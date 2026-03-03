@@ -1,0 +1,231 @@
+{
+  "title": "Employee Onboarding Form",
+  "description": "Complete this form to generate a pre-filled onboarding document. All required fields must be filled before export.",
+  "icon": "👋",
+  "template": "templates/onboarding.py",
+  "sections": [
+    {
+      "title": "Personal Information",
+      "fields": [
+        {
+          "id": "first_name",
+          "label": "First Name",
+          "type": "text",
+          "required": true,
+          "placeholder": "Jane"
+        },
+        {
+          "id": "last_name",
+          "label": "Last Name",
+          "type": "text",
+          "required": true,
+          "placeholder": "Doe"
+        },
+        {
+          "id": "email",
+          "label": "Email Address",
+          "type": "email",
+          "required": true,
+          "placeholder": "jane.doe@company.com"
+        },
+        {
+          "id": "phone",
+          "label": "Phone Number",
+          "type": "tel",
+          "required": false,
+          "placeholder": "(555) 123-4567"
+        },
+        {
+          "id": "date_of_birth",
+          "label": "Date of Birth",
+          "type": "date",
+          "required": true
+        },
+        {
+          "id": "start_date",
+          "label": "Start Date",
+          "type": "date",
+          "required": true
+        }
+      ]
+    },
+    {
+      "title": "Role & Department",
+      "fields": [
+        {
+          "id": "department",
+          "label": "Department",
+          "type": "select",
+          "required": true,
+          "options": [
+            "",
+            "Engineering",
+            "Design",
+            "Marketing",
+            "Sales",
+            "Operations",
+            "Finance",
+            "HR",
+            "Legal"
+          ]
+        },
+        {
+          "id": "job_title",
+          "label": "Job Title",
+          "type": "text",
+          "required": true,
+          "placeholder": "Senior Software Engineer"
+        },
+        {
+          "id": "employment_type",
+          "label": "Employment Type",
+          "type": "radio",
+          "required": true,
+          "options": [
+            "Full-Time",
+            "Part-Time",
+            "Contract",
+            "Intern"
+          ]
+        },
+        {
+          "id": "manager",
+          "label": "Reporting Manager",
+          "type": "text",
+          "required": false,
+          "placeholder": "Manager's full name"
+        }
+      ]
+    },
+    {
+      "title": "Equipment & Access",
+      "fields": [
+        {
+          "id": "laptop_preference",
+          "label": "Laptop Preference",
+          "type": "select",
+          "required": true,
+          "options": [
+            "",
+            "MacBook Pro 14\"",
+            "MacBook Pro 16\"",
+            "Dell XPS 15",
+            "ThinkPad X1 Carbon",
+            "Custom / Other"
+          ]
+        },
+        {
+          "id": "equipment_needs",
+          "label": "Additional Equipment",
+          "type": "checkbox",
+          "required": false,
+          "options": [
+            "External Monitor",
+            "Mechanical Keyboard",
+            "Ergonomic Mouse",
+            "Standing Desk",
+            "Webcam",
+            "Headset"
+          ],
+          "hint": "Select all that apply"
+        },
+        {
+          "id": "software_access",
+          "label": "Software Access Needed",
+          "type": "checkbox",
+          "required": false,
+          "options": [
+            "GitHub",
+            "Jira",
+            "Confluence",
+            "Figma",
+            "Slack Pro",
+            "Salesforce",
+            "AWS Console",
+            "Google Workspace Admin"
+          ],
+          "hint": "Select all that apply"
+        }
+      ]
+    },
+    {
+      "title": "Skills & Experience",
+      "fields": [
+        {
+          "id": "bio",
+          "label": "Professional Bio",
+          "type": "longtext",
+          "required": false,
+          "placeholder": "Write a brief professional biography that will be shared with the team. Include your background, areas of expertise, and what excites you about this role...",
+          "hint": "This will appear as a full paragraph in the onboarding document",
+          "maxLength": 2000
+        },
+        {
+          "id": "skills",
+          "label": "Key Skills",
+          "type": "list",
+          "required": false,
+          "placeholder": "e.g. Python",
+          "hint": "Add each skill individually or paste multiple skills separated by new lines"
+        },
+        {
+          "id": "certifications",
+          "label": "Certifications & Licenses",
+          "type": "list",
+          "required": false,
+          "placeholder": "e.g. AWS Solutions Architect",
+          "hint": "Professional certifications, licenses, or relevant credentials"
+        },
+        {
+          "id": "prior_projects",
+          "label": "Notable Prior Projects",
+          "type": "longtext",
+          "required": false,
+          "placeholder": "Describe 2-3 notable projects from your previous roles. What was your contribution? What was the impact?",
+          "maxLength": 3000
+        }
+      ]
+    },
+    {
+      "title": "Additional Information",
+      "fields": [
+        {
+          "id": "dietary_restrictions",
+          "label": "Dietary Restrictions",
+          "type": "text",
+          "required": false,
+          "placeholder": "For team lunches and events"
+        },
+        {
+          "id": "emergency_contact",
+          "label": "Emergency Contact Name",
+          "type": "text",
+          "required": true,
+          "placeholder": "Full name"
+        },
+        {
+          "id": "emergency_phone",
+          "label": "Emergency Contact Phone",
+          "type": "tel",
+          "required": true,
+          "placeholder": "(555) 987-6543"
+        },
+        {
+          "id": "onboarding_goals",
+          "label": "First 90 Days Goals",
+          "type": "list",
+          "required": false,
+          "placeholder": "e.g. Complete product training",
+          "hint": "What do you want to accomplish in your first 90 days?"
+        },
+        {
+          "id": "notes",
+          "label": "Additional Notes / Accommodations",
+          "type": "textarea",
+          "required": false,
+          "placeholder": "Any other information we should know..."
+        }
+      ]
+    }
+  ]
+}
