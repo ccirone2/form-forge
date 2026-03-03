@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FormForge — GitHub-Driven Form Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #181a22;
+    --surface-2: #1f2230;
+    --border: #2a2d3a;
+    --border-focus: #6366f1;
+    --text: #e8e8ed;
+    --text-muted: #8b8da0;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --accent-glow: rgba(99, 102, 241, 0.15);
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --radius: 10px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* ===== HEADER ===== */
+  .app-header {
+    padding: 16px 40px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+  .app-header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; cursor: pointer; }
+  .app-header h1 span { color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
+    transition: all 0.3s ease;
+  }
+  .status-badge.ready { border-color: var(--success); color: var(--success); }
+  .status-badge.loading { border-color: var(--warning); color: var(--warning); }
+  .status-badge.error { border-color: var(--error); color: var(--error); }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .status-badge.loading .status-dot { animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* ===== VIEWS ===== */
+  .view { display: none; }
+  .view.active { display: block; }
+  .main-container { max-width: 820px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* ===== SETUP VIEW ===== */
+  .setup-hero { text-align: center; margin-bottom: 40px; }
+  .setup-hero h2 { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 8px; }
+  .setup-hero p { color: var(--text-muted); font-size: 15px; max-width: 520px; margin: 0 auto; }
+
+  .config-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 28px; margin-bottom: 24px;
+  }
+  .config-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+  .config-row { display: flex; gap: 12px; align-items: flex-end; }
+  .config-row .field-grow { flex: 1; }
+  .config-row label { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+  .config-row input[type="text"] {
+    width: 100%; padding: 10px 14px; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .config-row input:focus { border-color: var(--border-focus); }
+
+  .btn-connect {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+    font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap;
+  }
+  .btn-connect:hover { background: var(--accent-hover); }
+  .btn-connect:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .repo-status {
+    margin-top: 12px; font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted);
+  }
+  .repo-status.success { color: var(--success); }
+  .repo-status.error { color: var(--error); }
+
+  /* ===== PICKER GRID ===== */
+  .picker-section { margin-top: 32px; }
+  .picker-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .picker-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;
+  }
+  .picker-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .picker-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .picker-card.selected { border-color: var(--accent); background: var(--accent-glow); }
+  .picker-card .card-icon { font-size: 28px; margin-bottom: 10px; }
+  .picker-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .picker-card p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .picker-card .card-badge {
+    position: absolute; top: 12px; right: 12px; font-size: 10px;
+    font-family: 'JetBrains Mono', monospace; padding: 2px 8px; border-radius: 10px;
+    background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border);
+  }
+  .picker-card.selected .card-badge { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .picker-empty {
+    grid-column: 1 / -1; text-align: center; padding: 40px;
+    color: var(--text-muted); font-size: 14px;
+  }
+
+  .launch-area { margin-top: 32px; text-align: center; }
+
+  /* ===== FORM VIEW ===== */
+  .form-nav {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+  }
+  .btn-back {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted); font-family: 'DM Sans', sans-serif;
+    font-size: 13px; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-back:hover { border-color: var(--text-muted); color: var(--text); }
+  .form-nav-info { font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); }
+
+  .form-title { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 6px; }
+  .form-description { color: var(--text-muted); font-size: 15px; margin-bottom: 36px; }
+
+  .schema-info {
+    background: var(--accent-glow); border: 1px solid rgba(99,102,241,0.25);
+    border-radius: var(--radius); padding: 16px 20px; margin-bottom: 32px;
+    font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--accent-hover);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .schema-info svg { flex-shrink: 0; }
+
+  .form-section {
+    margin-bottom: 32px; padding: 28px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius); transition: border-color 0.2s;
+  }
+  .form-section:hover { border-color: rgba(99,102,241,0.3); }
+  .section-title {
+    font-size: 16px; font-weight: 600; margin-bottom: 20px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+  .field-group { margin-bottom: 20px; }
+  .field-group:last-child { margin-bottom: 0; }
+  .field-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+  .field-label .required { color: var(--error); margin-left: 2px; }
+  .field-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Inputs */
+  input[type="text"], input[type="date"], input[type="email"], input[type="tel"],
+  textarea, select {
+    width: 100%; padding: 10px 14px; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
+  textarea { resize: vertical; min-height: 80px; }
+  select {
+    appearance: none; cursor: pointer; padding-right: 36px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b8da0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  select option { background: var(--surface-2); color: var(--text); }
+
+  .checkbox-group, .radio-group { display: flex; flex-direction: column; gap: 10px; }
+  .checkbox-item, .radio-item {
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    padding: 8px 12px; border-radius: 8px; transition: background 0.15s;
+  }
+  .checkbox-item:hover, .radio-item:hover { background: var(--surface-2); }
+  .checkbox-item input[type="checkbox"], .radio-item input[type="radio"] {
+    width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0;
+  }
+  .checkbox-item label, .radio-item label { font-size: 14px; cursor: pointer; user-select: none; }
+
+  .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .fields-row { grid-template-columns: 1fr; } }
+
+  /* Long text */
+  .longtext-wrapper textarea { min-height: 160px; line-height: 1.7; }
+  .longtext-counter {
+    text-align: right; font-size: 11px; font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted); margin-top: 4px; opacity: 0.7;
+  }
+
+  /* List entry */
+  .list-entry-wrapper { display: flex; flex-direction: column; gap: 8px; }
+  .list-items { display: flex; flex-direction: column; gap: 6px; }
+  .list-item-row { display: flex; align-items: center; gap: 8px; animation: listItemIn 0.2s ease; }
+  @keyframes listItemIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+  .list-item-row .item-number { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); min-width: 22px; text-align: right; user-select: none; }
+  .list-item-row input[type="text"] { flex: 1; padding: 8px 12px; font-size: 13px; }
+  .list-item-row .btn-remove-item {
+    background: none; border: 1px solid transparent; color: var(--text-muted);
+    cursor: pointer; padding: 4px 6px; border-radius: 6px; font-size: 16px; line-height: 1;
+    transition: all 0.15s; flex-shrink: 0;
+  }
+  .list-item-row .btn-remove-item:hover { color: var(--error); border-color: var(--error); background: rgba(239,68,68,0.08); }
+  .btn-add-item {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface-2); border: 1px dashed var(--border); color: var(--text-muted);
+    padding: 8px 14px; border-radius: 8px; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; cursor: pointer; transition: all 0.15s; align-self: flex-start;
+  }
+  .btn-add-item:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+  .list-item-count { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted); opacity: 0.7; }
+  .list-or-divider {
+    display: flex; align-items: center; gap: 10px; color: var(--text-muted);
+    font-size: 11px; font-family: 'JetBrains Mono', monospace; opacity: 0.5;
+  }
+  .list-or-divider::before, .list-or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .list-bulk-textarea { min-height: 80px; font-size: 13px; line-height: 1.6; }
+
+  /* Buttons */
+  .submit-area { margin-top: 40px; display: flex; align-items: center; gap: 16px; }
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 28px; background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+    font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 28px; background: transparent; color: var(--text-muted);
+    border: 1px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--text-muted); color: var(--text); }
+
+  /* Overlay */
+  .loading-overlay {
+    position: fixed; inset: 0; background: rgba(15,17,23,0.85); backdrop-filter: blur(4px);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 1000; gap: 16px;
+  }
+  .loading-overlay.hidden { display: none; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: var(--radius);
+    font-size: 14px; font-weight: 500; background: var(--surface); border: 1px solid var(--success);
+    color: var(--success); box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 2000;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { border-color: var(--error); color: var(--error); }
+
+  /* Console */
+  .console-panel { margin-top: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .console-header {
+    display: flex; align-items: center; justify-content: space-between; padding: 10px 16px;
+    background: var(--surface-2); border-bottom: 1px solid var(--border);
+    font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted);
+    cursor: pointer; user-select: none;
+  }
+  .console-body {
+    max-height: 200px; overflow-y: auto; padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7; color: var(--text-muted);
+  }
+  .console-body.collapsed { display: none; }
+  .log-entry { padding: 2px 0; }
+  .log-entry.info { color: var(--accent-hover); }
+  .log-entry.success { color: var(--success); }
+  .log-entry.error { color: var(--error); }
+
+  /* Token input */
+  .token-toggle {
+    font-size: 12px; color: var(--text-muted); cursor: pointer; margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace; user-select: none;
+  }
+  .token-toggle:hover { color: var(--accent-hover); }
+  .token-row { margin-top: 8px; }
+  .token-row.hidden { display: none; }
+  .token-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay hidden" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Loading...</div>
+</div>
+
+<!-- Header -->
+<header class="app-header">
+  <h1 onclick="showView('setup')"><span>&#9632;</span> FormForge</h1>
+  <div class="header-right">
+    <div class="status-badge" id="statusBadge">
+      <div class="status-dot"></div>
+      <span id="statusText">not connected</span>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== SETUP VIEW ==================== -->
+<div class="view active" id="view-setup">
+  <div class="main-container">
+    <div class="setup-hero">
+      <h2>Connect a GitHub Repo</h2>
+      <p>Point FormForge at a GitHub repository containing your form schemas and DOCX templates. It will fetch them and let you pick which form to fill out.</p>
+    </div>
+
+    <div class="config-card">
+      <h3>Repository</h3>
+      <div class="config-row">
+        <div class="field-grow">
+          <label>owner / repo</label>
+          <input type="text" id="repoInput" placeholder="myorg/form-templates" spellcheck="false">
+        </div>
+        <div class="field-grow" style="max-width: 200px;">
+          <label>branch (optional)</label>
+          <input type="text" id="branchInput" placeholder="main" spellcheck="false">
+        </div>
+        <button class="btn-connect" id="connectBtn" onclick="connectRepo()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+          Connect
+        </button>
+      </div>
+      <div class="repo-status" id="repoStatus"></div>
+
+      <div class="token-toggle" onclick="toggleToken()">&#9656; optional: add personal access token (for private repos)</div>
+      <div class="token-row hidden" id="tokenRow">
+        <div class="config-row">
+          <div class="field-grow">
+            <label>personal access token</label>
+            <input type="text" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" spellcheck="false" autocomplete="off">
+          </div>
+        </div>
+        <div class="token-hint">Token is only used in-browser and never stored or transmitted elsewhere. Needs <code>repo</code> scope for private repos.</div>
+      </div>
+    </div>
+
+    <div class="config-card" style="background: var(--surface-2); border-style: dashed;">
+      <h3>Expected Repo Structure</h3>
+      <pre style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.8; padding: 4px 0;">
+your-repo/
+├── schemas/
+│   ├── onboarding.json        ← form schema (fields, sections, metadata)
+│   ├── expense-report.json
+│   └── incident-report.json
+└── templates/
+    ├── onboarding.py          ← python-docx generation script
+    ├── expense-report.py
+    └── incident-report.py
+
+Each schema JSON references its template by name.
+Templates are Python scripts exporting a <strong style="color:var(--text)">generate_docx(data)</strong> function.</pre>
+    </div>
+
+    <!-- Picker appears after connect -->
+    <div class="picker-section" id="pickerSection" style="display:none;">
+      <h3>Available Forms</h3>
+      <div class="picker-grid" id="pickerGrid"></div>
+      <div class="launch-area">
+        <button class="btn-primary" id="launchBtn" disabled onclick="launchForm()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Open Selected Form
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== FORM VIEW ==================== -->
+<div class="view" id="view-form">
+  <div class="main-container">
+    <div class="form-nav">
+      <button class="btn-back" onclick="showView('setup')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back to picker
+      </button>
+      <span class="form-nav-info" id="formNavInfo"></span>
+    </div>
+
+    <h2 class="form-title" id="formTitle"></h2>
+    <p class="form-description" id="formDescription"></p>
+
+    <div class="schema-info" id="schemaInfo">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span id="schemaInfoText"></span>
+    </div>
+
+    <form id="dynamicForm" novalidate></form>
+
+    <div class="submit-area">
+      <button class="btn-primary" id="exportBtn" disabled onclick="handleExport()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Export to DOCX
+      </button>
+      <button class="btn-secondary" onclick="resetForm()">Reset</button>
+    </div>
+
+    <div class="console-panel">
+      <div class="console-header" onclick="toggleConsole()">
+        <span>&#9654; console output</span>
+        <span id="logCount">0 entries</span>
+      </div>
+      <div class="console-body collapsed" id="consoleBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+let pyodide = null;
+let pyodideReady = false;
+let currentSchema = null;
+let currentTemplateCode = null;
+let repoSchemas = [];      // [{name, path, description, icon, templatePath}]
+let selectedSchemaIdx = -1;
+
+// GitHub config
+let ghOwner = '';
+let ghRepo = '';
+let ghBranch = 'main';
+let ghToken = '';
+
+// ============================================================
+//  VIEW MANAGEMENT
+// ============================================================
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${name}`).classList.add('active');
+}
+
+// ============================================================
+//  LOGGING & TOAST
+// ============================================================
+function log(msg, level = 'info') {
+  const body = document.getElementById('consoleBody');
+  const countEl = document.getElementById('logCount');
+  const entry = document.createElement('div');
+  entry.className = `log-entry ${level}`;
+  entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+  body.appendChild(entry);
+  body.scrollTop = body.scrollHeight;
+  const count = body.children.length;
+  countEl.textContent = `${count} entr${count === 1 ? 'y' : 'ies'}`;
+}
+
+function toggleConsole() {
+  document.getElementById('consoleBody').classList.toggle('collapsed');
+}
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = `toast ${type} show`;
+  setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+function showOverlay(msg) {
+  document.getElementById('loadingText').textContent = msg;
+  document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+function hideOverlay() {
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+function toggleToken() {
+  document.getElementById('tokenRow').classList.toggle('hidden');
+}
+
+// ============================================================
+//  GITHUB API
+// ============================================================
+function ghHeaders() {
+  const h = { 'Accept': 'application/vnd.github.v3+json' };
+  if (ghToken) h['Authorization'] = `token ${ghToken}`;
+  return h;
+}
+
+async function ghFetch(path) {
+  const url = `https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/${path}?ref=${ghBranch}`;
+  const resp = await fetch(url, { headers: ghHeaders() });
+  if (!resp.ok) throw new Error(`GitHub ${resp.status}: ${resp.statusText} for ${path}`);
+  return resp.json();
+}
+
+async function ghFetchRaw(path) {
+  const url = `https://raw.githubusercontent.com/${ghOwner}/${ghRepo}/${ghBranch}/${path}`;
+  const resp = await fetch(url, { headers: ghToken ? { 'Authorization': `token ${ghToken}` } : {} });
+  if (!resp.ok) throw new Error(`GitHub raw ${resp.status} for ${path}`);
+  return resp.text();
+}
+
+// ============================================================
+//  CONNECT TO REPO
+// ============================================================
+async function connectRepo() {
+  const repoInput = document.getElementById('repoInput').value.trim();
+  ghBranch = document.getElementById('branchInput').value.trim() || 'main';
+  ghToken = document.getElementById('tokenInput').value.trim();
+  const statusEl = document.getElementById('repoStatus');
+
+  if (!repoInput || !repoInput.includes('/')) {
+    statusEl.className = 'repo-status error';
+    statusEl.textContent = 'Please enter owner/repo format, e.g. myorg/form-templates';
+    return;
+  }
+
+  const parts = repoInput.split('/');
+  ghOwner = parts[0];
+  ghRepo = parts.slice(1).join('/');
+
+  statusEl.className = 'repo-status';
+  statusEl.textContent = 'Connecting...';
+  document.getElementById('connectBtn').disabled = true;
+
+  try {
+    // Fetch schemas/ directory
+    log(`Fetching schemas from ${ghOwner}/${ghRepo}@${ghBranch}...`, 'info');
+    const schemaFiles = await ghFetch('schemas');
+
+    if (!Array.isArray(schemaFiles)) throw new Error('schemas/ directory not found or not a directory');
+
+    const jsonFiles = schemaFiles.filter(f => f.name.endsWith('.json'));
+    if (jsonFiles.length === 0) throw new Error('No .json files found in schemas/');
+
+    // Fetch each schema for metadata
+    repoSchemas = [];
+    for (const file of jsonFiles) {
+      try {
+        const raw = await ghFetchRaw(file.path);
+        const schema = JSON.parse(raw);
+        const baseName = file.name.replace('.json', '');
+        repoSchemas.push({
+          name: schema.title || baseName,
+          description: schema.description || '',
+          icon: schema.icon || '📄',
+          schemaPath: file.path,
+          templatePath: schema.template || `templates/${baseName}.py`,
+          schema: schema
+        });
+        log(`Found schema: ${schema.title || baseName}`, 'success');
+      } catch (e) {
+        log(`Skipped ${file.name}: ${e.message}`, 'error');
+      }
+    }
+
+    if (repoSchemas.length === 0) throw new Error('No valid schemas could be parsed');
+
+    // Check templates/ exists
+    try {
+      await ghFetch('templates');
+      log('templates/ directory confirmed', 'success');
+    } catch (e) {
+      log('Warning: templates/ directory not found — export may fail', 'error');
+    }
+
+    statusEl.className = 'repo-status success';
+    statusEl.textContent = `Connected — ${repoSchemas.length} schema${repoSchemas.length !== 1 ? 's' : ''} found`;
+
+    // Update badge
+    const badge = document.getElementById('statusBadge');
+    badge.className = 'status-badge ready';
+    document.getElementById('statusText').textContent = `${ghOwner}/${ghRepo}`;
+
+    renderPicker();
+  } catch (err) {
+    statusEl.className = 'repo-status error';
+    statusEl.textContent = `Error: ${err.message}`;
+    log(`Connect failed: ${err.message}`, 'error');
+  } finally {
+    document.getElementById('connectBtn').disabled = false;
+  }
+}
+
+// ============================================================
+//  PICKER
+// ============================================================
+function renderPicker() {
+  const section = document.getElementById('pickerSection');
+  const grid = document.getElementById('pickerGrid');
+  section.style.display = 'block';
+  grid.innerHTML = '';
+  selectedSchemaIdx = -1;
+  document.getElementById('launchBtn').disabled = true;
+
+  if (repoSchemas.length === 0) {
+    grid.innerHTML = '<div class="picker-empty">No schemas found in this repository.</div>';
+    return;
+  }
+
+  repoSchemas.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'picker-card';
+    card.dataset.idx = i;
+    card.innerHTML = `
+      <div class="card-icon">${s.icon}</div>
+      <h4>${s.name}</h4>
+      <p>${s.description || 'No description'}</p>
+      <span class="card-badge">${s.schema.sections ? s.schema.sections.length + ' sections' : 'schema'}</span>
+    `;
+    card.addEventListener('click', () => selectSchema(i));
+    grid.appendChild(card);
+  });
+}
+
+function selectSchema(idx) {
+  selectedSchemaIdx = idx;
+  document.querySelectorAll('.picker-card').forEach((c, i) => {
+    c.classList.toggle('selected', i === idx);
+  });
+  document.getElementById('launchBtn').disabled = false;
+}
+
+// ============================================================
+//  LAUNCH FORM
+// ============================================================
+async function launchForm() {
+  if (selectedSchemaIdx < 0) return;
+  const entry = repoSchemas[selectedSchemaIdx];
+
+  showOverlay('Loading template from GitHub...');
+
+  try {
+    // Fetch the template Python file
+    log(`Fetching template: ${entry.templatePath}`, 'info');
+    const templateCode = await ghFetchRaw(entry.templatePath);
+    log(`Template loaded: ${templateCode.length} chars`, 'success');
+
+    currentSchema = entry.schema;
+    currentTemplateCode = templateCode;
+
+    // Build form
+    buildForm(currentSchema);
+    document.getElementById('formNavInfo').textContent = `${entry.name} · from ${ghOwner}/${ghRepo}`;
+    document.getElementById('schemaInfoText').innerHTML =
+      `Loaded from GitHub — schema: <strong>${entry.schemaPath}</strong> · template: <strong>${entry.templatePath}</strong>`;
+
+    // Initialize Pyodide if not already
+    if (!pyodideReady) {
+      await initPyodide();
+    }
+
+    // Load the template into Pyodide
+    showOverlay('Loading template into Pyodide...');
+    await pyodide.runPythonAsync(currentTemplateCode);
+    log('Template code loaded into Pyodide', 'success');
+
+    document.getElementById('exportBtn').disabled = false;
+    showView('form');
+  } catch (err) {
+    log(`Launch failed: ${err.message}`, 'error');
+    showToast(`Failed to load: ${err.message}`, 'error');
+  } finally {
+    hideOverlay();
+  }
+}
+
+// ============================================================
+//  PYODIDE INIT
+// ============================================================
+async function initPyodide() {
+  showOverlay('Loading Pyodide runtime (~10 MB)...');
+  log('Loading Pyodide CDN...', 'info');
+
+  try {
+    if (typeof loadPyodide === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js';
+      document.head.appendChild(script);
+      await new Promise((resolve, reject) => {
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Failed to load Pyodide CDN'));
+      });
+    }
+
+    log('Initializing Python runtime...', 'info');
+    showOverlay('Initializing Python runtime...');
+    pyodide = await loadPyodide();
+    log('Pyodide initialized', 'success');
+
+    showOverlay('Installing python-docx via micropip...');
+    log('Installing python-docx...', 'info');
+    await pyodide.loadPackage('micropip');
+    const micropip = pyodide.pyimport('micropip');
+    await micropip.install('python-docx');
+    log('python-docx installed', 'success');
+
+    pyodideReady = true;
+  } catch (err) {
+    log('Pyodide init error: ' + err.message, 'error');
+    throw err;
+  }
+}
+
+// ============================================================
+//  FORM BUILDER
+// ============================================================
+function buildForm(schema) {
+  document.getElementById('formTitle').textContent = schema.title || 'Untitled Form';
+  document.getElementById('formDescription').textContent = schema.description || '';
+
+  const form = document.getElementById('dynamicForm');
+  form.innerHTML = '';
+
+  if (!schema.sections) { log('Schema has no sections array', 'error'); return; }
+
+  for (const section of schema.sections) {
+    const sectionDiv = document.createElement('div');
+    sectionDiv.className = 'form-section';
+    const sectionTitle = document.createElement('h3');
+    sectionTitle.className = 'section-title';
+    sectionTitle.textContent = section.title;
+    sectionDiv.appendChild(sectionTitle);
+
+    const shortTypes = ['text', 'email', 'tel', 'date', 'select'];
+    let rowBuffer = [];
+
+    function flushRow() {
+      if (rowBuffer.length === 0) return;
+      if (rowBuffer.length === 2) {
+        const row = document.createElement('div');
+        row.className = 'fields-row';
+        row.appendChild(rowBuffer[0]);
+        row.appendChild(rowBuffer[1]);
+        sectionDiv.appendChild(row);
+      } else {
+        rowBuffer.forEach(el => sectionDiv.appendChild(el));
+      }
+      rowBuffer = [];
+    }
+
+    for (const field of section.fields) {
+      const fieldEl = createField(field);
+      if (shortTypes.includes(field.type)) {
+        rowBuffer.push(fieldEl);
+        if (rowBuffer.length === 2) flushRow();
+      } else {
+        flushRow();
+        sectionDiv.appendChild(fieldEl);
+      }
+    }
+    flushRow();
+    form.appendChild(sectionDiv);
+  }
+
+  const totalFields = schema.sections.reduce((a, s) => a + s.fields.length, 0);
+  log(`Form built: ${schema.sections.length} sections, ${totalFields} fields`, 'success');
+}
+
+function createField(field) {
+  const group = document.createElement('div');
+  group.className = 'field-group';
+
+  // Label
+  if (field.type !== 'checkbox' && field.type !== 'radio') {
+    const label = document.createElement('label');
+    label.className = 'field-label';
+    label.setAttribute('for', field.id);
+    label.innerHTML = field.label + (field.required ? ' <span class="required">*</span>' : '');
+    group.appendChild(label);
+  } else {
+    const label = document.createElement('span');
+    label.className = 'field-label';
+    label.innerHTML = field.label + (field.required ? ' <span class="required">*</span>' : '');
+    group.appendChild(label);
+  }
+
+  switch (field.type) {
+    case 'text': case 'email': case 'tel': {
+      const input = document.createElement('input');
+      input.type = field.type; input.id = field.id; input.name = field.id;
+      input.placeholder = field.placeholder || ''; input.required = field.required || false;
+      group.appendChild(input);
+      break;
+    }
+    case 'date': {
+      const input = document.createElement('input');
+      input.type = 'date'; input.id = field.id; input.name = field.id;
+      input.required = field.required || false;
+      group.appendChild(input);
+      break;
+    }
+    case 'textarea': {
+      const ta = document.createElement('textarea');
+      ta.id = field.id; ta.name = field.id; ta.placeholder = field.placeholder || '';
+      ta.required = field.required || false; ta.rows = 3;
+      group.appendChild(ta);
+      break;
+    }
+    case 'longtext': {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'longtext-wrapper';
+      const ta = document.createElement('textarea');
+      ta.id = field.id; ta.name = field.id; ta.placeholder = field.placeholder || '';
+      ta.required = field.required || false; ta.rows = 6;
+      const maxLen = field.maxLength || 5000;
+      const counter = document.createElement('div');
+      counter.className = 'longtext-counter';
+      counter.textContent = `0 / ${maxLen} characters`;
+      ta.addEventListener('input', () => {
+        const len = ta.value.length;
+        counter.textContent = `${len} / ${maxLen} characters`;
+        counter.style.color = len > maxLen ? 'var(--error)' : '';
+      });
+      wrapper.appendChild(ta);
+      wrapper.appendChild(counter);
+      group.appendChild(wrapper);
+      break;
+    }
+    case 'select': {
+      const select = document.createElement('select');
+      select.id = field.id; select.name = field.id; select.required = field.required || false;
+      for (const opt of (field.options || [])) {
+        const option = document.createElement('option');
+        option.value = opt; option.textContent = opt || '— Select —';
+        select.appendChild(option);
+      }
+      group.appendChild(select);
+      break;
+    }
+    case 'radio': {
+      const rg = document.createElement('div'); rg.className = 'radio-group';
+      for (const opt of (field.options || [])) {
+        const item = document.createElement('div'); item.className = 'radio-item';
+        const input = document.createElement('input');
+        input.type = 'radio'; input.name = field.id; input.value = opt;
+        input.id = `${field.id}_${opt.replace(/\s+/g, '_').toLowerCase()}`;
+        const label = document.createElement('label');
+        label.setAttribute('for', input.id); label.textContent = opt;
+        item.appendChild(input); item.appendChild(label); rg.appendChild(item);
+      }
+      group.appendChild(rg);
+      break;
+    }
+    case 'checkbox': {
+      const cg = document.createElement('div'); cg.className = 'checkbox-group';
+      for (const opt of (field.options || [])) {
+        const item = document.createElement('div'); item.className = 'checkbox-item';
+        const input = document.createElement('input');
+        input.type = 'checkbox'; input.name = field.id; input.value = opt;
+        input.id = `${field.id}_${opt.replace(/\s+/g, '_').toLowerCase()}`;
+        const label = document.createElement('label');
+        label.setAttribute('for', input.id); label.textContent = opt;
+        item.appendChild(input); item.appendChild(label); cg.appendChild(item);
+      }
+      group.appendChild(cg);
+      break;
+    }
+    case 'list': {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'list-entry-wrapper';
+      const itemsContainer = document.createElement('div');
+      itemsContainer.className = 'list-items'; itemsContainer.id = `${field.id}_items`;
+      const countEl = document.createElement('div');
+      countEl.className = 'list-item-count'; countEl.id = `${field.id}_count`; countEl.textContent = '0 items';
+
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button'; addBtn.className = 'btn-add-item';
+      addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add item';
+      addBtn.addEventListener('click', () => {
+        addListItem(field.id, field.placeholder || '', itemsContainer, countEl);
+        const inputs = itemsContainer.querySelectorAll('.list-item-input');
+        inputs[inputs.length - 1].focus();
+      });
+
+      const divider = document.createElement('div');
+      divider.className = 'list-or-divider'; divider.textContent = 'or paste multiple lines';
+
+      const bulkTa = document.createElement('textarea');
+      bulkTa.className = 'list-bulk-textarea'; bulkTa.id = `${field.id}_bulk`;
+      bulkTa.placeholder = 'Paste items here, one per line...'; bulkTa.rows = 3;
+      bulkTa.addEventListener('blur', () => {
+        const lines = bulkTa.value.split('\n').map(l => l.trim()).filter(l => l);
+        if (lines.length > 0) {
+          for (const line of lines) addListItem(field.id, field.placeholder || '', itemsContainer, countEl, line);
+          bulkTa.value = '';
+        }
+      });
+
+      wrapper.appendChild(itemsContainer);
+      wrapper.appendChild(addBtn);
+      wrapper.appendChild(countEl);
+      wrapper.appendChild(divider);
+      wrapper.appendChild(bulkTa);
+      group.appendChild(wrapper);
+      setTimeout(() => addListItem(field.id, field.placeholder || '', itemsContainer, countEl), 0);
+      break;
+    }
+  }
+
+  if (field.hint) {
+    const hint = document.createElement('div');
+    hint.className = 'field-hint'; hint.textContent = field.hint;
+    group.appendChild(hint);
+  }
+
+  return group;
+}
+
+// ============================================================
+//  LIST HELPERS
+// ============================================================
+function addListItem(fieldId, placeholder, container, countEl, value = '') {
+  const row = document.createElement('div'); row.className = 'list-item-row';
+  const num = document.createElement('span'); num.className = 'item-number';
+  const input = document.createElement('input');
+  input.type = 'text'; input.className = 'list-item-input';
+  input.dataset.listField = fieldId; input.placeholder = placeholder; input.value = value;
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addListItem(fieldId, placeholder, container, countEl);
+      const inputs = container.querySelectorAll('.list-item-input');
+      inputs[inputs.length - 1].focus();
+    }
+    if (e.key === 'Backspace' && input.value === '' && container.children.length > 1) {
+      e.preventDefault();
+      const inputs = Array.from(container.querySelectorAll('.list-item-input'));
+      const idx = inputs.indexOf(input);
+      row.remove(); renumberListItems(container); updateListCount(container, countEl);
+      const remaining = container.querySelectorAll('.list-item-input');
+      if (remaining.length > 0) remaining[Math.max(0, idx - 1)].focus();
+    }
+  });
+  input.addEventListener('input', () => updateListCount(container, countEl));
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button'; removeBtn.className = 'btn-remove-item';
+  removeBtn.innerHTML = '&times;'; removeBtn.title = 'Remove item';
+  removeBtn.addEventListener('click', () => {
+    if (container.children.length <= 1) { input.value = ''; updateListCount(container, countEl); return; }
+    row.remove(); renumberListItems(container); updateListCount(container, countEl);
+  });
+
+  row.appendChild(num); row.appendChild(input); row.appendChild(removeBtn);
+  container.appendChild(row);
+  renumberListItems(container); updateListCount(container, countEl);
+}
+
+function renumberListItems(container) {
+  container.querySelectorAll('.list-item-row').forEach((row, i) => {
+    row.querySelector('.item-number').textContent = `${i + 1}.`;
+  });
+}
+
+function updateListCount(container, countEl) {
+  const filled = Array.from(container.querySelectorAll('.list-item-input')).filter(inp => inp.value.trim()).length;
+  countEl.textContent = `${filled} item${filled !== 1 ? 's' : ''}`;
+}
+
+function getListValues(fieldId) {
+  const container = document.getElementById(`${fieldId}_items`);
+  if (!container) return [];
+  return Array.from(container.querySelectorAll('.list-item-input')).map(inp => inp.value.trim()).filter(v => v);
+}
+
+// ============================================================
+//  COLLECT FORM DATA
+// ============================================================
+function collectFormData() {
+  const data = {};
+  if (!currentSchema || !currentSchema.sections) return data;
+  for (const section of currentSchema.sections) {
+    for (const field of section.fields) {
+      if (field.type === 'checkbox') {
+        const checked = document.querySelectorAll(`input[name="${field.id}"]:checked`);
+        data[field.id] = Array.from(checked).map(c => c.value).join(', ');
+      } else if (field.type === 'radio') {
+        const selected = document.querySelector(`input[name="${field.id}"]:checked`);
+        data[field.id] = selected ? selected.value : '';
+      } else if (field.type === 'list') {
+        data[field.id] = getListValues(field.id).join('\n');
+      } else {
+        const el = document.getElementById(field.id);
+        data[field.id] = el ? el.value : '';
+      }
+    }
+  }
+  return data;
+}
+
+// ============================================================
+//  VALIDATE
+// ============================================================
+function validateForm() {
+  const missing = [];
+  const data = collectFormData();
+  if (!currentSchema) return missing;
+  for (const section of currentSchema.sections) {
+    for (const field of section.fields) {
+      if (!field.required) continue;
+      const val = data[field.id];
+      if (!val || val.trim() === '') missing.push(field.label);
+    }
+  }
+  return missing;
+}
+
+// ============================================================
+//  RESET
+// ============================================================
+function resetForm() {
+  document.getElementById('dynamicForm').reset();
+  if (currentSchema) {
+    for (const section of currentSchema.sections) {
+      for (const field of section.fields) {
+        if (field.type === 'list') {
+          const container = document.getElementById(`${field.id}_items`);
+          const countEl = document.getElementById(`${field.id}_count`);
+          if (container) { container.innerHTML = ''; addListItem(field.id, field.placeholder || '', container, countEl); }
+        }
+      }
+    }
+  }
+  log('Form reset', 'info');
+}
+
+// ============================================================
+//  EXPORT
+// ============================================================
+async function handleExport() {
+  if (!pyodideReady) { showToast('Pyodide not ready', 'error'); return; }
+
+  const missing = validateForm();
+  if (missing.length > 0) {
+    showToast(`Missing: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? '...' : ''}`, 'error');
+    log('Validation failed: ' + missing.join(', '), 'error');
+    return;
+  }
+
+  const formData = collectFormData();
+  log('Collected ' + Object.keys(formData).length + ' fields', 'info');
+
+  showOverlay('Generating DOCX with python-docx...');
+
+  try {
+    pyodide.globals.set('form_data_json', JSON.stringify(formData));
+    await pyodide.runPythonAsync(`
+import json
+form_data = json.loads(form_data_json)
+docx_bytes = generate_docx(form_data)
+    `);
+
+    const docxBytes = pyodide.globals.get('docx_bytes');
+    const uint8 = new Uint8Array(docxBytes.toJs());
+    log(`DOCX generated: ${uint8.length} bytes`, 'success');
+
+    const blob = new Blob([uint8], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const title = (currentSchema.title || 'form').replace(/\s+/g, '_');
+    a.download = `${title}_${new Date().toISOString().slice(0,10)}.docx`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('DOCX exported successfully!');
+    log('Download triggered: ' + a.download, 'success');
+  } catch (err) {
+    console.error(err);
+    log('Export error: ' + err.message, 'error');
+    showToast('Export failed — check console', 'error');
+  } finally {
+    hideOverlay();
+  }
+}
+
+// ============================================================
+//  DEMO / FALLBACK — use embedded schema if no repo
+// ============================================================
+const DEMO_SCHEMA = {
+  title: "Employee Onboarding Form",
+  description: "Complete this form to generate a pre-filled onboarding document.",
+  icon: "👋",
+  template: "templates/onboarding.py",
+  sections: [
+    { title: "Personal Information", fields: [
+      { id: "first_name", label: "First Name", type: "text", required: true, placeholder: "Jane" },
+      { id: "last_name", label: "Last Name", type: "text", required: true, placeholder: "Doe" },
+      { id: "email", label: "Email Address", type: "email", required: true, placeholder: "jane.doe@company.com" },
+      { id: "phone", label: "Phone", type: "tel", required: false, placeholder: "(555) 123-4567" },
+      { id: "date_of_birth", label: "Date of Birth", type: "date", required: true },
+      { id: "start_date", label: "Start Date", type: "date", required: true }
+    ]},
+    { title: "Role & Department", fields: [
+      { id: "department", label: "Department", type: "select", required: true,
+        options: ["", "Engineering", "Design", "Marketing", "Sales", "Operations", "Finance", "HR"] },
+      { id: "job_title", label: "Job Title", type: "text", required: true, placeholder: "Senior Engineer" },
+      { id: "employment_type", label: "Employment Type", type: "radio", required: true,
+        options: ["Full-Time", "Part-Time", "Contract", "Intern"] },
+      { id: "manager", label: "Reporting Manager", type: "text", required: false, placeholder: "Manager name" }
+    ]},
+    { title: "Equipment & Access", fields: [
+      { id: "laptop_preference", label: "Laptop", type: "select", required: true,
+        options: ["", "MacBook Pro 14\"", "MacBook Pro 16\"", "Dell XPS 15", "ThinkPad X1"] },
+      { id: "equipment_needs", label: "Additional Equipment", type: "checkbox", required: false,
+        options: ["Monitor", "Keyboard", "Mouse", "Standing Desk", "Webcam", "Headset"], hint: "Select all that apply" },
+      { id: "software_access", label: "Software Access", type: "checkbox", required: false,
+        options: ["GitHub", "Jira", "Figma", "Slack Pro", "AWS Console"], hint: "Select all that apply" }
+    ]},
+    { title: "Skills & Experience", fields: [
+      { id: "bio", label: "Professional Bio", type: "longtext", required: false,
+        placeholder: "Write a brief professional biography...", maxLength: 2000 },
+      { id: "skills", label: "Key Skills", type: "list", required: false, placeholder: "e.g. Python",
+        hint: "Add skills one at a time or paste multiple" },
+      { id: "certifications", label: "Certifications", type: "list", required: false, placeholder: "e.g. AWS Solutions Architect" }
+    ]},
+    { title: "Additional Info", fields: [
+      { id: "emergency_contact", label: "Emergency Contact", type: "text", required: true, placeholder: "Full name" },
+      { id: "emergency_phone", label: "Emergency Phone", type: "tel", required: true, placeholder: "(555) 987-6543" },
+      { id: "onboarding_goals", label: "First 90 Days Goals", type: "list", required: false, placeholder: "e.g. Complete training" },
+      { id: "notes", label: "Notes", type: "textarea", required: false, placeholder: "Anything else..." }
+    ]}
+  ]
+};
+
+const DEMO_TEMPLATE = `
+import io
+from docx import Document
+from docx.shared import Inches, Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_TABLE_ALIGNMENT
+
+def generate_docx(data):
+    doc = Document()
+    style = doc.styles['Normal']
+    style.font.name = 'Calibri'
+    style.font.size = Pt(11)
+
+    title = doc.add_heading('Employee Onboarding Document', level=0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    for run in title.runs:
+        run.font.color.rgb = RGBColor(0x33, 0x33, 0x66)
+
+    doc.add_paragraph('')
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run(f"Prepared for {data.get('first_name', '')} {data.get('last_name', '')} — Start Date: {data.get('start_date', 'TBD')}")
+    run.font.size = Pt(12)
+    run.font.color.rgb = RGBColor(0x66, 0x66, 0x99)
+    doc.add_paragraph('')
+
+    def add_table_section(title_text, fields):
+        doc.add_heading(title_text, level=1)
+        table = doc.add_table(rows=0, cols=2)
+        table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        table.style = 'Light Grid Accent 1'
+        for label, value in fields:
+            row = table.add_row()
+            lp = row.cells[0].paragraphs[0]
+            lr = lp.add_run(label)
+            lr.bold = True; lr.font.size = Pt(10)
+            vp = row.cells[1].paragraphs[0]
+            vr = vp.add_run(str(value) if value else '\\u2014')
+            vr.font.size = Pt(10)
+        doc.add_paragraph('')
+
+    def add_longtext(title_text, text):
+        doc.add_heading(title_text, level=2)
+        if text and text.strip():
+            for para in text.strip().split('\\n'):
+                if para.strip():
+                    p = doc.add_paragraph()
+                    r = p.add_run(para.strip())
+                    r.font.size = Pt(10)
+        else:
+            p = doc.add_paragraph()
+            r = p.add_run('No information provided.')
+            r.font.size = Pt(10); r.italic = True
+            r.font.color.rgb = RGBColor(0x99, 0x99, 0x99)
+        doc.add_paragraph('')
+
+    def add_list(title_text, items_str):
+        doc.add_heading(title_text, level=2)
+        if items_str and items_str.strip():
+            for item in [i.strip() for i in items_str.split('\\n') if i.strip()]:
+                p = doc.add_paragraph(style='List Bullet')
+                r = p.add_run(item)
+                r.font.size = Pt(10)
+        else:
+            p = doc.add_paragraph()
+            r = p.add_run('No items listed.')
+            r.font.size = Pt(10); r.italic = True
+            r.font.color.rgb = RGBColor(0x99, 0x99, 0x99)
+        doc.add_paragraph('')
+
+    add_table_section('Personal Information', [
+        ('First Name', data.get('first_name', '')), ('Last Name', data.get('last_name', '')),
+        ('Email', data.get('email', '')), ('Phone', data.get('phone', '')),
+        ('Date of Birth', data.get('date_of_birth', '')), ('Start Date', data.get('start_date', '')),
+    ])
+    add_table_section('Role & Department', [
+        ('Department', data.get('department', '')), ('Job Title', data.get('job_title', '')),
+        ('Employment Type', data.get('employment_type', '')), ('Reporting Manager', data.get('manager', '')),
+    ])
+    add_table_section('Equipment & Access', [
+        ('Laptop', data.get('laptop_preference', '')),
+        ('Additional Equipment', data.get('equipment_needs', '') or 'None'),
+        ('Software Access', data.get('software_access', '') or 'None'),
+    ])
+
+    doc.add_heading('Skills & Experience', level=1)
+    add_longtext('Professional Bio', data.get('bio', ''))
+    add_list('Key Skills', data.get('skills', ''))
+    add_list('Certifications', data.get('certifications', ''))
+
+    add_table_section('Additional Information', [
+        ('Emergency Contact', data.get('emergency_contact', '')),
+        ('Emergency Phone', data.get('emergency_phone', '')),
+        ('Notes', data.get('notes', '')),
+    ])
+    add_list('First 90 Days Goals', data.get('onboarding_goals', ''))
+
+    doc.add_paragraph('')
+    doc.add_heading('Signatures', level=1)
+    sig = doc.add_table(rows=2, cols=2)
+    sig.alignment = WD_TABLE_ALIGNMENT.CENTER
+    for i, lbl in enumerate(['Employee Signature', 'Date', 'HR Representative', 'Date']):
+        cell = sig.rows[i // 2].cells[i % 2]
+        p = cell.paragraphs[0]
+        p.add_run('\\n\\n')
+        p.add_run('_' * 35 + '\\n')
+        r = p.add_run(lbl)
+        r.font.size = Pt(9); r.font.color.rgb = RGBColor(0x99, 0x99, 0x99)
+
+    doc.add_paragraph('')
+    fp = doc.add_paragraph()
+    fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    fr = fp.add_run('Auto-generated by FormForge.')
+    fr.font.size = Pt(8); fr.font.color.rgb = RGBColor(0xAA, 0xAA, 0xAA); fr.italic = True
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+    return buffer.getvalue()
+`;
+
+// ============================================================
+//  BOOT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  // Pre-populate demo into picker as a fallback
+  repoSchemas = [{
+    name: DEMO_SCHEMA.title,
+    description: DEMO_SCHEMA.description,
+    icon: DEMO_SCHEMA.icon,
+    schemaPath: '(embedded demo)',
+    templatePath: '(embedded demo)',
+    schema: DEMO_SCHEMA,
+    embeddedTemplate: DEMO_TEMPLATE
+  }];
+
+  // If user wants to skip GitHub, they can launch the demo directly
+  log('FormForge ready — connect a GitHub repo or use the embedded demo', 'info');
+});
+
+// Override launchForm to handle embedded templates
+const _originalLaunchForm = launchForm;
+launchForm = async function() {
+  if (selectedSchemaIdx < 0) return;
+  const entry = repoSchemas[selectedSchemaIdx];
+
+  showOverlay('Loading...');
+
+  try {
+    let templateCode;
+    if (entry.embeddedTemplate) {
+      templateCode = entry.embeddedTemplate;
+      log('Using embedded demo template', 'info');
+    } else {
+      log(`Fetching template: ${entry.templatePath}`, 'info');
+      templateCode = await ghFetchRaw(entry.templatePath);
+      log(`Template loaded: ${templateCode.length} chars`, 'success');
+    }
+
+    currentSchema = entry.schema;
+    currentTemplateCode = templateCode;
+
+    buildForm(currentSchema);
+    document.getElementById('formNavInfo').textContent = entry.embeddedTemplate
+      ? `${entry.name} · embedded demo`
+      : `${entry.name} · from ${ghOwner}/${ghRepo}`;
+    document.getElementById('schemaInfoText').innerHTML = entry.embeddedTemplate
+      ? 'Using embedded demo schema and template. Connect a GitHub repo for your own forms.'
+      : `Loaded from GitHub — schema: <strong>${entry.schemaPath}</strong> · template: <strong>${entry.templatePath}</strong>`;
+
+    if (!pyodideReady) await initPyodide();
+
+    showOverlay('Loading template into Pyodide...');
+    await pyodide.runPythonAsync(currentTemplateCode);
+    log('Template code loaded into Pyodide', 'success');
+
+    document.getElementById('exportBtn').disabled = false;
+    showView('form');
+  } catch (err) {
+    log(`Launch failed: ${err.message}`, 'error');
+    showToast(`Failed: ${err.message}`, 'error');
+  } finally {
+    hideOverlay();
+  }
+};
+
+// Also override connectRepo to merge demo + remote schemas
+const _originalConnectRepo = connectRepo;
+connectRepo = async function() {
+  await _originalConnectRepo();
+  // If connect succeeded, ensure demo is still available
+  if (repoSchemas.length > 0 && !repoSchemas.find(s => s.embeddedTemplate)) {
+    // Remote schemas loaded — demo is replaced, which is fine
+  }
+};
+</script>
+</body>
+</html>
