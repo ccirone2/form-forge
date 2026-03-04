@@ -107,6 +107,22 @@
         "max_size_mb": { "type": "integer", "minimum": 1 },
         "min_rows": { "type": "integer", "minimum": 1 },
         "max_rows": { "type": "integer", "minimum": 1 },
+        "visible_when": {
+          "type": "object",
+          "required": ["field", "equals"],
+          "properties": {
+            "field": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]*$",
+              "description": "The id of the field whose value controls visibility."
+            },
+            "equals": {
+              "type": "string",
+              "description": "The value that triggers this field to become visible."
+            }
+          },
+          "additionalProperties": false
+        },
         "fields": {
           "type": "array",
           "minItems": 1,

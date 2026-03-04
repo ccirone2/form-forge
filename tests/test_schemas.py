@@ -353,3 +353,124 @@ def test_rejects_step_zero():
         assert False, "Should have raised ValidationError"
     except jsonschema.ValidationError:
         pass
+
+
+# --- visible_when tests ---
+
+
+def test_visible_when_validates():
+    """A field with visible_when should validate."""
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "color",
+                        "label": "Color",
+                        "type": "select",
+                        "options": ["Red", "Blue", "Other"],
+                    },
+                    {
+                        "id": "other_color",
+                        "label": "Describe color",
+                        "type": "text",
+                        "visible_when": {"field": "color", "equals": "Other"},
+                    },
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_rejects_visible_when_missing_field():
+    """visible_when must have a 'field' property."""
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "x",
+                        "label": "X",
+                        "type": "text",
+                        "visible_when": {"equals": "yes"},
+                    }
+                ],
+            }
+        ],
+    }
+    try:
+        jsonschema.validate(instance=bad, schema=spec)
+        assert False, "Should have raised ValidationError"
+    except jsonschema.ValidationError:
+        pass
+
+
+def test_rejects_visible_when_missing_equals():
+    """visible_when must have an 'equals' property."""
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "x",
+                        "label": "X",
+                        "type": "text",
+                        "visible_when": {"field": "y"},
+                    }
+                ],
+            }
+        ],
+    }
+    try:
+        jsonschema.validate(instance=bad, schema=spec)
+        assert False, "Should have raised ValidationError"
+    except jsonschema.ValidationError:
+        pass
+
+
+def test_rejects_visible_when_extra_property():
+    """visible_when must not have extra properties."""
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "x",
+                        "label": "X",
+                        "type": "text",
+                        "visible_when": {
+                            "field": "y",
+                            "equals": "yes",
+                            "operator": "eq",
+                        },
+                    }
+                ],
+            }
+        ],
+    }
+    try:
+        jsonschema.validate(instance=bad, schema=spec)
+        assert False, "Should have raised ValidationError"
+    except jsonschema.ValidationError:
+        pass
+
+
+def test_existing_schemas_still_validate_after_visible_when():
+    """Regression: all existing schemas must still validate."""
+    spec = _load_spec()
+    for path in _schema_files():
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        jsonschema.validate(instance=schema, schema=spec)
