@@ -4,26 +4,37 @@ Every field in a schema has a `type` that controls how it renders in the form an
 
 ## Quick Reference
 
-| Type | Renders As | Data Format | Needs `options`? |
-|------|-----------|-------------|-----------------|
-| `text` | Single-line text input | `"Jane"` | no |
-| `email` | Email input with browser validation | `"jane@co.com"` | no |
-| `tel` | Phone number input | `"(555) 123-4567"` | no |
-| `date` | Native date picker | `"2025-03-15"` | no |
-| `textarea` | Multi-line text (3 rows) | `"Some notes..."` | no |
-| `longtext` | Large textarea with character counter | `"Para 1\nPara 2"` | no |
-| `select` | Dropdown menu | `"Engineering"` | yes |
-| `radio` | Radio button group | `"Full-Time"` | yes |
-| `checkbox` | Checkbox group (multi-select) | `"A, B, C"` | yes |
-| `list` | Dynamic add/remove rows with bulk paste | `"X\nY\nZ"` | no |
-| `number` | Number input with min/max/step | `"42.5"` | no |
-| `currency` | Number input with currency prefix | `"1250.00"` | no |
-| `heading` | Non-input section divider | *(skipped)* | no |
-| `hidden` | Not rendered (passes static value) | `"1.0"` | no |
-| `address` | Multi-field group (street/city/state/zip) | JSON string | no |
-| `file` | File upload with preview | base64 data URI | no |
-| `signature` | Canvas drawing pad | base64 PNG data URI | no |
-| `repeater` | Dynamic group of rows | JSON array string | needs `fields` |
+| Type | Renders As | Data Format | Required extra props |
+|------|-----------|-------------|----------------------|
+| `text` | Single-line text input | `"Jane"` | none |
+| `email` | Email input with browser validation | `"jane@co.com"` | none |
+| `tel` | Phone number input | `"(555) 123-4567"` | none |
+| `date` | Native date picker | `"2025-03-15"` | none |
+| `textarea` | Multi-line text (3 rows) | `"Some notes..."` | none |
+| `longtext` | Large textarea (6 rows) with character counter | `"Para 1\nPara 2"` | none |
+| `select` | Dropdown menu | `"Engineering"` | `options` |
+| `radio` | Radio button group | `"Full-Time"` | `options` |
+| `checkbox` | Checkbox group (multi-select) | `"A, B, C"` | `options` |
+| `list` | Dynamic add/remove rows with bulk paste | `"X\nY\nZ"` | none |
+| `number` | Number input with min/max/step | `"42.5"` | none |
+| `currency` | Number input with currency prefix | `"1250.00"` | none |
+| `heading` | Non-input section divider | *(skipped)* | none |
+| `hidden` | Not rendered (passes static value) | `"1.0"` | `default_value` |
+| `address` | Multi-field group (street/city/state/zip) | JSON string | none |
+| `file` | File upload with preview | base64 data URI | none |
+| `signature` | Canvas drawing pad | base64 PNG data URI | none |
+| `repeater` | Dynamic group of rows | JSON array string | `fields` |
+
+## Common Optional Properties
+
+These apply to any field type unless noted otherwise in the type's section below:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `required` | boolean | Fails validation if empty. For `address`, checks that `street` is non-empty. |
+| `placeholder` | string | Input placeholder text. Not applicable to `date`, `heading`, `hidden`, `address`, `file`, `signature`, `repeater`. |
+| `hint` | string | Helper text shown below the field label. Applicable to all types. |
+| `visible_when` | object | Conditionally show this field. See [Conditional Visibility](#conditional-visibility-visible_when). |
 
 ## Layout Rules
 
@@ -45,7 +56,9 @@ Standard single-line input. Use for names, titles, short answers.
 { "id": "first_name", "label": "First Name", "type": "text", "required": true, "placeholder": "Jane" }
 ```
 
-**Template:** `data.get('first_name', '')`  → `"Jane"`
+**Schema properties:** `maxLength` (optional integer, no enforced limit in the browser — schema validation only).
+
+**Template:** `data.get('first_name', '')` → `"Jane"`
 
 ## email
 
@@ -99,7 +112,7 @@ Multi-line text input, 3 rows tall. Good for short notes or comments.
 
 ## longtext
 
-Large text area (6 rows) with a live character counter. Use for bios, descriptions, or any extended prose. Supports `maxLength` to show a limit.
+Large text area (6 rows) with a live character counter. Use for bios, descriptions, or any extended prose.
 
 ```json
 {
@@ -111,6 +124,8 @@ Large text area (6 rows) with a live character counter. Use for bios, descriptio
   "maxLength": 2000
 }
 ```
+
+**Schema properties:** `maxLength` (optional integer, defaults to `5000` in the counter display — does not hard-truncate, only colors the counter red when exceeded).
 
 **Template:** Value may contain `\n` for paragraph breaks.
 
@@ -181,8 +196,10 @@ if equipment:
 
 Dynamic list entry with two input modes:
 
-- **Individual rows** — click "Add item" or press Enter to add rows. Backspace on an empty row removes it. Each row has an × delete button.
-- **Bulk paste** — a textarea where users can paste multiple items separated by newlines, which auto-convert to individual rows.
+- **Individual rows** — click "Add item" or press Enter to add rows. Backspace on an empty row removes it. Each row has an x delete button.
+- **Bulk paste** — a textarea where users can paste multiple items separated by newlines, which auto-convert to individual rows on blur.
+
+One empty row is added automatically when the field renders.
 
 ```json
 {
@@ -194,7 +211,7 @@ Dynamic list entry with two input modes:
 }
 ```
 
-**Template:** Value is a newline-separated string.
+**Template:** Value is a newline-separated string. Empty list produces `""`.
 
 ```python
 skills = data.get('skills', '')  # "Python\nJavaScript\nRust"
@@ -212,7 +229,7 @@ Numeric input with optional `min`, `max`, and `step` constraints. Renders as `<i
 { "id": "quantity", "label": "Quantity", "type": "number", "min": 0, "max": 100, "step": 1 }
 ```
 
-**Schema properties:** `min`, `max`, `step` (all optional).
+**Schema properties:** `min` (integer), `max` (integer), `step` (number) — all optional. These are the only field types where `min`, `max`, and `step` are permitted; they are forbidden on all other types by the schema spec.
 
 **Template:** Value is a string — parse with `int()` or `float()` as needed.
 
@@ -222,13 +239,13 @@ qty = int(data.get('quantity', '0'))
 
 ## currency
 
-Number input with a currency symbol prefix. Defaults to `$` with `step="0.01"`.
+Number input with a currency symbol prefix. Renders as `<input type="number">` with `step="0.01"` and `min="0"` fixed in the browser.
 
 ```json
 { "id": "total_amount", "label": "Total Amount", "type": "currency", "required": true, "placeholder": "0.00" }
 ```
 
-**Schema properties:** `currency_symbol` (optional, defaults to `"$"`).
+**Schema properties:** `currency_symbol` (optional string, defaults to `"$"`). This is the only field type where `currency_symbol` is permitted; it is forbidden on all other types by the schema spec.
 
 **Template:** Value is a string like `"1250.00"`. Format in the template:
 
@@ -245,23 +262,27 @@ Non-input element that renders as a visual section divider within a form section
 { "id": "emergency_heading", "label": "Emergency Contact Information", "type": "heading", "hint": "Provide at least one emergency contact" }
 ```
 
-**Template:** Not passed — heading fields are skipped during data collection.
+**Template:** Not passed — heading fields are skipped during `collectFormData()`.
+
+**Note:** `heading` does not create an element with `id = field.id`, so it cannot be used as a `visible_when` target.
 
 ## hidden
 
-Invisible field that passes a static value to the template. Use for metadata like form version numbers, form IDs, or computed values.
+Invisible field that passes a static value to the template. Use for metadata like form version numbers, form IDs, or other values that should appear in the DOCX but not be edited by the user.
 
 ```json
 { "id": "form_version", "label": "Form Version", "type": "hidden", "default_value": "2.1" }
 ```
 
-**Schema properties:** `default_value` (the static value to pass).
+**Schema properties:** `default_value` (string, required). This is the only field type where `default_value` is permitted; it is forbidden on all other types by the schema spec.
+
+The field group is rendered with `display: none` and the value is restored to `default_value` on form reset.
 
 **Template:** `data.get('form_version', '')` → `"2.1"`
 
 ## address
 
-Compound field that renders as a group of 4 sub-inputs: street, city, state, and ZIP code.
+Compound field that renders as a group of 4 sub-inputs: street, city, state, and ZIP code. The sub-inputs use IDs `{field.id}_street`, `{field.id}_city`, `{field.id}_state`, `{field.id}_zip`. There is no single element with `id = field.id`.
 
 ```json
 { "id": "mailing_address", "label": "Mailing Address", "type": "address", "hint": "Where should we send it?" }
@@ -279,11 +300,13 @@ zip_code = addr.get('zip', '')
 formatted = f"{street}\n{city}, {state} {zip_code}"
 ```
 
-**Validation:** When `required`, checks that the street field is non-empty.
+**Validation:** When `required`, checks that `street` is non-empty.
+
+**Note:** Because there is no element with `id = field.id`, `address` fields cannot reliably be used as `visible_when` targets.
 
 ## file
 
-File upload input with image preview. The file is read as a base64 data URI and passed to the template.
+File upload input with image preview. The file is read as a base64 data URI and stored in a hidden input with `id = field.id`.
 
 ```json
 {
@@ -297,10 +320,12 @@ File upload input with image preview. The file is read as a base64 data URI and 
 ```
 
 **Schema properties:**
-- `accept` — file type filter (defaults to `"image/*"`)
-- `max_size_mb` — maximum file size in MB (defaults to `5`)
+- `accept` — file type filter passed to `<input type="file" accept="...">` (defaults to `"image/*"`)
+- `max_size_mb` — maximum file size in MB, enforced client-side (defaults to `5`)
 
-**Template:** Value is a base64 data URI string (e.g., `"data:image/png;base64,iVBOR..."`) or empty string.
+Non-image files are accepted (based on `accept`) but won't show a preview. Image files show a preview inline.
+
+**Template:** Value is a base64 data URI string (e.g., `"data:image/png;base64,iVBOR..."`) or empty string if no file was uploaded.
 
 ```python
 import base64, io
@@ -313,7 +338,7 @@ if receipt and ',' in receipt:
 
 ## signature
 
-Canvas-based drawing pad for capturing signatures. Supports both mouse and touch input. Exports as a base64 PNG data URI. Includes a "Clear" button to reset.
+Canvas-based drawing pad for capturing signatures. Supports both mouse and touch input. The canvas is 400x150 pixels internally. Exports as a base64 PNG data URI stored in a hidden input with `id = field.id`. Includes a "Clear" button to reset.
 
 ```json
 { "id": "employee_signature", "label": "Employee Signature", "type": "signature", "required": true }
@@ -332,7 +357,7 @@ if sig and ',' in sig:
 
 ## repeater
 
-Dynamic field group — users can add N copies of a set of sub-fields. Ideal for line items, references, dependents, etc.
+Dynamic field group — users can add N copies of a set of sub-fields. Each row is numbered and has a remove button. Ideal for line items, references, dependents, etc.
 
 ```json
 {
@@ -350,9 +375,11 @@ Dynamic field group — users can add N copies of a set of sub-fields. Ideal for
 ```
 
 **Schema properties:**
-- `fields` — array of sub-field definitions (supports `text`, `email`, `tel`, `number`, `currency`, `select`)
-- `min_rows` — minimum rows shown initially (defaults to `1`)
-- `max_rows` — maximum rows allowed (defaults to `10`)
+- `fields` — required array of sub-field definitions. Permitted sub-field types: `text`, `email`, `tel`, `number`, `currency`, `select`. No other types (including `heading`, `hidden`, `address`, `repeater`) are allowed inside a repeater.
+- `min_rows` — minimum rows; remove button is disabled when at the minimum (defaults to `1`)
+- `max_rows` — maximum rows; add button is disabled when at the maximum (defaults to `10`)
+
+Sub-field IDs within `fields` must be unique within the repeater but do not need to be globally unique. They are keyed by sub-field `id` in each row's data object.
 
 **Template:** Value is a JSON array string. Parse and iterate:
 
@@ -364,6 +391,47 @@ for item in items:
     amount = item.get('amount', '0')
     category = item.get('category', '')
 ```
+
+---
+
+## Conditional Visibility (`visible_when`)
+
+Any top-level field can include a `visible_when` object to make it appear only when another field has a specific value.
+
+```json
+{
+  "id": "contract_end_date",
+  "label": "Contract End Date",
+  "type": "date",
+  "visible_when": { "field": "employment_type", "equals": "Contract" }
+}
+```
+
+**Schema:**
+
+```json
+"visible_when": {
+  "field": "employment_type",   // id of the controlling field
+  "equals": "Contract"          // value that makes this field visible
+}
+```
+
+**Behavior:** Hidden fields start with CSS class `conditional-hidden` (display: none). When the controlling field's value matches `equals`, the class is removed. The comparison is a strict string equality check on the field's current value.
+
+**When required fields are hidden:** Validation skips them. `isFieldConditionallyHidden()` checks the field group's CSS class, so hidden-but-required fields do not block form submission.
+
+**Supported source field types** (the `field` being watched):
+- `select` — attaches a `change` listener on the `<select>` element
+- `radio` — attaches `change` listeners on all `<input type="radio">` elements for that name
+- `checkbox` — attaches `change` listeners; `equals` must match the full comma-separated string of checked values
+- `text`, `email`, `tel`, `date`, `textarea`, `longtext`, `number`, `currency` — attaches `input` and `change` listeners on the element
+
+**Supported target field types** (the field with `visible_when`):
+Works for any type that renders a direct element with `id = field.id`: `text`, `email`, `tel`, `date`, `textarea`, `longtext`, `select`, `number`, `currency`, `hidden`, `file`, `signature`.
+
+Does **not** reliably work as a target for: `checkbox`, `radio`, `list`, `address`, `repeater`, `heading` — these types do not render a single element with `id = field.id`, so the visibility logic cannot find their field group.
+
+`visible_when` is not supported inside `repeater` sub-fields.
 
 ---
 

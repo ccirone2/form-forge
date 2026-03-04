@@ -10,7 +10,7 @@ Place template files in the `templates/` directory of your repo:
 templates/
 ├── onboarding.py
 ├── expense-report.py
-└── incident-report.py
+└── _base.py         ← shared helpers, auto-loaded by FormForge
 ```
 
 Each schema references its template via the `template` field (e.g. `"template": "templates/onboarding.py"`). If omitted, FormForge looks for `templates/{schema-filename}.py`.
@@ -32,7 +32,273 @@ def generate_docx(data):
 
 The function receives a flat dictionary where keys are field `id` values from the schema and values are always strings. It must return the raw bytes of a valid `.docx` file.
 
+## The `_base` Module
+
+FormForge provides a shared helper module at `templates/_base.py`. It is loaded into Pyodide's virtual filesystem once per session (before any template runs) via `loadBaseModule()` in `index.html`. All templates should import it:
+
+```python
+import _base
+```
+
+This works identically in Pyodide and in standard Python (for local testing).
+
+### `_base.new_doc(title_text, subtitle_text="", font_name="Calibri", font_size=11)`
+
+Creates a styled `Document` with a centered title and optional subtitle. Sets the Normal style font. Returns the `Document` instance.
+
+```python
+doc = _base.new_doc("Employee Onboarding Document", f"Prepared for {first} {last}")
+```
+
+- Title is colored `COLOR_MEDIUM_BLUE`, centered.
+- Subtitle (if provided) is colored `COLOR_SOFT_BLUE`, centered, 12pt.
+- An empty paragraph spacer follows each.
+
+### `_base.add_table_section(doc, heading, rows)`
+
+Adds a level-1 heading followed by a two-column key/value table. An empty paragraph spacer is appended after.
+
+```python
+_base.add_table_section(doc, "Personal Information", [
+    ("First Name", data.get("first_name", "")),
+    ("Last Name", data.get("last_name", "")),
+    ("Email", data.get("email", "")),
+])
+```
+
+- `rows` is a list of `(label, value)` tuples.
+- Empty/falsy values display as `—` (em dash).
+- Table style: `Light Grid Accent 1`, centered.
+- Both columns use 10pt font; label is bold.
+
+### `_base.add_longtext(doc, heading, text)`
+
+Adds a level-2 heading followed by one or more paragraphs split on `\n`. If `text` is empty, renders "No information provided." in muted italic.
+
+```python
+_base.add_longtext(doc, "Professional Bio", data.get("bio", ""))
+```
+
+### `_base.add_bullet_list(doc, heading, items_str)`
+
+Adds a level-2 heading followed by a `List Bullet` style paragraph for each newline-separated item. If `items_str` is empty, renders "No items listed." in muted italic.
+
+```python
+_base.add_bullet_list(doc, "Key Skills", data.get("skills", ""))
+```
+
+### `_base.add_signatures(doc, labels)`
+
+Adds a level-1 "Signatures" heading and a grid of signature blocks — two per row — each with an underline and a muted label.
+
+```python
+_base.add_signatures(doc, [
+    "Employee Signature", "Date",
+    "HR Representative", "Date",
+])
+```
+
+Labels are paired into rows of two. If you need signature image embedding instead (e.g., for canvas `signature` fields), handle that manually — see the expense-report template for an example.
+
+### `_base.finalize(doc)`
+
+Serializes the `Document` to bytes and returns them. Always call this as the last line of `generate_docx`.
+
+```python
+return _base.finalize(doc)
+```
+
+### Color palette
+
+Use these constants anywhere you need consistent colors:
+
+| Constant | Value | Usage |
+|---|---|---|
+| `_base.COLOR_DARK_NAVY` | `#1A1A3E` | Heavy emphasis |
+| `_base.COLOR_MEDIUM_BLUE` | `#333366` | Titles |
+| `_base.COLOR_SOFT_BLUE` | `#666699` | Subtitles |
+| `_base.COLOR_MUTED` | `#999999` | Placeholder / empty-state text |
+| `_base.COLOR_LIGHT_MUTED` | `#AAAAAA` | Footer text |
+
+Example:
+
+```python
+run.font.color.rgb = _base.COLOR_MUTED
+```
+
+## Understanding the Data Dictionary
+
+All values in `data` are strings, regardless of field type. `heading` fields are the only exception — they are skipped during data collection and never appear in `data`.
+
+| Field Type | Value Format | Example |
+|---|---|---|
+| `text`, `email`, `tel` | Plain string | `"Jane Doe"` |
+| `date` | ISO format (`YYYY-MM-DD`) | `"2025-03-15"` |
+| `select` | Selected option string | `"Engineering"` |
+| `radio` | Selected option string | `"Full-Time"` |
+| `textarea` | Plain string | `"Some notes here"` |
+| `longtext` | String with `\n` paragraph breaks | `"First paragraph.\nSecond paragraph."` |
+| `checkbox` | Comma-separated string | `"GitHub, Jira, Figma"` |
+| `list` | Newline-separated string | `"Python\nJavaScript\nRust"` |
+| `number` | Numeric string | `"42.5"` |
+| `currency` | Numeric string | `"1250.00"` |
+| `hidden` | Static string from `default_value` | `"2.1"` |
+| `address` | JSON object string | `'{"street":"123 Main","city":"Springfield","state":"IL","zip":"62701"}'` |
+| `file` | Base64 data URI string or `""` | `"data:image/png;base64,iVBOR..."` |
+| `signature` | Base64 PNG data URI string or `""` | `"data:image/png;base64,iVBOR..."` |
+| `repeater` | JSON array string | `'[{"description":"Flight","amount":"250"}]'` |
+| `heading` | *(not present in data)* | — |
+
+Empty or unfilled fields are empty strings `""`. Always use `data.get('field_id', '')` — never assume a key exists.
+
+## Conditional Fields (`visible_when`)
+
+Fields with `visible_when` are hidden or shown based on another field's value. The form always collects every field regardless of visibility — hidden conditional fields arrive as empty strings `""`.
+
+Templates do not need special handling for `visible_when`. Use the same `data.get('field_id', '')` pattern. An empty string from a hidden field behaves the same as an unfilled field — handle it with your normal empty-check guards.
+
+```python
+# Works correctly whether the field was visible or hidden
+notes = data.get("notes", "")
+if notes and notes.strip():
+    _base.add_longtext(doc, "Additional Notes", notes)
+```
+
+## Wizard Forms
+
+When a schema uses `"wizard": true`, the form renders as a multi-step wizard UI with Next/Back navigation per section. The data contract for `generate_docx(data)` is identical to a non-wizard form — wizard mode is purely a UI concern. All field data from all steps is collected and flattened into the same dict before `generate_docx` is called.
+
+No template changes are needed to support wizard schemas.
+
+## Parsing Complex Field Types
+
+### `address` → dict
+
+```python
+import json
+
+raw_addr = data.get("mailing_address", "{}")
+try:
+    addr = json.loads(raw_addr)
+except (json.JSONDecodeError, TypeError):
+    addr = {}
+
+street = addr.get("street", "")
+city = addr.get("city", "")
+state = addr.get("state", "")
+zip_code = addr.get("zip", "")
+```
+
+If the field was hidden (via `visible_when`) or not filled, `raw_addr` will be `""` — the `try/except` will catch that and `addr` will default to `{}`.
+
+### `repeater` → list of dicts
+
+```python
+import json
+
+raw_items = data.get("line_items", "[]")
+try:
+    items = json.loads(raw_items)
+except (json.JSONDecodeError, TypeError):
+    items = []
+
+for item in items:
+    desc = item.get("description", "")
+    amount = item.get("amount", "0")
+    category = item.get("category", "")
+```
+
+Each element is a dict keyed by the sub-field `id` values defined in the repeater's `fields` array. All sub-field values are strings.
+
+### `file` / `signature` → embedded image
+
+```python
+import base64, io
+from docx.shared import Inches
+
+receipt = data.get("receipt_photo", "")
+if receipt and "," in receipt:
+    try:
+        img_bytes = base64.b64decode(receipt.split(",")[1])
+        doc.add_picture(io.BytesIO(img_bytes), width=Inches(3))
+    except Exception:
+        p = doc.add_paragraph()
+        p.add_run("[Image could not be embedded]").italic = True
+else:
+    p = doc.add_paragraph()
+    p.add_run("No image uploaded.").italic = True
+```
+
+For `signature` fields use `width=Inches(2.5)` to match the canvas proportions. The data URI format is `data:image/png;base64,<data>` — split on `","` to isolate the base64 payload.
+
+### `number` / `currency` → numeric
+
+```python
+qty = data.get("quantity", "0")
+try:
+    qty_int = int(qty)
+except (ValueError, TypeError):
+    qty_int = 0
+
+amount = data.get("total_amount", "0")
+try:
+    amount_fmt = f"${float(amount):,.2f}"
+except (ValueError, TypeError):
+    amount_fmt = f"${amount}"
+```
+
+Always wrap numeric conversions in `try/except` — the field may be empty if it was optional and unfilled.
+
+### `checkbox` → list
+
+```python
+tools = data.get("tools_used", "")
+tool_list = [t.strip() for t in tools.split(",") if t.strip()] if tools else []
+```
+
+### `longtext` → paragraphs
+
+Use `_base.add_longtext()` — it handles the split and the empty case. If you need inline control:
+
+```python
+bio = data.get("bio", "")
+for paragraph in bio.split("\n"):
+    if paragraph.strip():
+        doc.add_paragraph(paragraph.strip())
+```
+
+### `list` → bullets
+
+Use `_base.add_bullet_list()` — it handles the split and the empty case. If you need inline control:
+
+```python
+skills = data.get("skills", "")
+for item in skills.split("\n"):
+    if item.strip():
+        doc.add_paragraph(item.strip(), style="List Bullet")
+```
+
 ## Minimal Template
+
+```python
+import _base
+
+def generate_docx(data):
+    doc = _base.new_doc("My Document", data.get("title", ""))
+
+    _base.add_table_section(doc, "Details", [
+        ("Name", data.get("name", "")),
+        ("Date", data.get("date", "")),
+    ])
+
+    _base.add_bullet_list(doc, "Action Items", data.get("actions", ""))
+
+    return _base.finalize(doc)
+```
+
+## Template Without `_base` (Standalone)
+
+If you need a fully self-contained template without `_base`:
 
 ```python
 import io
@@ -40,7 +306,7 @@ from docx import Document
 
 def generate_docx(data):
     doc = Document()
-    doc.add_heading('My Document', level=0)
+    doc.add_heading("My Document", level=0)
     doc.add_paragraph(f"Name: {data.get('name', '')}")
 
     buf = io.BytesIO()
@@ -49,117 +315,29 @@ def generate_docx(data):
     return buf.getvalue()
 ```
 
-## Understanding the Data Dictionary
+## Available Libraries
 
-All values in `data` are strings, regardless of field type. Here's how each type is serialized:
+| Library | Import | Purpose |
+|---|---|---|
+| python-docx | `from docx import Document` | DOCX generation |
+| Python stdlib | `io`, `json`, `datetime`, `re`, `base64`, `math` | General utilities |
 
-| Field Type | Value Format | Example |
-|------------|-------------|---------|
-| `text`, `email`, `tel` | Plain string | `"Jane Doe"` |
-| `date` | ISO format string | `"2025-03-15"` |
-| `select` | Selected option string | `"Engineering"` |
-| `radio` | Selected option string | `"Full-Time"` |
-| `textarea` | Plain string | `"Some notes here"` |
-| `longtext` | String with `\n` paragraph breaks | `"First paragraph.\nSecond paragraph."` |
-| `checkbox` | Comma-separated string | `"GitHub, Jira, Figma"` |
-| `list` | Newline-separated string | `"Python\nJavaScript\nRust"` |
-
-Empty or unfilled fields will be empty strings `""`.
-
-## Parsing Field Types
-
-### Simple fields (text, email, tel, date, select, radio, textarea)
-
-Use directly:
-
-```python
-name = data.get('first_name', '')
-department = data.get('department', '')
-```
-
-### Long text → paragraphs
-
-```python
-bio = data.get('bio', '')
-if bio:
-    doc.add_heading('Bio', level=1)
-    for paragraph in bio.split('\n'):
-        if paragraph.strip():
-            doc.add_paragraph(paragraph.strip())
-```
-
-### List → bullet points
-
-```python
-skills = data.get('skills', '')
-if skills:
-    doc.add_heading('Skills', level=1)
-    for item in skills.split('\n'):
-        if item.strip():
-            doc.add_paragraph(item.strip(), style='List Bullet')
-```
-
-### Checkbox → comma-separated items
-
-```python
-tools = data.get('tools_used', '')
-if tools:
-    tool_list = [t.strip() for t in tools.split(',') if t.strip()]
-    doc.add_paragraph(f"Tools: {', '.join(tool_list)}")
-```
+Additional pure-Python packages can be installed via `micropip` if needed. Packages with C extensions (numpy, pandas, etc.) will only work if they have pre-built Pyodide wheels — check the [Pyodide packages list](https://pyodide.org/en/stable/usage/packages-in-pyodide.html).
 
 ## Common python-docx Patterns
 
-### Styled document with title
+### Colored footer
 
 ```python
-from docx.shared import Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 
-style = doc.styles['Normal']
-style.font.name = 'Calibri'
-style.font.size = Pt(11)
-
-title = doc.add_heading('Document Title', level=0)
-title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-```
-
-### Key-value table
-
-```python
-from docx.enum.table import WD_TABLE_ALIGNMENT
-
-table = doc.add_table(rows=0, cols=2)
-table.style = 'Light Grid Accent 1'
-table.alignment = WD_TABLE_ALIGNMENT.CENTER
-
-rows = [
-    ('Name', data.get('name', '')),
-    ('Date', data.get('date', '')),
-    ('Department', data.get('department', '')),
-]
-
-for label, value in rows:
-    row = table.add_row()
-    row.cells[0].paragraphs[0].add_run(label).bold = True
-    row.cells[1].paragraphs[0].add_run(value or '\u2014')
-```
-
-### Signature block
-
-```python
-doc.add_paragraph('')
-doc.add_heading('Signatures', level=1)
-
-sig_table = doc.add_table(rows=1, cols=2)
-for i, label in enumerate(['Employee Signature', 'Date']):
-    cell = sig_table.rows[0].cells[i]
-    p = cell.paragraphs[0]
-    p.add_run('\n\n')
-    p.add_run('_' * 35 + '\n')
-    run = p.add_run(label)
-    run.font.size = Pt(9)
-    run.font.color.rgb = RGBColor(0x99, 0x99, 0x99)
+fp = doc.add_paragraph()
+fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+fr = fp.add_run("Auto-generated by FormForge. Review all information for accuracy.")
+fr.font.size = Pt(8)
+fr.font.color.rgb = _base.COLOR_LIGHT_MUTED
+fr.italic = True
 ```
 
 ### Page break
@@ -168,107 +346,61 @@ for i, label in enumerate(['Employee Signature', 'Date']):
 doc.add_page_break()
 ```
 
-### Centered footer text
+### Manual key-value table (without `add_table_section`)
 
 ```python
-p = doc.add_paragraph()
-p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-run = p.add_run('Auto-generated document.')
-run.font.size = Pt(8)
-run.italic = True
-run.font.color.rgb = RGBColor(0xAA, 0xAA, 0xAA)
-```
+from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.shared import Pt
 
-## Available Libraries
+table = doc.add_table(rows=0, cols=2)
+table.style = "Light Grid Accent 1"
+table.alignment = WD_TABLE_ALIGNMENT.CENTER
 
-These are available in the Pyodide runtime:
-
-| Library | Import | Purpose |
-|---------|--------|---------|
-| python-docx | `from docx import Document` | DOCX generation |
-| Python stdlib | `io`, `json`, `datetime`, `re`, `math`, etc. | General utilities |
-
-Additional pure-Python packages can be installed via `micropip` if needed. Packages with C extensions (numpy, pandas, etc.) will only work if they have pre-built Pyodide wheels — check the [Pyodide packages list](https://pyodide.org/en/stable/usage/packages-in-pyodide.html).
-
-## Helper Function Pattern
-
-For consistency across templates, extract common operations into helper functions at the top of your file:
-
-```python
-from docx.shared import Pt, RGBColor
-
-MUTED = RGBColor(0x99, 0x99, 0x99)
-
-def add_table_section(doc, heading, rows):
-    """Add a heading followed by a key-value table."""
-    doc.add_heading(heading, level=1)
-    table = doc.add_table(rows=0, cols=2)
-    table.style = 'Light Grid Accent 1'
-    for label, value in rows:
-        row = table.add_row()
-        row.cells[0].paragraphs[0].add_run(label).bold = True
-        row.cells[1].paragraphs[0].add_run(value or '\u2014')
-    doc.add_paragraph('')
-
-def add_bullet_list(doc, heading, items_str):
-    """Add a heading followed by bullet points from a newline-separated string."""
-    doc.add_heading(heading, level=2)
-    if items_str and items_str.strip():
-        for item in items_str.split('\n'):
-            if item.strip():
-                doc.add_paragraph(item.strip(), style='List Bullet')
-    else:
-        p = doc.add_paragraph()
-        r = p.add_run('No items listed.')
-        r.italic = True
-        r.font.color.rgb = MUTED
-    doc.add_paragraph('')
-```
-
-Then your `generate_docx` function stays clean:
-
-```python
-def generate_docx(data):
-    doc = Document()
-    doc.add_heading('My Report', level=0)
-
-    add_table_section(doc, 'Details', [
-        ('Name', data.get('name', '')),
-        ('Date', data.get('date', '')),
-    ])
-    add_bullet_list(doc, 'Action Items', data.get('actions', ''))
-
-    buf = io.BytesIO()
-    doc.save(buf)
-    buf.seek(0)
-    return buf.getvalue()
+for label, value in [("Name", data.get("name", "")), ("Date", data.get("date", ""))]:
+    row = table.add_row()
+    lr = row.cells[0].paragraphs[0].add_run(label)
+    lr.bold = True
+    lr.font.size = Pt(10)
+    vr = row.cells[1].paragraphs[0].add_run(value or "\u2014")
+    vr.font.size = Pt(10)
 ```
 
 ## Testing Locally
 
-You can test templates without a browser using standard Python:
+Templates can be tested without a browser using standard Python:
 
 ```bash
 pip install python-docx
-python -c "
-import json
-from my_template import generate_docx
-
-data = {'name': 'Test User', 'date': '2025-01-15', 'department': 'Engineering'}
-result = generate_docx(data)
-
-with open('test_output.docx', 'wb') as f:
-    f.write(result)
-print(f'Generated {len(result)} bytes')
-"
+PYTHONPATH=. python -m pytest tests/ -v
 ```
 
-Or use FormForge's Local Files feature to drop in your `.json` and `.py` and test interactively.
+The test suite in `tests/test_templates.py` runs `generate_docx()` for each template with sample and empty fixture data and verifies the output is valid DOCX bytes. Fixtures are in `tests/fixtures/`.
+
+To run a one-off manual test:
+
+```python
+# From the repo root
+import sys
+sys.path.insert(0, "templates")
+import importlib.util, json
+
+spec = importlib.util.spec_from_file_location("tmpl", "templates/onboarding.py")
+tmpl = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(tmpl)
+
+data = json.load(open("tests/fixtures/onboarding_sample.json"))
+result = tmpl.generate_docx(data)
+open("test_output.docx", "wb").write(result)
+print(f"Generated {len(result)} bytes")
+```
+
+Or use FormForge's Local Files feature to drop in your `.json` and `.py` and test interactively in the browser.
 
 ## Tips
 
-- Always use `data.get('field_id', '')` with a default — never assume a key exists
-- Handle empty strings gracefully in your document (show "—" or "Not provided" instead of blank space)
-- Keep templates self-contained — all imports and helpers in one file
-- Use `doc.add_paragraph('')` for vertical spacing between sections
-- Test with both fully filled and mostly empty form data to make sure the document looks good either way
+- Always use `data.get('field_id', '')` — never assume a key exists.
+- Wrap `json.loads()` and numeric conversions in `try/except` — the value may be `""` if the field was optional, unfilled, or conditionally hidden.
+- Handle empty strings gracefully — show `"—"` or `"Not provided"` rather than blank cells.
+- Use `doc.add_paragraph("")` for vertical spacing between sections.
+- Test with both fully filled and mostly empty form data.
+- For signature image embedding, use `_base.add_signatures()` only for blank underline blocks. If the schema uses `signature` field type, embed the canvas image with `doc.add_picture()` as shown in expense-report.py.

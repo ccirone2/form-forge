@@ -23,15 +23,23 @@ GitHub repo → fetch schema JSON + template .py → render form in browser
 form-forge/
 ├── index.html                  ← single-file app (HTML + CSS + JS)
 ├── schemas/
+│   ├── _schema.spec.json       ← JSON Schema spec that validates all schemas
 │   └── *.json                  ← form definitions
 ├── templates/
+│   ├── _base.py                ← shared helpers for all templates
 │   └── *.py                    ← Python DOCX generation scripts
 ├── tests/
-│   └── fixtures/               ← sample data for template tests
+│   ├── fixtures/               ← sample data for template tests
+│   ├── test_base.py            ← unit tests for _base.py utilities (14 tests)
+│   ├── test_templates.py       ← integration tests for templates (4 tests)
+│   └── test_schemas.py         ← schema validation tests (26 tests)
 ├── docs/
 │   ├── DEVLOG.md               ← development journal
-│   └── FORMFORGE_EXPANSION_GUIDE.md  ← project roadmap
-└── .github/workflows/          ← CI configuration
+│   ├── SCHEMA_GUIDE.md         ← guide for writing new schemas
+│   ├── TEMPLATE_GUIDE.md       ← guide for writing new templates
+│   └── FIELD_TYPES.md          ← reference for all 17 field types
+└── .github/workflows/
+    └── validate.yml            ← CI: schema validation + pytest
 ```
 
 ## Running Locally
@@ -70,52 +78,97 @@ No build system or package manager required.
 
 ### 2. Create a template (`templates/my-form.py`)
 
-Every template must export a `generate_docx(data)` function that accepts a dict (keyed by field `id`) and returns DOCX bytes:
+Every template must export a `generate_docx(data)` function that accepts a dict (keyed by field `id`) and returns DOCX bytes. Use the shared `_base` helpers:
 
 ```python
-import io
-from docx import Document
+import _base
 
 def generate_docx(data):
-    doc = Document()
-    doc.add_heading("My Document", level=0)
+    doc = _base.new_doc("My Document")
     doc.add_paragraph(f"Name: {data.get('field_name', '')}")
-
-    buffer = io.BytesIO()
-    doc.save(buffer)
-    buffer.seek(0)
-    return buffer.getvalue()
+    return _base.finalize(doc)
 ```
+
+See `docs/TEMPLATE_GUIDE.md` for the full `_base` API.
 
 ## Supported Field Types
 
-| Type | HTML Input | Data Format |
+| Type | Renders As | Data Format |
 |------|-----------|-------------|
-| `text` | Text input | `str` |
+| `text` | Single-line input | `str` |
 | `email` | Email input | `str` |
 | `tel` | Phone input | `str` |
-| `date` | Date picker | `str` |
+| `date` | Date picker | `str` (`YYYY-MM-DD`) |
 | `textarea` | Multi-line text | `str` |
-| `longtext` | Large text area | `str` (may contain newlines) |
+| `longtext` | Large textarea with character counter | `str` (may contain `\n`) |
 | `select` | Dropdown | `str` |
 | `radio` | Radio buttons | `str` |
 | `checkbox` | Checkboxes | `str` (comma-separated) |
-| `list` | Dynamic list | `str` (newline-separated) |
+| `list` | Dynamic add/remove rows | `str` (newline-separated) |
+| `number` | Number input with min/max/step | `str` |
+| `currency` | Number input with currency prefix | `str` |
+| `heading` | Visual section divider | *(not collected)* |
+| `hidden` | Passes a static value | `str` |
+| `address` | Street/city/state/zip group | JSON string |
+| `file` | File upload with image preview | base64 data URI |
+| `signature` | Canvas drawing pad | base64 PNG data URI |
+| `repeater` | Dynamic rows of sub-fields | JSON array string |
 
-## Testing Templates
+See `docs/FIELD_TYPES.md` for full details on each type, including schema properties and template handling.
 
-Templates are standalone Python scripts — test them without a browser:
+## Schema Features
+
+### Wizard Mode (multi-step forms)
+
+Set `"wizard": true` at the schema top level to render the form as a step-by-step wizard. Each section becomes a step with Next/Back navigation. Required field validation runs per-step before advancing.
+
+```json
+{
+  "title": "Multi-Step Form",
+  "wizard": true,
+  "sections": [
+    { "title": "Step 1", "step": 1, "fields": [...] },
+    { "title": "Step 2", "step": 2, "fields": [...] }
+  ]
+}
+```
+
+### Conditional Field Visibility
+
+Use `visible_when` on any field to hide or show it based on another field's value. The field is hidden until the source field matches the specified value.
+
+```json
+{
+  "id": "other_reason",
+  "label": "Please specify",
+  "type": "text",
+  "visible_when": { "field": "reason", "equals": "Other" }
+}
+```
+
+Hidden fields are excluded from validation but are always included in `data` passed to templates (as empty strings).
+
+## CI
+
+GitHub Actions runs on every push and pull request to `develop` and `main`:
+
+- **Schema validation** — validates all `schemas/*.json` against `schemas/_schema.spec.json`
+- **Tests** — runs `PYTHONPATH=. pytest tests/ -v` (44 tests)
+
+See `.github/workflows/validate.yml`.
+
+## Development
 
 ```bash
-pip install python-docx
-python -c "
-import json, importlib.util
-spec = importlib.util.spec_from_file_location('t', 'templates/onboarding.py')
-mod = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
-result = mod.generate_docx({'first_name': 'Jane', 'last_name': 'Doe', 'email': 'jane@co.com', 'start_date': '2026-04-01'})
-print(f'Generated {len(result)} bytes')
-"
+# Run locally
+python -m http.server 8000
+
+# Run all tests (44 tests)
+PYTHONPATH=. python -m pytest tests/ -v
+
+# Lint
+ruff check templates/ tests/ --fix
+ruff format templates/ tests/
 ```
 
 ## License

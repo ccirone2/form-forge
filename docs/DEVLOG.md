@@ -14,6 +14,71 @@
 
 ## Log
 
+### 2026-03-03 — Updated FIELD_TYPES.md to Reflect Current Project State
+**Issues:** documentation maintenance
+
+- Verified all 17 field types in `schemas/_schema.spec.json` `fieldType` enum match what is documented.
+- Added `maxLength` to the `text` type section — the spec allows it on both `text` and `longtext`, but the old doc only mentioned it under `longtext`.
+- Corrected `longtext` `maxLength` behavior: defaults to `5000` in the counter display, does not hard-truncate, only turns the counter red when exceeded.
+- Clarified `currency` behavior: `step="0.01"` and `min="0"` are fixed in the browser regardless of schema; `currency_symbol` defaults to `"$"`.
+- Noted that `hidden` restores `default_value` on form reset (handled in `resetForm()` in `index.html`).
+- Added explicit note that `min`/`max`/`step` are forbidden on all types except `number`, and `currency_symbol` is forbidden on all types except `currency`, per the schema spec `allOf` constraints.
+- Added "Common Optional Properties" table covering `required`, `placeholder`, `hint`, and `visible_when` as cross-cutting concerns.
+- Rewrote `list` section to clarify the bulk-paste converts on blur (not on input), and that one empty row is pre-populated on render.
+- Updated `address` section to document the actual sub-input IDs (`{id}_street`, `{id}_city`, `{id}_state`, `{id}_zip`) and note the absence of an `id = field.id` element.
+- Updated `repeater` section to explicitly list permitted sub-field types (`text`, `email`, `tel`, `number`, `currency`, `select`) sourced from `repeaterFieldType` in the spec; noted `min_rows` behavior (remove button disabled at minimum).
+- Added a dedicated "Conditional Visibility (`visible_when`)" section documenting: schema shape, CSS class mechanics, validation skip behavior, supported source types per listener attachment logic in `setupConditionalVisibility()`, and target type limitations (types without a direct `id = field.id` element — `checkbox`, `radio`, `list`, `address`, `repeater`, `heading` — do not work reliably as targets).
+- Added note that `heading` cannot be used as a `visible_when` target (no `id = field.id` element rendered).
+
+### 2026-03-03 — Updated TEMPLATE_GUIDE.md to Reflect Current Project State
+**Issues:** documentation maintenance
+
+- Rewrote `docs/TEMPLATE_GUIDE.md` to accurately reflect the `_base` module introduced in issue #3 and all field types added in issue #2
+- Added a dedicated `_base` Module section documenting all six helpers (`new_doc`, `add_table_section`, `add_longtext`, `add_bullet_list`, `add_signatures`, `finalize`) with signatures, parameter descriptions, and usage examples drawn from the actual source in `templates/_base.py`
+- Added the full color palette table (`COLOR_DARK_NAVY`, `COLOR_MEDIUM_BLUE`, `COLOR_SOFT_BLUE`, `COLOR_MUTED`, `COLOR_LIGHT_MUTED`) with hex values and intended usage
+- Expanded the data dictionary table to cover all 17 field types including `number`, `currency`, `hidden`, `address`, `file`, `signature`, `repeater`; clarified that `heading` is never present in `data`
+- Added a Conditional Fields section explaining that `visible_when`-hidden fields arrive as empty strings and require no special template handling — normal empty-check guards suffice
+- Added a Wizard Forms section explaining that wizard mode is UI-only; `generate_docx(data)` receives the same flat dict regardless of whether a schema uses `"wizard": true`
+- Added Parsing Complex Field Types section with code snippets for `address` (JSON object parse), `repeater` (JSON array parse and iteration), `file`/`signature` (base64 decode and `doc.add_picture()`), `number`/`currency` (numeric conversion with `try/except`), `checkbox` (split on comma), `longtext`/`list` (split on newline)
+- All parse examples include `try/except` guards matching the pattern used in `templates/expense-report.py`
+- Updated local testing instructions to reference `PYTHONPATH=. python -m pytest tests/ -v` and the `tests/fixtures/` directory; replaced the outdated one-liner with the `importlib.util.spec_from_file_location()` pattern used by the actual test suite
+- Removed the Helper Function Pattern section (superseded by the `_base` module documentation)
+- Removed hand-rolled signature block, key-value table, and `add_bullet_list` snippets that duplicated `_base` internals; retained only the Manual key-value table and colored footer examples under Common python-docx Patterns for cases requiring direct `python-docx` control
+
+---
+
+### 2026-03-03 — Updated SCHEMA_GUIDE.md to Reflect Current Project State
+**Issues:** documentation maintenance
+
+- Added `wizard` to the top-level structure table with type, required, and description columns
+- Added `step` to the sections table (optional integer, minimum 1, defaults to index + 1)
+- Expanded the field properties table to cover all spec-enforced properties: `default_value`, `fields`, `maxLength` (text + longtext), `min`/`max`/`step` (number only), `currency_symbol` (currency only), `accept`/`max_size_mb` (file only), `min_rows`/`max_rows` (repeater only), `visible_when`
+- Corrected `maxLength` documentation: allowed on both `text` and `longtext` (was listed as `longtext` only in the old field table)
+- Added field types table listing all 17 types with their `options` requirement and special properties
+- Added "Wizard Mode" section with schema example, explanation of `step` defaulting, per-step validation behavior, and non-wizard backward compatibility note
+- Added "Conditional Visibility" section with full `visible_when` schema example, property table, and behavior details (hidden fields skip required validation, always collected as empty string, source can appear anywhere, multiple dependents supported)
+- Added "Repeater Sub-Fields" section with sub-field type restriction list and template note
+- Added "Validation" section with local validation command
+- Updated top-level and section tables to include `Type` column and `additionalProperties: false` note
+- Updated field ID documentation with explicit pattern explanation and failure examples (uppercase, hyphen, leading digit)
+- Added a note to the file location section that `_schema.spec.json` is excluded from the picker
+
+---
+
+### 2026-03-03 — Updated README.md to Reflect Current Project State
+**Issues:** documentation maintenance
+
+- Rewrote `README.md` to accurately reflect all features added in issues #2–#9
+- Added wizard mode (`"wizard": true`) section with schema example
+- Added conditional field visibility (`visible_when`) section with schema example
+- Updated the field type table to cover all 17 supported types (was previously showing only 10)
+- Updated project structure tree to include `_schema.spec.json`, `_base.py`, individual test files with counts, and all docs
+- Updated "Adding a New Form" template example to use `_base` helpers instead of raw `python-docx`
+- Added CI section describing the GitHub Actions workflow (`validate.yml`) and the 44-test count
+- Removed outdated manual template testing snippet (still available in `docs/TEMPLATE_GUIDE.md`)
+
+---
+
 ### 2026-03-03 — CI with GitHub Actions (#9)
 **Issues:** #9 (Set up CI with GitHub Actions)
 

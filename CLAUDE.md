@@ -15,7 +15,6 @@ FormForge is a **client-side-only** browser application that turns GitHub-hosted
 - **`schemas/*.json`** — Form definitions. Each schema has `title`, `description`, `icon`, `template` (path to .py), and `sections[]` containing `fields[]` with `id`, `label`, `type`, etc.
 - **`templates/_base.py`** — Shared helper module for all templates. Provides `new_doc()`, `add_table_section()`, `add_longtext()`, `add_bullet_list()`, `add_signatures()`, `finalize()`, and a standard color palette. Loaded into Pyodide's virtual filesystem once via `loadBaseModule()` before any template runs.
 - **`templates/*.py`** — Python scripts that export a `generate_docx(data)` function. Called by Pyodide with form data as a dict. Must return DOCX bytes. Uses `python-docx` and `import _base`.
-- **`docs/FORMFORGE_EXPANSION_GUIDE.md`** — Project roadmap and architectural reference. Consult before making design decisions.
 - **`docs/DEVLOG.md`** — Running development journal. Add a dated entry when completing work on any issue.
 - **`docs/SCHEMA_GUIDE.md`** — Guide for writing new form schemas.
 - **`docs/TEMPLATE_GUIDE.md`** — Guide for writing new Python templates.
@@ -31,6 +30,14 @@ FormForge is a **client-side-only** browser application that turns GitHub-hosted
 4. `generate_docx(form_data)` — Called via `runPythonAsync` with serialized form data
 
 There are 4 template loading paths that all follow this pattern: `launchForm()` (GitHub), its override (GitHub picker), `launchLocal()` (local files), and `launchDemo()` (embedded demo).
+
+### Wizard Form Support
+
+Schemas with `"wizard": true` render as multi-step forms instead of all-at-once. Each section gets an optional `"step"` (positive integer ≥1). The UI shows a step indicator (numbered circles + connectors), displays one section at a time, and validates per-step before advancing via `wizardValidateStep()`. Submit is only available on the final step. Data is preserved across step navigation.
+
+### Conditional Field Visibility (`visible_when`)
+
+Fields can have an optional `visible_when` object: `{ "field": "<source_id>", "equals": "<value>" }`. When the source field's value doesn't match, the dependent field is hidden (CSS class `conditional-hidden`). `setupConditionalVisibility(schema)` builds the dependency map and attaches listeners. Hidden fields are skipped during validation but still collected as empty strings in `collectFormData()`.
 
 ## Key Conventions
 
@@ -51,7 +58,7 @@ No build system or package manager. Pyodide and python-docx load from CDN at run
 # Run locally — open index.html directly or use HTTP server for CORS
 python -m http.server 8000
 
-# Run all tests (33 tests)
+# Run all tests (44 tests)
 PYTHONPATH=. python -m pytest tests/ -v
 
 # Run a single test file
@@ -69,9 +76,15 @@ ruff format templates/ tests/
 
 - `tests/test_base.py` — Unit tests for all `_base.py` utilities (14 tests)
 - `tests/test_templates.py` — Integration tests that load each template with sample data and verify valid DOCX output (4 tests)
-- `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas (15 tests)
+- `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas, wizard, and visible_when (26 tests)
 - `tests/fixtures/*.json` — Sample form data matching each schema's field IDs
 - Templates are loaded via `importlib.util.spec_from_file_location()` with `sys.path` including `templates/` so `import _base` resolves
+
+## CI/CD
+
+`.github/workflows/validate.yml` runs on push/PR to `develop` and `main`:
+1. Schema validation — validates all `schemas/*.json` against `_schema.spec.json` using `jsonschema`
+2. Test execution — runs `PYTHONPATH=. pytest tests/ -v` on Python 3.12
 
 ## GitHub Issues
 
