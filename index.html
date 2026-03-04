@@ -766,6 +766,7 @@
 // ============================================================
 let pyodide = null;
 let pyodideReady = false;
+let baseModuleLoaded = false;  // Whether _base.py has been loaded into Pyodide
 let currentSchema = null;
 let currentTemplateCode = null;
 let repoSchemas = [];      // [{name, path, description, icon, templatePath}]
@@ -1141,6 +1142,7 @@ async function launchLocal() {
       'Loaded from <strong>local files</strong> — no data was sent to any server.';
 
     if (!pyodideReady) await initPyodide();
+    await loadBaseModule();
 
     showOverlay('Loading template into Pyodide...');
     await pyodide.runPythonAsync(currentTemplateCode);
@@ -1168,6 +1170,7 @@ async function launchDemo() {
       'Using the <strong>embedded demo</strong> — Employee Onboarding Form. Connect a GitHub repo or load local files for your own forms.';
 
     if (!pyodideReady) await initPyodide();
+    await loadBaseModule();
 
     showOverlay('Loading template into Pyodide...');
     await pyodide.runPythonAsync(currentTemplateCode);
@@ -1224,6 +1227,7 @@ async function connectRepo() {
   const parts = repoInput.split('/');
   ghOwner = parts[0];
   ghRepo = parts.slice(1).join('/');
+  baseModuleLoaded = false;  // Reset so _base.py is fetched from the new repo
 
   statusEl.className = 'repo-status';
   statusEl.textContent = 'Connecting...';
@@ -1355,6 +1359,7 @@ async function launchForm() {
     if (!pyodideReady) {
       await initPyodide();
     }
+    await loadBaseModule();
 
     // Load the template into Pyodide
     showOverlay('Loading template into Pyodide...');
@@ -1405,6 +1410,55 @@ async function initPyodide() {
   } catch (err) {
     log('Pyodide init error: ' + err.message, 'error');
     throw err;
+  }
+}
+
+async function loadBaseModule() {
+  if (baseModuleLoaded) return;
+
+  showOverlay('Loading shared template base...');
+  log('Loading _base.py module...', 'info');
+
+  try {
+    let baseCode = null;
+
+    // Try fetching from connected GitHub repo first
+    if (ghOwner && ghRepo) {
+      try {
+        baseCode = await ghFetchRaw('templates/_base.py');
+        log('_base.py loaded from repo', 'success');
+      } catch (e) {
+        log('_base.py not found in repo, using built-in', 'info');
+      }
+    }
+
+    // Fall back to fetching from the FormForge repo
+    if (!baseCode) {
+      try {
+        const resp = await fetch(
+          'https://raw.githubusercontent.com/ccirone2/form-forge/develop/templates/_base.py'
+        );
+        if (resp.ok) {
+          baseCode = await resp.text();
+          log('_base.py loaded from FormForge repo', 'success');
+        }
+      } catch (e) {
+        log('Could not fetch _base.py from FormForge repo', 'info');
+      }
+    }
+
+    if (baseCode) {
+      // Write _base.py to Pyodide's virtual filesystem so templates
+      // can use a standard `import _base` statement
+      pyodide.FS.writeFile('/home/pyodide/_base.py', baseCode);
+      await pyodide.runPythonAsync('import _base');
+      baseModuleLoaded = true;
+      log('_base module loaded into Pyodide', 'success');
+    } else {
+      log('_base.py unavailable — templates must be self-contained', 'info');
+    }
+  } catch (err) {
+    log('Warning: could not load _base module: ' + err.message, 'error');
   }
 }
 
@@ -2300,6 +2354,7 @@ launchForm = async function() {
       `Loaded from GitHub — schema: <strong>${entry.schemaPath}</strong> · template: <strong>${entry.templatePath}</strong>`;
 
     if (!pyodideReady) await initPyodide();
+    await loadBaseModule();
 
     showOverlay('Loading template into Pyodide...');
     await pyodide.runPythonAsync(currentTemplateCode);

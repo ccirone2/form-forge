@@ -20,18 +20,11 @@ Field type notes:
 import io
 import json
 import base64
-from datetime import datetime
-from docx import Document
-from docx.shared import Inches, Pt, RGBColor
+from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
 
-
-# -- Color palette --
-COLOR_NAVY = RGBColor(0x1A, 0x1A, 0x3E)
-COLOR_BLUE = RGBColor(0x33, 0x33, 0x66)
-COLOR_SOFT = RGBColor(0x66, 0x66, 0x99)
-COLOR_MUTED = RGBColor(0x99, 0x99, 0x99)
+import _base
 
 
 def generate_docx(data):
@@ -44,34 +37,15 @@ def generate_docx(data):
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
-    doc = Document()
-
-    # ── Global styles ───────────────────────────────────────
-    style = doc.styles["Normal"]
-    style.font.name = "Calibri"
-    style.font.size = Pt(11)
-
-    # ── Title ───────────────────────────────────────────────
-    title = doc.add_heading("Expense Report", level=0)
-    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    for run in title.runs:
-        run.font.color.rgb = COLOR_BLUE
-
-    doc.add_paragraph("")
-
-    # ── Summary line ────────────────────────────────────────
     name = data.get("employee_name", "")
     dept = data.get("department", "")
     report_date = data.get("report_date", "")
     form_ver = data.get("form_version", "")
 
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = p.add_run(f"{name} — {dept} — {report_date}")
-    run.font.size = Pt(12)
-    run.font.color.rgb = COLOR_SOFT
-
-    doc.add_paragraph("")
+    doc = _base.new_doc(
+        "Expense Report",
+        f"{name} — {dept} — {report_date}",
+    )
 
     # ── Report Details ──────────────────────────────────────
     total = data.get("total_amount", "0")
@@ -80,7 +54,7 @@ def generate_docx(data):
     except (ValueError, TypeError):
         total_fmt = f"${total}"
 
-    _add_table_section(doc, "Report Details", [
+    _base.add_table_section(doc, "Report Details", [
         ("Employee", name),
         ("Department", dept),
         ("Report Date", report_date),
@@ -119,7 +93,7 @@ def generate_docx(data):
         p = doc.add_paragraph()
         r = p.add_run("No line items provided.")
         r.italic = True
-        r.font.color.rgb = COLOR_MUTED
+        r.font.color.rgb = _base.COLOR_MUTED
 
     doc.add_paragraph("")
 
@@ -143,12 +117,12 @@ def generate_docx(data):
             p = doc.add_paragraph()
             r = p.add_run("[Receipt image could not be embedded]")
             r.italic = True
-            r.font.color.rgb = COLOR_MUTED
+            r.font.color.rgb = _base.COLOR_MUTED
     else:
         p = doc.add_paragraph()
         r = p.add_run("No receipt uploaded.")
         r.italic = True
-        r.font.color.rgb = COLOR_MUTED
+        r.font.color.rgb = _base.COLOR_MUTED
 
     doc.add_paragraph("")
 
@@ -183,7 +157,7 @@ def generate_docx(data):
         p = doc.add_paragraph()
         r = p.add_run("No address provided.")
         r.italic = True
-        r.font.color.rgb = COLOR_MUTED
+        r.font.color.rgb = _base.COLOR_MUTED
 
     doc.add_paragraph("")
 
@@ -206,7 +180,7 @@ def generate_docx(data):
         lp = doc.add_paragraph()
         lr = lp.add_run(label)
         lr.font.size = Pt(9)
-        lr.font.color.rgb = COLOR_MUTED
+        lr.font.color.rgb = _base.COLOR_MUTED
 
     doc.add_paragraph("")
 
@@ -218,36 +192,7 @@ def generate_docx(data):
         "Please review all information for accuracy."
     )
     fr.font.size = Pt(8)
-    fr.font.color.rgb = COLOR_MUTED
+    fr.font.color.rgb = _base.COLOR_MUTED
     fr.italic = True
 
-    # ── Serialize ───────────────────────────────────────────
-    buffer = io.BytesIO()
-    doc.save(buffer)
-    buffer.seek(0)
-    return buffer.getvalue()
-
-
-# ═══════════════════════════════════════════════════════════
-#  HELPER FUNCTIONS
-# ═══════════════════════════════════════════════════════════
-
-def _add_table_section(doc, title_text, fields):
-    """Add a heading + two-column key/value table."""
-    doc.add_heading(title_text, level=1)
-
-    table = doc.add_table(rows=0, cols=2)
-    table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.style = "Light Grid Accent 1"
-
-    for label, value in fields:
-        row = table.add_row()
-        lp = row.cells[0].paragraphs[0]
-        lr = lp.add_run(label)
-        lr.bold = True
-        lr.font.size = Pt(10)
-        vp = row.cells[1].paragraphs[0]
-        vr = vp.add_run(str(value) if value else "\u2014")
-        vr.font.size = Pt(10)
-
-    doc.add_paragraph("")
+    return _base.finalize(doc)

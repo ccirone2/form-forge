@@ -14,6 +14,29 @@
 
 ## Log
 
+### 2026-03-03 — Created Shared Template Base `_base.py` (#3)
+**Issues:** #3 (Create shared template base)
+
+- Created `templates/_base.py` with 6 shared utilities: `new_doc()`, `add_table_section()`, `add_longtext()`, `add_bullet_list()`, `add_signatures()`, `finalize()`
+- Exported a standard color palette (`COLOR_DARK_NAVY`, `COLOR_MEDIUM_BLUE`, `COLOR_SOFT_BLUE`, `COLOR_MUTED`, `COLOR_LIGHT_MUTED`)
+- Refactored `templates/onboarding.py` to use `_base` helpers — removed ~90 lines of duplicated helper functions
+- Refactored `templates/expense-report.py` to use `_base` helpers for shared patterns (table sections, colors, finalize)
+- Updated `index.html` with `loadBaseModule()` function that fetches `_base.py` and writes it to Pyodide's virtual filesystem via `pyodide.FS.writeFile()`, enabling standard `import _base` in templates
+- `loadBaseModule()` is called once before any template execution; `baseModuleLoaded` flag prevents re-fetching
+- Added `baseModuleLoaded` reset on repo change so new repos get their own `_base.py`
+- Created `tests/test_base.py` (14 tests) covering all 6 utilities, color constants, and edge cases
+- Created `tests/test_templates.py` (4 tests) verifying both templates produce valid DOCX with sample and empty data
+- Created `tests/fixtures/onboarding_sample.json` sample fixture
+
+**Decisions:**
+- Used Pyodide's `FS.writeFile()` to place `_base.py` on the virtual filesystem rather than `exec()` into globals — this allows templates to use standard `import _base` syntax that works identically in regular Python and Pyodide
+- Kept `Calibri` as the default font (matching existing templates) rather than `Segoe UI` from the expansion guide sketch
+- Added optional `font_name` and `font_size` parameters to `new_doc()` for template customization while maintaining backward compatibility
+- `loadBaseModule()` tries the connected GitHub repo first, falls back to the FormForge repo on GitHub — works for both custom repos and the demo/local file paths
+- Expense report template retains its own signature handling (base64 image embedding) rather than using `add_signatures()` since it needs specialized canvas-to-image logic
+
+---
+
 ### 2026-03-03 — Implemented All 8 New Field Types (#2)
 **Issues:** #2, #11 (number), #12 (currency), #13 (heading), #14 (hidden), #15 (address), #16 (file), #17 (signature), #18 (repeater), #19 (demo schema)
 
