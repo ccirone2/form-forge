@@ -1,0 +1,37 @@
+name: Validate Schemas & Templates
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install python-docx jsonschema pytest
+
+      - name: Validate schemas against spec
+        run: |
+          python -c "
+          import json, jsonschema
+          from pathlib import Path
+          spec = json.loads(Path('schemas/_schema.spec.json').read_text())
+          for f in sorted(Path('schemas').glob('*.json')):
+              if f.name.startswith('_'): continue
+              schema = json.loads(f.read_text())
+              jsonschema.validate(schema, spec)
+              print(f'  ✓ {f.name}')
+          print('All schemas valid.')
+          "
+
+      - name: Run tests
+        run: PYTHONPATH=. pytest tests/ -v
