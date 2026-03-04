@@ -14,6 +14,19 @@
 
 ## Log
 
+### 2026-03-04 — Keyboard Accessibility for Interactive Elements (#42)
+**Issues:** #42
+
+- **Clickable non-interactive elements** (`<h1>` logo, console header, 4 docs card headers) now have `tabindex="0"`, `role="button"`, and `onkeydown` handlers for Enter/Space.
+- **Collapsible sections** (docs cards + console) toggle `aria-expanded` on open/close via `toggleDocs()` and `toggleConsole()`. Docs headers also have `aria-controls` pointing to their content panel.
+- **Checkbox/radio groups** now have `role="group"` and `aria-labelledby` pointing to their group label `<span>` (given a unique `id`).
+- **Signature canvas** has `aria-label="Signature pad — draw your signature with mouse or touch"`.
+
+**Decisions:**
+- Used `role="group"` + `aria-labelledby` instead of `<fieldset>`/`<legend>` to avoid CSS reset issues with the existing dark-theme styling.
+
+---
+
 ### 2026-03-04 — CI Improvements: Ruff Linting, Dependency Pins, Cleanup (#41)
 **Issues:** #41
 
