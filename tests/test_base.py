@@ -38,10 +38,14 @@ def test_new_doc_custom_font():
 
 def test_add_table_section():
     doc = _base.new_doc("Test")
-    _base.add_table_section(doc, "Info", [
-        ("Name", "Alice"),
-        ("Role", "Developer"),
-    ])
+    _base.add_table_section(
+        doc,
+        "Info",
+        [
+            ("Name", "Alice"),
+            ("Role", "Developer"),
+        ],
+    )
     # Should have at least one table
     assert len(doc.tables) >= 1
     table = doc.tables[0]
@@ -52,9 +56,13 @@ def test_add_table_section():
 
 def test_add_table_section_empty_value():
     doc = _base.new_doc("Test")
-    _base.add_table_section(doc, "Info", [
-        ("Field", ""),
-    ])
+    _base.add_table_section(
+        doc,
+        "Info",
+        [
+            ("Field", ""),
+        ],
+    )
     table = doc.tables[0]
     # Empty values should show em dash
     assert table.rows[0].cells[1].text == "\u2014"

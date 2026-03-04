@@ -54,13 +54,17 @@ def generate_docx(data):
     except (ValueError, TypeError):
         total_fmt = f"${total}"
 
-    _base.add_table_section(doc, "Report Details", [
-        ("Employee", name),
-        ("Department", dept),
-        ("Report Date", report_date),
-        ("Total Amount", total_fmt),
-        ("Form Version", form_ver),
-    ])
+    _base.add_table_section(
+        doc,
+        "Report Details",
+        [
+            ("Employee", name),
+            ("Department", dept),
+            ("Report Date", report_date),
+            ("Total Amount", total_fmt),
+            ("Form Version", form_ver),
+        ],
+    )
 
     # ── Line Items (repeater) ───────────────────────────────
     doc.add_heading("Expense Line Items", level=1)
@@ -164,8 +168,10 @@ def generate_docx(data):
     # ── Signatures (signature fields) ───────────────────────
     doc.add_heading("Approval Signatures", level=1)
 
-    for label, field_id in [("Employee Signature", "employee_signature"),
-                            ("Manager Signature", "manager_signature")]:
+    for label, field_id in [
+        ("Employee Signature", "employee_signature"),
+        ("Manager Signature", "manager_signature"),
+    ]:
         sig_b64 = data.get(field_id, "")
         p = doc.add_paragraph()
         if sig_b64 and "," in sig_b64:

@@ -38,60 +38,84 @@ def generate_docx(data):
     )
 
     # ── Section: Personal Information ──────────────────────────
-    _base.add_table_section(doc, "Personal Information", [
-        ("First Name",     data.get("first_name", "")),
-        ("Last Name",      data.get("last_name", "")),
-        ("Email",          data.get("email", "")),
-        ("Phone",          data.get("phone", "")),
-        ("Date of Birth",  data.get("date_of_birth", "")),
-        ("Start Date",     data.get("start_date", "")),
-    ])
+    _base.add_table_section(
+        doc,
+        "Personal Information",
+        [
+            ("First Name", data.get("first_name", "")),
+            ("Last Name", data.get("last_name", "")),
+            ("Email", data.get("email", "")),
+            ("Phone", data.get("phone", "")),
+            ("Date of Birth", data.get("date_of_birth", "")),
+            ("Start Date", data.get("start_date", "")),
+        ],
+    )
 
     # ── Section: Role & Department ─────────────────────────────
-    _base.add_table_section(doc, "Role & Department", [
-        ("Department",        data.get("department", "")),
-        ("Job Title",         data.get("job_title", "")),
-        ("Employment Type",   data.get("employment_type", "")),
-        ("Reporting Manager", data.get("manager", "")),
-    ])
+    _base.add_table_section(
+        doc,
+        "Role & Department",
+        [
+            ("Department", data.get("department", "")),
+            ("Job Title", data.get("job_title", "")),
+            ("Employment Type", data.get("employment_type", "")),
+            ("Reporting Manager", data.get("manager", "")),
+        ],
+    )
 
     # ── Section: Equipment & Access ────────────────────────────
     equipment = data.get("equipment_needs", "")
     software = data.get("software_access", "")
 
-    _base.add_table_section(doc, "Equipment & Access", [
-        ("Laptop",               data.get("laptop_preference", "")),
-        ("Additional Equipment", equipment if equipment else "None requested"),
-        ("Software Access",      software if software else "None requested"),
-    ])
+    _base.add_table_section(
+        doc,
+        "Equipment & Access",
+        [
+            ("Laptop", data.get("laptop_preference", "")),
+            ("Additional Equipment", equipment if equipment else "None requested"),
+            ("Software Access", software if software else "None requested"),
+        ],
+    )
 
     # ── Section: Skills & Experience ───────────────────────────
     doc.add_heading("Skills & Experience", level=1)
 
     _base.add_longtext(doc, "Professional Bio", data.get("bio", ""))
     _base.add_bullet_list(doc, "Key Skills", data.get("skills", ""))
-    _base.add_bullet_list(doc, "Certifications & Licenses", data.get("certifications", ""))
+    _base.add_bullet_list(
+        doc, "Certifications & Licenses", data.get("certifications", "")
+    )
     _base.add_longtext(doc, "Notable Prior Projects", data.get("prior_projects", ""))
 
     # ── Section: Additional Information ────────────────────────
-    _base.add_table_section(doc, "Additional Information", [
-        ("Dietary Restrictions", data.get("dietary_restrictions", "")),
-        ("Emergency Contact",    data.get("emergency_contact", "")),
-        ("Emergency Phone",      data.get("emergency_phone", "")),
-        ("Notes",                data.get("notes", "")),
-    ])
+    _base.add_table_section(
+        doc,
+        "Additional Information",
+        [
+            ("Dietary Restrictions", data.get("dietary_restrictions", "")),
+            ("Emergency Contact", data.get("emergency_contact", "")),
+            ("Emergency Phone", data.get("emergency_phone", "")),
+            ("Notes", data.get("notes", "")),
+        ],
+    )
 
     _base.add_bullet_list(doc, "First 90 Days Goals", data.get("onboarding_goals", ""))
 
     # ── Signatures ─────────────────────────────────────────────
-    _base.add_signatures(doc, [
-        "Employee Signature", "Date",
-        "HR Representative",  "Date",
-    ])
+    _base.add_signatures(
+        doc,
+        [
+            "Employee Signature",
+            "Date",
+            "HR Representative",
+            "Date",
+        ],
+    )
 
     # ── Footer ─────────────────────────────────────────────────
     doc.add_paragraph("")
     from docx.enum.text import WD_ALIGN_PARAGRAPH
+
     fp = doc.add_paragraph()
     fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
     fr = fp.add_run(
@@ -99,6 +123,7 @@ def generate_docx(data):
         "Please review all information for accuracy."
     )
     from docx.shared import Pt
+
     fr.font.size = Pt(8)
     fr.font.color.rgb = _base.COLOR_LIGHT_MUTED
     fr.italic = True
