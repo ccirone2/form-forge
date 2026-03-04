@@ -1,0 +1,14 @@
+{
+  "form_version": "1.0",
+  "employee_name": "Jane Doe",
+  "department": "Engineering",
+  "report_date": "2026-03-01",
+  "total_amount": "1375.50",
+  "line_items": "[{\"description\":\"Flight to NYC\",\"amount\":\"450.00\",\"category\":\"Travel\"},{\"description\":\"Client dinner\",\"amount\":\"125.50\",\"category\":\"Meals\"},{\"description\":\"Hotel 2 nights\",\"amount\":\"800.00\",\"category\":\"Lodging\"}]",
+  "item_count": "3",
+  "receipt_photo": "",
+  "notes": "Business trip for client onsite meeting, March 1-3.",
+  "mailing_address": "{\"street\":\"123 Main Street\",\"city\":\"Springfield\",\"state\":\"IL\",\"zip\":\"62701\"}",
+  "employee_signature": "",
+  "manager_signature": ""
+}

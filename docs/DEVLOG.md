@@ -14,6 +14,28 @@
 
 ## Log
 
+### 2026-03-03 — Implemented All 8 New Field Types (#2)
+**Issues:** #2, #11 (number), #12 (currency), #13 (heading), #14 (hidden), #15 (address), #16 (file), #17 (signature), #18 (repeater), #19 (demo schema)
+
+- Added 8 new field types to `createField()`, `collectFormData()`, `validateForm()`, and `resetForm()` in `index.html`
+- Added CSS styles for all new field types (currency wrapper, heading divider, address group, file upload with preview, signature canvas pad, repeater rows)
+- Updated `buildForm()` layout: `number` and `currency` pair in 2-column rows; `hidden` skipped from visible layout
+- Created `schemas/expense-report.json` — demo form exercising all 8 new types plus existing types
+- Created `templates/expense-report.py` — handles JSON parsing for address/repeater, base64 decoding for file/signature, currency formatting
+- Created `tests/fixtures/expense-report_sample.json` — sample data for template testing
+- Updated `docs/FIELD_TYPES.md` with all 8 new types: JSON schema examples, schema properties, and template handling code
+
+**Decisions:**
+- Heading fields return early from `createField()` to skip the default hint rendering (they handle their own hint)
+- Hidden fields use `default_value` schema property; the field group is `display: none`
+- Address data is serialized as a JSON object string; validation checks street is non-empty when required
+- Signature uses `canvas.toDataURL('image/png')` saved to a hidden input on each `mouseup`/`touchend`
+- Repeater stores sub-field config via `wrapper.dataset.subFields` for `collectFormData()` to reference
+- Repeater sub-fields support text, email, tel, number, currency, and select types
+- File upload validates size client-side via `max_size_mb` and shows image preview for image types
+
+---
+
 ### 2026-03-03 — Implementation Plan for #2 (New Field Types)
 **Issues:** #2, #11–#19
 
