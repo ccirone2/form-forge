@@ -15,10 +15,12 @@ FormForge is a **client-side-only** browser application that turns GitHub-hosted
 - **`templates/*.py`** — Python scripts that export a `generate_docx(data)` function. Called by Pyodide with form data as a dict. Must return DOCX bytes. Uses `python-docx`.
 - **`docs/FORMFORGE_EXPANSION_GUIDE.md`** — Project roadmap and architectural reference. Consult before making design decisions.
 - **`docs/DEVLOG.md`** — Running development journal. Add a dated entry when completing work on any issue.
+- **`docs/SCHEMA_GUIDE.md`** — Guide for writing new form schemas.
+- **`docs/TEMPLATE_GUIDE.md`** — Guide for writing new Python templates.
 
 ## Supported Field Types
 
-`text`, `email`, `tel`, `date`, `textarea`, `longtext`, `select`, `radio`, `checkbox`, `list`
+- **`docs/FIELD_TYPES.md`** — Reference for all supported form field types, their JSON schema, and template handling.
 
 Adding a new type touches three places: `createField()` switch in index.html, `collectFormData()` in index.html, and the template .py file.
 
@@ -41,4 +43,4 @@ No build system or package manager is configured yet. To work on this project:
 
 ## GitHub Issues
 
-Issues #1–#9 track all planned expansion work. Each issue includes a journaling task to update `docs/DEVLOG.md`. See the expansion guide for full context on each area.
+Each issue includes a journaling task to update `docs/DEVLOG.md`.

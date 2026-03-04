@@ -8,10 +8,11 @@
 6. Write or update tests for the changed code
 7. Run tests: `PYTHONPATH=. python -m pytest tests/ -v`
 8. Run lint: `ruff check engine/ dev/ --fix && ruff format engine/ dev/`
-9. Update the task status in `docs/PLAN.md` to ✅
-10. Commit with conventional format referencing the issue
-11. Push and open a PR targeting `develop`: `gh pr create --base develop`
-12. Update `docs/DEVLOG.md` with what was done
+9. Check the source GitHub issue acceptance criteria and ensure they are met
+10. Update the issue status to ✅ if all criteria are met
+11. Commit with conventional format referencing the issue
+12. Push and open a PR targeting `develop`: `gh pr create --base develop`
+13. Update `docs/DEVLOG.md` with what was done
 
 **Branching:** All feature branches start from `develop`. PRs target `develop`.
 Only `develop` → `main` merges happen for stable releases.
