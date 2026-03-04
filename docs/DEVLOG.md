@@ -14,6 +14,26 @@
 
 ## Log
 
+### 2026-03-03 — Added Schema Validation with `_schema.spec.json` (#4)
+**Issues:** #4 (Add schema validation)
+
+- Created `schemas/_schema.spec.json` using JSON Schema draft 2020-12 to validate all form schemas
+- Spec validates top-level structure (`title`, `sections`), section structure (`title`, `fields`), and field structure (`id` pattern, `label`, `type` enum)
+- All 17 field types enumerated in the `type` enum with type-specific conditional validation via `if/then/allOf`
+- Conditional rules enforce: `options` required for select/radio/checkbox, `default_value` for hidden, `fields` for repeater
+- Type-specific properties restricted to their correct types (e.g., `min/max/step` only on `number`, `maxLength` only on `text/longtext`, `accept/max_size_mb` only on `file`)
+- Repeater sub-fields validated separately with restricted type enum (`text`, `email`, `tel`, `number`, `currency`, `select`)
+- Created `tests/test_schemas.py` with 15 tests: spec validity, field type coverage, positive validation of both existing schemas, and 9 negative tests for invalid schemas
+- Both `onboarding.json` and `expense-report.json` validate successfully against the spec
+
+**Decisions:**
+- Used `if/then` within `allOf` for conditional validation rather than `oneOf` with separate schemas per type — keeps the spec more readable and maintainable
+- Used `additionalProperties: false` at all levels to catch typos and unknown properties early
+- Template path pattern enforced as `^templates/.+\.py$` to match the project convention
+- Repeater sub-fields defined as a separate `$defs/repeaterField` schema with its own restricted type enum, matching the subset supported by the app
+
+---
+
 ### 2026-03-03 — Created Shared Template Base `_base.py` (#3)
 **Issues:** #3 (Create shared template base)
 
