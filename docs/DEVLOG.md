@@ -14,6 +14,22 @@
 
 ## Log
 
+### 2026-03-03 — CI with GitHub Actions (#9)
+**Issues:** #9 (Set up CI with GitHub Actions)
+
+- Created `.github/workflows/validate.yml` with two jobs: schema validation and pytest
+- Triggers on `push` and `pull_request` to `develop` and `main` branches
+- Uses `ubuntu-latest`, Python 3.12, installs `python-docx`, `jsonschema`, `pytest`
+- Schema validation step validates all `schemas/*.json` (excluding `_schema.spec.json`) against the spec
+- Test step runs `PYTHONPATH=. pytest tests/ -v` (44 tests)
+
+**Decisions:**
+- Scoped triggers to `develop` and `main` branches only — avoids unnecessary CI runs on ephemeral branches
+- Used inline Python for schema validation rather than a separate script — keeps the repo simple and avoids adding a new file for a few lines of code
+- Followed the workflow structure from `docs/FORMFORGE_EXPANSION_GUIDE.md` Section 8
+
+---
+
 ### 2026-03-03 — Conditional Field Visibility with `visible_when` (#7)
 **Issues:** #7 (Add conditional/dynamic field visibility)
 
