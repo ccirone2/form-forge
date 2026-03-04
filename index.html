@@ -1293,7 +1293,7 @@ async function connectRepo() {
 
     if (!Array.isArray(schemaFiles)) throw new Error('schemas/ directory not found or not a directory');
 
-    const jsonFiles = schemaFiles.filter(f => f.name.endsWith('.json'));
+    const jsonFiles = schemaFiles.filter(f => f.name.endsWith('.json') && !f.name.startsWith('_'));
     if (jsonFiles.length === 0) throw new Error('No .json files found in schemas/');
 
     // Fetch each schema for metadata
