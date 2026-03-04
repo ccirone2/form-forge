@@ -14,6 +14,22 @@
 
 ## Log
 
+### 2026-03-03 — Add Demo Schema Exercising All Field Types, Wizard, and Conditionals
+**Issues:** #19
+
+- Created `schemas/field-type-demo.json` — "Event Registration" wizard form with 4 steps, all 17 field types, and 3 `visible_when` conditionals
+- Created `templates/field-type-demo.py` — template handling all field types including JSON-parsed address, repeater, file, and signature
+- Created `tests/fixtures/field-type-demo_sample.json` — comprehensive sample data
+- Added 2 template tests (`test_field_type_demo_generates_valid_docx`, `test_field_type_demo_with_empty_data`)
+- All 46 tests pass; schema validates against `_schema.spec.json`
+
+**Conditional visibility demonstrated:**
+- `venue_address` (address) → shown when `attendance_mode` = "In-person"
+- `dietary_restrictions` (checkbox) → shown when `attendance_mode` = "In-person"
+- `virtual_platform` (text) → shown when `attendance_mode` = "Virtual"
+
+---
+
 ### 2026-03-03 — Filter _schema.spec.json from Schema Picker
 **Issues:** #26
 

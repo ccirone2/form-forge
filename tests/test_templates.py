@@ -49,3 +49,19 @@ def test_expense_report_with_empty_data():
     result = mod.generate_docx({})
     assert isinstance(result, bytes)
     assert result[:2] == b"PK"
+
+
+def test_field_type_demo_generates_valid_docx():
+    data = json.loads((FIXTURES / "field-type-demo_sample.json").read_text())
+    mod = load_template("field-type-demo")
+    result = mod.generate_docx(data)
+    assert isinstance(result, bytes)
+    assert len(result) > 0
+    assert result[:2] == b"PK"
+
+
+def test_field_type_demo_with_empty_data():
+    mod = load_template("field-type-demo")
+    result = mod.generate_docx({})
+    assert isinstance(result, bytes)
+    assert result[:2] == b"PK"

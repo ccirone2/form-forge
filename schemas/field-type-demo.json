@@ -1,0 +1,175 @@
+{
+  "title": "Event Registration",
+  "description": "Register for an upcoming event. This demo exercises all 17 field types, wizard mode, and conditional visibility.",
+  "icon": "🎪",
+  "template": "templates/field-type-demo.py",
+  "wizard": true,
+  "sections": [
+    {
+      "title": "Applicant Info",
+      "step": 1,
+      "fields": [
+        {
+          "id": "form_version",
+          "label": "Form Version",
+          "type": "hidden",
+          "default_value": "2.0"
+        },
+        {
+          "id": "full_name",
+          "label": "Full Name",
+          "type": "text",
+          "required": true,
+          "placeholder": "Jane Doe"
+        },
+        {
+          "id": "email",
+          "label": "Email Address",
+          "type": "email",
+          "required": true,
+          "placeholder": "jane@example.com"
+        },
+        {
+          "id": "phone",
+          "label": "Phone Number",
+          "type": "tel",
+          "placeholder": "(555) 123-4567"
+        },
+        {
+          "id": "event_date",
+          "label": "Preferred Event Date",
+          "type": "date",
+          "required": true
+        }
+      ]
+    },
+    {
+      "title": "Event Details",
+      "step": 2,
+      "fields": [
+        {
+          "id": "event_details_heading",
+          "label": "Tell Us About Your Event",
+          "type": "heading",
+          "hint": "Provide details so we can plan accordingly"
+        },
+        {
+          "id": "event_type",
+          "label": "Event Type",
+          "type": "select",
+          "required": true,
+          "options": ["", "Conference", "Workshop", "Meetup", "Webinar"]
+        },
+        {
+          "id": "event_description",
+          "label": "Brief Description",
+          "type": "textarea",
+          "placeholder": "Summarize the event in a few sentences..."
+        },
+        {
+          "id": "detailed_proposal",
+          "label": "Detailed Proposal",
+          "type": "longtext",
+          "maxLength": 3000,
+          "hint": "Full event proposal with goals, agenda, and expected outcomes"
+        },
+        {
+          "id": "attendance_mode",
+          "label": "Attendance Mode",
+          "type": "radio",
+          "required": true,
+          "options": ["In-person", "Virtual", "Hybrid"]
+        },
+        {
+          "id": "venue_address",
+          "label": "Venue Address",
+          "type": "address",
+          "hint": "Required for in-person events",
+          "visible_when": { "field": "attendance_mode", "equals": "In-person" }
+        },
+        {
+          "id": "dietary_restrictions",
+          "label": "Dietary Restrictions",
+          "type": "checkbox",
+          "options": ["Vegetarian", "Vegan", "Gluten-free", "Halal", "Kosher", "None"],
+          "hint": "Select all that apply for catering",
+          "visible_when": { "field": "attendance_mode", "equals": "In-person" }
+        },
+        {
+          "id": "virtual_platform",
+          "label": "Preferred Virtual Platform",
+          "type": "text",
+          "placeholder": "e.g., Zoom, Teams, Google Meet",
+          "visible_when": { "field": "attendance_mode", "equals": "Virtual" }
+        }
+      ]
+    },
+    {
+      "title": "Budget & Items",
+      "step": 3,
+      "fields": [
+        {
+          "id": "budget_amount",
+          "label": "Estimated Budget",
+          "type": "currency",
+          "required": true,
+          "placeholder": "0.00"
+        },
+        {
+          "id": "attendee_count",
+          "label": "Expected Attendees",
+          "type": "number",
+          "min": 1,
+          "max": 500,
+          "step": 1,
+          "placeholder": "50"
+        },
+        {
+          "id": "expense_items",
+          "label": "Budget Line Items",
+          "type": "repeater",
+          "min_rows": 1,
+          "max_rows": 10,
+          "fields": [
+            { "id": "item_name", "label": "Item", "type": "text", "placeholder": "Venue rental" },
+            { "id": "quantity", "label": "Qty", "type": "number", "min": 1, "max": 999, "step": 1 },
+            { "id": "unit_cost", "label": "Unit Cost", "type": "currency" },
+            { "id": "category", "label": "Category", "type": "select", "options": ["", "Venue", "Catering", "Equipment", "Marketing", "Other"] }
+          ]
+        },
+        {
+          "id": "special_requests",
+          "label": "Special Requests",
+          "type": "list",
+          "hint": "One request per line"
+        }
+      ]
+    },
+    {
+      "title": "Attachments & Approval",
+      "step": 4,
+      "fields": [
+        {
+          "id": "supporting_doc",
+          "label": "Supporting Document",
+          "type": "file",
+          "accept": ".pdf,image/*",
+          "max_size_mb": 10,
+          "hint": "Upload a PDF or image (max 10 MB)"
+        },
+        {
+          "id": "additional_notes",
+          "label": "Additional Notes",
+          "type": "textarea",
+          "placeholder": "Anything else we should know..."
+        },
+        {
+          "id": "applicant_signature",
+          "label": "Applicant Signature",
+          "type": "signature",
+          "required": true
+        }
+      ]
+    }
+  ]
+}
