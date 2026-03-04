@@ -14,6 +14,15 @@
 
 ## Log
 
+### 2026-03-03 — Filter _schema.spec.json from Schema Picker
+**Issues:** #26
+
+- `_schema.spec.json` was appearing in the web UI schema picker and failing to load when selected
+- Added `!f.name.startsWith('_')` filter in `index.html` to exclude all `_`-prefixed JSON files from the listing
+- Convention: `_`-prefixed files in `schemas/` are internal infrastructure, not form definitions
+
+---
+
 ### 2026-03-03 — Updated FIELD_TYPES.md to Reflect Current Project State
 **Issues:** documentation maintenance
 
