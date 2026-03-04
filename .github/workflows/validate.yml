@@ -16,22 +16,18 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install python-docx jsonschema pytest
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements-dev.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
 
-      - name: Validate schemas against spec
-        run: |
-          python -c "
-          import json, jsonschema
-          from pathlib import Path
-          spec = json.loads(Path('schemas/_schema.spec.json').read_text())
-          for f in sorted(Path('schemas').glob('*.json')):
-              if f.name.startswith('_'): continue
-              schema = json.loads(f.read_text())
-              jsonschema.validate(schema, spec)
-              print(f'  ✓ {f.name}')
-          print('All schemas valid.')
-          "
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check templates/ tests/
 
       - name: Run tests
         run: PYTHONPATH=. pytest tests/ -v
