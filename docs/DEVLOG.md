@@ -14,6 +14,22 @@
 
 ## Log
 
+### 2026-03-04 — Critical Bug Fixes: XSS, Repeater Populate, Fixtures, Docs (#37)
+**Issues:** #37
+
+Fixed four critical issues identified during deep code review:
+
+- **XSS via unsanitized innerHTML** — Applied `escapeHtml()` to all GitHub-fetched values in `renderPicker()` (schema icon, name, description) and both `schemaInfoText` assignments (schema/template paths). Also sanitized markdown link URLs in `inlineFormat()` to reject `javascript:` protocol — only `http://` and `https://` URLs are now emitted as href values.
+- **Silent repeater population failure** — `populateForm()` used selector `.btn-add-row` but the actual repeater add button class is `.btn-add-item`. Repeater data silently failed to restore from save/load and autosave. Fixed the selector.
+- **Fixture data mismatch** — `onboarding_sample.json` had `laptop_preference: "MacBook Pro"` (not a valid schema option; corrected to `"MacBook Pro 14\""`) and `equipment_needs` used `\n` separator (checkbox fields serialize with `, `; corrected to `"External Monitor, Mechanical Keyboard"`).
+- **Doc contradiction on maxLength** — `SCHEMA_GUIDE.md` claimed `maxLength` "displays a live counter" for all types. In reality, only `longtext` has a counter; `text` uses `maxLength` for schema validation only. Corrected the description.
+
+**Decisions:**
+- Used `escapeHtml()` rather than switching to `textContent` to preserve existing HTML structure in picker cards
+- Sanitized markdown links to http/https only (no `data:`, `javascript:`, etc.)
+
+---
+
 ### 2026-03-04 — Form Data Save/Load & Autosave (#29–#35)
 **Issues:** #29, #30, #31, #32, #33, #34, #35
 

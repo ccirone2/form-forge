@@ -110,7 +110,7 @@ Each field defines a single input in the form. The `id` becomes the key in the `
 | `options` | conditional | array | Array of strings. Required for `select`, `radio`, and `checkbox`. Forbidden on all other types. |
 | `default_value` | conditional | string | Static value to inject. Required for `hidden`. Forbidden on all other types. |
 | `fields` | conditional | array | Sub-field definitions. Required for `repeater`. Forbidden on all other types. |
-| `maxLength` | no | integer | Maximum character count. Minimum 1. Allowed on `text` and `longtext` only. Displays a live counter. |
+| `maxLength` | no | integer | Maximum character count. Minimum 1. Allowed on `text` and `longtext` only. On `longtext`, displays a live counter (defaults to 5000). On `text`, schema validation only — no counter in the browser. |
 | `min` | no | integer | Minimum value. Allowed on `number` only. |
 | `max` | no | integer | Maximum value. Allowed on `number` only. |
 | `step` | no | number | Step increment. Allowed on `number` only. |
