@@ -981,7 +981,10 @@ function renderMarkdown(md) {
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--accent-hover)">$1</a>');
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
+        const safeUrl = /^https?:\/\//i.test(url) ? url : '#';
+        return `<a href="${safeUrl}" target="_blank" style="color:var(--accent-hover)">${text}</a>`;
+      });
   }
 
   while (i < lines.length) {
@@ -1413,9 +1416,9 @@ function renderPicker() {
     card.className = 'picker-card';
     card.dataset.idx = i;
     card.innerHTML = `
-      <div class="card-icon">${s.icon}</div>
-      <h4>${s.name}</h4>
-      <p>${s.description || 'No description'}</p>
+      <div class="card-icon">${escapeHtml(s.icon || '')}</div>
+      <h4>${escapeHtml(s.name)}</h4>
+      <p>${escapeHtml(s.description || 'No description')}</p>
       <span class="card-badge">${s.schema.sections ? s.schema.sections.length + ' sections' : 'schema'}</span>
     `;
     card.addEventListener('click', () => selectSchema(i));
@@ -1453,7 +1456,7 @@ async function launchForm() {
     buildForm(currentSchema);
     document.getElementById('formNavInfo').textContent = `${entry.name} · from ${ghOwner}/${ghRepo}`;
     document.getElementById('schemaInfoText').innerHTML =
-      `Loaded from GitHub — schema: <strong>${entry.schemaPath}</strong> · template: <strong>${entry.templatePath}</strong>`;
+      `Loaded from GitHub — schema: <strong>${escapeHtml(entry.schemaPath)}</strong> · template: <strong>${escapeHtml(entry.templatePath)}</strong>`;
 
     // Initialize Pyodide if not already
     if (!pyodideReady) {
@@ -2467,7 +2470,7 @@ function populateForm(data, options = {}) {
             if (Array.isArray(rows)) {
               const wrapper = document.getElementById(`${field.id}_repeater`);
               if (wrapper) {
-                const addBtn = wrapper.querySelector('.btn-add-row');
+                const addBtn = wrapper.querySelector('.btn-add-item');
                 // Remove existing rows
                 wrapper.querySelectorAll('.repeater-row').forEach(r => r.remove());
                 // Add rows by clicking the add button
@@ -3176,7 +3179,7 @@ launchForm = async function() {
     buildForm(currentSchema);
     document.getElementById('formNavInfo').textContent = `${entry.name} · from ${ghOwner}/${ghRepo}`;
     document.getElementById('schemaInfoText').innerHTML =
-      `Loaded from GitHub — schema: <strong>${entry.schemaPath}</strong> · template: <strong>${entry.templatePath}</strong>`;
+      `Loaded from GitHub — schema: <strong>${escapeHtml(entry.schemaPath)}</strong> · template: <strong>${escapeHtml(entry.templatePath)}</strong>`;
 
     if (!pyodideReady) await initPyodide();
     await loadBaseModule();
