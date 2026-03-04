@@ -379,6 +379,40 @@
     font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;
   }
   .btn-secondary:hover { border-color: var(--text-muted); color: var(--text); }
+  .btn-secondary svg { opacity: 0.7; }
+  .btn-secondary:hover svg { opacity: 1; }
+
+  .autosave-prompt {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 12px 20px; margin-bottom: 24px;
+    background: var(--surface-2); border-left: 3px solid var(--warning);
+    border-radius: var(--radius); animation: fadeInPrompt 0.3s ease-out;
+  }
+  .autosave-prompt .autosave-msg {
+    font-size: 13px; color: var(--text-muted); flex: 1;
+  }
+  .autosave-prompt .autosave-msg strong { color: var(--text); }
+  .autosave-prompt .autosave-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .autosave-prompt .btn-restore {
+    padding: 6px 16px; background: var(--accent); color: #fff; border: none;
+    border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+    font-weight: 600; cursor: pointer; transition: background 0.2s;
+  }
+  .autosave-prompt .btn-restore:hover { background: var(--accent-hover); }
+  .autosave-prompt .btn-discard {
+    padding: 6px 16px; background: transparent; color: var(--text-muted); border: 1px solid var(--border);
+    border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+    font-weight: 500; cursor: pointer; transition: all 0.2s;
+  }
+  .autosave-prompt .btn-discard:hover { border-color: var(--text-muted); color: var(--text); }
+  @keyframes fadeInPrompt {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (max-width: 600px) {
+    .autosave-prompt { flex-direction: column; align-items: flex-start; }
+    .submit-area { flex-wrap: wrap; }
+  }
 
   /* Overlay */
   .loading-overlay {
@@ -796,6 +830,15 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
         Export to DOCX
       </button>
+      <button class="btn-secondary" onclick="saveFormData()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Data
+      </button>
+      <button class="btn-secondary" onclick="document.getElementById('loadDataInput').click()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Load Data
+      </button>
+      <input type="file" accept=".json" id="loadDataInput" style="display:none" onchange="handleLoadDataFile(event)">
       <button class="btn-secondary" onclick="resetForm()">Reset</button>
     </div>
 
@@ -824,6 +867,8 @@ let wizardCurrentStep = 0;  // Current wizard step index (0-based)
 let currentTemplateCode = null;
 let repoSchemas = [];      // [{name, path, description, icon, templatePath}]
 let selectedSchemaIdx = -1;
+let pendingDataUrl = null;   // ?data= URL param, consumed after form launch
+let autosaveTimer = null;    // Debounce timer for autosave
 
 // GitHub config
 let ghOwner = '';
@@ -1203,6 +1248,7 @@ async function launchLocal() {
 
     document.getElementById('exportBtn').disabled = false;
     showView('form');
+    postLaunchHook();
   } catch (err) {
     log(`Local launch failed: ${err.message}`, 'error');
     showToast(`Failed: ${err.message}`, 'error');
@@ -1231,6 +1277,7 @@ async function launchDemo() {
 
     document.getElementById('exportBtn').disabled = false;
     showView('form');
+    postLaunchHook();
   } catch (err) {
     log(`Demo launch failed: ${err.message}`, 'error');
     showToast(`Failed: ${err.message}`, 'error');
@@ -1421,6 +1468,7 @@ async function launchForm() {
 
     document.getElementById('exportBtn').disabled = false;
     showView('form');
+    postLaunchHook();
   } catch (err) {
     log(`Launch failed: ${err.message}`, 'error');
     showToast(`Failed to load: ${err.message}`, 'error');
@@ -2333,6 +2381,466 @@ function collectFormData() {
 }
 
 // ============================================================
+//  POPULATE FORM DATA
+// ============================================================
+function populateForm(data, options = {}) {
+  const { skipFileFields = false, silent = false } = options;
+  if (!currentSchema || !currentSchema.sections) return;
+
+  const knownIds = new Set();
+  let warnings = 0;
+
+  // Build set of known field IDs
+  for (const section of currentSchema.sections) {
+    for (const field of section.fields) {
+      if (field.type !== 'heading') knownIds.add(field.id);
+    }
+  }
+
+  // Warn about unknown keys in data (skip _formforge metadata)
+  for (const key of Object.keys(data)) {
+    if (key.startsWith('_')) continue;
+    if (!knownIds.has(key)) {
+      console.warn(`populateForm: unknown field ID "${key}"`);
+      warnings++;
+    }
+  }
+
+  for (const section of currentSchema.sections) {
+    for (const field of section.fields) {
+      if (field.type === 'heading') continue;
+
+      const value = data[field.id];
+      if (value === undefined || value === null) {
+        if (data.hasOwnProperty(field.id) === false) {
+          console.warn(`populateForm: no data for field "${field.id}"`);
+          warnings++;
+        }
+        continue;
+      }
+
+      try {
+        if (field.type === 'radio') {
+          const radio = document.querySelector(`input[name="${field.id}"][value="${CSS.escape(value)}"]`);
+          if (radio) radio.checked = true;
+
+        } else if (field.type === 'checkbox') {
+          // Uncheck all first
+          document.querySelectorAll(`input[name="${field.id}"]`).forEach(cb => cb.checked = false);
+          if (value) {
+            const selected = value.split(', ');
+            selected.forEach(v => {
+              const cb = document.querySelector(`input[name="${field.id}"][value="${CSS.escape(v)}"]`);
+              if (cb) cb.checked = true;
+            });
+          }
+
+        } else if (field.type === 'list') {
+          const container = document.getElementById(`${field.id}_items`);
+          const countEl = document.getElementById(`${field.id}_count`);
+          if (container && countEl) {
+            container.innerHTML = '';
+            const items = value ? value.split('\n').filter(v => v) : [''];
+            if (items.length === 0) items.push('');
+            items.forEach(v => addListItem(field.id, field.placeholder || '', container, countEl, v));
+          }
+
+        } else if (field.type === 'address') {
+          try {
+            const addr = JSON.parse(value);
+            const streetEl = document.getElementById(`${field.id}_street`);
+            const cityEl = document.getElementById(`${field.id}_city`);
+            const stateEl = document.getElementById(`${field.id}_state`);
+            const zipEl = document.getElementById(`${field.id}_zip`);
+            if (streetEl) streetEl.value = addr.street || '';
+            if (cityEl) cityEl.value = addr.city || '';
+            if (stateEl) stateEl.value = addr.state || '';
+            if (zipEl) zipEl.value = addr.zip || '';
+          } catch (e) {
+            console.warn(`populateForm: invalid JSON for address field "${field.id}"`);
+            warnings++;
+          }
+
+        } else if (field.type === 'repeater') {
+          try {
+            const rows = JSON.parse(value);
+            if (Array.isArray(rows)) {
+              const wrapper = document.getElementById(`${field.id}_repeater`);
+              if (wrapper) {
+                const addBtn = wrapper.querySelector('.btn-add-row');
+                // Remove existing rows
+                wrapper.querySelectorAll('.repeater-row').forEach(r => r.remove());
+                // Add rows by clicking the add button
+                for (let i = 0; i < rows.length; i++) {
+                  if (addBtn) addBtn.click();
+                }
+                // Fill row data
+                const rowEls = wrapper.querySelectorAll('.repeater-row');
+                rows.forEach((rowData, i) => {
+                  if (rowEls[i]) {
+                    const subFields = field.fields || [];
+                    for (const sf of subFields) {
+                      const input = rowEls[i].querySelector(`[id$="_${sf.id}"]`);
+                      if (input && rowData[sf.id] !== undefined) {
+                        input.value = rowData[sf.id];
+                      }
+                    }
+                  }
+                });
+              }
+            }
+          } catch (e) {
+            console.warn(`populateForm: invalid JSON for repeater field "${field.id}"`);
+            warnings++;
+          }
+
+        } else if (field.type === 'file') {
+          if (skipFileFields) continue;
+          const hidden = document.getElementById(field.id);
+          if (hidden && value) {
+            hidden.value = value;
+            // Show preview if it's an image data URL
+            if (value.startsWith('data:image/')) {
+              const preview = document.getElementById(`${field.id}_preview`);
+              if (preview) {
+                preview.src = value;
+                preview.style.display = 'block';
+              }
+            }
+            const info = document.getElementById(`${field.id}_info`);
+            if (info) info.textContent = 'Restored from saved data';
+          }
+
+        } else if (field.type === 'signature') {
+          if (skipFileFields) continue;
+          const hidden = document.getElementById(field.id);
+          if (hidden && value) {
+            hidden.value = value;
+            // Draw onto canvas
+            if (value.startsWith('data:image/')) {
+              const canvas = document.getElementById(`${field.id}_canvas`);
+              if (canvas) {
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                img.onload = () => {
+                  ctx.clearRect(0, 0, canvas.width, canvas.height);
+                  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                };
+                img.src = value;
+              }
+            }
+          }
+
+        } else if (field.type === 'longtext') {
+          const el = document.getElementById(field.id);
+          if (el) {
+            el.value = value;
+            // Dispatch input event to update character counter
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+
+        } else {
+          // text, email, tel, date, textarea, select, number, currency, hidden
+          const el = document.getElementById(field.id);
+          if (el) el.value = value;
+        }
+      } catch (e) {
+        console.warn(`populateForm: error setting field "${field.id}":`, e);
+        warnings++;
+      }
+    }
+  }
+
+  // Re-evaluate conditional visibility
+  if (currentSchema) setupConditionalVisibility(currentSchema);
+
+  // Show warning toast if mismatches found
+  if (warnings > 0 && !silent) {
+    showToast(`Form populated with ${warnings} warning${warnings !== 1 ? 's' : ''} — check console`, 'warning');
+  } else if (!silent) {
+    log('Form data populated successfully', 'success');
+  }
+}
+
+// ============================================================
+//  SAVE FORM DATA
+// ============================================================
+function saveFormData() {
+  const data = collectFormData();
+
+  data._formforge = {
+    schemaTitle: currentSchema.title,
+    savedAt: new Date().toISOString(),
+    version: 1,
+  };
+
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const slug = currentSchema.title.toLowerCase().replace(/\s+/g, '_');
+  const filename = `${slug}_data_${dateStr}.json`;
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showToast('Form data saved successfully.', 'success');
+  log(`saveFormData: downloaded ${filename}`, 'info');
+}
+
+// ============================================================
+//  LOAD FORM DATA
+// ============================================================
+function handleLoadDataFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function (e) {
+    let parsed;
+
+    try {
+      parsed = JSON.parse(e.target.result);
+    } catch (err) {
+      showToast('Invalid JSON file — could not parse', 'error');
+      log(`Load data: JSON parse error — ${err.message}`, 'error');
+      event.target.value = '';
+      return;
+    }
+
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      showToast('Invalid data file — expected a JSON object', 'error');
+      log('Load data: root value is not a JSON object', 'error');
+      event.target.value = '';
+      return;
+    }
+
+    const meta = parsed._formforge;
+    delete parsed._formforge;
+
+    if (meta && meta.schemaTitle && currentSchema && meta.schemaTitle !== currentSchema.title) {
+      showToast(
+        `Data was saved for "${meta.schemaTitle}" but current form is "${currentSchema.title}"`,
+        'warning'
+      );
+      log(
+        `Load data: schema mismatch — file schema "${meta.schemaTitle}", current schema "${currentSchema.title}"`,
+        'warning'
+      );
+    }
+
+    const data = parsed;
+    setTimeout(() => populateForm(data), 0);
+
+    showToast('Form data loaded successfully');
+    log(`Load data: populated form from "${file.name}"`);
+
+    event.target.value = '';
+  };
+
+  reader.onerror = function () {
+    showToast('Failed to read file', 'error');
+    log(`Load data: FileReader error reading "${file.name}"`, 'error');
+    event.target.value = '';
+  };
+
+  reader.readAsText(file);
+}
+
+// ============================================================
+//  AUTOSAVE
+// ============================================================
+
+function getAutosaveKey() {
+  const slug = (currentSchema.title || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return `formforge_autosave_${slug}`;
+}
+
+function autosaveFormData() {
+  try {
+    const data = collectFormData();
+
+    // Skip large file/signature values (>50KB) to stay under localStorage limits
+    for (const [key, value] of Object.entries(data)) {
+      if (typeof value === 'string' && value.length > 50 * 1024) {
+        data[key] = '';
+      }
+    }
+
+    data._formforge = {
+      schemaTitle: currentSchema.title,
+      savedAt: new Date().toISOString(),
+      version: 1,
+    };
+
+    localStorage.setItem(getAutosaveKey(), JSON.stringify(data));
+  } catch (err) {
+    console.warn('Autosave failed:', err.message);
+  }
+}
+
+function setupAutosave() {
+  const form = document.getElementById('dynamicForm');
+  if (!form) return;
+
+  // Remove previous listener if one was attached
+  if (form._autosaveHandler) {
+    form.removeEventListener('input', form._autosaveHandler);
+    form.removeEventListener('change', form._autosaveHandler);
+  }
+
+  const handler = () => {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(autosaveFormData, 2000);
+  };
+
+  form._autosaveHandler = handler;
+  form.addEventListener('input', handler);
+  form.addEventListener('change', handler);
+}
+
+function checkAutosaveRestore() {
+  const raw = localStorage.getItem(getAutosaveKey());
+  if (!raw) return;
+
+  try {
+    const parsed = JSON.parse(raw);
+    const savedAt = parsed?._formforge?.savedAt;
+    if (savedAt) {
+      showAutosavePrompt(savedAt);
+    }
+  } catch (err) {
+    console.warn('Failed to parse autosave data:', err.message);
+  }
+}
+
+function showAutosavePrompt(savedAt) {
+  // Avoid duplicate prompts
+  const existing = document.querySelector('.autosave-prompt');
+  if (existing) existing.remove();
+
+  const prompt = document.createElement('div');
+  prompt.className = 'autosave-prompt';
+  prompt.innerHTML = `
+    <span class="autosave-msg">
+      Unsaved data from <strong>${formatTimeAgo(savedAt)}</strong>
+    </span>
+    <div class="autosave-actions">
+      <button class="btn-restore" type="button">Restore</button>
+      <button class="btn-discard" type="button">Discard</button>
+    </div>
+  `;
+
+  prompt.querySelector('.btn-restore').addEventListener('click', () => {
+    try {
+      const raw = localStorage.getItem(getAutosaveKey());
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      delete data._formforge;
+      setTimeout(() => populateForm(data), 0);
+      prompt.remove();
+      showToast('Form data restored', 'success');
+    } catch (err) {
+      log(`Autosave restore failed: ${err.message}`, 'error');
+      showToast('Could not restore saved data', 'error');
+    }
+  });
+
+  prompt.querySelector('.btn-discard').addEventListener('click', () => {
+    localStorage.removeItem(getAutosaveKey());
+    prompt.remove();
+    log('Autosave data discarded', 'info');
+  });
+
+  const form = document.getElementById('dynamicForm');
+  if (form) {
+    form.parentNode.insertBefore(prompt, form);
+  }
+}
+
+function formatTimeAgo(isoString) {
+  const saved = new Date(isoString);
+  if (isNaN(saved.getTime())) return 'an unknown time';
+
+  const now = new Date();
+  const diffMs = now - saved;
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffSeconds < 60) return 'just now';
+  if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes === 1 ? '' : 's'} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+  if (diffDays === 1) return 'yesterday';
+  return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+}
+
+// ============================================================
+//  URL PARAMETER LOADING
+// ============================================================
+
+async function loadPendingDataUrl() {
+  if (!pendingDataUrl) return;
+
+  const url = pendingDataUrl;
+  pendingDataUrl = null;
+
+  log('Loading form data from URL: ' + url, 'info');
+
+  let response;
+  try {
+    response = await fetch(url);
+  } catch (err) {
+    showToast('Failed to load form data from URL', 'error');
+    log('Fetch error loading data URL: ' + err, 'error');
+    return;
+  }
+
+  let data;
+  try {
+    data = await response.json();
+  } catch (err) {
+    showToast('Failed to load form data from URL', 'error');
+    log('JSON parse error loading data URL: ' + err, 'error');
+    return;
+  }
+
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    showToast('Failed to load form data from URL', 'error');
+    log('Data URL did not return a JSON object', 'error');
+    return;
+  }
+
+  delete data._formforge;
+
+  setTimeout(() => populateForm(data), 0);
+  showToast('Form data loaded from URL', 'success');
+}
+
+// ============================================================
+//  POST-LAUNCH HOOK
+// ============================================================
+function postLaunchHook() {
+  setupAutosave();
+  if (pendingDataUrl) {
+    loadPendingDataUrl();
+  } else {
+    checkAutosaveRestore();
+  }
+}
+
+// ============================================================
 //  VALIDATE
 // ============================================================
 function validateForm() {
@@ -2389,6 +2897,11 @@ function resetForm() {
   }
   // Re-evaluate conditional visibility after reset
   if (currentSchema) setupConditionalVisibility(currentSchema);
+  // Clear autosave on reset
+  try { localStorage.removeItem(getAutosaveKey()); } catch (e) { /* ignore */ }
+  // Remove autosave prompt if visible
+  const prompt = document.querySelector('.autosave-prompt');
+  if (prompt) prompt.remove();
   log('Form reset', 'info');
 }
 
@@ -2433,6 +2946,9 @@ docx_bytes = generate_docx(form_data)
 
     showToast('DOCX exported successfully!');
     log('Download triggered: ' + a.download, 'success');
+
+    // Clear autosave after successful export
+    try { localStorage.removeItem(getAutosaveKey()); } catch (e) { /* ignore */ }
   } catch (err) {
     console.error(err);
     log('Export error: ' + err.message, 'error');
@@ -2624,6 +3140,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   log('FormForge ready — try the demo, load local files, or connect a GitHub repo', 'info');
 
+  // Parse ?data= URL parameter for pre-filled forms
+  const urlParams = new URLSearchParams(window.location.search);
+  const dataUrl = urlParams.get('data');
+  if (dataUrl) {
+    try {
+      new URL(dataUrl, window.location.href);  // validate URL
+      pendingDataUrl = dataUrl;
+      log('Pending data URL: ' + dataUrl, 'info');
+    } catch (e) {
+      console.warn('Invalid ?data= URL parameter:', dataUrl);
+    }
+  }
+
   // Load docs with embedded fallbacks (will reload from GitHub after connect)
   loadDocs();
 });
@@ -2658,6 +3187,7 @@ launchForm = async function() {
 
     document.getElementById('exportBtn').disabled = false;
     showView('form');
+    postLaunchHook();
   } catch (err) {
     log(`Launch failed: ${err.message}`, 'error');
     showToast(`Failed: ${err.message}`, 'error');
