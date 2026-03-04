@@ -303,6 +303,136 @@
   .token-row { margin-top: 8px; }
   .token-row.hidden { display: none; }
   .token-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Source divider */
+  .source-divider {
+    display: flex; align-items: center; gap: 16px; margin: 24px 0;
+    color: var(--text-muted); font-size: 12px; font-family: 'JetBrains Mono', monospace;
+  }
+  .source-divider::before, .source-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* Drop zones */
+  .local-upload-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  @media (max-width: 500px) { .local-upload-row { grid-template-columns: 1fr; } }
+
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    padding: 24px 16px; text-align: center; cursor: pointer;
+    transition: all 0.2s; background: var(--surface-2); position: relative;
+    outline: none;
+  }
+  .drop-zone:hover, .drop-zone:focus-visible {
+    border-color: var(--accent); background: var(--accent-glow);
+  }
+  .drop-zone.drag-over {
+    border-color: var(--accent); background: var(--accent-glow);
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+  }
+  .drop-zone.has-file {
+    border-color: var(--success); border-style: solid; background: rgba(34,197,94,0.05);
+  }
+  .drop-zone-icon { margin-bottom: 8px; color: var(--text-muted); }
+  .drop-zone.has-file .drop-zone-icon { color: var(--success); }
+  .drop-zone-label { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .drop-zone-hint { font-size: 11px; color: var(--text-muted); }
+  .drop-zone.has-file .drop-zone-hint { display: none; }
+  .drop-zone-file {
+    font-size: 12px; font-family: 'JetBrains Mono', monospace;
+    color: var(--success); margin-top: 6px; word-break: break-all;
+  }
+  .drop-zone-file:empty { display: none; }
+
+  .local-status {
+    font-size: 12px; font-family: 'JetBrains Mono', monospace; color: var(--text-muted);
+  }
+  .local-status.error { color: var(--error); }
+  .local-status.success { color: var(--success); }
+
+  /* Docs section */
+  .docs-section { display: flex; flex-direction: column; gap: 12px; }
+  .docs-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; transition: border-color 0.2s;
+  }
+  .docs-card:hover { border-color: rgba(99,102,241,0.25); }
+  .docs-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; cursor: pointer; user-select: none; transition: background 0.15s;
+  }
+  .docs-card-header:hover { background: var(--surface-2); }
+  .docs-card-header h3 { font-size: 14px; font-weight: 600; }
+  .docs-toggle {
+    font-size: 12px; color: var(--text-muted); transition: transform 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .docs-toggle.open { transform: rotate(90deg); }
+  .docs-card-body {
+    padding: 0 20px 20px; font-size: 13px; color: var(--text-muted); line-height: 1.7;
+  }
+  .docs-card-body.collapsed { display: none; }
+  .docs-card-body p { margin-bottom: 12px; }
+  .docs-card-body h4 {
+    font-size: 13px; font-weight: 600; color: var(--text); margin: 20px 0 8px;
+    padding-top: 12px; border-top: 1px solid var(--border);
+  }
+  .docs-card-body h4:first-of-type { margin-top: 12px; border-top: none; padding-top: 0; }
+  .docs-card-body code {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    background: var(--surface-2); padding: 1px 5px; border-radius: 4px; color: var(--accent-hover);
+  }
+  .docs-card-body strong { color: var(--text); }
+
+  .docs-code {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px; margin: 8px 0 12px; overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.7;
+    color: var(--text-muted); white-space: pre; tab-size: 2;
+  }
+
+  .docs-table {
+    width: 100%; border-collapse: collapse; margin: 8px 0 12px;
+    font-size: 12px; font-family: 'JetBrains Mono', monospace;
+  }
+  .docs-table th {
+    text-align: left; padding: 8px 10px; background: var(--surface-2);
+    border: 1px solid var(--border); color: var(--text); font-weight: 600; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .docs-table td {
+    padding: 7px 10px; border: 1px solid var(--border); color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif; font-size: 12px;
+  }
+  .docs-table td code {
+    font-size: 11px; background: var(--bg); padding: 1px 4px; border-radius: 3px;
+  }
+  .docs-source-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-family: 'JetBrains Mono', monospace;
+    padding: 4px 10px; border-radius: 6px; margin-bottom: 12px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
+  }
+  .docs-source-badge.from-github { border-color: var(--success); color: var(--success); }
+  .docs-source-badge.from-fallback { border-color: var(--warning); color: var(--warning); }
+  .docs-source-badge:empty { display: none; }
+  .docs-rendered-md { line-height: 1.7; }
+  .docs-rendered-md h1 { font-size: 18px; font-weight: 700; margin: 20px 0 8px; color: var(--text); }
+  .docs-rendered-md h2 { font-size: 15px; font-weight: 600; margin: 16px 0 6px; color: var(--text); }
+  .docs-rendered-md h3 { font-size: 13px; font-weight: 600; margin: 14px 0 4px; color: var(--text); }
+  .docs-rendered-md p { margin-bottom: 10px; }
+  .docs-rendered-md ul, .docs-rendered-md ol { margin: 8px 0 12px 20px; }
+  .docs-rendered-md li { margin-bottom: 4px; }
+  .docs-rendered-md pre { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin: 8px 0 12px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.7; }
+  .docs-rendered-md code { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; color: var(--accent-hover); }
+  .docs-rendered-md pre code { background: none; padding: 0; color: var(--text-muted); }
+  .docs-rendered-md table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 12px; }
+  .docs-rendered-md th { text-align: left; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border); font-weight: 600; font-size: 11px; }
+  .docs-rendered-md td { padding: 7px 10px; border: 1px solid var(--border); }
+  .docs-rendered-md hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+  .docs-rendered-md blockquote { border-left: 3px solid var(--accent); padding-left: 14px; margin: 8px 0; color: var(--text-muted); font-style: italic; }
 </style>
 </head>
 <body>
@@ -328,12 +458,70 @@
 <div class="view active" id="view-setup">
   <div class="main-container">
     <div class="setup-hero">
-      <h2>Connect a GitHub Repo</h2>
-      <p>Point FormForge at a GitHub repository containing your form schemas and DOCX templates. It will fetch them and let you pick which form to fill out.</p>
+      <h2>Load Your Forms</h2>
+      <p>Connect a GitHub repo for shared org-wide forms, or load schema and template files directly from your machine for fully private, offline use. No data ever leaves your browser.</p>
+      <div style="margin-top: 20px;">
+        <button class="btn-secondary" onclick="launchDemo()" style="border-color: var(--accent); color: var(--accent-hover);">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Try the demo form
+        </button>
+      </div>
     </div>
 
+    <!-- ===== LOCAL FILES ===== -->
+    <div class="config-card" id="localCard">
+      <h3>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        Local Files <span style="font-size: 11px; font-weight: 400; color: var(--text-muted); margin-left: 6px;">(private, offline)</span>
+      </h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+        Load a schema <code>.json</code> and its template <code>.py</code> directly from your machine. Files are read in-browser only — nothing is uploaded anywhere.
+      </p>
+
+      <div class="local-upload-row">
+        <!-- Schema drop zone -->
+        <div class="drop-zone" id="schemaDropZone" tabindex="0">
+          <input type="file" id="localSchemaFile" accept=".json" hidden>
+          <div class="drop-zone-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+          </div>
+          <div class="drop-zone-label">Schema JSON</div>
+          <div class="drop-zone-hint">Drop .json or click to browse</div>
+          <div class="drop-zone-file" id="schemaFileName"></div>
+        </div>
+
+        <!-- Template drop zone -->
+        <div class="drop-zone" id="templateDropZone" tabindex="0">
+          <input type="file" id="localTemplateFile" accept=".py" hidden>
+          <div class="drop-zone-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12l-2 4 2 4"/><path d="M14 12l2 4-2 4"/></svg>
+          </div>
+          <div class="drop-zone-label">Template Python</div>
+          <div class="drop-zone-hint">Drop .py or click to browse</div>
+          <div class="drop-zone-file" id="templateFileName"></div>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; display: flex; align-items: center; gap: 12px;">
+        <button class="btn-connect" id="localLaunchBtn" disabled onclick="launchLocal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Open Form
+        </button>
+        <span class="local-status" id="localStatus"></span>
+      </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="source-divider">
+      <span>or load from a shared repository</span>
+    </div>
+
+    <!-- ===== GITHUB ===== -->
     <div class="config-card">
-      <h3>Repository</h3>
+      <h3>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+        GitHub Repository <span style="font-size: 11px; font-weight: 400; color: var(--text-muted); margin-left: 6px;">(shared, org-wide)</span>
+      </h3>
       <div class="config-row">
         <div class="field-grow">
           <label>owner / repo</label>
@@ -362,21 +550,85 @@
       </div>
     </div>
 
-    <div class="config-card" style="background: var(--surface-2); border-style: dashed;">
-      <h3>Expected Repo Structure</h3>
-      <pre style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.8; padding: 4px 0;">
-your-repo/
-├── schemas/
-│   ├── onboarding.json        ← form schema (fields, sections, metadata)
-│   ├── expense-report.json
-│   └── incident-report.json
-└── templates/
-    ├── onboarding.py          ← python-docx generation script
-    ├── expense-report.py
-    └── incident-report.py
+    <!-- ===== DOCUMENTATION ===== -->
+    <div class="source-divider" style="margin-top: 32px;">
+      <span>documentation — creating custom forms</span>
+    </div>
 
-Each schema JSON references its template by name.
-Templates are Python scripts exporting a <strong style="color:var(--text)">generate_docx(data)</strong> function.</pre>
+    <div class="config-card" style="background: var(--surface-2); border-style: dashed;">
+      <h3>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+        How It Works
+      </h3>
+      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-bottom: 12px;">
+        Every form needs two files: a <strong style="color: var(--text);">schema</strong> (<code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 4px; color: var(--accent-hover);">.json</code>) that defines the form fields, and a <strong style="color: var(--text);">template</strong> (<code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 4px; color: var(--accent-hover);">.py</code>) that generates the DOCX output. The schema drives the UI; the template drives the document. No data ever leaves the browser.
+      </p>
+      <pre style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.8; padding: 4px 0; margin: 0;">your-repo/                         ← or just two local files
+├── schemas/
+│   └── my-form.json               ← defines fields, sections, layout
+└── templates/
+    └── my-form.py                 ← Python script with generate_docx(data)</pre>
+    </div>
+
+    <div class="docs-section" id="docsSection">
+
+      <!-- Dynamic doc slots — populated by JS -->
+      <div class="docs-card">
+        <div class="docs-card-header" onclick="toggleDocs('schemaGuide')">
+          <h3>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span id="schemaGuideTitle">Schema Guide</span>
+          </h3>
+          <span class="docs-toggle" id="schemaGuideToggle">&#9654;</span>
+        </div>
+        <div class="docs-card-body collapsed" id="schemaGuide">
+          <div class="docs-source-badge" id="schemaGuideSource"></div>
+          <div id="schemaGuideContent"><p>Loading...</p></div>
+        </div>
+      </div>
+
+      <div class="docs-card">
+        <div class="docs-card-header" onclick="toggleDocs('templateGuide')">
+          <h3>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <span id="templateGuideTitle">Template Guide</span>
+          </h3>
+          <span class="docs-toggle" id="templateGuideToggle">&#9654;</span>
+        </div>
+        <div class="docs-card-body collapsed" id="templateGuide">
+          <div class="docs-source-badge" id="templateGuideSource"></div>
+          <div id="templateGuideContent"><p>Loading...</p></div>
+        </div>
+      </div>
+
+      <div class="docs-card">
+        <div class="docs-card-header" onclick="toggleDocs('fieldTypes')">
+          <h3>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <span id="fieldTypesTitle">Field Types Reference</span>
+          </h3>
+          <span class="docs-toggle" id="fieldTypesToggle">&#9654;</span>
+        </div>
+        <div class="docs-card-body collapsed" id="fieldTypes">
+          <div class="docs-source-badge" id="fieldTypesSource"></div>
+          <div id="fieldTypesContent"><p>Loading...</p></div>
+        </div>
+      </div>
+
+      <div class="docs-card">
+        <div class="docs-card-header" onclick="toggleDocs('exampleSchema')">
+          <h3>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span id="exampleSchemaTitle">Example Schema &amp; Template</span>
+          </h3>
+          <span class="docs-toggle" id="exampleSchemaToggle">&#9654;</span>
+        </div>
+        <div class="docs-card-body collapsed" id="exampleSchema">
+          <div class="docs-source-badge" id="exampleSchemaSource"></div>
+          <div id="exampleSchemaContent"><p>Loading...</p></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Picker appears after connect -->
@@ -496,6 +748,366 @@ function hideOverlay() {
 
 function toggleToken() {
   document.getElementById('tokenRow').classList.toggle('hidden');
+}
+
+function toggleDocs(id) {
+  const body = document.getElementById(id);
+  const toggle = document.getElementById(id + 'Toggle');
+  body.classList.toggle('collapsed');
+  toggle.classList.toggle('open');
+}
+
+// ============================================================
+//  DOCS: FETCH FROM GITHUB OR FALL BACK TO EMBEDDED
+// ============================================================
+
+// Mapping: doc slot → GitHub path to try
+const DOCS_CONFIG = {
+  schemaGuide:   { ghPath: 'docs/SCHEMA_GUIDE.md',   title: 'Schema Guide',              fallbackTitle: 'Schema Reference (demo)' },
+  templateGuide: { ghPath: 'docs/TEMPLATE_GUIDE.md',  title: 'Template Guide',            fallbackTitle: 'Template Reference (demo)' },
+  fieldTypes:    { ghPath: 'docs/FIELD_TYPES.md',      title: 'Field Types Reference',     fallbackTitle: 'Field Types (demo)' },
+  exampleSchema: { ghPath: null,                       title: 'Example Schema & Template', fallbackTitle: 'Example Schema & Template (demo)' },
+};
+
+// Lightweight markdown → HTML (handles headers, code blocks, tables, lists, bold, inline code, links, hr, blockquotes)
+function renderMarkdown(md) {
+  let html = '';
+  const lines = md.split('\n');
+  let i = 0;
+  let inCodeBlock = false;
+  let codeBuffer = [];
+  let inTable = false;
+  let tableBuffer = [];
+  let inList = false;
+  let listBuffer = [];
+
+  function flushList() {
+    if (listBuffer.length > 0) {
+      const tag = listBuffer[0].ordered ? 'ol' : 'ul';
+      html += `<${tag}>${listBuffer.map(l => `<li>${inlineFormat(l.text)}</li>`).join('')}</${tag}>`;
+      listBuffer = [];
+    }
+    inList = false;
+  }
+
+  function flushTable() {
+    if (tableBuffer.length < 2) { tableBuffer = []; inTable = false; return; }
+    html += '<table>';
+    tableBuffer.forEach((row, ri) => {
+      if (ri === 1 && /^[\s|:-]+$/.test(row)) return; // skip separator
+      const tag = ri === 0 ? 'th' : 'td';
+      const cells = row.split('|').map(c => c.trim()).filter(c => c !== '');
+      html += '<tr>' + cells.map(c => `<${tag}>${inlineFormat(c)}</${tag}>`).join('') + '</tr>';
+    });
+    html += '</table>';
+    tableBuffer = [];
+    inTable = false;
+  }
+
+  function inlineFormat(text) {
+    return text
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:var(--accent-hover)">$1</a>');
+  }
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Fenced code blocks
+    if (line.trim().startsWith('```')) {
+      if (inCodeBlock) {
+        html += `<pre><code>${codeBuffer.join('\n').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
+        codeBuffer = [];
+        inCodeBlock = false;
+      } else {
+        flushList(); flushTable();
+        inCodeBlock = true;
+      }
+      i++; continue;
+    }
+    if (inCodeBlock) { codeBuffer.push(line); i++; continue; }
+
+    // Table rows
+    if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+      flushList();
+      inTable = true;
+      tableBuffer.push(line.trim());
+      i++; continue;
+    } else if (inTable) {
+      flushTable();
+    }
+
+    // Empty line
+    if (line.trim() === '') { flushList(); html += ''; i++; continue; }
+
+    // Headings
+    const hMatch = line.match(/^(#{1,3})\s+(.+)/);
+    if (hMatch) { flushList(); const lvl = hMatch[1].length; html += `<h${lvl}>${inlineFormat(hMatch[2])}</h${lvl}>`; i++; continue; }
+
+    // HR
+    if (/^---+$/.test(line.trim())) { flushList(); html += '<hr>'; i++; continue; }
+
+    // Blockquote
+    if (line.trim().startsWith('>')) { flushList(); html += `<blockquote>${inlineFormat(line.trim().replace(/^>\s*/, ''))}</blockquote>`; i++; continue; }
+
+    // Unordered list
+    if (/^\s*[-*]\s+/.test(line)) { inList = true; listBuffer.push({ ordered: false, text: line.replace(/^\s*[-*]\s+/, '') }); i++; continue; }
+
+    // Ordered list
+    if (/^\s*\d+\.\s+/.test(line)) { inList = true; listBuffer.push({ ordered: true, text: line.replace(/^\s*\d+\.\s+/, '') }); i++; continue; }
+
+    // Paragraph
+    flushList();
+    html += `<p>${inlineFormat(line)}</p>`;
+    i++;
+  }
+
+  flushList(); flushTable();
+  if (inCodeBlock && codeBuffer.length) {
+    html += `<pre><code>${codeBuffer.join('\n').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
+  }
+  return html;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function buildFallbackSchemaGuide() {
+  const schema = JSON.stringify(DEMO_SCHEMA, null, 2);
+  return `<p>Below is the embedded demo schema. Use it as a starting point for your own <code>.json</code> files.</p>
+    <pre class="docs-code">${escapeHtml(schema)}</pre>`;
+}
+
+function buildFallbackTemplateGuide() {
+  return `<p>Below is the embedded demo template. Your <code>.py</code> file must export a <code>generate_docx(data)</code> function that returns bytes.</p>
+    <pre class="docs-code">${escapeHtml(DEMO_TEMPLATE.trim())}</pre>`;
+}
+
+function buildFallbackFieldTypes() {
+  return `<table class="docs-table">
+    <tr><th>Type</th><th>Renders As</th><th>Data Format</th><th>Needs options?</th></tr>
+    <tr><td><code>text</code></td><td>Single-line input</td><td><code>"Jane"</code></td><td>no</td></tr>
+    <tr><td><code>email</code></td><td>Email input</td><td><code>"jane@co.com"</code></td><td>no</td></tr>
+    <tr><td><code>tel</code></td><td>Phone input</td><td><code>"(555) 123-4567"</code></td><td>no</td></tr>
+    <tr><td><code>date</code></td><td>Date picker</td><td><code>"2025-03-15"</code></td><td>no</td></tr>
+    <tr><td><code>textarea</code></td><td>Multi-line (3 rows)</td><td><code>"Some notes..."</code></td><td>no</td></tr>
+    <tr><td><code>longtext</code></td><td>Large textarea + counter</td><td><code>"Para 1\\nPara 2"</code></td><td>no</td></tr>
+    <tr><td><code>select</code></td><td>Dropdown</td><td><code>"Engineering"</code></td><td>yes</td></tr>
+    <tr><td><code>radio</code></td><td>Radio buttons</td><td><code>"Full-Time"</code></td><td>yes</td></tr>
+    <tr><td><code>checkbox</code></td><td>Checkbox group</td><td><code>"A, B, C"</code> (comma-sep)</td><td>yes</td></tr>
+    <tr><td><code>list</code></td><td>Dynamic rows + paste</td><td><code>"X\\nY\\nZ"</code> (newline-sep)</td><td>no</td></tr>
+  </table>
+  <p><strong>Layout:</strong> <code>text</code>, <code>email</code>, <code>tel</code>, <code>date</code>, <code>select</code> auto-pair into two-column rows. Everything else is full-width.</p>`;
+}
+
+function buildFallbackExamples() {
+  const schema = JSON.stringify(DEMO_SCHEMA, null, 2);
+  return `<p>These are the embedded demo files. Save them as <code>.json</code> and <code>.py</code> to use as starting points.</p>
+    <h4>onboarding.json</h4>
+    <pre class="docs-code">${escapeHtml(schema)}</pre>
+    <h4>onboarding.py</h4>
+    <pre class="docs-code">${escapeHtml(DEMO_TEMPLATE.trim())}</pre>`;
+}
+
+async function loadDocs() {
+  const isConnected = ghOwner && ghRepo;
+
+  for (const [slotId, config] of Object.entries(DOCS_CONFIG)) {
+    const contentEl = document.getElementById(slotId + 'Content');
+    const sourceEl = document.getElementById(slotId + 'Source');
+    const titleEl = document.getElementById(slotId + 'Title');
+
+    // Try GitHub first
+    if (isConnected && config.ghPath) {
+      try {
+        const md = await ghFetchRaw(config.ghPath);
+        if (md && md.trim().length > 10) {
+          contentEl.innerHTML = `<div class="docs-rendered-md">${renderMarkdown(md)}</div>`;
+          sourceEl.className = 'docs-source-badge from-github';
+          sourceEl.textContent = `from ${ghOwner}/${ghRepo} · ${config.ghPath}`;
+          titleEl.textContent = config.title;
+          log(`Docs loaded: ${config.ghPath}`, 'success');
+          continue;
+        }
+      } catch (e) {
+        log(`Docs not found: ${config.ghPath} — using fallback`, 'info');
+      }
+    }
+
+    // Fallback to embedded
+    titleEl.textContent = config.fallbackTitle;
+    sourceEl.className = 'docs-source-badge from-fallback';
+    sourceEl.textContent = isConnected
+      ? `${config.ghPath || 'n/a'} not found in repo — showing built-in reference`
+      : 'offline — showing built-in reference from demo files';
+
+    switch (slotId) {
+      case 'schemaGuide':   contentEl.innerHTML = buildFallbackSchemaGuide(); break;
+      case 'templateGuide': contentEl.innerHTML = buildFallbackTemplateGuide(); break;
+      case 'fieldTypes':    contentEl.innerHTML = buildFallbackFieldTypes(); break;
+      case 'exampleSchema': contentEl.innerHTML = buildFallbackExamples(); break;
+    }
+  }
+}
+
+// Reload docs when GitHub connects
+const _origConnectRepo = connectRepo;
+connectRepo = async function() {
+  await _origConnectRepo();
+  if (ghOwner && ghRepo && repoSchemas.length > 0) {
+    log('Refreshing docs from GitHub...', 'info');
+    await loadDocs();
+  }
+};
+
+// ============================================================
+//  LOCAL FILE HANDLING
+// ============================================================
+let localSchemaText = null;
+let localTemplateText = null;
+
+function initDropZones() {
+  setupDropZone('schemaDropZone', 'localSchemaFile', '.json', (text, name) => {
+    try {
+      JSON.parse(text); // validate it's JSON
+      localSchemaText = text;
+      document.getElementById('schemaFileName').textContent = name;
+      document.getElementById('schemaDropZone').classList.add('has-file');
+      log(`Local schema loaded: ${name} (${text.length} chars)`, 'success');
+      checkLocalReady();
+    } catch (e) {
+      document.getElementById('localStatus').className = 'local-status error';
+      document.getElementById('localStatus').textContent = `Invalid JSON: ${e.message}`;
+      log(`Schema parse error: ${e.message}`, 'error');
+    }
+  });
+
+  setupDropZone('templateDropZone', 'localTemplateFile', '.py', (text, name) => {
+    if (!text.includes('generate_docx')) {
+      document.getElementById('localStatus').className = 'local-status error';
+      document.getElementById('localStatus').textContent = 'Template must contain a generate_docx() function';
+      log('Template missing generate_docx function', 'error');
+      return;
+    }
+    localTemplateText = text;
+    document.getElementById('templateFileName').textContent = name;
+    document.getElementById('templateDropZone').classList.add('has-file');
+    log(`Local template loaded: ${name} (${text.length} chars)`, 'success');
+    checkLocalReady();
+  });
+}
+
+function setupDropZone(zoneId, inputId, ext, onLoad) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+
+  // Click to browse
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') input.click(); });
+
+  // File input change
+  input.addEventListener('change', () => {
+    if (input.files.length > 0) readFile(input.files[0], onLoad);
+  });
+
+  // Drag and drop
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      if (!file.name.endsWith(ext)) {
+        showToast(`Please drop a ${ext} file`, 'error');
+        return;
+      }
+      readFile(file, onLoad);
+    }
+  });
+}
+
+function readFile(file, callback) {
+  const reader = new FileReader();
+  reader.onload = () => callback(reader.result, file.name);
+  reader.onerror = () => { log(`File read error: ${file.name}`, 'error'); };
+  reader.readAsText(file);
+}
+
+function checkLocalReady() {
+  const ready = localSchemaText && localTemplateText;
+  document.getElementById('localLaunchBtn').disabled = !ready;
+  if (ready) {
+    document.getElementById('localStatus').className = 'local-status success';
+    document.getElementById('localStatus').textContent = 'Both files loaded — ready to open';
+  }
+}
+
+async function launchLocal() {
+  if (!localSchemaText || !localTemplateText) return;
+
+  showOverlay('Loading local files...');
+
+  try {
+    const schema = JSON.parse(localSchemaText);
+
+    if (!schema.sections || !Array.isArray(schema.sections)) {
+      throw new Error('Schema must have a "sections" array');
+    }
+
+    currentSchema = schema;
+    currentTemplateCode = localTemplateText;
+
+    buildForm(currentSchema);
+    document.getElementById('formNavInfo').textContent = `${schema.title || 'Local Form'} · local files`;
+    document.getElementById('schemaInfoText').innerHTML =
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -1px; margin-right: 4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' +
+      'Loaded from <strong>local files</strong> — no data was sent to any server.';
+
+    if (!pyodideReady) await initPyodide();
+
+    showOverlay('Loading template into Pyodide...');
+    await pyodide.runPythonAsync(currentTemplateCode);
+    log('Local template loaded into Pyodide', 'success');
+
+    document.getElementById('exportBtn').disabled = false;
+    showView('form');
+  } catch (err) {
+    log(`Local launch failed: ${err.message}`, 'error');
+    showToast(`Failed: ${err.message}`, 'error');
+  } finally {
+    hideOverlay();
+  }
+}
+
+async function launchDemo() {
+  showOverlay('Loading demo form...');
+  try {
+    currentSchema = DEMO_SCHEMA;
+    currentTemplateCode = DEMO_TEMPLATE;
+
+    buildForm(currentSchema);
+    document.getElementById('formNavInfo').textContent = `${DEMO_SCHEMA.title} · embedded demo`;
+    document.getElementById('schemaInfoText').innerHTML =
+      'Using the <strong>embedded demo</strong> — Employee Onboarding Form. Connect a GitHub repo or load local files for your own forms.';
+
+    if (!pyodideReady) await initPyodide();
+
+    showOverlay('Loading template into Pyodide...');
+    await pyodide.runPythonAsync(currentTemplateCode);
+    log('Demo template loaded into Pyodide', 'success');
+
+    document.getElementById('exportBtn').disabled = false;
+    showView('form');
+  } catch (err) {
+    log(`Demo launch failed: ${err.message}`, 'error');
+    showToast(`Failed: ${err.message}`, 'error');
+  } finally {
+    hideOverlay();
+  }
 }
 
 // ============================================================
@@ -1271,22 +1883,19 @@ def generate_docx(data):
 //  BOOT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-  // Pre-populate demo into picker as a fallback
-  repoSchemas = [{
-    name: DEMO_SCHEMA.title,
-    description: DEMO_SCHEMA.description,
-    icon: DEMO_SCHEMA.icon,
-    schemaPath: '(embedded demo)',
-    templatePath: '(embedded demo)',
-    schema: DEMO_SCHEMA,
-    embeddedTemplate: DEMO_TEMPLATE
-  }];
+  // Initialize drag-and-drop zones for local files
+  initDropZones();
 
-  // If user wants to skip GitHub, they can launch the demo directly
-  log('FormForge ready — connect a GitHub repo or use the embedded demo', 'info');
+  // No pre-populated schemas — picker is purely for GitHub results
+  repoSchemas = [];
+
+  log('FormForge ready — try the demo, load local files, or connect a GitHub repo', 'info');
+
+  // Load docs with embedded fallbacks (will reload from GitHub after connect)
+  loadDocs();
 });
 
-// Override launchForm to handle embedded templates
+// Override launchForm to handle GitHub picker entries
 const _originalLaunchForm = launchForm;
 launchForm = async function() {
   if (selectedSchemaIdx < 0) return;
@@ -1295,26 +1904,17 @@ launchForm = async function() {
   showOverlay('Loading...');
 
   try {
-    let templateCode;
-    if (entry.embeddedTemplate) {
-      templateCode = entry.embeddedTemplate;
-      log('Using embedded demo template', 'info');
-    } else {
-      log(`Fetching template: ${entry.templatePath}`, 'info');
-      templateCode = await ghFetchRaw(entry.templatePath);
-      log(`Template loaded: ${templateCode.length} chars`, 'success');
-    }
+    log(`Fetching template: ${entry.templatePath}`, 'info');
+    const templateCode = await ghFetchRaw(entry.templatePath);
+    log(`Template loaded: ${templateCode.length} chars`, 'success');
 
     currentSchema = entry.schema;
     currentTemplateCode = templateCode;
 
     buildForm(currentSchema);
-    document.getElementById('formNavInfo').textContent = entry.embeddedTemplate
-      ? `${entry.name} · embedded demo`
-      : `${entry.name} · from ${ghOwner}/${ghRepo}`;
-    document.getElementById('schemaInfoText').innerHTML = entry.embeddedTemplate
-      ? 'Using embedded demo schema and template. Connect a GitHub repo for your own forms.'
-      : `Loaded from GitHub — schema: <strong>${entry.schemaPath}</strong> · template: <strong>${entry.templatePath}</strong>`;
+    document.getElementById('formNavInfo').textContent = `${entry.name} · from ${ghOwner}/${ghRepo}`;
+    document.getElementById('schemaInfoText').innerHTML =
+      `Loaded from GitHub — schema: <strong>${entry.schemaPath}</strong> · template: <strong>${entry.templatePath}</strong>`;
 
     if (!pyodideReady) await initPyodide();
 
@@ -1329,16 +1929,6 @@ launchForm = async function() {
     showToast(`Failed: ${err.message}`, 'error');
   } finally {
     hideOverlay();
-  }
-};
-
-// Also override connectRepo to merge demo + remote schemas
-const _originalConnectRepo = connectRepo;
-connectRepo = async function() {
-  await _originalConnectRepo();
-  // If connect succeeded, ensure demo is still available
-  if (repoSchemas.length > 0 && !repoSchemas.find(s => s.embeddedTemplate)) {
-    // Remote schemas loaded — demo is replaced, which is fine
   }
 };
 </script>
