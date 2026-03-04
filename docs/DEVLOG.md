@@ -14,6 +14,28 @@
 
 ## Log
 
+### 2026-03-03 — Conditional Field Visibility with `visible_when` (#7)
+**Issues:** #7 (Add conditional/dynamic field visibility)
+
+- Updated `schemas/_schema.spec.json` to allow optional `visible_when` object on field definitions with required `field` (matching field ID pattern) and `equals` (string) properties, plus `additionalProperties: false`
+- Added `setupConditionalVisibility()` in `index.html` — builds a dependency map from source field IDs to dependent fields, attaches `change`/`input` event listeners based on source field type (select/radio use `change`, text/textarea use `input`+`change`), and evaluates initial state
+- Added `getFieldValue()` helper that handles radio, checkbox, and standard input/select value retrieval
+- Added `isFieldConditionallyHidden()` check used by `validateForm()` and `wizardValidateStep()` to skip validation of hidden conditional fields
+- `collectFormData()` unchanged — always collects all fields (hidden ones return empty strings), ensuring templates always receive every key
+- `resetForm()` calls `setupConditionalVisibility()` after reset to re-evaluate all conditions
+- Added CSS class `conditional-hidden` with `display: none`
+- Added 5 new tests to `tests/test_schemas.py`: visible_when validates, missing field rejected, missing equals rejected, extra property rejected, existing schemas regression
+- All 44 tests pass
+
+**Decisions:**
+- `visible_when` uses simple `equals` string matching — sufficient for the current use case and keeps the schema spec clean. More complex operators (not_equals, contains, etc.) can be added later by extending the `visible_when` object
+- Conditional fields are hidden via a CSS class on `.field-group` rather than removing from DOM — preserves form state so Back button in wizard mode doesn't lose data
+- `collectFormData()` always includes hidden conditional fields (as empty strings) rather than omitting them — ensures templates always receive a consistent set of keys regardless of visibility state
+- Event listeners support order-independent references: a field can depend on a source that appears later in the schema since listeners are attached after all fields are rendered
+- Multiple fields can depend on the same source field via the dependency map pattern
+
+---
+
 ### 2026-03-03 — Multi-Step Wizard Form Support (#6)
 **Issues:** #6 (Add multi-step wizard form support)
 

@@ -359,6 +359,7 @@
   .wizard-nav .btn-wizard-next:hover { background: var(--accent-hover); }
   .wizard-nav .btn-wizard-next:active { transform: scale(0.97); }
   .form-section.wizard-hidden { display: none; }
+  .field-group.conditional-hidden { display: none; }
 
   /* Buttons */
   .submit-area { margin-top: 40px; display: flex; align-items: center; gap: 16px; }
@@ -1643,8 +1644,96 @@ function buildForm(schema) {
     document.querySelector('.submit-area').style.display = '';
   }
 
+  // Set up conditional visibility (visible_when)
+  setupConditionalVisibility(schema);
+
   const totalFields = schema.sections.reduce((a, s) => a + s.fields.length, 0);
   log(`Form built: ${schema.sections.length} sections, ${totalFields} fields${isWizard ? ' (wizard mode)' : ''}`, 'success');
+}
+
+// ============================================================
+//  CONDITIONAL VISIBILITY (visible_when)
+// ============================================================
+
+function setupConditionalVisibility(schema) {
+  // Build map: sourceFieldId -> [{targetFieldId, equals}]
+  const dependencies = {};
+  for (const section of schema.sections) {
+    for (const field of section.fields) {
+      if (!field.visible_when) continue;
+      const src = field.visible_when.field;
+      if (!dependencies[src]) dependencies[src] = [];
+      dependencies[src].push({ targetId: field.id, equals: field.visible_when.equals });
+
+      // Set initial hidden state
+      const group = document.getElementById(field.id)?.closest('.field-group');
+      if (group) group.classList.add('conditional-hidden');
+    }
+  }
+
+  // For each source field, attach listeners and evaluate initial state
+  for (const srcId of Object.keys(dependencies)) {
+    const evaluate = () => {
+      const srcValue = getFieldValue(srcId);
+      for (const dep of dependencies[srcId]) {
+        const targetEl = document.getElementById(dep.targetId);
+        const group = targetEl?.closest('.field-group');
+        if (!group) continue;
+        if (srcValue === dep.equals) {
+          group.classList.remove('conditional-hidden');
+        } else {
+          group.classList.add('conditional-hidden');
+        }
+      }
+    };
+
+    // Attach to the right elements based on field type
+    const srcField = findFieldDef(schema, srcId);
+    if (srcField && (srcField.type === 'radio' || srcField.type === 'checkbox')) {
+      document.querySelectorAll(`input[name="${srcId}"]`).forEach(el => {
+        el.addEventListener('change', evaluate);
+      });
+    } else if (srcField && srcField.type === 'select') {
+      const el = document.getElementById(srcId);
+      if (el) el.addEventListener('change', evaluate);
+    } else {
+      const el = document.getElementById(srcId);
+      if (el) {
+        el.addEventListener('input', evaluate);
+        el.addEventListener('change', evaluate);
+      }
+    }
+
+    // Evaluate initial state
+    evaluate();
+  }
+}
+
+function getFieldValue(fieldId) {
+  // Radio: get selected value
+  const radio = document.querySelector(`input[name="${fieldId}"][type="radio"]:checked`);
+  if (radio) return radio.value;
+  // Checkbox: get comma-separated checked values
+  const checkboxes = document.querySelectorAll(`input[name="${fieldId}"][type="checkbox"]:checked`);
+  if (checkboxes.length > 0) return Array.from(checkboxes).map(c => c.value).join(', ');
+  // Default: input/select/textarea
+  const el = document.getElementById(fieldId);
+  return el ? el.value : '';
+}
+
+function findFieldDef(schema, fieldId) {
+  for (const section of schema.sections) {
+    for (const field of section.fields) {
+      if (field.id === fieldId) return field;
+    }
+  }
+  return null;
+}
+
+function isFieldConditionallyHidden(fieldId) {
+  const el = document.getElementById(fieldId);
+  const group = el?.closest('.field-group');
+  return group ? group.classList.contains('conditional-hidden') : false;
 }
 
 // ============================================================
@@ -1658,6 +1747,7 @@ function wizardValidateStep(stepIndex) {
   for (const field of section.fields) {
     if (field.type === 'heading') continue;
     if (!field.required) continue;
+    if (isFieldConditionallyHidden(field.id)) continue;
     if (field.type === 'address') {
       const el = document.getElementById(`${field.id}_street`);
       if (!el || !el.value.trim()) missing.push(field.label);
@@ -2249,6 +2339,7 @@ function validateForm() {
     for (const field of section.fields) {
       if (field.type === 'heading') continue; // non-input, skip
       if (!field.required) continue;
+      if (isFieldConditionallyHidden(field.id)) continue;
       if (field.type === 'address') {
         const addr = JSON.parse(data[field.id] || '{}');
         if (!addr.street || !addr.street.trim()) missing.push(field.label);
@@ -2292,6 +2383,8 @@ function resetForm() {
       }
     }
   }
+  // Re-evaluate conditional visibility after reset
+  if (currentSchema) setupConditionalVisibility(currentSchema);
   log('Form reset', 'info');
 }
 
