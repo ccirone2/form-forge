@@ -14,6 +14,27 @@
 
 ## Log
 
+### 2026-03-04 — Extract Duplicated Template Patterns into _base.py (#39)
+**Issues:** #39
+
+Consolidated duplicated template code into shared `_base.py` utilities and fixed bugs:
+
+- **`add_footer(doc)`** — Standard auto-generated footer. Replaced 3 identical footer blocks (onboarding, expense-report, field-type-demo). Also removed mid-function imports in onboarding.py.
+- **`add_address_block(doc, heading, raw_json)`** — Parses address JSON and renders formatted block. Fixes the empty-city bug (`, ST ZIP` → `ST ZIP`). Replaced 2 duplicate blocks.
+- **`add_image_or_placeholder(doc, b64_str, width_inches, placeholder)`** — Base64 image embed with graceful fallback. Replaced 3 duplicate blocks.
+- **`add_signature_line(doc, b64_str, label, width_inches)`** — Signature image or underline placeholder with label. Replaced 3 duplicate blocks.
+- **`add_repeater_table(doc, headers, items, field_keys, currency_keys)`** — Repeater field as a headed table with optional currency formatting. Replaced 2 duplicate blocks.
+- **Truthiness fix** in `add_table_section`: `"0"` and `0` now render as `"0"` instead of an em dash.
+- **Narrowed exception handlers** from bare `except Exception` to `(ValueError, binascii.Error, OSError, UnrecognizedImageError)`.
+- **13 new tests** for all new utilities, edge cases (empty city, invalid base64, zero values), bringing total to 59.
+
+**Decisions:**
+- `expense-report.py` no longer imports `io`, `base64`, `Inches`, `Pt`, `WD_ALIGN_PARAGRAPH`, or `WD_TABLE_ALIGNMENT` — all handled by `_base`.
+- `field-type-demo.py` still imports `Pt` for inline text formatting that doesn't use a `_base` utility.
+- Address formatting builds city/state/zip from non-empty parts rather than f-string interpolation with empty guards.
+
+---
+
 ### 2026-03-04 — Critical Bug Fixes: XSS, Repeater Populate, Fixtures, Docs (#37)
 **Issues:** #37
 
