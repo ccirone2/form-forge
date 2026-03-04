@@ -24,6 +24,10 @@
       "pattern": "^templates/.+\\.py$",
       "description": "Path to the Python template file, relative to repo root."
     },
+    "wizard": {
+      "type": "boolean",
+      "description": "When true, sections render as wizard steps with next/back navigation."
+    },
     "sections": {
       "type": "array",
       "minItems": 1,
@@ -55,6 +59,11 @@
         "title": {
           "type": "string",
           "minLength": 1
+        },
+        "step": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Step number for wizard mode. Defaults to section index + 1 if omitted."
         },
         "fields": {
           "type": "array",
