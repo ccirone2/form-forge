@@ -14,6 +14,21 @@
 
 ## Log
 
+### 2026-03-04 — Fix Blank-Canvas Detection for Signature Field (#17)
+**Issues:** #17 (Add signature field type)
+
+- Fixed required-field validation for signature fields — `canvas.toDataURL()` always returns a non-empty base64 string even for a blank canvas, so validation was passing without any drawing
+- Added `isCanvasBlank()` utility in `index.html` that checks the alpha channel of all pixels to determine if the canvas has actual drawn content
+- Updated `endDraw()` to set the hidden input to empty string when canvas is blank, making the existing `validateForm()` logic work correctly for required signatures
+- No changes needed to `validateForm()`, `collectFormData()`, schemas, CSS, templates, or tests
+- All 46 tests pass with no regressions
+
+**Decisions:**
+- Used alpha-channel pixel scanning (`getImageData`) rather than comparing `toDataURL()` against a reference blank — more robust across browsers and canvas sizes
+- Set hidden input to empty string (rather than adding special validation logic) so the existing `!val || val.trim() === ''` check in `validateForm()` handles it naturally
+
+---
+
 ### 2026-03-03 — Add Demo Schema Exercising All Field Types, Wizard, and Conditionals
 **Issues:** #19
 
