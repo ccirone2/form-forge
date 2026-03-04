@@ -235,3 +235,121 @@ def test_rejects_min_on_text_field():
         assert False, "Should have raised ValidationError"
     except jsonschema.ValidationError:
         pass
+
+
+# --- Wizard schema tests ---
+
+
+def test_wizard_schema_validates():
+    """A schema with wizard: true and step on sections should validate."""
+    spec = _load_spec()
+    wizard_schema = {
+        "title": "Wizard Form",
+        "wizard": True,
+        "sections": [
+            {
+                "title": "Step 1",
+                "step": 1,
+                "fields": [{"id": "name", "label": "Name", "type": "text"}],
+            },
+            {
+                "title": "Step 2",
+                "step": 2,
+                "fields": [{"id": "email", "label": "Email", "type": "email"}],
+            },
+        ],
+    }
+    jsonschema.validate(instance=wizard_schema, schema=spec)
+
+
+def test_wizard_schema_without_step_validates():
+    """A wizard schema where sections omit step should still validate."""
+    spec = _load_spec()
+    wizard_schema = {
+        "title": "Wizard Form",
+        "wizard": True,
+        "sections": [
+            {
+                "title": "Part A",
+                "fields": [{"id": "x", "label": "X", "type": "text"}],
+            },
+            {
+                "title": "Part B",
+                "fields": [{"id": "y", "label": "Y", "type": "text"}],
+            },
+        ],
+    }
+    jsonschema.validate(instance=wizard_schema, schema=spec)
+
+
+def test_non_wizard_schemas_still_validate():
+    """Existing schemas without wizard flag must continue to validate."""
+    spec = _load_spec()
+    schema_files = _schema_files()
+    assert len(schema_files) > 0
+    for path in schema_files:
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        assert "wizard" not in schema or isinstance(schema.get("wizard"), bool)
+        jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_rejects_wizard_non_boolean():
+    """wizard must be a boolean, not a string or int."""
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "wizard": "yes",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [{"id": "x", "label": "X", "type": "text"}],
+            }
+        ],
+    }
+    try:
+        jsonschema.validate(instance=bad, schema=spec)
+        assert False, "Should have raised ValidationError"
+    except jsonschema.ValidationError:
+        pass
+
+
+def test_rejects_step_non_integer():
+    """step must be a positive integer, not a string."""
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "wizard": True,
+        "sections": [
+            {
+                "title": "S",
+                "step": "one",
+                "fields": [{"id": "x", "label": "X", "type": "text"}],
+            }
+        ],
+    }
+    try:
+        jsonschema.validate(instance=bad, schema=spec)
+        assert False, "Should have raised ValidationError"
+    except jsonschema.ValidationError:
+        pass
+
+
+def test_rejects_step_zero():
+    """step must be >= 1."""
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "wizard": True,
+        "sections": [
+            {
+                "title": "S",
+                "step": 0,
+                "fields": [{"id": "x", "label": "X", "type": "text"}],
+            }
+        ],
+    }
+    try:
+        jsonschema.validate(instance=bad, schema=spec)
+        assert False, "Should have raised ValidationError"
+    except jsonschema.ValidationError:
+        pass

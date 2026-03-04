@@ -14,6 +14,28 @@
 
 ## Log
 
+### 2026-03-03 — Multi-Step Wizard Form Support (#6)
+**Issues:** #6 (Add multi-step wizard form support)
+
+- Updated `schemas/_schema.spec.json` to allow optional `"wizard": true` boolean at the top level and optional `"step"` (positive integer, minimum 1) on section objects
+- Added wizard CSS styles to `index.html`: step indicator with circles, connectors, and labels; navigation buttons; section visibility toggling
+- Modified `buildForm()` in `index.html` to detect `wizard: true` and render a step indicator, show only one section at a time, and add Next/Back navigation buttons per section
+- Added `wizardValidateStep()` for per-step validation — clicking Next validates only the current section's required fields before advancing
+- Added `wizardNext()` and `wizardGoTo()` for step navigation with indicator state updates (active/completed styling)
+- Back button hidden on first step; submit area hidden until last step; data preserved across step navigation
+- Non-wizard schemas render exactly as before — no visual or behavioral changes
+- Added 6 new tests to `tests/test_schemas.py`: wizard schema validation, wizard without step, non-wizard regression, rejects non-boolean wizard, rejects non-integer step, rejects step zero
+- All 39 tests pass
+
+**Decisions:**
+- Wizard navigation buttons are placed inside each section div rather than in a fixed footer — keeps the flow natural and avoids layout conflicts with the existing submit area
+- Submit area (`Export to DOCX` + `Reset`) is hidden during wizard navigation and only shown on the final step, where it replaces the Next button
+- Per-step validation reuses the same pattern as `validateForm()` but scoped to one section — `collectFormData()` and full `validateForm()` still operate across all sections for final export
+- Step indicator uses numbered circles with connectors — completed steps get accent-glow background, active step gets solid accent fill
+- If sections omit `step`, the indicator defaults to section index + 1
+
+---
+
 ### 2026-03-03 — Template Testing with pytest (#5)
 **Issues:** #5 (Set up template testing with pytest)
 
