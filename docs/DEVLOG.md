@@ -14,6 +14,22 @@
 
 ## Log
 
+### 2026-03-03 — Project Initialization Complete
+**Issues:** #1 (Project Initialization)
+
+- Added `README.md` with project overview, architecture, field types, usage instructions, and how to add forms
+- Added `LICENSE` (MIT)
+- Created `tests/` and `tests/fixtures/` directories
+- Created `.github/workflows/` directory (ready for CI in issue #9)
+- Added `.gitignore` for Python, Node, OS, and IDE files
+- Verified `schemas/` and `templates/` directories already in place
+
+**Decisions:**
+- Chose MIT license for maximum permissiveness
+- Used `.gitkeep` files to track empty directories in git
+
+---
+
 ### 2026-03-03 — Project Setup
 **Issues:** #1 (Project Initialization)
 
