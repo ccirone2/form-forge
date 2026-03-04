@@ -1,0 +1,271 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/ccirone2/form-forge/schemas/_schema.spec.json",
+  "title": "FormForge Schema",
+  "description": "Validates FormForge form definition schemas.",
+  "type": "object",
+  "required": ["title", "sections"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Form heading displayed in the picker and form header."
+    },
+    "description": {
+      "type": "string",
+      "description": "Subheading shown in the picker and form header."
+    },
+    "icon": {
+      "type": "string",
+      "description": "Single emoji character shown in the form picker."
+    },
+    "template": {
+      "type": "string",
+      "pattern": "^templates/.+\\.py$",
+      "description": "Path to the Python template file, relative to repo root."
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/section" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "fieldType": {
+      "type": "string",
+      "enum": [
+        "text", "email", "tel", "date",
+        "textarea", "longtext",
+        "select", "radio", "checkbox",
+        "list", "number", "currency",
+        "heading", "hidden",
+        "address", "file", "signature",
+        "repeater"
+      ]
+    },
+    "repeaterFieldType": {
+      "type": "string",
+      "enum": ["text", "email", "tel", "number", "currency", "select"]
+    },
+    "section": {
+      "type": "object",
+      "required": ["title", "fields"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/field" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "field": {
+      "type": "object",
+      "required": ["id", "label", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": { "$ref": "#/$defs/fieldType" },
+        "required": { "type": "boolean" },
+        "placeholder": { "type": "string" },
+        "hint": { "type": "string" },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "min": { "type": "integer" },
+        "max": { "type": "integer" },
+        "step": { "type": "number" },
+        "currency_symbol": { "type": "string" },
+        "default_value": { "type": "string" },
+        "accept": { "type": "string" },
+        "max_size_mb": { "type": "integer", "minimum": 1 },
+        "min_rows": { "type": "integer", "minimum": 1 },
+        "max_rows": { "type": "integer", "minimum": 1 },
+        "fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/repeaterField" }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "type": { "enum": ["select", "radio", "checkbox"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "required": ["options"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "hidden" } },
+            "required": ["type"]
+          },
+          "then": {
+            "required": ["default_value"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "const": "repeater" } },
+            "required": ["type"]
+          },
+          "then": {
+            "required": ["fields"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "list", "number", "currency", "address", "file", "signature", "repeater", "heading", "hidden"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "not": { "required": ["options"] }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "currency", "heading", "hidden", "address", "file", "signature", "repeater"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "min": false,
+              "max": false,
+              "step": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "heading", "hidden", "address", "file", "signature", "repeater"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "currency_symbol": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["email", "tel", "date", "textarea", "select", "radio", "checkbox", "list", "number", "currency", "heading", "hidden", "address", "file", "signature", "repeater"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "maxLength": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "currency", "heading", "hidden", "address", "signature", "repeater"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "accept": false,
+              "max_size_mb": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "currency", "heading", "hidden", "address", "file", "signature"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "min_rows": false,
+              "max_rows": false,
+              "fields": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "currency", "heading", "address", "file", "signature", "repeater"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "default_value": false
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "repeaterField": {
+      "type": "object",
+      "required": ["id", "label", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": { "$ref": "#/$defs/repeaterFieldType" },
+        "required": { "type": "boolean" },
+        "placeholder": { "type": "string" },
+        "hint": { "type": "string" },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "min": { "type": "integer" },
+        "max": { "type": "integer" },
+        "step": { "type": "number" },
+        "currency_symbol": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "type": { "const": "select" } },
+            "required": ["type"]
+          },
+          "then": {
+            "required": ["options"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["text", "email", "tel", "number", "currency"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "not": { "required": ["options"] }
+          }
+        }
+      ],
+      "additionalProperties": false
+    }
+  }
+}
