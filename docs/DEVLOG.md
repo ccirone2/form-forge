@@ -14,6 +14,26 @@
 
 ## Log
 
+### 2026-03-04 — Form Data Save/Load & Autosave (#29–#35)
+**Issues:** #29, #30, #31, #32, #33, #34, #35
+
+Added complete data persistence lifecycle to FormForge:
+
+- **`populateForm(data, options)`** (#29) — Inverse of `collectFormData()`. Restores all 17 field types from a `{fieldId: stringValue}` dict, including radio, checkbox, list, address (JSON), repeater (JSON), file (with image preview), signature (drawn onto canvas), and longtext (with character counter update). Re-evaluates `visible_when` rules after populate. Warns on mismatches without blocking.
+- **Save Data button** (#30) — Downloads current form data as `{title}_data_{date}.json` with `_formforge` metadata (schemaTitle, savedAt, version).
+- **Load Data button** (#31) — Uploads a saved `.json` file, validates JSON, warns on schema mismatch, and calls `populateForm()` to restore fields.
+- **localStorage autosave** (#32) — Debounced (2s) autosave on input/change, per-schema keys, large-field skipping (>50KB), restore prompt banner with "Restore" / "Discard" buttons, cleared on export and reset.
+- **URL parameter loading** (#33) — `?data=<url>` fetches and populates form data after launch. Takes precedence over autosave restore.
+- **`postLaunchHook()`** (#34) — Shared hook called after all 4 launch paths (local, demo, GitHub, picker) that wires up autosave and URL/autosave restore.
+- **UI changes** (#35) — Save Data / Load Data buttons with Feather-style SVG icons in submit area. Autosave prompt banner CSS with warning accent and fade-in animation. Responsive layout.
+
+**Decisions:**
+- `_formforge` metadata key uses underscore prefix to avoid collision with field IDs (which must start with `[a-z]`)
+- Autosave skips file/signature values >50KB to stay under localStorage ~5MB limit
+- `populateForm()` calls wrapped in `setTimeout(0)` when called immediately after `buildForm()` to account for list/repeater initial DOM setup timing
+
+---
+
 ### 2026-03-04 — Fix Blank-Canvas Detection for Signature Field (#17)
 **Issues:** #17 (Add signature field type)
 
