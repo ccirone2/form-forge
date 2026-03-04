@@ -1,0 +1,134 @@
+{
+  "title": "Expense Report",
+  "description": "Submit an expense report for reimbursement. Attach receipts and provide line items for each expense.",
+  "icon": "💰",
+  "template": "templates/expense-report.py",
+  "sections": [
+    {
+      "title": "Report Details",
+      "fields": [
+        {
+          "id": "form_version",
+          "label": "Form Version",
+          "type": "hidden",
+          "default_value": "1.0"
+        },
+        {
+          "id": "employee_name",
+          "label": "Employee Name",
+          "type": "text",
+          "required": true,
+          "placeholder": "Jane Doe"
+        },
+        {
+          "id": "department",
+          "label": "Department",
+          "type": "select",
+          "required": true,
+          "options": [
+            "",
+            "Engineering",
+            "Design",
+            "Marketing",
+            "Sales",
+            "Operations",
+            "Finance",
+            "HR",
+            "Legal"
+          ]
+        },
+        {
+          "id": "report_date",
+          "label": "Report Date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "id": "total_amount",
+          "label": "Total Amount",
+          "type": "currency",
+          "required": true,
+          "placeholder": "0.00"
+        }
+      ]
+    },
+    {
+      "title": "Expenses",
+      "fields": [
+        {
+          "id": "expenses_heading",
+          "label": "Expense Line Items",
+          "type": "heading",
+          "hint": "Add each expense as a separate row below"
+        },
+        {
+          "id": "line_items",
+          "label": "Line Items",
+          "type": "repeater",
+          "min_rows": 1,
+          "max_rows": 20,
+          "fields": [
+            { "id": "description", "label": "Description", "type": "text", "placeholder": "Flight to NYC" },
+            { "id": "amount", "label": "Amount", "type": "currency" },
+            { "id": "category", "label": "Category", "type": "select", "options": ["", "Travel", "Meals", "Lodging", "Supplies", "Other"] }
+          ]
+        },
+        {
+          "id": "item_count",
+          "label": "Number of Receipts",
+          "type": "number",
+          "min": 0,
+          "max": 50,
+          "step": 1,
+          "placeholder": "0"
+        }
+      ]
+    },
+    {
+      "title": "Supporting Documents",
+      "fields": [
+        {
+          "id": "receipt_photo",
+          "label": "Receipt / Invoice Photo",
+          "type": "file",
+          "accept": "image/*",
+          "max_size_mb": 5,
+          "hint": "Upload a photo of your receipt or invoice"
+        },
+        {
+          "id": "notes",
+          "label": "Additional Notes",
+          "type": "textarea",
+          "placeholder": "Any additional context for this expense report..."
+        }
+      ]
+    },
+    {
+      "title": "Mailing Address",
+      "fields": [
+        {
+          "id": "mailing_address",
+          "label": "Reimbursement Mailing Address",
+          "type": "address",
+          "hint": "Where should the reimbursement check be mailed?"
+        }
+      ]
+    },
+    {
+      "title": "Approval",
+      "fields": [
+        {
+          "id": "employee_signature",
+          "label": "Employee Signature",
+          "type": "signature",
+          "required": true
+        },
+        {
+          "id": "manager_signature",
+          "label": "Manager Signature",
+          "type": "signature"
+        }
+      ]
+    }
+  ]
+}
