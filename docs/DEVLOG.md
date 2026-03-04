@@ -14,6 +14,19 @@
 
 ## Log
 
+### 2026-03-04 — CI Improvements: Ruff Linting, Dependency Pins, Cleanup (#41)
+**Issues:** #41
+
+- **Added `ruff check` lint step** to CI workflow — catches lint issues before merge.
+- **Created `requirements-dev.txt`** with version-bounded dependencies: `python-docx>=1.1,<2`, `jsonschema>=4.23,<5`, `pytest>=8,<9`, `ruff>=0.4,<1`. CI now installs from this file.
+- **Removed redundant inline schema validation** step from CI — this duplicated `test_schemas.py::test_validate_all_schemas` with worse error reporting.
+- **Added pip caching** via `actions/cache@v4` keyed on `requirements-dev.txt` hash.
+
+**Decisions:**
+- Used version ranges (not exact pins) to allow patch updates while preventing breaking major/minor changes.
+
+---
+
 ### 2026-03-04 — Extract Duplicated Template Patterns into _base.py (#39)
 **Issues:** #39
 
