@@ -604,7 +604,7 @@
 
 <!-- Header -->
 <header class="app-header">
-  <h1 onclick="showView('setup')"><span>&#9632;</span> FormForge</h1>
+  <h1 onclick="showView('setup')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showView('setup')}"><span>&#9632;</span> FormForge</h1>
   <div class="header-right">
     <div class="status-badge" id="statusBadge">
       <div class="status-dot"></div>
@@ -733,7 +733,7 @@
 
       <!-- Dynamic doc slots — populated by JS -->
       <div class="docs-card">
-        <div class="docs-card-header" onclick="toggleDocs('schemaGuide')">
+        <div class="docs-card-header" onclick="toggleDocs('schemaGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="schemaGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('schemaGuide')}">
           <h3>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             <span id="schemaGuideTitle">Schema Guide</span>
@@ -747,7 +747,7 @@
       </div>
 
       <div class="docs-card">
-        <div class="docs-card-header" onclick="toggleDocs('templateGuide')">
+        <div class="docs-card-header" onclick="toggleDocs('templateGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="templateGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('templateGuide')}">
           <h3>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             <span id="templateGuideTitle">Template Guide</span>
@@ -761,7 +761,7 @@
       </div>
 
       <div class="docs-card">
-        <div class="docs-card-header" onclick="toggleDocs('fieldTypes')">
+        <div class="docs-card-header" onclick="toggleDocs('fieldTypes')" tabindex="0" role="button" aria-expanded="false" aria-controls="fieldTypes" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('fieldTypes')}">
           <h3>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
             <span id="fieldTypesTitle">Field Types Reference</span>
@@ -775,7 +775,7 @@
       </div>
 
       <div class="docs-card">
-        <div class="docs-card-header" onclick="toggleDocs('exampleSchema')">
+        <div class="docs-card-header" onclick="toggleDocs('exampleSchema')" tabindex="0" role="button" aria-expanded="false" aria-controls="exampleSchema" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('exampleSchema')}">
           <h3>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             <span id="exampleSchemaTitle">Example Schema &amp; Template</span>
@@ -843,7 +843,7 @@
     </div>
 
     <div class="console-panel">
-      <div class="console-header" onclick="toggleConsole()">
+      <div class="console-header" onclick="toggleConsole()" tabindex="0" role="button" aria-expanded="false" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleConsole()}">
         <span>&#9654; console output</span>
         <span id="logCount">0 entries</span>
       </div>
@@ -900,7 +900,10 @@ function log(msg, level = 'info') {
 }
 
 function toggleConsole() {
-  document.getElementById('consoleBody').classList.toggle('collapsed');
+  const body = document.getElementById('consoleBody');
+  body.classList.toggle('collapsed');
+  const header = body.previousElementSibling;
+  header.setAttribute('aria-expanded', !body.classList.contains('collapsed'));
 }
 
 function showToast(msg, type = 'success') {
@@ -927,6 +930,8 @@ function toggleDocs(id) {
   const toggle = document.getElementById(id + 'Toggle');
   body.classList.toggle('collapsed');
   toggle.classList.toggle('open');
+  const header = body.previousElementSibling;
+  header.setAttribute('aria-expanded', !body.classList.contains('collapsed'));
 }
 
 // ============================================================
@@ -1878,6 +1883,7 @@ function createField(field) {
   } else {
     const label = document.createElement('span');
     label.className = 'field-label';
+    label.id = `${field.id}_group_label`;
     label.innerHTML = field.label + (field.required ? ' <span class="required">*</span>' : '');
     group.appendChild(label);
   }
@@ -1937,6 +1943,7 @@ function createField(field) {
     }
     case 'radio': {
       const rg = document.createElement('div'); rg.className = 'radio-group';
+      rg.setAttribute('role', 'group'); rg.setAttribute('aria-labelledby', `${field.id}_group_label`);
       for (const opt of (field.options || [])) {
         const item = document.createElement('div'); item.className = 'radio-item';
         const input = document.createElement('input');
@@ -1951,6 +1958,7 @@ function createField(field) {
     }
     case 'checkbox': {
       const cg = document.createElement('div'); cg.className = 'checkbox-group';
+      cg.setAttribute('role', 'group'); cg.setAttribute('aria-labelledby', `${field.id}_group_label`);
       for (const opt of (field.options || [])) {
         const item = document.createElement('div'); item.className = 'checkbox-item';
         const input = document.createElement('input');
@@ -2116,6 +2124,7 @@ function createField(field) {
       const canvas = document.createElement('canvas');
       canvas.className = 'signature-canvas'; canvas.id = `${field.id}_canvas`;
       canvas.width = 400; canvas.height = 150;
+      canvas.setAttribute('aria-label', 'Signature pad \u2014 draw your signature with mouse or touch');
       const hiddenInput = document.createElement('input');
       hiddenInput.type = 'hidden'; hiddenInput.id = field.id;
       let drawing = false;
