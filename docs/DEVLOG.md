@@ -14,6 +14,23 @@
 
 ## Log
 
+### 2026-03-03 — Template Testing with pytest (#5)
+**Issues:** #5 (Set up template testing with pytest)
+
+- All test infrastructure was created during issues #3 and #4:
+  - `tests/test_schemas.py` (15 tests): validates all schemas against `_schema.spec.json`, plus 9 negative tests for invalid schemas
+  - `tests/test_templates.py` (4 tests): runs `generate_docx()` for onboarding and expense-report with sample and empty data, verifies valid DOCX output (bytes, non-empty, PK magic bytes)
+  - `tests/test_base.py` (14 tests): unit tests for all `_base.py` utilities
+  - `tests/fixtures/onboarding_sample.json` and `expense-report_sample.json` with field IDs matching their schemas
+- Templates loaded via `importlib.util.spec_from_file_location()` with `sys.path` including `templates/` so `import _base` resolves
+- All 33 tests pass with `PYTHONPATH=. python -m pytest tests/ -v`
+- No external services or network access required — fully offline
+
+**Decisions:**
+- Issue #5 was fully satisfied by work in #3 and #4 — no additional code needed, just verified and closed
+
+---
+
 ### 2026-03-03 — Added Schema Validation with `_schema.spec.json` (#4)
 **Issues:** #4 (Add schema validation)
 
