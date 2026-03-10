@@ -19,11 +19,13 @@
 
 - **Load Sample Data button** added to the submit area alongside Save Data / Load Data. Clicking it fetches `tests/fixtures/{schemaName}_sample.json` from the connected GitHub repo via `ghFetchRaw()`, then calls `populateForm(data, { skipFileFields: true })`.
 - **`currentSchemaName` state variable** added and set in all 4 launch paths (GitHub launchForm, picker override, launchLocal, launchDemo). Derived from the schema file path by stripping `schemas/` prefix and `.json` suffix. Empty string for local/demo paths.
-- **Fallback to inline `sampleData`** — if no fixture file is found (404 or no connected repo), `loadSampleData()` checks `currentSchema.sampleData` and uses it directly.
+- **Fallback to inline `sampleData`** — if no fixture file is found (404 or no connected repo), `loadSampleData()` checks `currentSchema.sampleData` and uses it directly. Added `sampleData` to `DEMO_SCHEMA` so the demo form works without a GitHub connection.
 - **`sampleData` schema property** — added optional `sampleData` object to `_schema.spec.json`. Allows schemas to ship inline sample data for repos without fixture files.
 - **3 new schema tests** (83 total): `test_sample_data_validates`, `test_sample_data_is_optional`, `test_rejects_sample_data_non_object`.
 - **SCHEMA_GUIDE.md** updated with Sample Data section documenting fixture naming convention and inline `sampleData` fallback.
 - All 3 existing fixture files verified complete for their schemas.
+- **Heading bold fix** — Added `_clear_bold()` helper that sets both `w:b` and `w:bCs` to `val="0"` on heading styles. Word's built-in headings carry `<w:bCs/>` (bold complex script) which renders bold even when `w:b` is disabled. Applied to Title and Heading 1-6. Consolidated the two heading loops into one.
+- **Table cell margins** changed from 0.02" to 0.03" on all tables.
 
 **Decisions:**
 - Fixture file takes precedence over inline `sampleData` — single source of truth for test suite and UI.
