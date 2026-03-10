@@ -1,7 +1,13 @@
 """Tests for templates/stencils.py shared utilities."""
 
 import sys
+import zipfile
 from pathlib import Path
+
+import pytest
+from docx.shared import RGBColor, Inches
+from docx.oxml.ns import qn
+from lxml import etree
 
 # Add templates/ to path so `import stencils` works
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "templates"))
@@ -9,10 +15,45 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "templates"))
 import stencils
 
 
+# ---------------------------------------------------------------------------
+#  Helpers
+# ---------------------------------------------------------------------------
+
+WNS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+
+
+def _docx_styles_xml(doc):
+    """Save doc to bytes and return parsed styles.xml root."""
+    import io
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+    with zipfile.ZipFile(buf) as z:
+        return etree.fromstring(z.read("word/styles.xml"))
+
+
+def _table_border_vals(table):
+    """Return a dict of border edge -> val from the table's XML."""
+    tblPr = table._tbl.tblPr
+    borders = tblPr.find(qn("w:tblBorders")) if tblPr is not None else None
+    if borders is None:
+        return {}
+    result = {}
+    for child in borders:
+        tag = child.tag.split("}")[-1]
+        result[tag] = child.get(qn("w:val"))
+    return result
+
+
+# ---------------------------------------------------------------------------
+#  new_doc
+# ---------------------------------------------------------------------------
+
+
 def test_new_doc_creates_document():
     doc = stencils.new_doc("Test Title")
     assert doc is not None
-    # Verify the title heading exists
     assert len(doc.paragraphs) > 0
 
 
@@ -36,17 +77,222 @@ def test_new_doc_custom_font():
     assert style.font.size.pt == 12
 
 
+# ---------------------------------------------------------------------------
+#  Theme tests (replacing palette tests)
+# ---------------------------------------------------------------------------
+
+
+def test_theme_classic_has_all_fields():
+    t = stencils.THEME_CLASSIC
+    for field in stencils._THEME_FIELDS:
+        assert hasattr(t, field), f"Missing field: {field}"
+
+
+def test_theme_minimal_has_all_fields():
+    t = stencils.THEME_MINIMAL
+    for field in stencils._THEME_FIELDS:
+        assert hasattr(t, field), f"Missing field: {field}"
+
+
+def test_theme_modern_has_all_fields():
+    t = stencils.THEME_MODERN
+    for field in stencils._THEME_FIELDS:
+        assert hasattr(t, field), f"Missing field: {field}"
+
+
+def test_classic_theme_matches_legacy_colors():
+    """THEME_CLASSIC colors must match the original PALETTE_CLASSIC values."""
+    assert stencils.THEME_CLASSIC.title == RGBColor(0x33, 0x33, 0x66)
+    assert stencils.THEME_CLASSIC.subtitle == RGBColor(0x66, 0x66, 0x99)
+    assert stencils.THEME_CLASSIC.muted == RGBColor(0x99, 0x99, 0x99)
+    assert stencils.THEME_CLASSIC.footer == RGBColor(0xAA, 0xAA, 0xAA)
+    assert stencils.THEME_CLASSIC.accent == RGBColor(0x1A, 0x1A, 0x3E)
+
+
+def test_set_theme_switches_title_style_color():
+    try:
+        stencils.set_theme(stencils.THEME_MINIMAL)
+        doc = stencils.new_doc("Test")
+        assert doc.styles["Title"].font.color.rgb == stencils.THEME_MINIMAL.title
+    finally:
+        stencils.set_theme(stencils.THEME_MODERN)
+
+
+def test_set_theme_invalid_raises():
+    with pytest.raises(ValueError, match="missing required fields"):
+        stencils.set_theme(object())
+
+
+def test_set_theme_custom_theme():
+    custom = stencils.DocTheme(
+        title=RGBColor(0xFF, 0x00, 0x00),
+        subtitle=RGBColor(0x00, 0xFF, 0x00),
+        muted=RGBColor(0x00, 0x00, 0xFF),
+        footer=RGBColor(0xAA, 0xBB, 0xCC),
+        accent=RGBColor(0x11, 0x22, 0x33),
+        font_body="Arial",
+        font_heading="Arial Bold",
+        font_caption="Arial Narrow",
+        size_body=12,
+        size_title=28,
+        size_heading1=18,
+        size_heading2=14,
+        size_subtitle=13,
+        size_table=11,
+        size_caption=10,
+        size_footer=9,
+        margin_top=0.5,
+        margin_bottom=0.5,
+        margin_left=0.75,
+        margin_right=0.75,
+    )
+    try:
+        stencils.set_theme(custom)
+        doc = stencils.new_doc("Test")
+        assert doc.styles["Title"].font.color.rgb == RGBColor(0xFF, 0x00, 0x00)
+        assert doc.styles["Normal"].font.name == "Arial"
+    finally:
+        stencils.set_theme(stencils.THEME_MODERN)
+
+
+def test_set_theme_restores_default():
+    stencils.set_theme(stencils.THEME_MINIMAL)
+    stencils.set_theme(stencils.THEME_MODERN)
+    assert stencils._active_theme is stencils.THEME_MODERN
+
+
+def test_new_doc_theme_override():
+    """theme= on new_doc overrides styles without changing active theme."""
+    before = stencils._active_theme
+    doc = stencils.new_doc("Test", theme=stencils.THEME_MINIMAL)
+    assert doc.styles["Title"].font.color.rgb == stencils.THEME_MINIMAL.title
+    assert stencils._active_theme is before
+
+
+def test_new_doc_theme_override_does_not_change_active():
+    before = stencils._active_theme
+    stencils.new_doc("Test", theme=stencils.THEME_CLASSIC)
+    assert stencils._active_theme is before
+
+
+def test_new_doc_subtitle_theme_override():
+    doc = stencils.new_doc("T", "Sub", theme=stencils.THEME_MODERN)
+    assert doc.styles["Subtitle"].font.color.rgb == stencils.THEME_MODERN.subtitle
+
+
+def test_new_doc_no_theme_uses_active():
+    try:
+        stencils.set_theme(stencils.THEME_MINIMAL)
+        doc = stencils.new_doc("Test")
+        assert doc.styles["Title"].font.color.rgb == stencils.THEME_MINIMAL.title
+    finally:
+        stencils.set_theme(stencils.THEME_MODERN)
+
+
+# ---------------------------------------------------------------------------
+#  Template builder
+# ---------------------------------------------------------------------------
+
+
+def test_template_bytes_are_valid_docx():
+    raw = stencils._get_template(stencils.THEME_MODERN)
+    assert isinstance(raw, bytes)
+    assert raw[:2] == b"PK"
+
+
+def test_template_has_only_normal_table_style():
+    doc = stencils.new_doc("Test")
+    sroot = _docx_styles_xml(doc)
+    table_styles = [
+        s
+        for s in sroot.findall(f"{{{WNS}}}style")
+        if s.get(f"{{{WNS}}}type") == "table"
+    ]
+    assert len(table_styles) == 1
+    name_el = table_styles[0].find(f"{{{WNS}}}name")
+    assert name_el.get(f"{{{WNS}}}val") == "Normal Table"
+
+
+def test_template_heading1_style_configured():
+    doc = stencils.new_doc("Test", theme=stencils.THEME_CLASSIC)
+    h1 = doc.styles["Heading 1"]
+    assert h1.font.name == "Segoe UI Semibold"
+    assert h1.font.color.rgb == stencils.THEME_CLASSIC.title
+
+
+def test_template_heading2_style_configured():
+    doc = stencils.new_doc("Test", theme=stencils.THEME_CLASSIC)
+    h2 = doc.styles["Heading 2"]
+    assert h2.font.name == "Segoe UI Semibold"
+    assert h2.font.color.rgb == stencils.THEME_CLASSIC.subtitle
+
+
+def test_template_page_margins():
+    doc = stencils.new_doc("Test")
+    section = doc.sections[0]
+    assert section.top_margin == Inches(1.0)
+    assert section.bottom_margin == Inches(1.0)
+    assert section.left_margin == Inches(1.0)
+    assert section.right_margin == Inches(1.0)
+
+
+def test_template_custom_margins():
+    custom = stencils.DocTheme(
+        title=RGBColor(0, 0, 0),
+        subtitle=RGBColor(0, 0, 0),
+        muted=RGBColor(0, 0, 0),
+        footer=RGBColor(0, 0, 0),
+        accent=RGBColor(0, 0, 0),
+        font_body="Arial",
+        font_heading="Arial",
+        font_caption="Arial",
+        size_body=11,
+        size_title=26,
+        size_heading1=16,
+        size_heading2=13,
+        size_subtitle=12,
+        size_table=10,
+        size_caption=9,
+        size_footer=8,
+        margin_top=0.5,
+        margin_bottom=0.75,
+        margin_left=1.25,
+        margin_right=1.5,
+    )
+    doc = stencils.new_doc("Test", theme=custom)
+    section = doc.sections[0]
+    assert section.top_margin == Inches(0.5)
+    assert section.bottom_margin == Inches(0.75)
+    assert section.left_margin == Inches(1.25)
+    assert section.right_margin == Inches(1.5)
+
+
+def test_set_theme_rebuilds_cache():
+    """Changing theme should produce template with new colors."""
+    try:
+        stencils.set_theme(stencils.THEME_CLASSIC)
+        doc = stencils.new_doc("Test")
+        assert doc.styles["Title"].font.color.rgb == stencils.THEME_CLASSIC.title
+
+        stencils.set_theme(stencils.THEME_MINIMAL)
+        doc = stencils.new_doc("Test")
+        assert doc.styles["Title"].font.color.rgb == stencils.THEME_MINIMAL.title
+    finally:
+        stencils.set_theme(stencils.THEME_MODERN)
+
+
+# ---------------------------------------------------------------------------
+#  Table styling
+# ---------------------------------------------------------------------------
+
+
 def test_table_section():
     doc = stencils.new_doc("Test")
     stencils.table_section(
         doc,
         "Info",
-        [
-            ("Name", "Alice"),
-            ("Role", "Developer"),
-        ],
+        [("Name", "Alice"), ("Role", "Developer")],
     )
-    # Should have at least one table
     assert len(doc.tables) >= 1
     table = doc.tables[0]
     assert len(table.rows) == 2
@@ -56,16 +302,97 @@ def test_table_section():
 
 def test_table_section_empty_value():
     doc = stencils.new_doc("Test")
-    stencils.table_section(
-        doc,
-        "Info",
-        [
-            ("Field", ""),
-        ],
-    )
+    stencils.table_section(doc, "Info", [("Field", "")])
     table = doc.tables[0]
-    # Empty values should show em dash
     assert table.rows[0].cells[1].text == "\u2014"
+
+
+def test_table_section_borders_are_none():
+    doc = stencils.new_doc("Test")
+    stencils.table_section(doc, "Info", [("A", "B")])
+    borders = _table_border_vals(doc.tables[0])
+    for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        assert borders.get(edge) == "none", f"{edge} should be 'none'"
+
+
+def test_table_section_zero_value():
+    doc = stencils.new_doc("Test")
+    stencils.table_section(doc, "Info", [("Count", "0")])
+    table = doc.tables[0]
+    assert table.rows[0].cells[1].text == "0"
+
+
+def test_table_section_numeric_zero():
+    doc = stencils.new_doc("Test")
+    stencils.table_section(doc, "Info", [("Count", 0)])
+    table = doc.tables[0]
+    assert table.rows[0].cells[1].text == "0"
+
+
+def test_repeater_table_with_items():
+    doc = stencils.new_doc("Test")
+    items = [
+        {"desc": "Item A", "amount": "100.50"},
+        {"desc": "Item B", "amount": "200"},
+    ]
+    stencils.repeater_table(
+        doc,
+        headers=["Description", "Amount"],
+        items=items,
+        field_keys=["desc", "amount"],
+        currency_keys=["amount"],
+    )
+    assert len(doc.tables) >= 1
+    table = doc.tables[0]
+    assert len(table.rows) == 3
+    assert table.rows[1].cells[0].text == "Item A"
+    assert table.rows[1].cells[1].text == "$100.50"
+    assert table.rows[2].cells[1].text == "$200.00"
+
+
+def test_repeater_table_empty():
+    doc = stencils.new_doc("Test")
+    stencils.repeater_table(
+        doc,
+        headers=["A", "B"],
+        items=[],
+        field_keys=["a", "b"],
+    )
+    texts = [p.text for p in doc.paragraphs]
+    assert any("No line items provided." in t for t in texts)
+
+
+def test_repeater_table_has_grid_borders():
+    doc = stencils.new_doc("Test")
+    stencils.repeater_table(
+        doc,
+        headers=["A"],
+        items=[{"a": "1"}],
+        field_keys=["a"],
+    )
+    borders = _table_border_vals(doc.tables[0])
+    for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        assert borders.get(edge) == "single", f"{edge} should be 'single'"
+
+
+def test_repeater_table_header_is_shaded():
+    doc = stencils.new_doc("Test")
+    stencils.repeater_table(
+        doc,
+        headers=["A"],
+        items=[{"a": "1"}],
+        field_keys=["a"],
+    )
+    header_cell = doc.tables[0].rows[0].cells[0]
+    tcPr = header_cell._tc.tcPr
+    shd = tcPr.find(qn("w:shd")) if tcPr is not None else None
+    assert shd is not None
+    assert shd.get(qn("w:fill")) == str(stencils.THEME_MODERN.accent)
+
+
+# ---------------------------------------------------------------------------
+#  Other stencil functions
+# ---------------------------------------------------------------------------
 
 
 def test_longtext_with_content():
@@ -102,7 +429,6 @@ def test_bullet_list_empty():
 def test_signatures():
     doc = stencils.new_doc("Test")
     stencils.signatures(doc, ["Employee", "Date", "Manager", "Date"])
-    # Should create a table for signatures
     assert len(doc.tables) >= 1
     sig_table = doc.tables[-1]
     assert len(sig_table.rows) == 2
@@ -121,147 +447,7 @@ def test_finalize_returns_valid_docx():
     result = stencils.finalize(doc)
     assert isinstance(result, bytes)
     assert len(result) > 0
-    # DOCX is a ZIP file — starts with PK
     assert result[:2] == b"PK"
-
-
-# ── Palette tests (#48–#51) ─────────────────────────────────
-
-
-def test_palette_classic_exists():
-    p = stencils.PALETTE_CLASSIC
-    assert p is not None
-    assert hasattr(p, "title")
-    assert hasattr(p, "subtitle")
-    assert hasattr(p, "muted")
-    assert hasattr(p, "footer")
-    assert hasattr(p, "accent")
-
-
-def test_palette_minimal_exists():
-    p = stencils.PALETTE_MINIMAL
-    assert p is not None
-    assert hasattr(p, "title")
-    assert hasattr(p, "subtitle")
-    assert hasattr(p, "muted")
-    assert hasattr(p, "footer")
-    assert hasattr(p, "accent")
-
-
-def test_palette_modern_exists():
-    p = stencils.PALETTE_MODERN
-    assert p is not None
-    assert hasattr(p, "title")
-    assert hasattr(p, "subtitle")
-    assert hasattr(p, "muted")
-    assert hasattr(p, "footer")
-    assert hasattr(p, "accent")
-
-
-def test_classic_palette_matches_legacy_constants():
-    """PALETTE_CLASSIC roles must match the original COLOR_* values."""
-    from docx.shared import RGBColor
-
-    assert stencils.PALETTE_CLASSIC.title == RGBColor(0x33, 0x33, 0x66)
-    assert stencils.PALETTE_CLASSIC.subtitle == RGBColor(0x66, 0x66, 0x99)
-    assert stencils.PALETTE_CLASSIC.muted == RGBColor(0x99, 0x99, 0x99)
-    assert stencils.PALETTE_CLASSIC.footer == RGBColor(0xAA, 0xAA, 0xAA)
-    assert stencils.PALETTE_CLASSIC.accent == RGBColor(0x1A, 0x1A, 0x3E)
-
-
-def test_set_palette_switches_title_color():
-    try:
-        stencils.set_palette(stencils.PALETTE_MINIMAL)
-        doc = stencils.new_doc("Test")
-        title_run = doc.paragraphs[0].runs[0]
-        assert title_run.font.color.rgb == stencils.PALETTE_MINIMAL.title
-    finally:
-        stencils.set_palette(stencils.PALETTE_MODERN)
-
-
-def test_set_palette_invalid_raises():
-    import pytest
-
-    with pytest.raises(ValueError, match="missing required roles"):
-        stencils.set_palette(object())
-
-
-def test_set_palette_custom_palette():
-    from docx.shared import RGBColor
-
-    custom = stencils.Palette(
-        title=RGBColor(0xFF, 0x00, 0x00),
-        subtitle=RGBColor(0x00, 0xFF, 0x00),
-        muted=RGBColor(0x00, 0x00, 0xFF),
-        footer=RGBColor(0xAA, 0xBB, 0xCC),
-        accent=RGBColor(0x11, 0x22, 0x33),
-    )
-    try:
-        stencils.set_palette(custom)
-        doc = stencils.new_doc("Test")
-        title_run = doc.paragraphs[0].runs[0]
-        assert title_run.font.color.rgb == RGBColor(0xFF, 0x00, 0x00)
-    finally:
-        stencils.set_palette(stencils.PALETTE_MODERN)
-
-
-def test_set_palette_restores_default():
-    stencils.set_palette(stencils.PALETTE_MINIMAL)
-    stencils.set_palette(stencils.PALETTE_MODERN)
-    assert stencils._active_palette is stencils.PALETTE_MODERN
-
-
-def test_new_doc_palette_override():
-    """palette= on new_doc overrides title color without changing active palette."""
-    before = stencils._active_palette
-    doc = stencils.new_doc("Test", palette=stencils.PALETTE_MINIMAL)
-    title_run = doc.paragraphs[0].runs[0]
-    assert title_run.font.color.rgb == stencils.PALETTE_MINIMAL.title
-    # Active palette unchanged
-    assert stencils._active_palette is before
-
-
-def test_new_doc_palette_override_does_not_change_active():
-    before = stencils._active_palette
-    stencils.new_doc("Test", palette=stencils.PALETTE_CLASSIC)
-    assert stencils._active_palette is before
-
-
-def test_new_doc_subtitle_palette_override():
-    doc = stencils.new_doc("T", "Sub", palette=stencils.PALETTE_MODERN)
-    # Subtitle is the 3rd paragraph (title, spacer, subtitle)
-    subtitle_para = doc.paragraphs[2]
-    assert subtitle_para.runs[0].font.color.rgb == stencils.PALETTE_MODERN.subtitle
-
-
-def test_new_doc_no_palette_uses_active():
-    try:
-        stencils.set_palette(stencils.PALETTE_MINIMAL)
-        doc = stencils.new_doc("Test")
-        title_run = doc.paragraphs[0].runs[0]
-        assert title_run.font.color.rgb == stencils.PALETTE_MINIMAL.title
-    finally:
-        stencils.set_palette(stencils.PALETTE_MODERN)
-
-
-# ── Tests for table_section zero/falsy value fix ─────────────
-
-
-def test_table_section_zero_value():
-    doc = stencils.new_doc("Test")
-    stencils.table_section(doc, "Info", [("Count", "0")])
-    table = doc.tables[0]
-    assert table.rows[0].cells[1].text == "0"
-
-
-def test_table_section_numeric_zero():
-    doc = stencils.new_doc("Test")
-    stencils.table_section(doc, "Info", [("Count", 0)])
-    table = doc.tables[0]
-    assert table.rows[0].cells[1].text == "0"
-
-
-# ── Tests for footer ─────────────────────────────────────────
 
 
 def test_footer():
@@ -269,9 +455,6 @@ def test_footer():
     stencils.footer(doc)
     texts = [p.text for p in doc.paragraphs]
     assert any("auto-generated by FormForge" in t for t in texts)
-
-
-# ── Tests for address ────────────────────────────────────────
 
 
 def test_address_full():
@@ -283,9 +466,7 @@ def test_address_full():
     )
     stencils.address(doc, "Address", addr)
     texts = [p.text for p in doc.paragraphs]
-    # Street should appear
     assert any("123 Main St" in t for t in texts)
-    # City/state/zip should appear
     assert any("Springfield, IL 62701" in t for t in texts)
 
 
@@ -298,7 +479,6 @@ def test_address_empty_city():
     )
     stencils.address(doc, "Address", addr)
     texts = [p.text for p in doc.paragraphs]
-    # Should NOT produce a leading comma
     for t in texts:
         assert not t.strip().startswith(",")
 
@@ -322,9 +502,6 @@ def test_address_empty_json():
     assert any("No address provided." in t for t in texts)
 
 
-# ── Tests for image ──────────────────────────────────────────
-
-
 def test_image_empty():
     doc = stencils.new_doc("Test")
     stencils.image(doc, "", placeholder="No image.")
@@ -337,9 +514,6 @@ def test_image_invalid_b64():
     stencils.image(doc, "data:image/png;base64,NOT_VALID!!!", placeholder="Failed.")
     texts = [p.text for p in doc.paragraphs]
     assert any("Failed." in t for t in texts)
-
-
-# ── Tests for signature ──────────────────────────────────────
 
 
 def test_signature_empty():
@@ -355,42 +529,4 @@ def test_signature_invalid_b64():
     stencils.signature(doc, "data:image/png;base64,BAD_DATA!!!", "Signer")
     texts = [p.text for p in doc.paragraphs]
     assert any("Signer" in t for t in texts)
-    # Falls back to underline
     assert any("_" * 40 in t for t in texts)
-
-
-# ── Tests for repeater_table ─────────────────────────────────
-
-
-def test_repeater_table_with_items():
-    doc = stencils.new_doc("Test")
-    items = [
-        {"desc": "Item A", "amount": "100.50"},
-        {"desc": "Item B", "amount": "200"},
-    ]
-    stencils.repeater_table(
-        doc,
-        headers=["Description", "Amount"],
-        items=items,
-        field_keys=["desc", "amount"],
-        currency_keys=["amount"],
-    )
-    assert len(doc.tables) >= 1
-    table = doc.tables[0]
-    # Header row + 2 data rows
-    assert len(table.rows) == 3
-    assert table.rows[1].cells[0].text == "Item A"
-    assert table.rows[1].cells[1].text == "$100.50"
-    assert table.rows[2].cells[1].text == "$200.00"
-
-
-def test_repeater_table_empty():
-    doc = stencils.new_doc("Test")
-    stencils.repeater_table(
-        doc,
-        headers=["A", "B"],
-        items=[],
-        field_keys=["a", "b"],
-    )
-    texts = [p.text for p in doc.paragraphs]
-    assert any("No line items provided." in t for t in texts)

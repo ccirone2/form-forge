@@ -42,18 +42,19 @@ import stencils
 
 This works identically in Pyodide and in standard Python (for local testing).
 
-### `stencils.new_doc(title_text, subtitle_text="", font_name="Calibri", font_size=11, palette=None)`
+### `stencils.new_doc(title_text, subtitle_text="", font_name=None, font_size=None, theme=None)`
 
-Creates a styled `Document` with a centered title and optional subtitle. Sets the Normal style font. Returns the `Document` instance.
+Creates a styled `Document` cloned from a pre-built template. The template has all heading styles, page margins, and base font configured from the active (or given) theme. Returns the `Document` instance.
 
 ```python
 doc = stencils.new_doc("Employee Onboarding Document", f"Prepared for {first} {last}")
 ```
 
-- Title is colored with the active palette's `title` role, centered.
-- Subtitle (if provided) is colored with the `subtitle` role, centered, 12pt.
+- Title uses the pre-configured "Title" style (heading font, title color, centered).
+- Subtitle (if provided) uses the "Subtitle" style (caption font, subtitle color, centered).
 - An empty paragraph spacer follows each.
-- Pass `palette=` to override colors for this document only (see [Color palettes](#color-palettes)).
+- Pass `font_name` / `font_size` to override the base body font for this document.
+- Pass `theme=` to use a different theme for this document (see [Document themes](#document-themes)).
 
 ### `stencils.table_section(doc, heading, rows)`
 
@@ -69,8 +70,8 @@ stencils.table_section(doc, "Personal Information", [
 
 - `rows` is a list of `(label, value)` tuples.
 - Empty/falsy values display as `—` (em dash).
-- Table style: `Light Grid Accent 1`, centered.
-- Both columns use 10pt font; label is bold.
+- Borderless table, centered. Labels use the heading font (semibold).
+- Both columns use the theme's `size_table` (default 10pt).
 
 ### `stencils.longtext(doc, heading, text)`
 
@@ -109,75 +110,83 @@ Serializes the `Document` to bytes and returns them. Always call this as the las
 return stencils.finalize(doc)
 ```
 
-### Color palettes
+### Document themes
 
-Stencils provides a palette system with 3 built-in palettes and support for custom palettes. Each palette defines 5 semantic color roles:
+Stencils uses a `DocTheme` system that bundles colors, fonts, sizes, and page layout into a single frozen dataclass. A pre-built DOCX template is generated from the theme at import time and cached — `new_doc()` clones from it so heading styles, margins, and base fonts are automatic.
 
-| Role | Semantic meaning |
-|---|---|
-| `title` | Main heading text color |
-| `subtitle` | Subtitle text color |
-| `muted` | Empty-state / placeholder text color |
-| `footer` | Footer text color |
-| `accent` | Reserved for heavy emphasis / future use |
+#### Theme fields
 
-#### Built-in palettes
+| Category | Fields | Defaults |
+|---|---|---|
+| **Colors** | `title`, `subtitle`, `muted`, `footer`, `accent` | Varies by theme |
+| **Fonts** | `font_body`, `font_heading`, `font_caption` | Segoe UI / Semibold / Semilight |
+| **Sizes (pt)** | `size_body`, `size_title`, `size_heading1`, `size_heading2`, `size_subtitle`, `size_table`, `size_caption`, `size_footer` | 11, 26, 16, 13, 12, 10, 9, 8 |
+| **Margins (in)** | `margin_top`, `margin_bottom`, `margin_left`, `margin_right` | 1.0 each |
 
-| Palette | Style | Title | Subtitle | Muted | Footer | Accent |
-|---|---|---|---|---|---|---|
-| `PALETTE_CLASSIC` | Bold navy/blue (default) | `#333366` | `#666699` | `#999999` | `#AAAAAA` | `#1A1A3E` |
-| `PALETTE_MINIMAL` | Near-monochrome, extremely restrained | `#1A1A1A` | `#555555` | `#AAAAAA` | `#CCCCCC` | `#000000` |
-| `PALETTE_MODERN` | Contemporary teal/slate | `#1B5E6E` | `#4A8FA3` | `#8FA9B2` | `#B0C4CB` | `#0D3D4A` |
+#### Built-in themes
 
-#### Switching palettes with `set_palette()`
+| Theme | Style | Title | Subtitle | Accent |
+|---|---|---|---|---|
+| `THEME_CLASSIC` | Bold navy/blue | `#333366` | `#666699` | `#1A1A3E` |
+| `THEME_MINIMAL` | Near-monochrome | `#1A1A1A` | `#555555` | `#000000` |
+| `THEME_MODERN` | Contemporary teal/slate (default) | `#1B5E6E` | `#4A8FA3` | `#0D3D4A` |
 
-Call `set_palette()` at the top of your `generate_docx()` to change colors for all subsequent stencils calls:
+#### Switching themes with `set_theme()`
+
+Call `set_theme()` at the top of your `generate_docx()` to configure all document styling:
 
 ```python
 import stencils
 
 def generate_docx(data):
-    stencils.set_palette(stencils.PALETTE_MODERN)
+    stencils.set_theme(stencils.THEME_MODERN)
     doc = stencils.new_doc("My Document", "Subtitle")
     stencils.table_section(doc, "Info", [("Name", data.get("name", ""))])
     stencils.footer(doc)
     return stencils.finalize(doc)
 ```
 
-#### Per-document override with `new_doc(palette=)`
+#### Per-document override with `new_doc(theme=)`
 
-For a one-off palette on just the title/subtitle without changing the module-level palette:
+For a one-off theme on a single document without changing the module-level theme:
 
 ```python
-doc = stencils.new_doc("Title", "Subtitle", palette=stencils.PALETTE_MINIMAL)
+doc = stencils.new_doc("Title", "Subtitle", theme=stencils.THEME_MINIMAL)
 ```
 
-This does **not** affect `footer()`, `longtext()`, or other helpers — they always use the active module-level palette set by `set_palette()`.
+The active theme (set by `set_theme()`) is still used by helpers like `footer()` and `longtext()` within that document.
 
-#### Custom palettes
+#### Custom themes
 
-Define your own palette with any `RGBColor` values:
+Define your own theme with all required fields:
 
 ```python
 from docx.shared import RGBColor
 import stencils
 
-custom = stencils.Palette(
+custom = stencils.DocTheme(
     title=RGBColor(0x8B, 0x00, 0x00),
     subtitle=RGBColor(0xCD, 0x57, 0x00),
     muted=RGBColor(0xAA, 0xAA, 0xAA),
     footer=RGBColor(0xCC, 0xCC, 0xCC),
     accent=RGBColor(0x5C, 0x00, 0x00),
+    font_body="Segoe UI",
+    font_heading="Segoe UI Semibold",
+    font_caption="Segoe UI Semilight",
+    size_body=11, size_title=26, size_heading1=16, size_heading2=13,
+    size_subtitle=12, size_table=10, size_caption=9, size_footer=8,
+    margin_top=1.0, margin_bottom=1.0, margin_left=1.0, margin_right=1.0,
 )
-stencils.set_palette(custom)
+stencils.set_theme(custom)
 ```
 
-#### Accessing colors directly
+#### Accessing theme values directly
 
-To use a palette's color in custom formatting:
+To use a theme's color or font in custom formatting:
 
 ```python
-run.font.color.rgb = stencils.PALETTE_CLASSIC.muted
+run.font.color.rgb = stencils.THEME_CLASSIC.muted
+run.font.name = stencils.THEME_CLASSIC.font_heading
 ```
 
 ## Understanding the Data Dictionary
@@ -390,7 +399,7 @@ fp = doc.add_paragraph()
 fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
 fr = fp.add_run("Auto-generated by FormForge. Review all information for accuracy.")
 fr.font.size = Pt(8)
-fr.font.color.rgb = stencils.PALETTE_CLASSIC.footer
+fr.font.color.rgb = stencils.THEME_CLASSIC.footer
 fr.italic = True
 ```
 
@@ -406,9 +415,25 @@ doc.add_page_break()
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.shared import Pt
 
+from docx.oxml.ns import nsdecls
+from docx.oxml import parse_xml
+
 table = doc.add_table(rows=0, cols=2)
-table.style = "Light Grid Accent 1"
 table.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+# Remove borders for a clean key-value look
+tblPr = table._tbl.tblPr
+borders = parse_xml(
+    f'<w:tblBorders {nsdecls("w")}>'
+    '<w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+    '<w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+    '<w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+    '<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+    '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+    '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+    '</w:tblBorders>'
+)
+tblPr.append(borders)
 
 for label, value in [("Name", data.get("name", "")), ("Date", data.get("date", ""))]:
     row = table.add_row()
