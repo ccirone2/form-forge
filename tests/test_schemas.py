@@ -474,3 +474,51 @@ def test_existing_schemas_still_validate_after_visible_when():
     for path in _schema_files():
         schema = json.loads(path.read_text(encoding="utf-8"))
         jsonschema.validate(instance=schema, schema=spec)
+
+
+# ---------------------------------------------------------------------------
+#  sampleData property
+# ---------------------------------------------------------------------------
+
+
+def _minimal_schema():
+    """Return a minimal valid schema for testing."""
+    return {
+        "title": "Test Form",
+        "sections": [
+            {
+                "title": "Section 1",
+                "fields": [
+                    {"id": "name", "label": "Name", "type": "text"}
+                ],
+            }
+        ],
+    }
+
+
+def test_sample_data_validates():
+    """A schema with an optional sampleData object should validate."""
+    spec = _load_spec()
+    schema = _minimal_schema()
+    schema["sampleData"] = {"name": "Jane Doe"}
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_sample_data_is_optional():
+    """Schemas without sampleData must still validate (it's optional)."""
+    spec = _load_spec()
+    schema = _minimal_schema()
+    assert "sampleData" not in schema
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_rejects_sample_data_non_object():
+    """sampleData must be an object, not a string or array."""
+    spec = _load_spec()
+    schema = _minimal_schema()
+    schema["sampleData"] = "not an object"
+    try:
+        jsonschema.validate(instance=schema, schema=spec)
+        assert False, "Should have raised ValidationError"
+    except jsonschema.ValidationError:
+        pass

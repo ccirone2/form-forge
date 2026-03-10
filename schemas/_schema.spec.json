@@ -32,6 +32,10 @@
       "type": "array",
       "minItems": 1,
       "items": { "$ref": "#/$defs/section" }
+    },
+    "sampleData": {
+      "type": "object",
+      "description": "Inline sample form data (field ID to string value) used by Load Sample Data when no fixture file exists."
     }
   },
   "additionalProperties": false,

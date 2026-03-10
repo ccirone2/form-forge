@@ -14,6 +14,44 @@
 
 ## Log
 
+### 2026-03-10 -- Load Sample Data button + sampleData schema property (#55, #56, #57)
+**Issues:** #55, #56, #57
+
+- **Load Sample Data button** added to the submit area alongside Save Data / Load Data. Clicking it fetches `tests/fixtures/{schemaName}_sample.json` from the connected GitHub repo via `ghFetchRaw()`, then calls `populateForm(data, { skipFileFields: true })`.
+- **`currentSchemaName` state variable** added and set in all 4 launch paths (GitHub launchForm, picker override, launchLocal, launchDemo). Derived from the schema file path by stripping `schemas/` prefix and `.json` suffix. Empty string for local/demo paths.
+- **Fallback to inline `sampleData`** — if no fixture file is found (404 or no connected repo), `loadSampleData()` checks `currentSchema.sampleData` and uses it directly. Added `sampleData` to `DEMO_SCHEMA` so the demo form works without a GitHub connection.
+- **`sampleData` schema property** — added optional `sampleData` object to `_schema.spec.json`. Allows schemas to ship inline sample data for repos without fixture files.
+- **3 new schema tests** (83 total): `test_sample_data_validates`, `test_sample_data_is_optional`, `test_rejects_sample_data_non_object`.
+- **SCHEMA_GUIDE.md** updated with Sample Data section documenting fixture naming convention and inline `sampleData` fallback.
+- All 3 existing fixture files verified complete for their schemas.
+- **Heading bold fix** — Added `_clear_bold()` helper that sets both `w:b` and `w:bCs` to `val="0"` on heading styles. Word's built-in headings carry `<w:bCs/>` (bold complex script) which renders bold even when `w:b` is disabled. Applied to Title and Heading 1-6. Consolidated the two heading loops into one.
+- **Table cell margins** changed from 0.02" to 0.03" on all tables.
+
+**Decisions:**
+- Fixture file takes precedence over inline `sampleData` — single source of truth for test suite and UI.
+- `skipFileFields: true` passed to `populateForm` since fixture files use empty strings for file/signature fields.
+- Local/demo paths set `currentSchemaName = ''` so the fixture fetch is skipped cleanly; they fall through to the `sampleData` check or show a toast.
+
+---
+
+### 2026-03-10 -- Plan: Load Sample Data button (#55, #56, #57)
+**Issues:** #55, #56, #57
+
+Planned a feature to add a "Load Sample Data" button alongside the existing Save Data / Load Data buttons in the form submit area. The button lets users instantly populate the form with representative fixture data so they can export a demo DOCX without manual input.
+
+**Decision: fetch from tests/fixtures/ as primary source.** Four approaches were considered (embedded in index.html, fetched from fixtures, schema-level sampleData property, auto-generated). Fetching tests/fixtures/{schemaName}_sample.json via the existing ghFetchRaw() utility is the simplest path -- the three fixture files already exist and cover all current schemas, and it avoids duplicating data inside index.html.
+
+**Decision: schema-level sampleData as optional fallback.** For repos that do not follow the fixture convention, a sampleData property in the schema JSON can supply inline sample values. This is optional and requires a _schema.spec.json update and schema validation tests.
+
+**Three tasks planned:**
+- **Task 1 (#55):** Core button + loadSampleData() function in index.html. Adds currentSchemaName state variable set across all 4 launch paths. ~1.5h.
+- **Task 2 (#56):** Fixture coverage verification and SCHEMA_GUIDE.md documentation of the fixture naming convention. ~30 min.
+- **Task 3 (#57):** sampleData schema property as fallback; spec update, tests, docs. Depends on #55. ~1h.
+
+Implementation order: Task 1 and Task 2 are independent. Task 3 waits for Task 1.
+
+---
+
 ### 2026-03-10 — DOCX styling fixes: fonts, headings 3-6, spacing, tables
 
 - **Theme font override fix** — Added `_set_style_font()` helper that strips `w:asciiTheme`/`w:hAnsiTheme`/`w:cstheme`/`w:eastAsiaTheme` attributes from built-in Word styles (Title, Heading 1-6, Subtitle, List Bullet, Normal). Without this, Word's theme-linked font references silently override `python-docx`'s `style.font.name`, causing Calibri to render instead of Segoe UI.

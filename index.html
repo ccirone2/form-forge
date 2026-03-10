@@ -839,6 +839,10 @@
         Load Data
       </button>
       <input type="file" accept=".json" id="loadDataInput" style="display:none" onchange="handleLoadDataFile(event)">
+      <button class="btn-secondary" onclick="loadSampleData()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Load Sample Data
+      </button>
       <button class="btn-secondary" onclick="resetForm()">Reset</button>
     </div>
 
@@ -867,6 +871,7 @@ let wizardCurrentStep = 0;  // Current wizard step index (0-based)
 let currentTemplateCode = null;
 let repoSchemas = [];      // [{name, path, description, icon, templatePath}]
 let selectedSchemaIdx = -1;
+let currentSchemaName = '';  // Derived schema name (e.g., 'onboarding' from 'schemas/onboarding.json')
 let pendingDataUrl = null;   // ?data= URL param, consumed after form launch
 let autosaveTimer = null;    // Debounce timer for autosave
 
@@ -1239,6 +1244,7 @@ async function launchLocal() {
     }
 
     currentSchema = schema;
+    currentSchemaName = '';
     currentTemplateCode = localTemplateText;
 
     buildForm(currentSchema);
@@ -1269,6 +1275,7 @@ async function launchDemo() {
   showOverlay('Loading demo form...');
   try {
     currentSchema = DEMO_SCHEMA;
+    currentSchemaName = '';
     currentTemplateCode = DEMO_TEMPLATE;
 
     buildForm(currentSchema);
@@ -1455,6 +1462,7 @@ async function launchForm() {
     log(`Template loaded: ${templateCode.length} chars`, 'success');
 
     currentSchema = entry.schema;
+    currentSchemaName = (entry.schemaPath || '').replace(/^schemas\//, '').replace(/\.json$/, '');
     currentTemplateCode = templateCode;
 
     // Build form
@@ -2667,6 +2675,41 @@ function handleLoadDataFile(event) {
 }
 
 // ============================================================
+//  LOAD SAMPLE DATA
+// ============================================================
+
+async function loadSampleData() {
+  if (!currentSchema) return;
+
+  // Try fetching fixture from connected GitHub repo
+  if (ghOwner && ghRepo && currentSchemaName) {
+    const fixturePath = `tests/fixtures/${currentSchemaName}_sample.json`;
+    try {
+      log(`Fetching sample data: ${fixturePath}`, 'info');
+      const raw = await ghFetchRaw(fixturePath);
+      const data = JSON.parse(raw);
+      setTimeout(() => populateForm(data, { skipFileFields: true }), 0);
+      showToast('Sample data loaded');
+      log(`Sample data loaded from ${fixturePath}`, 'success');
+      return;
+    } catch (e) {
+      log(`No fixture file found at ${fixturePath}: ${e.message}`, 'info');
+    }
+  }
+
+  // Fallback: check for inline sampleData in the schema
+  if (currentSchema.sampleData && typeof currentSchema.sampleData === 'object') {
+    setTimeout(() => populateForm(currentSchema.sampleData, { skipFileFields: true }), 0);
+    showToast('Sample data loaded from schema');
+    log('Sample data loaded from inline sampleData property', 'success');
+    return;
+  }
+
+  showToast('No sample data found for this form', 'error');
+  log('No sample data available — no fixture file or sampleData property', 'info');
+}
+
+// ============================================================
 //  AUTOSAVE
 // ============================================================
 
@@ -2978,6 +3021,28 @@ const DEMO_SCHEMA = {
   description: "Complete this form to generate a pre-filled onboarding document.",
   icon: "👋",
   template: "templates/onboarding.py",
+  sampleData: {
+    first_name: "Alice",
+    last_name: "Johnson",
+    email: "alice.johnson@example.com",
+    phone: "555-0123",
+    date_of_birth: "1992-05-14",
+    start_date: "2026-04-01",
+    department: "Engineering",
+    job_title: "Senior Developer",
+    employment_type: "Full-Time",
+    manager: "Bob Smith",
+    laptop_preference: "MacBook Pro 14\"",
+    equipment_needs: "Monitor, Keyboard",
+    software_access: "GitHub, Jira, Figma",
+    bio: "Experienced full-stack developer with 8 years in web applications.\nPassionate about clean architecture and mentoring.",
+    skills: "Python\nTypeScript\nReact\nPostgreSQL",
+    certifications: "AWS Solutions Architect\nPMP",
+    emergency_contact: "Bob Johnson",
+    emergency_phone: "555-9876",
+    onboarding_goals: "Complete team onboarding\nSet up development environment\nShip first PR",
+    notes: "Prefers standing desk if available."
+  },
   sections: [
     { title: "Personal Information", fields: [
       { id: "first_name", label: "First Name", type: "text", required: true, placeholder: "Jane" },
@@ -3117,6 +3182,7 @@ launchForm = async function() {
     log(`Template loaded: ${templateCode.length} chars`, 'success');
 
     currentSchema = entry.schema;
+    currentSchemaName = (entry.schemaPath || '').replace(/^schemas\//, '').replace(/\.json$/, '');
     currentTemplateCode = templateCode;
 
     buildForm(currentSchema);
