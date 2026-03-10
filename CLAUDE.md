@@ -11,7 +11,7 @@ FormForge is a **client-side-only** browser application that turns GitHub-hosted
 ## Architecture
 
 - **`index.html`** — The entire frontend: HTML + CSS + JS in one file (~2400 lines). Contains the form builder, GitHub API integration, Pyodide loader, validation, and UI. Do not split this file unless the expansion guide explicitly calls for it.
-- **`schemas/_schema.spec.json`** — JSON Schema (draft 2020-12) that validates all form schemas. Enforces required fields, valid field types (17 enumerated), conditional constraints (e.g., `select` requires `options`, `repeater` requires `fields`), and `additionalProperties: false` at all levels.
+- **`schemas/_schema.spec.json`** — JSON Schema (draft 2020-12) that validates all form schemas. Enforces required fields, valid field types (18 enumerated), conditional constraints (e.g., `select` requires `options`, `repeater` requires `fields`), and `additionalProperties: false` at all levels.
 - **`schemas/*.json`** — Form definitions. Each schema has `title`, `description`, `icon`, `template` (path to .py), and `sections[]` containing `fields[]` with `id`, `label`, `type`, etc.
 - **`templates/stencils.py`** — Shared helper module for all templates. Provides `new_doc()`, `table_section()`, `longtext()`, `bullet_list()`, `signatures()`, `footer()`, `address()`, `image()`, `signature()`, `repeater_table()`, `finalize()`, and a standard color palette. Loaded into Pyodide's virtual filesystem once via `loadBaseModule()` before any template runs.
 - **`templates/*.py`** — Python scripts that export a `generate_docx(data)` function. Called by Pyodide with form data as a dict. Must return DOCX bytes. Uses `python-docx` and `import stencils`.

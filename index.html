@@ -715,7 +715,7 @@
         <div class="config-row">
           <div class="field-grow">
             <label>personal access token</label>
-            <input type="text" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" spellcheck="false" autocomplete="off">
+            <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" spellcheck="false" autocomplete="off">
           </div>
         </div>
         <div class="token-hint">Token is only used in-browser and never stored or transmitted elsewhere. Needs <code>repo</code> scope for private repos.</div>
@@ -893,6 +893,9 @@ let ghOwner = '';
 let ghRepo = '';
 let ghBranch = 'main';
 let ghToken = '';
+
+// FormForge repo fallback (used when connected repo lacks stencils.py)
+const FORMFORGE_FALLBACK = { owner: 'ccirone2', repo: 'form-forge', branch: 'develop' };
 
 // ============================================================
 //  VIEW MANAGEMENT
@@ -1578,7 +1581,7 @@ async function loadBaseModule() {
     if (!baseCode) {
       try {
         const resp = await fetch(
-          'https://raw.githubusercontent.com/ccirone2/form-forge/develop/templates/stencils.py?t=' + Date.now()
+          `https://raw.githubusercontent.com/${FORMFORGE_FALLBACK.owner}/${FORMFORGE_FALLBACK.repo}/${FORMFORGE_FALLBACK.branch}/templates/stencils.py?t=${Date.now()}`
         );
         if (resp.ok) {
           baseCode = await resp.text();
@@ -1752,21 +1755,9 @@ function buildForm(schema) {
 
 function setupConditionalVisibility(schema) {
   // Build map: sourceFieldId -> [{targetFieldId, equals}]
-  const dependencies = {};
-  for (const section of schema.sections) {
-    for (const field of section.fields) {
-      if (!field.visible_when) continue;
-      const src = field.visible_when.field;
-      if (!dependencies[src]) dependencies[src] = [];
-      dependencies[src].push({ targetId: field.id, equals: field.visible_when.equals });
+  const dependencies = _buildConditionalDependencies(schema);
 
-      // Set initial hidden state
-      const group = document.getElementById(field.id)?.closest('.field-group');
-      if (group) group.classList.add('conditional-hidden');
-    }
-  }
-
-  // For each source field, attach listeners and evaluate initial state
+  // Attach listeners (only called from buildForm, which recreates DOM elements)
   for (const srcId of Object.keys(dependencies)) {
     const evaluate = () => {
       const srcValue = getFieldValue(srcId);
@@ -1782,7 +1773,6 @@ function setupConditionalVisibility(schema) {
       }
     };
 
-    // Attach to the right elements based on field type
     const srcField = findFieldDef(schema, srcId);
     if (srcField && (srcField.type === 'radio' || srcField.type === 'checkbox')) {
       document.querySelectorAll(`input[name="${srcId}"]`).forEach(el => {
@@ -1799,9 +1789,39 @@ function setupConditionalVisibility(schema) {
       }
     }
 
-    // Evaluate initial state
     evaluate();
   }
+}
+
+function evaluateAllConditionals(schema) {
+  // Re-evaluate visibility without attaching new listeners
+  const dependencies = _buildConditionalDependencies(schema);
+  for (const srcId of Object.keys(dependencies)) {
+    const srcValue = getFieldValue(srcId);
+    for (const dep of dependencies[srcId]) {
+      const targetEl = document.getElementById(dep.targetId);
+      const group = targetEl?.closest('.field-group');
+      if (!group) continue;
+      if (srcValue === dep.equals) {
+        group.classList.remove('conditional-hidden');
+      } else {
+        group.classList.add('conditional-hidden');
+      }
+    }
+  }
+}
+
+function _buildConditionalDependencies(schema) {
+  const dependencies = {};
+  for (const section of schema.sections) {
+    for (const field of section.fields) {
+      if (!field.visible_when) continue;
+      const src = field.visible_when.field;
+      if (!dependencies[src]) dependencies[src] = [];
+      dependencies[src].push({ targetId: field.id, equals: field.visible_when.equals });
+    }
+  }
+  return dependencies;
 }
 
 function getFieldValue(fieldId) {
@@ -2609,8 +2629,8 @@ function populateForm(data, options = {}) {
     }
   }
 
-  // Re-evaluate conditional visibility
-  if (currentSchema) setupConditionalVisibility(currentSchema);
+  // Re-evaluate conditional visibility (no new listeners — buildForm already attached them)
+  if (currentSchema) evaluateAllConditionals(currentSchema);
 
   // Show warning toast if mismatches found
   if (warnings > 0 && !silent) {
@@ -2988,8 +3008,8 @@ function resetForm() {
       }
     }
   }
-  // Re-evaluate conditional visibility after reset
-  if (currentSchema) setupConditionalVisibility(currentSchema);
+  // Re-evaluate conditional visibility after reset (no new listeners)
+  if (currentSchema) evaluateAllConditionals(currentSchema);
   // Clear autosave on reset
   try { localStorage.removeItem(getAutosaveKey()); } catch (e) { /* ignore */ }
   // Remove autosave prompt if visible

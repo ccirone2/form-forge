@@ -102,8 +102,8 @@
           "type": "integer",
           "minimum": 1
         },
-        "min": { "type": "integer" },
-        "max": { "type": "integer" },
+        "min": { "type": "number" },
+        "max": { "type": "number" },
         "step": { "type": "number" },
         "currency_symbol": { "type": "string" },
         "default_value": { "type": "string" },
@@ -269,8 +269,8 @@
           "type": "integer",
           "minimum": 1
         },
-        "min": { "type": "integer" },
-        "max": { "type": "integer" },
+        "min": { "type": "number" },
+        "max": { "type": "number" },
         "step": { "type": "number" },
         "currency_symbol": { "type": "string" }
       },
@@ -291,6 +291,41 @@
           },
           "then": {
             "not": { "required": ["options"] }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["text", "email", "tel", "currency", "select"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "min": false,
+              "max": false,
+              "step": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["text", "email", "tel", "number", "select"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "currency_symbol": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["email", "tel", "number", "currency", "select"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "maxLength": false
+            }
           }
         }
       ],

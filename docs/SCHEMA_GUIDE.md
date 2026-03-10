@@ -143,7 +143,7 @@ Examples:
 
 ## Field Types
 
-17 types are supported. The `type` value must be exactly one of these strings.
+18 types are supported. The `type` value must be exactly one of these strings.
 
 | Type | Renders As | `options` needed? | Special properties |
 |------|-----------|-------------------|--------------------|
