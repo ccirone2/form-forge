@@ -14,6 +14,20 @@
 
 ## Log
 
+### 2026-03-10 — DOCX styling fixes: fonts, headings 3-6, spacing, tables
+
+- **Theme font override fix** — Added `_set_style_font()` helper that strips `w:asciiTheme`/`w:hAnsiTheme`/`w:cstheme`/`w:eastAsiaTheme` attributes from built-in Word styles (Title, Heading 1-6, Subtitle, List Bullet, Normal). Without this, Word's theme-linked font references silently override `python-docx`'s `style.font.name`, causing Calibri to render instead of Segoe UI.
+- **Heading 3-6 support** — Added `size_heading3` (12pt), `size_heading4`/`5`/`6` (11pt) to `DocTheme` dataclass and all three themes. Configured in `_build_template()` with heading font, theme colors, and `bold = False`.
+- **Normal style spacing** — Set `space_after = Pt(0)` on the Normal style (was defaulting to 10pt).
+- **Table cell margins** — Added `_set_cell_margins()` helper; applied 0.02" top/bottom margins to all tables (table_section, signatures, repeater_table).
+- **Repeater table borders** — Changed from full grid borders to horizontal-only (top, bottom, insideH); vertical borders (left, right, insideV) set to none.
+- **Repeater header bold** — Added `r.bold = True` on header row runs for proper semibold rendering.
+- **Color field rename** — Renamed `title`/`subtitle`/`muted`/`footer`/`accent` to `color_title`/`color_subtitle`/`color_muted`/`color_footer`/`color_accent` across DocTheme, all themes, stencils.py usage sites, and tests.
+- **THEME_MODERN margins** — Updated to bottom=0.75", left/right=1.5".
+- All 80 tests pass.
+
+---
+
 ### 2026-03-10 — Implement DocTheme + cached template + manual table styling (#53)
 **Issues:** #53
 

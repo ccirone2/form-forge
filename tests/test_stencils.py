@@ -102,18 +102,18 @@ def test_theme_modern_has_all_fields():
 
 def test_classic_theme_matches_legacy_colors():
     """THEME_CLASSIC colors must match the original PALETTE_CLASSIC values."""
-    assert stencils.THEME_CLASSIC.title == RGBColor(0x33, 0x33, 0x66)
-    assert stencils.THEME_CLASSIC.subtitle == RGBColor(0x66, 0x66, 0x99)
-    assert stencils.THEME_CLASSIC.muted == RGBColor(0x99, 0x99, 0x99)
-    assert stencils.THEME_CLASSIC.footer == RGBColor(0xAA, 0xAA, 0xAA)
-    assert stencils.THEME_CLASSIC.accent == RGBColor(0x1A, 0x1A, 0x3E)
+    assert stencils.THEME_CLASSIC.color_title == RGBColor(0x33, 0x33, 0x66)
+    assert stencils.THEME_CLASSIC.color_subtitle == RGBColor(0x66, 0x66, 0x99)
+    assert stencils.THEME_CLASSIC.color_muted == RGBColor(0x99, 0x99, 0x99)
+    assert stencils.THEME_CLASSIC.color_footer == RGBColor(0xAA, 0xAA, 0xAA)
+    assert stencils.THEME_CLASSIC.color_accent == RGBColor(0x1A, 0x1A, 0x3E)
 
 
 def test_set_theme_switches_title_style_color():
     try:
         stencils.set_theme(stencils.THEME_MINIMAL)
         doc = stencils.new_doc("Test")
-        assert doc.styles["Title"].font.color.rgb == stencils.THEME_MINIMAL.title
+        assert doc.styles["Title"].font.color.rgb == stencils.THEME_MINIMAL.color_title
     finally:
         stencils.set_theme(stencils.THEME_MODERN)
 
@@ -125,11 +125,11 @@ def test_set_theme_invalid_raises():
 
 def test_set_theme_custom_theme():
     custom = stencils.DocTheme(
-        title=RGBColor(0xFF, 0x00, 0x00),
-        subtitle=RGBColor(0x00, 0xFF, 0x00),
-        muted=RGBColor(0x00, 0x00, 0xFF),
-        footer=RGBColor(0xAA, 0xBB, 0xCC),
-        accent=RGBColor(0x11, 0x22, 0x33),
+        color_title=RGBColor(0xFF, 0x00, 0x00),
+        color_subtitle=RGBColor(0x00, 0xFF, 0x00),
+        color_muted=RGBColor(0x00, 0x00, 0xFF),
+        color_footer=RGBColor(0xAA, 0xBB, 0xCC),
+        color_accent=RGBColor(0x11, 0x22, 0x33),
         font_body="Arial",
         font_heading="Arial Bold",
         font_caption="Arial Narrow",
@@ -137,6 +137,10 @@ def test_set_theme_custom_theme():
         size_title=28,
         size_heading1=18,
         size_heading2=14,
+        size_heading3=12,
+        size_heading4=11,
+        size_heading5=11,
+        size_heading6=11,
         size_subtitle=13,
         size_table=11,
         size_caption=10,
@@ -165,7 +169,7 @@ def test_new_doc_theme_override():
     """theme= on new_doc overrides styles without changing active theme."""
     before = stencils._active_theme
     doc = stencils.new_doc("Test", theme=stencils.THEME_MINIMAL)
-    assert doc.styles["Title"].font.color.rgb == stencils.THEME_MINIMAL.title
+    assert doc.styles["Title"].font.color.rgb == stencils.THEME_MINIMAL.color_title
     assert stencils._active_theme is before
 
 
@@ -177,14 +181,14 @@ def test_new_doc_theme_override_does_not_change_active():
 
 def test_new_doc_subtitle_theme_override():
     doc = stencils.new_doc("T", "Sub", theme=stencils.THEME_MODERN)
-    assert doc.styles["Subtitle"].font.color.rgb == stencils.THEME_MODERN.subtitle
+    assert doc.styles["Subtitle"].font.color.rgb == stencils.THEME_MODERN.color_subtitle
 
 
 def test_new_doc_no_theme_uses_active():
     try:
         stencils.set_theme(stencils.THEME_MINIMAL)
         doc = stencils.new_doc("Test")
-        assert doc.styles["Title"].font.color.rgb == stencils.THEME_MINIMAL.title
+        assert doc.styles["Title"].font.color.rgb == stencils.THEME_MINIMAL.color_title
     finally:
         stencils.set_theme(stencils.THEME_MODERN)
 
@@ -217,32 +221,32 @@ def test_template_heading1_style_configured():
     doc = stencils.new_doc("Test", theme=stencils.THEME_CLASSIC)
     h1 = doc.styles["Heading 1"]
     assert h1.font.name == "Segoe UI Semibold"
-    assert h1.font.color.rgb == stencils.THEME_CLASSIC.title
+    assert h1.font.color.rgb == stencils.THEME_CLASSIC.color_title
 
 
 def test_template_heading2_style_configured():
     doc = stencils.new_doc("Test", theme=stencils.THEME_CLASSIC)
     h2 = doc.styles["Heading 2"]
     assert h2.font.name == "Segoe UI Semibold"
-    assert h2.font.color.rgb == stencils.THEME_CLASSIC.subtitle
+    assert h2.font.color.rgb == stencils.THEME_CLASSIC.color_subtitle
 
 
 def test_template_page_margins():
     doc = stencils.new_doc("Test")
     section = doc.sections[0]
     assert section.top_margin == Inches(1.0)
-    assert section.bottom_margin == Inches(1.0)
-    assert section.left_margin == Inches(1.0)
-    assert section.right_margin == Inches(1.0)
+    assert section.bottom_margin == Inches(0.75)
+    assert section.left_margin == Inches(1.5)
+    assert section.right_margin == Inches(1.5)
 
 
 def test_template_custom_margins():
     custom = stencils.DocTheme(
-        title=RGBColor(0, 0, 0),
-        subtitle=RGBColor(0, 0, 0),
-        muted=RGBColor(0, 0, 0),
-        footer=RGBColor(0, 0, 0),
-        accent=RGBColor(0, 0, 0),
+        color_title=RGBColor(0, 0, 0),
+        color_subtitle=RGBColor(0, 0, 0),
+        color_muted=RGBColor(0, 0, 0),
+        color_footer=RGBColor(0, 0, 0),
+        color_accent=RGBColor(0, 0, 0),
         font_body="Arial",
         font_heading="Arial",
         font_caption="Arial",
@@ -250,6 +254,10 @@ def test_template_custom_margins():
         size_title=26,
         size_heading1=16,
         size_heading2=13,
+        size_heading3=12,
+        size_heading4=11,
+        size_heading5=11,
+        size_heading6=11,
         size_subtitle=12,
         size_table=10,
         size_caption=9,
@@ -272,11 +280,11 @@ def test_set_theme_rebuilds_cache():
     try:
         stencils.set_theme(stencils.THEME_CLASSIC)
         doc = stencils.new_doc("Test")
-        assert doc.styles["Title"].font.color.rgb == stencils.THEME_CLASSIC.title
+        assert doc.styles["Title"].font.color.rgb == stencils.THEME_CLASSIC.color_title
 
         stencils.set_theme(stencils.THEME_MINIMAL)
         doc = stencils.new_doc("Test")
-        assert doc.styles["Title"].font.color.rgb == stencils.THEME_MINIMAL.title
+        assert doc.styles["Title"].font.color.rgb == stencils.THEME_MINIMAL.color_title
     finally:
         stencils.set_theme(stencils.THEME_MODERN)
 
@@ -389,7 +397,7 @@ def test_repeater_table_header_is_shaded():
     tcPr = header_cell._tc.tcPr
     shd = tcPr.find(qn("w:shd")) if tcPr is not None else None
     assert shd is not None
-    assert shd.get(qn("w:fill")) == str(stencils.THEME_MODERN.accent)
+    assert shd.get(qn("w:fill")) == str(stencils.THEME_MODERN.color_accent)
 
 
 # ---------------------------------------------------------------------------

@@ -34,11 +34,11 @@ from docx.oxml import parse_xml
 # ---------------------------------------------------------------------------
 
 _THEME_FIELDS = (
-    "title",
-    "subtitle",
-    "muted",
-    "footer",
-    "accent",
+    "color_title",
+    "color_subtitle",
+    "color_muted",
+    "color_footer",
+    "color_accent",
     "font_body",
     "font_heading",
     "font_caption",
@@ -46,6 +46,10 @@ _THEME_FIELDS = (
     "size_title",
     "size_heading1",
     "size_heading2",
+    "size_heading3",
+    "size_heading4",
+    "size_heading5",
+    "size_heading6",
     "size_subtitle",
     "size_table",
     "size_caption",
@@ -62,11 +66,11 @@ class DocTheme:
     """Complete document theme: colors, fonts, sizes, and page layout.
 
     Colors:
-        title:    Main heading / Heading 1 text color.
-        subtitle: Subtitle / Heading 2 text color.
-        muted:    Empty-state / placeholder text color.
-        footer:   Footer text color.
-        accent:   Table header background / heavy emphasis.
+        color_title:    Main heading / Heading 1 text color.
+        color_subtitle: Subtitle / Heading 2 text color.
+        color_muted:    Empty-state / placeholder text color.
+        color_footer:   Footer text color.
+        color_accent:   Table header background / heavy emphasis.
 
     Fonts:
         font_body:    Base body font.
@@ -78,6 +82,10 @@ class DocTheme:
         size_title:    Title heading (level 0).
         size_heading1: Level-1 heading.
         size_heading2: Level-2 heading.
+        size_heading3: Level-3 heading.
+        size_heading4: Level-4 heading.
+        size_heading5: Level-5 heading.
+        size_heading6: Level-6 heading.
         size_subtitle: Subtitle text.
         size_table:    Table cell / section body text.
         size_caption:  Signature labels / small text.
@@ -88,11 +96,11 @@ class DocTheme:
     """
 
     # Colors
-    title: RGBColor
-    subtitle: RGBColor
-    muted: RGBColor
-    footer: RGBColor
-    accent: RGBColor
+    color_title: RGBColor
+    color_subtitle: RGBColor
+    color_muted: RGBColor
+    color_footer: RGBColor
+    color_accent: RGBColor
     # Fonts
     font_body: str
     font_heading: str
@@ -102,6 +110,10 @@ class DocTheme:
     size_title: int
     size_heading1: int
     size_heading2: int
+    size_heading3: int
+    size_heading4: int
+    size_heading5: int
+    size_heading6: int
     size_subtitle: int
     size_table: int
     size_caption: int
@@ -116,11 +128,11 @@ class DocTheme:
 # Built-in themes ──────────────────────────────────────────────────────────
 
 THEME_CLASSIC = DocTheme(
-    title=RGBColor(0x33, 0x33, 0x66),
-    subtitle=RGBColor(0x66, 0x66, 0x99),
-    muted=RGBColor(0x99, 0x99, 0x99),
-    footer=RGBColor(0xAA, 0xAA, 0xAA),
-    accent=RGBColor(0x1A, 0x1A, 0x3E),
+    color_title=RGBColor(0x33, 0x33, 0x66),
+    color_subtitle=RGBColor(0x66, 0x66, 0x99),
+    color_muted=RGBColor(0x99, 0x99, 0x99),
+    color_footer=RGBColor(0xAA, 0xAA, 0xAA),
+    color_accent=RGBColor(0x1A, 0x1A, 0x3E),
     font_body="Segoe UI",
     font_heading="Segoe UI Semibold",
     font_caption="Segoe UI Semilight",
@@ -128,6 +140,10 @@ THEME_CLASSIC = DocTheme(
     size_title=26,
     size_heading1=16,
     size_heading2=13,
+    size_heading3=12,
+    size_heading4=11,
+    size_heading5=11,
+    size_heading6=11,
     size_subtitle=12,
     size_table=10,
     size_caption=9,
@@ -139,11 +155,11 @@ THEME_CLASSIC = DocTheme(
 )
 
 THEME_MINIMAL = DocTheme(
-    title=RGBColor(0x1A, 0x1A, 0x1A),
-    subtitle=RGBColor(0x55, 0x55, 0x55),
-    muted=RGBColor(0xAA, 0xAA, 0xAA),
-    footer=RGBColor(0xCC, 0xCC, 0xCC),
-    accent=RGBColor(0x00, 0x00, 0x00),
+    color_title=RGBColor(0x1A, 0x1A, 0x1A),
+    color_subtitle=RGBColor(0x55, 0x55, 0x55),
+    color_muted=RGBColor(0xAA, 0xAA, 0xAA),
+    color_footer=RGBColor(0xCC, 0xCC, 0xCC),
+    color_accent=RGBColor(0x00, 0x00, 0x00),
     font_body="Segoe UI",
     font_heading="Segoe UI Semibold",
     font_caption="Segoe UI Semilight",
@@ -151,6 +167,10 @@ THEME_MINIMAL = DocTheme(
     size_title=26,
     size_heading1=16,
     size_heading2=13,
+    size_heading3=12,
+    size_heading4=11,
+    size_heading5=11,
+    size_heading6=11,
     size_subtitle=12,
     size_table=10,
     size_caption=9,
@@ -162,11 +182,11 @@ THEME_MINIMAL = DocTheme(
 )
 
 THEME_MODERN = DocTheme(
-    title=RGBColor(0x1B, 0x5E, 0x6E),
-    subtitle=RGBColor(0x4A, 0x8F, 0xA3),
-    muted=RGBColor(0x8F, 0xA9, 0xB2),
-    footer=RGBColor(0xB0, 0xC4, 0xCB),
-    accent=RGBColor(0x0D, 0x3D, 0x4A),
+    color_title=RGBColor(0x1B, 0x5E, 0x6E),
+    color_subtitle=RGBColor(0x4A, 0x8F, 0xA3),
+    color_muted=RGBColor(0x8F, 0xA9, 0xB2),
+    color_footer=RGBColor(0xB0, 0xC4, 0xCB),
+    color_accent=RGBColor(0x0D, 0x3D, 0x4A),
     font_body="Segoe UI",
     font_heading="Segoe UI Semibold",
     font_caption="Segoe UI Semilight",
@@ -174,14 +194,18 @@ THEME_MODERN = DocTheme(
     size_title=26,
     size_heading1=16,
     size_heading2=13,
+    size_heading3=12,
+    size_heading4=11,
+    size_heading5=11,
+    size_heading6=11,
     size_subtitle=12,
     size_table=10,
     size_caption=9,
     size_footer=8,
     margin_top=1.0,
-    margin_bottom=1.0,
-    margin_left=1.0,
-    margin_right=1.0,
+    margin_bottom=0.75,
+    margin_left=1.5,
+    margin_right=1.5,
 )
 
 _active_theme = THEME_MODERN
@@ -228,8 +252,7 @@ def _set_style_font(style, font_name):
     if rPr is not None:
         rFonts = rPr.find(qn("w:rFonts"))
         if rFonts is not None:
-            for attr in ("w:asciiTheme", "w:hAnsiTheme",
-                         "w:cstheme", "w:eastAsiaTheme"):
+            for attr in ("w:asciiTheme", "w:hAnsiTheme", "w:cstheme", "w:eastAsiaTheme"):
                 rFonts.attrib.pop(qn(attr), None)
 
 
@@ -247,9 +270,7 @@ def _build_template(theme):
     ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
     styles_el = doc.styles.element
     for style_el in styles_el.findall(f"{{{ns}}}style"):
-        if style_el.get(f"{{{ns}}}type") == "table" and not style_el.get(
-            f"{{{ns}}}default"
-        ):
+        if style_el.get(f"{{{ns}}}type") == "table" and not style_el.get(f"{{{ns}}}default"):
             styles_el.remove(style_el)
 
     # -- Configure paragraph styles ------------------------------------
@@ -261,23 +282,35 @@ def _build_template(theme):
     title_style = doc.styles["Title"]
     _set_style_font(title_style, theme.font_heading)
     title_style.font.size = Pt(theme.size_title)
-    title_style.font.color.rgb = theme.title
+    title_style.font.color.rgb = theme.color_title
     title_style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    for level, name, size, color in [
-        (1, "Heading 1", theme.size_heading1, theme.title),
-        (2, "Heading 2", theme.size_heading2, theme.subtitle),
+    for name, size, color in [
+        ("Heading 1", theme.size_heading1, theme.color_title),
+        ("Heading 2", theme.size_heading2, theme.color_subtitle),
     ]:
         h = doc.styles[name]
         _set_style_font(h, theme.font_heading)
         h.font.size = Pt(size)
         h.font.color.rgb = color
 
+    for name, size, color in [
+        ("Heading 3", theme.size_heading3, theme.color_title),
+        ("Heading 4", theme.size_heading4, theme.color_subtitle),
+        ("Heading 5", theme.size_heading5, theme.color_subtitle),
+        ("Heading 6", theme.size_heading6, theme.color_subtitle),
+    ]:
+        h = doc.styles[name]
+        _set_style_font(h, theme.font_heading)
+        h.font.size = Pt(size)
+        h.font.color.rgb = color
+        h.font.bold = False
+
     try:
         sub = doc.styles["Subtitle"]
         _set_style_font(sub, theme.font_caption)
         sub.font.size = Pt(theme.size_subtitle)
-        sub.font.color.rgb = theme.subtitle
+        sub.font.color.rgb = theme.color_subtitle
         sub.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
     except KeyError:
         pass  # Handled per-run in new_doc() as fallback
@@ -418,7 +451,7 @@ def new_doc(title_text, subtitle_text="", font_name=None, font_size=None, theme=
             run = para.add_run(subtitle_text)
             run.font.name = t.font_caption
             run.font.size = Pt(t.size_subtitle)
-            run.font.color.rgb = t.subtitle
+            run.font.color.rgb = t.color_subtitle
         doc.add_paragraph("")
 
     return doc
@@ -482,7 +515,7 @@ def longtext(doc, heading, text):
         run = p.add_run("No information provided.")
         run.font.size = Pt(t.size_table)
         run.italic = True
-        run.font.color.rgb = t.muted
+        run.font.color.rgb = t.color_muted
 
     doc.add_paragraph("")
 
@@ -511,7 +544,7 @@ def bullet_list(doc, heading, items_str):
         run = p.add_run("No items listed.")
         run.font.size = Pt(t.size_table)
         run.italic = True
-        run.font.color.rgb = t.muted
+        run.font.color.rgb = t.color_muted
 
     doc.add_paragraph("")
 
@@ -544,7 +577,7 @@ def signatures(doc, labels):
         run = p.add_run(label)
         run.font.name = t.font_caption
         run.font.size = Pt(t.size_caption)
-        run.font.color.rgb = t.muted
+        run.font.color.rgb = t.color_muted
 
 
 def footer(doc):
@@ -564,7 +597,7 @@ def footer(doc):
     )
     fr.font.name = t.font_caption
     fr.font.size = Pt(t.size_footer)
-    fr.font.color.rgb = t.footer
+    fr.font.color.rgb = t.color_footer
     fr.italic = True
 
 
@@ -613,7 +646,7 @@ def address(doc, heading, raw_json):
         p = doc.add_paragraph()
         r = p.add_run("No address provided.")
         r.italic = True
-        r.font.color.rgb = t.muted
+        r.font.color.rgb = t.color_muted
 
     doc.add_paragraph("")
 
@@ -640,7 +673,7 @@ def image(doc, b64_str, width_inches=3.0, placeholder="No image uploaded."):
     p = doc.add_paragraph()
     r = p.add_run(placeholder)
     r.italic = True
-    r.font.color.rgb = _active_theme.muted
+    r.font.color.rgb = _active_theme.color_muted
 
 
 def signature(doc, b64_str, label, width_inches=2.5):
@@ -668,7 +701,7 @@ def signature(doc, b64_str, label, width_inches=2.5):
     lr = lp.add_run(label)
     lr.font.name = t.font_caption
     lr.font.size = Pt(t.size_caption)
-    lr.font.color.rgb = t.muted
+    lr.font.color.rgb = t.color_muted
 
 
 def repeater_table(doc, headers, items, field_keys, currency_keys=None):
@@ -693,31 +726,32 @@ def repeater_table(doc, headers, items, field_keys, currency_keys=None):
     if items:
         table = doc.add_table(rows=1, cols=len(headers))
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
-        border_color = str(t.muted)
+        border_color = str(t.color_muted)
         tbl = table._tbl
         tblPr = tbl.tblPr if tbl.tblPr is not None else tbl._add_tblPr()
         existing = tblPr.find(qn("w:tblBorders"))
         if existing is not None:
             tblPr.remove(existing)
-        tblPr.append(parse_xml(
-            f"<w:tblBorders {nsdecls('w')}>"
-            f'<w:top w:val="single" w:sz="4" w:space="0" w:color="{border_color}"/>'
-            f'<w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
-            f'<w:bottom w:val="single" w:sz="4" w:space="0" w:color="{border_color}"/>'
-            f'<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
-            f'<w:insideH w:val="single" w:sz="4" w:space="0" w:color="{border_color}"/>'
-            f'<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
-            f"</w:tblBorders>"
-        ))
+        tblPr.append(
+            parse_xml(
+                f"<w:tblBorders {nsdecls('w')}>"
+                f'<w:top w:val="single" w:sz="4" w:space="0" w:color="{border_color}"/>'
+                f'<w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                f'<w:bottom w:val="single" w:sz="4" w:space="0" w:color="{border_color}"/>'
+                f'<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                f'<w:insideH w:val="single" w:sz="4" w:space="0" w:color="{border_color}"/>'
+                f'<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+                f"</w:tblBorders>"
+            )
+        )
         _set_cell_margins(table, top=0.02, bottom=0.02)
 
         header_row = table.rows[0]
-        _shade_cells(header_row, str(t.accent))
+        _shade_cells(header_row, str(t.color_accent))
         for i, header_text in enumerate(headers):
             cell_p = header_row.cells[i].paragraphs[0]
             r = cell_p.add_run(header_text)
             r.font.name = t.font_heading
-            r.bold = True
             r.font.size = Pt(t.size_table)
             r.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
 
@@ -737,7 +771,7 @@ def repeater_table(doc, headers, items, field_keys, currency_keys=None):
         p = doc.add_paragraph()
         r = p.add_run("No line items provided.")
         r.italic = True
-        r.font.color.rgb = t.muted
+        r.font.color.rgb = t.color_muted
 
     doc.add_paragraph("")
 
