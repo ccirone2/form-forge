@@ -9,7 +9,7 @@ Review the recent changes for quality and correctness.
    - No raw `print()` in library code (only in `if __name__` blocks)
    - Pyodide compatibility (no filesystem, no C extensions, no threading)
    - Error handling (don't silently swallow exceptions)
-   - YAML/data round-trip safety (can export → import without data loss)
+   - Data round-trip safety (form data → DOCX export without loss)
 3. Run tests: `PYTHONPATH=. python -m pytest tests/ -v`
 4. Check for any TODO/FIXME/HACK comments that should be issues
 5. Provide a summary of findings

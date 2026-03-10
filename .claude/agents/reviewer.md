@@ -24,7 +24,7 @@ must run in Pyodide (browser-based WebAssembly).
 - [ ] Error handling (explicit, not swallowed)
 - [ ] Schema field types validated correctly
 - [ ] Compound fields handled in all code paths
-- [ ] Redaction applied consistently
+- [ ] Form data handled correctly in all code paths
 - [ ] Tests cover the new/changed code
 
 ## Output Format

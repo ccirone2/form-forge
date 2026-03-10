@@ -1,15 +1,22 @@
 # Add Development Log Entry
 
-Append an entry to `docs/DEVLOG.md` with today's date.
+Append an entry to `docs/DEVLOG.md` with today's date, inserted after the `## Log` heading (reverse-chronological order — newest first).
 
 Content to log: $ARGUMENTS
 
 Format:
 ```
-## YYYY-MM-DD — [Brief Title]
+### YYYY-MM-DD — [Brief Title]
+**Issues:** #N, #M
 
-[Content]
+[What was done, decisions made, any notable details]
 
-**Files changed:** [list]
-**Related issues:** [list]
+---
 ```
+
+Rules:
+- DEVLOG.md is append-only — never delete or modify past entries
+- Insert new entries directly after the `## Log` line, before existing entries
+- Use `###` (h3) for entry headings, not `##`
+- Always include related issue numbers
+- End each entry with a `---` separator

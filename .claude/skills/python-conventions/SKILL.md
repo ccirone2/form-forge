@@ -1,11 +1,11 @@
 ---
 name: python-conventions
 description: >
-  Python coding conventions for the docx_builder project. Apply when writing
-  or editing any Python file in the engine/ directory.
+  Python coding conventions for the FormForge project. Apply when writing
+  or editing any Python file in the templates/ or tests/ directory.
 ---
 
-# Python Conventions for docx_builder
+# Python Conventions for FormForge
 
 ## Type Hints
 - All function signatures must have type hints
@@ -15,20 +15,20 @@ description: >
 
 ## Docstrings (Google Style)
 ```python
-def my_function(schema: Schema, data: dict[str, Any]) -> str:
+def my_function(doc: Document, data: dict[str, str]) -> bytes:
     """Brief one-line summary.
 
     Longer description if needed.
 
     Args:
-        schema: The active schema definition.
-        data: Field key-value pairs from Excel.
+        doc: The python-docx Document instance.
+        data: Field key-value pairs from the form.
 
     Returns:
-        YAML string ready for clipboard.
+        DOCX file bytes ready for download.
 
     Raises:
-        ValueError: If schema is invalid.
+        ValueError: If data is invalid.
     """
 ```
 
@@ -48,5 +48,4 @@ def my_function(schema: Schema, data: dict[str, Any]) -> str:
 - No filesystem access (no open(), no Path.exists() in runtime code)
 - No C extensions (use pure Python packages only)
 - No threading/multiprocessing
-- HTTP via `requests` (works in Pyodide)
 - Use `io.BytesIO` for in-memory file operations

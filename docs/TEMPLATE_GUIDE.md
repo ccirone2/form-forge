@@ -203,8 +203,8 @@ All values in `data` are strings, regardless of field type. `heading` fields are
 | `longtext` | String with `\n` paragraph breaks | `"First paragraph.\nSecond paragraph."` |
 | `checkbox` | Comma-separated string | `"GitHub, Jira, Figma"` |
 | `list` | Newline-separated string | `"Python\nJavaScript\nRust"` |
-| `number` | Number input with min/max/step | `"42.5"` |
-| `currency` | Number input with currency prefix | `"1250.00"` |
+| `number` | Numeric string | `"42.5"` |
+| `currency` | Numeric string (no symbol) | `"1250.00"` |
 | `hidden` | Static string from `default_value` | `"1.0"` |
 | `address` | JSON object string | `'{"street":"123 Main","city":"Springfield","state":"IL","zip":"62701"}'` |
 | `file` | Base64 data URI string or `""` | `"data:image/png;base64,iVBOR..."` |

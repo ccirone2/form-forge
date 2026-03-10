@@ -54,7 +54,6 @@ for p in pathlib.Path('schemas').glob('*.json'):
 | `template` | no | string | Path to the Python template file relative to repo root. Must match `^templates/.+\.py$`. Defaults to `templates/{schema-filename}.py`. |
 | `wizard` | no | boolean | When `true`, sections render as sequential steps with Next/Back navigation. See [Wizard Mode](#wizard-mode). |
 | `sections` | yes | array | Array of section objects. Minimum 1. |
-
 | `sampleData` | no | object | Inline sample form data (field ID to string value). Used by the **Load Sample Data** button when no fixture file exists. See [Sample Data](#sample-data). |
 
 No other top-level properties are allowed.
