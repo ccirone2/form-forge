@@ -160,7 +160,7 @@ def table_section(doc, heading, rows):
 
     table = doc.add_table(rows=0, cols=2)
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.style = "Light Grid Accent 1"
+    table.style = "Light Grid"
 
     for label, value in rows:
         row = table.add_row()
@@ -404,7 +404,7 @@ def repeater_table(doc, headers, items, field_keys, currency_keys=None):
     if items:
         table = doc.add_table(rows=1, cols=len(headers))
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
-        table.style = "Light Grid Accent 1"
+        table.style = "Table Grid"
         for i, header in enumerate(headers):
             cell_p = table.rows[0].cells[i].paragraphs[0]
             r = cell_p.add_run(header)

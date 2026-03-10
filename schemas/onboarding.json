@@ -81,12 +81,7 @@
           "label": "Employment Type",
           "type": "radio",
           "required": true,
-          "options": [
-            "Full-Time",
-            "Part-Time",
-            "Contract",
-            "Intern"
-          ]
+          "options": ["Full-Time", "Part-Time", "Contract", "Intern"]
         },
         {
           "id": "manager",
@@ -190,13 +185,6 @@
       "title": "Additional Information",
       "fields": [
         {
-          "id": "dietary_restrictions",
-          "label": "Dietary Restrictions",
-          "type": "text",
-          "required": false,
-          "placeholder": "For team lunches and events"
-        },
-        {
           "id": "emergency_contact",
           "label": "Emergency Contact Name",
           "type": "text",
@@ -217,6 +205,13 @@
           "required": false,
           "placeholder": "e.g. Complete product training",
           "hint": "What do you want to accomplish in your first 90 days?"
+        },
+        {
+          "id": "dietary_restrictions",
+          "label": "Dietary Restrictions",
+          "type": "text",
+          "required": false,
+          "placeholder": "For team lunches and events"
         },
         {
           "id": "notes",

@@ -84,9 +84,7 @@ def generate_docx(data):
 
     stencils.longtext(doc, "Professional Bio", data.get("bio", ""))
     stencils.bullet_list(doc, "Key Skills", data.get("skills", ""))
-    stencils.bullet_list(
-        doc, "Certifications & Licenses", data.get("certifications", "")
-    )
+    stencils.bullet_list(doc, "Certifications & Licenses", data.get("certifications", ""))
     stencils.longtext(doc, "Notable Prior Projects", data.get("prior_projects", ""))
 
     # ── Section: Additional Information ────────────────────────
@@ -94,9 +92,9 @@ def generate_docx(data):
         doc,
         "Additional Information",
         [
-            ("Dietary Restrictions", data.get("dietary_restrictions", "")),
             ("Emergency Contact", data.get("emergency_contact", "")),
             ("Emergency Phone", data.get("emergency_phone", "")),
+            ("Dietary Restrictions", data.get("dietary_restrictions", "")),
             ("Notes", data.get("notes", "")),
         ],
     )
