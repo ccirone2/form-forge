@@ -256,6 +256,23 @@ def _set_style_font(style, font_name):
                 rFonts.attrib.pop(qn(attr), None)
 
 
+def _clear_bold(style):
+    """Explicitly disable bold on a style, including complex-script bold.
+
+    Word's built-in heading styles carry ``<w:bCs/>`` (bold complex script)
+    which some renderers apply universally.  ``style.font.bold = False``
+    only sets ``<w:b w:val="0"/>`` but leaves ``w:bCs`` untouched.
+    This helper sets both to false.
+    """
+    style.font.bold = False
+    rPr = style.element.rPr
+    if rPr is not None:
+        bCs = rPr.find(qn("w:bCs"))
+        if bCs is not None:
+            rPr.remove(bCs)
+        rPr.append(parse_xml(f'<w:bCs {nsdecls("w")} w:val="0"/>'))
+
+
 def _build_template(theme):
     """Build a DOCX template with all Word styles configured from a theme.
 
@@ -283,20 +300,12 @@ def _build_template(theme):
     _set_style_font(title_style, theme.font_heading)
     title_style.font.size = Pt(theme.size_title)
     title_style.font.color.rgb = theme.color_title
-    title_style.font.bold = False
+    _clear_bold(title_style)
     title_style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     for name, size, color in [
         ("Heading 1", theme.size_heading1, theme.color_title),
         ("Heading 2", theme.size_heading2, theme.color_subtitle),
-    ]:
-        h = doc.styles[name]
-        _set_style_font(h, theme.font_heading)
-        h.font.size = Pt(size)
-        h.font.color.rgb = color
-        h.font.bold = False
-
-    for name, size, color in [
         ("Heading 3", theme.size_heading3, theme.color_title),
         ("Heading 4", theme.size_heading4, theme.color_subtitle),
         ("Heading 5", theme.size_heading5, theme.color_subtitle),
@@ -306,7 +315,7 @@ def _build_template(theme):
         _set_style_font(h, theme.font_heading)
         h.font.size = Pt(size)
         h.font.color.rgb = color
-        h.font.bold = False
+        _clear_bold(h)
 
     try:
         sub = doc.styles["Subtitle"]
@@ -475,7 +484,7 @@ def table_section(doc, heading, rows):
     table = doc.add_table(rows=0, cols=2)
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     _set_table_borders(table, val="none", sz=0, color="auto")
-    _set_cell_margins(table, top=0.02, bottom=0.02)
+    _set_cell_margins(table, top=0.03, bottom=0.03)
 
     for label, value in rows:
         row = table.add_row()
@@ -569,7 +578,7 @@ def signatures(doc, labels):
     num_cols = min(len(labels), 2)
     sig_table = doc.add_table(rows=num_rows, cols=num_cols)
     sig_table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    _set_cell_margins(sig_table, top=0.02, bottom=0.02)
+    _set_cell_margins(sig_table, top=0.03, bottom=0.03)
 
     for i, label in enumerate(labels):
         cell = sig_table.rows[i // 2].cells[i % 2]
@@ -746,7 +755,7 @@ def repeater_table(doc, headers, items, field_keys, currency_keys=None):
                 f"</w:tblBorders>"
             )
         )
-        _set_cell_margins(table, top=0.02, bottom=0.02)
+        _set_cell_margins(table, top=0.03, bottom=0.03)
 
         header_row = table.rows[0]
         _shade_cells(header_row, str(t.color_accent))
