@@ -32,6 +32,8 @@ def generate_docx(data):
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
+    stencils.set_palette(stencils.PALETTE_MINIMAL)
+
     name = data.get("full_name", "")
     email = data.get("email", "")
     event_date = data.get("event_date", "")
@@ -171,9 +173,7 @@ def generate_docx(data):
 
     # signature — applicant signature
     doc.add_heading("Applicant Signature", level=1)
-    stencils.signature(
-        doc, data.get("applicant_signature", ""), "Applicant Signature"
-    )
+    stencils.signature(doc, data.get("applicant_signature", ""), "Applicant Signature")
     doc.add_paragraph("")
 
     # ── Footer ────────────────────────────────────────────

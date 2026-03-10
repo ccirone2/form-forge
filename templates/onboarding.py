@@ -28,6 +28,8 @@ def generate_docx(data):
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
+    stencils.set_palette(stencils.PALETTE_CLASSIC)
+
     first = data.get("first_name", "")
     last = data.get("last_name", "")
     start = data.get("start_date", "TBD")
