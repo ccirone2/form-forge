@@ -171,9 +171,7 @@ def generate_docx(data):
 
     # signature — applicant signature
     doc.add_heading("Applicant Signature", level=1)
-    stencils.signature(
-        doc, data.get("applicant_signature", ""), "Applicant Signature"
-    )
+    stencils.signature(doc, data.get("applicant_signature", ""), "Applicant Signature")
     doc.add_paragraph("")
 
     # ── Footer ────────────────────────────────────────────

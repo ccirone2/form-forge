@@ -19,6 +19,7 @@ import io
 import json
 import base64
 import binascii
+from dataclasses import dataclass
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -26,15 +27,93 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.image.exceptions import UnrecognizedImageError
 
 
-# -- Standard color palette --
-COLOR_DARK_NAVY = RGBColor(0x1A, 0x1A, 0x3E)
-COLOR_MEDIUM_BLUE = RGBColor(0x33, 0x33, 0x66)
-COLOR_SOFT_BLUE = RGBColor(0x66, 0x66, 0x99)
-COLOR_MUTED = RGBColor(0x99, 0x99, 0x99)
-COLOR_LIGHT_MUTED = RGBColor(0xAA, 0xAA, 0xAA)
+# -- Palette system --
+
+_PALETTE_ROLES = ("title", "subtitle", "muted", "footer", "accent")
 
 
-def new_doc(title_text, subtitle_text="", font_name="Calibri", font_size=11):
+@dataclass(frozen=True)
+class Palette:
+    """A set of semantic colors for DOCX document styling.
+
+    Roles:
+        title:    Main heading text color.
+        subtitle: Subtitle text color.
+        muted:    Empty-state / placeholder text color.
+        footer:   Footer text color.
+        accent:   Reserved for heavy emphasis / future use.
+    """
+
+    title: RGBColor
+    subtitle: RGBColor
+    muted: RGBColor
+    footer: RGBColor
+    accent: RGBColor
+
+
+# Built-in palettes
+PALETTE_CLASSIC = Palette(
+    title=RGBColor(0x33, 0x33, 0x66),
+    subtitle=RGBColor(0x66, 0x66, 0x99),
+    muted=RGBColor(0x99, 0x99, 0x99),
+    footer=RGBColor(0xAA, 0xAA, 0xAA),
+    accent=RGBColor(0x1A, 0x1A, 0x3E),
+)
+
+PALETTE_MINIMAL = Palette(
+    title=RGBColor(0x1A, 0x1A, 0x1A),
+    subtitle=RGBColor(0x55, 0x55, 0x55),
+    muted=RGBColor(0xAA, 0xAA, 0xAA),
+    footer=RGBColor(0xCC, 0xCC, 0xCC),
+    accent=RGBColor(0x00, 0x00, 0x00),
+)
+
+PALETTE_MODERN = Palette(
+    title=RGBColor(0x1B, 0x5E, 0x6E),
+    subtitle=RGBColor(0x4A, 0x8F, 0xA3),
+    muted=RGBColor(0x8F, 0xA9, 0xB2),
+    footer=RGBColor(0xB0, 0xC4, 0xCB),
+    accent=RGBColor(0x0D, 0x3D, 0x4A),
+)
+
+_active_palette = PALETTE_CLASSIC
+
+# Legacy color constants — updated by set_palette() to reflect the active palette
+COLOR_DARK_NAVY = PALETTE_CLASSIC.accent
+COLOR_MEDIUM_BLUE = PALETTE_CLASSIC.title
+COLOR_SOFT_BLUE = PALETTE_CLASSIC.subtitle
+COLOR_MUTED = PALETTE_CLASSIC.muted
+COLOR_LIGHT_MUTED = PALETTE_CLASSIC.footer
+
+
+def set_palette(palette):
+    """Set the active color palette for all subsequent stencils calls.
+
+    Args:
+        palette: A Palette instance (use a built-in PALETTE_* constant or
+                 construct a custom Palette with all five role fields).
+
+    Raises:
+        ValueError: If palette is missing any required role field.
+    """
+    global _active_palette, COLOR_DARK_NAVY, COLOR_MEDIUM_BLUE
+    global COLOR_SOFT_BLUE, COLOR_MUTED, COLOR_LIGHT_MUTED
+
+    missing = [r for r in _PALETTE_ROLES if not hasattr(palette, r)]
+    if missing:
+        raise ValueError(f"Palette missing required roles: {', '.join(missing)}")
+
+    _active_palette = palette
+    COLOR_DARK_NAVY = palette.accent
+    COLOR_MEDIUM_BLUE = palette.title
+    COLOR_SOFT_BLUE = palette.subtitle
+    COLOR_MUTED = palette.muted
+    COLOR_LIGHT_MUTED = palette.footer
+
+
+def new_doc(
+    title_text, subtitle_text="", font_name="Calibri", font_size=11, palette=None
+):
     """
     Create a styled Document with a centered title and optional subtitle.
 
@@ -43,10 +122,13 @@ def new_doc(title_text, subtitle_text="", font_name="Calibri", font_size=11):
         subtitle_text: Optional subtitle displayed below the title.
         font_name: Base font for the document (default: "Calibri").
         font_size: Base font size in points (default: 11).
+        palette: Optional Palette to use for title/subtitle colors.
+                 If None, uses the current active palette.
 
     Returns:
         A python-docx Document instance.
     """
+    p = palette if palette is not None else _active_palette
     doc = Document()
 
     style = doc.styles["Normal"]
@@ -56,16 +138,16 @@ def new_doc(title_text, subtitle_text="", font_name="Calibri", font_size=11):
     title = doc.add_heading(title_text, level=0)
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     for run in title.runs:
-        run.font.color.rgb = COLOR_MEDIUM_BLUE
+        run.font.color.rgb = p.title
 
     doc.add_paragraph("")
 
     if subtitle_text:
-        p = doc.add_paragraph()
-        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        run = p.add_run(subtitle_text)
+        para = doc.add_paragraph()
+        para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        run = para.add_run(subtitle_text)
         run.font.size = Pt(12)
-        run.font.color.rgb = COLOR_SOFT_BLUE
+        run.font.color.rgb = p.subtitle
 
         doc.add_paragraph("")
 
@@ -126,7 +208,7 @@ def longtext(doc, heading, text):
         run = p.add_run("No information provided.")
         run.font.size = Pt(10)
         run.italic = True
-        run.font.color.rgb = COLOR_MUTED
+        run.font.color.rgb = _active_palette.muted
 
     doc.add_paragraph("")
 
@@ -154,7 +236,7 @@ def bullet_list(doc, heading, items_str):
         run = p.add_run("No items listed.")
         run.font.size = Pt(10)
         run.italic = True
-        run.font.color.rgb = COLOR_MUTED
+        run.font.color.rgb = _active_palette.muted
 
     doc.add_paragraph("")
 
@@ -184,7 +266,7 @@ def signatures(doc, labels):
         p.add_run("_" * 35 + "\n")
         run = p.add_run(label)
         run.font.size = Pt(9)
-        run.font.color.rgb = COLOR_MUTED
+        run.font.color.rgb = _active_palette.muted
 
 
 def footer(doc):
@@ -202,7 +284,7 @@ def footer(doc):
         "Please review all information for accuracy."
     )
     fr.font.size = Pt(8)
-    fr.font.color.rgb = COLOR_LIGHT_MUTED
+    fr.font.color.rgb = _active_palette.footer
     fr.italic = True
 
 
@@ -250,14 +332,12 @@ def address(doc, heading, raw_json):
         p = doc.add_paragraph()
         r = p.add_run("No address provided.")
         r.italic = True
-        r.font.color.rgb = COLOR_MUTED
+        r.font.color.rgb = _active_palette.muted
 
     doc.add_paragraph("")
 
 
-def image(
-    doc, b64_str, width_inches=3.0, placeholder="No image uploaded."
-):
+def image(doc, b64_str, width_inches=3.0, placeholder="No image uploaded."):
     """
     Embed a base64 data-URI image or render a placeholder if absent/invalid.
 
@@ -279,7 +359,7 @@ def image(
     p = doc.add_paragraph()
     r = p.add_run(placeholder)
     r.italic = True
-    r.font.color.rgb = COLOR_MUTED
+    r.font.color.rgb = _active_palette.muted
 
 
 def signature(doc, b64_str, label, width_inches=2.5):
@@ -305,7 +385,7 @@ def signature(doc, b64_str, label, width_inches=2.5):
     lp = doc.add_paragraph()
     lr = lp.add_run(label)
     lr.font.size = Pt(9)
-    lr.font.color.rgb = COLOR_MUTED
+    lr.font.color.rgb = _active_palette.muted
 
 
 def repeater_table(doc, headers, items, field_keys, currency_keys=None):
@@ -348,7 +428,7 @@ def repeater_table(doc, headers, items, field_keys, currency_keys=None):
         p = doc.add_paragraph()
         r = p.add_run("No line items provided.")
         r.italic = True
-        r.font.color.rgb = COLOR_MUTED
+        r.font.color.rgb = _active_palette.muted
 
     doc.add_paragraph("")
 

@@ -14,6 +14,27 @@
 
 ## Log
 
+### 2026-03-10 — Named Color Palettes for stencils.py (#48–#51)
+**Issues:** #48, #49, #50, #51
+
+Added a palette system to `stencils.py` with 3 built-in palettes and custom palette support:
+
+- **`Palette` dataclass** with 5 semantic roles: `title`, `subtitle`, `muted`, `footer`, `accent`
+- **3 built-in palettes:** `PALETTE_CLASSIC` (bold navy/blue — default, preserves existing colors), `PALETTE_MINIMAL` (near-monochrome, extremely restrained), `PALETTE_MODERN` (contemporary teal/slate)
+- **`set_palette(palette)`** — switches the active palette for all subsequent stencils calls; also updates legacy `COLOR_*` module constants for backward compatibility; raises `ValueError` on incomplete palettes
+- **`new_doc(palette=)`** — optional per-document palette override for title/subtitle colors without mutating global state
+- **Wired all 9 helper functions** to read from `_active_palette` instead of hardcoded `COLOR_*` constants
+- **13 new tests** covering palette existence, role matching, switching, restoration, invalid palettes, custom palettes, and `new_doc()` overrides (72 total)
+- **Updated `TEMPLATE_GUIDE.md`** — rewrote "Color palette" section to document palettes, `set_palette()`, `new_doc(palette=)`, custom `Palette` construction, and legacy constant mapping
+
+**Decisions:**
+- Used `dataclass(frozen=True)` for `Palette` to make palettes immutable and hashable
+- Default palette is `PALETTE_CLASSIC` — existing templates produce identical output with zero changes
+- Legacy `COLOR_*` constants remain as module-level aliases updated by `set_palette()` — no breaking changes for existing template code
+- `new_doc(palette=)` is intentionally scoped to title/subtitle only; use `set_palette()` for full-document palette control
+
+---
+
 ### 2026-03-10 — Rename `_base.py` → `stencils.py` and Shorten Function Names
 
 - Renamed `templates/_base.py` to `templates/stencils.py`

@@ -133,6 +133,135 @@ def test_color_constants_exist():
     assert stencils.COLOR_LIGHT_MUTED is not None
 
 
+# ── Palette tests (#48–#51) ─────────────────────────────────
+
+
+def test_palette_classic_exists():
+    p = stencils.PALETTE_CLASSIC
+    assert p is not None
+    assert hasattr(p, "title")
+    assert hasattr(p, "subtitle")
+    assert hasattr(p, "muted")
+    assert hasattr(p, "footer")
+    assert hasattr(p, "accent")
+
+
+def test_palette_minimal_exists():
+    p = stencils.PALETTE_MINIMAL
+    assert p is not None
+    assert hasattr(p, "title")
+    assert hasattr(p, "subtitle")
+    assert hasattr(p, "muted")
+    assert hasattr(p, "footer")
+    assert hasattr(p, "accent")
+
+
+def test_palette_modern_exists():
+    p = stencils.PALETTE_MODERN
+    assert p is not None
+    assert hasattr(p, "title")
+    assert hasattr(p, "subtitle")
+    assert hasattr(p, "muted")
+    assert hasattr(p, "footer")
+    assert hasattr(p, "accent")
+
+
+def test_classic_palette_matches_legacy_constants():
+    """PALETTE_CLASSIC roles must match the original COLOR_* values."""
+    from docx.shared import RGBColor
+
+    assert stencils.PALETTE_CLASSIC.title == RGBColor(0x33, 0x33, 0x66)
+    assert stencils.PALETTE_CLASSIC.subtitle == RGBColor(0x66, 0x66, 0x99)
+    assert stencils.PALETTE_CLASSIC.muted == RGBColor(0x99, 0x99, 0x99)
+    assert stencils.PALETTE_CLASSIC.footer == RGBColor(0xAA, 0xAA, 0xAA)
+    assert stencils.PALETTE_CLASSIC.accent == RGBColor(0x1A, 0x1A, 0x3E)
+
+
+def test_set_palette_switches_title_color():
+    try:
+        stencils.set_palette(stencils.PALETTE_MINIMAL)
+        doc = stencils.new_doc("Test")
+        title_run = doc.paragraphs[0].runs[0]
+        assert title_run.font.color.rgb == stencils.PALETTE_MINIMAL.title
+    finally:
+        stencils.set_palette(stencils.PALETTE_CLASSIC)
+
+
+def test_set_palette_updates_color_constants():
+    try:
+        stencils.set_palette(stencils.PALETTE_MINIMAL)
+        assert stencils.COLOR_MEDIUM_BLUE == stencils.PALETTE_MINIMAL.title
+        assert stencils.COLOR_MUTED == stencils.PALETTE_MINIMAL.muted
+    finally:
+        stencils.set_palette(stencils.PALETTE_CLASSIC)
+
+
+def test_set_palette_invalid_raises():
+    import pytest
+
+    with pytest.raises(ValueError, match="missing required roles"):
+        stencils.set_palette(object())
+
+
+def test_set_palette_custom_palette():
+    from docx.shared import RGBColor
+
+    custom = stencils.Palette(
+        title=RGBColor(0xFF, 0x00, 0x00),
+        subtitle=RGBColor(0x00, 0xFF, 0x00),
+        muted=RGBColor(0x00, 0x00, 0xFF),
+        footer=RGBColor(0xAA, 0xBB, 0xCC),
+        accent=RGBColor(0x11, 0x22, 0x33),
+    )
+    try:
+        stencils.set_palette(custom)
+        doc = stencils.new_doc("Test")
+        title_run = doc.paragraphs[0].runs[0]
+        assert title_run.font.color.rgb == RGBColor(0xFF, 0x00, 0x00)
+    finally:
+        stencils.set_palette(stencils.PALETTE_CLASSIC)
+
+
+def test_set_palette_restores_classic():
+    from docx.shared import RGBColor
+
+    stencils.set_palette(stencils.PALETTE_MINIMAL)
+    stencils.set_palette(stencils.PALETTE_CLASSIC)
+    assert stencils.COLOR_MEDIUM_BLUE == RGBColor(0x33, 0x33, 0x66)
+    assert stencils.COLOR_MUTED == RGBColor(0x99, 0x99, 0x99)
+
+
+def test_new_doc_palette_override():
+    """palette= on new_doc overrides title color without changing active palette."""
+    doc = stencils.new_doc("Test", palette=stencils.PALETTE_MINIMAL)
+    title_run = doc.paragraphs[0].runs[0]
+    assert title_run.font.color.rgb == stencils.PALETTE_MINIMAL.title
+    # Active palette unchanged
+    assert stencils._active_palette is stencils.PALETTE_CLASSIC
+
+
+def test_new_doc_palette_override_does_not_change_active():
+    stencils.new_doc("Test", palette=stencils.PALETTE_MODERN)
+    assert stencils._active_palette is stencils.PALETTE_CLASSIC
+
+
+def test_new_doc_subtitle_palette_override():
+    doc = stencils.new_doc("T", "Sub", palette=stencils.PALETTE_MODERN)
+    # Subtitle is the 3rd paragraph (title, spacer, subtitle)
+    subtitle_para = doc.paragraphs[2]
+    assert subtitle_para.runs[0].font.color.rgb == stencils.PALETTE_MODERN.subtitle
+
+
+def test_new_doc_no_palette_uses_active():
+    try:
+        stencils.set_palette(stencils.PALETTE_MINIMAL)
+        doc = stencils.new_doc("Test")
+        title_run = doc.paragraphs[0].runs[0]
+        assert title_run.font.color.rgb == stencils.PALETTE_MINIMAL.title
+    finally:
+        stencils.set_palette(stencils.PALETTE_CLASSIC)
+
+
 # ── Tests for table_section zero/falsy value fix ─────────────
 
 
@@ -223,9 +352,7 @@ def test_image_empty():
 
 def test_image_invalid_b64():
     doc = stencils.new_doc("Test")
-    stencils.image(
-        doc, "data:image/png;base64,NOT_VALID!!!", placeholder="Failed."
-    )
+    stencils.image(doc, "data:image/png;base64,NOT_VALID!!!", placeholder="Failed.")
     texts = [p.text for p in doc.paragraphs]
     assert any("Failed." in t for t in texts)
 
