@@ -25,7 +25,7 @@ def test_new_doc_with_subtitle():
 def test_new_doc_default_font():
     doc = stencils.new_doc("Title")
     style = doc.styles["Normal"]
-    assert style.font.name == "Calibri"
+    assert style.font.name == "Segoe UI"
     assert style.font.size.pt == 11
 
 
@@ -176,7 +176,7 @@ def test_set_palette_switches_title_color():
         title_run = doc.paragraphs[0].runs[0]
         assert title_run.font.color.rgb == stencils.PALETTE_MINIMAL.title
     finally:
-        stencils.set_palette(stencils.PALETTE_CLASSIC)
+        stencils.set_palette(stencils.PALETTE_MODERN)
 
 
 def test_set_palette_invalid_raises():
@@ -202,27 +202,29 @@ def test_set_palette_custom_palette():
         title_run = doc.paragraphs[0].runs[0]
         assert title_run.font.color.rgb == RGBColor(0xFF, 0x00, 0x00)
     finally:
-        stencils.set_palette(stencils.PALETTE_CLASSIC)
+        stencils.set_palette(stencils.PALETTE_MODERN)
 
 
-def test_set_palette_restores_classic():
+def test_set_palette_restores_default():
     stencils.set_palette(stencils.PALETTE_MINIMAL)
-    stencils.set_palette(stencils.PALETTE_CLASSIC)
-    assert stencils._active_palette is stencils.PALETTE_CLASSIC
+    stencils.set_palette(stencils.PALETTE_MODERN)
+    assert stencils._active_palette is stencils.PALETTE_MODERN
 
 
 def test_new_doc_palette_override():
     """palette= on new_doc overrides title color without changing active palette."""
+    before = stencils._active_palette
     doc = stencils.new_doc("Test", palette=stencils.PALETTE_MINIMAL)
     title_run = doc.paragraphs[0].runs[0]
     assert title_run.font.color.rgb == stencils.PALETTE_MINIMAL.title
     # Active palette unchanged
-    assert stencils._active_palette is stencils.PALETTE_CLASSIC
+    assert stencils._active_palette is before
 
 
 def test_new_doc_palette_override_does_not_change_active():
-    stencils.new_doc("Test", palette=stencils.PALETTE_MODERN)
-    assert stencils._active_palette is stencils.PALETTE_CLASSIC
+    before = stencils._active_palette
+    stencils.new_doc("Test", palette=stencils.PALETTE_CLASSIC)
+    assert stencils._active_palette is before
 
 
 def test_new_doc_subtitle_palette_override():
@@ -239,7 +241,7 @@ def test_new_doc_no_palette_uses_active():
         title_run = doc.paragraphs[0].runs[0]
         assert title_run.font.color.rgb == stencils.PALETTE_MINIMAL.title
     finally:
-        stencils.set_palette(stencils.PALETTE_CLASSIC)
+        stencils.set_palette(stencils.PALETTE_MODERN)
 
 
 # ── Tests for table_section zero/falsy value fix ─────────────
