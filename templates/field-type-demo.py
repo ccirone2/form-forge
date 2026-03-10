@@ -32,7 +32,7 @@ def generate_docx(data):
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
-    stencils.set_palette(stencils.PALETTE_MINIMAL)
+    stencils.set_theme(stencils.THEME_MINIMAL)
 
     name = data.get("full_name", "")
     email = data.get("email", "")

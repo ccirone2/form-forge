@@ -14,6 +14,40 @@
 
 ## Log
 
+### 2026-03-10 — Implement DocTheme + cached template + manual table styling (#53)
+**Issues:** #53
+
+Replaced the piecemeal styling system (Palette + font constants + per-run overrides + built-in Word table styles) with a unified `DocTheme` system:
+
+- **`DocTheme` frozen dataclass** with 21 fields: 5 colors, 3 fonts, 8 sizes, 4 page margins. Replaces `Palette` (5 colors only) + `FONT_BODY/HEADING/CAPTION` constants + hardcoded sizes.
+- **3 built-in themes:** `THEME_CLASSIC`, `THEME_MODERN`, `THEME_MINIMAL` — drop-in replacements for the old `PALETTE_*` constants.
+- **Programmatic DOCX template** built once per theme at first use, cached as bytes. `_build_template()` creates a Document, strips all table styles except Normal Table, pre-configures 6 paragraph styles (Title, Heading 1, Heading 2, Subtitle, List Bullet, Normal) with theme colors/fonts/sizes, sets page margins, clears body content, and serializes to bytes. `new_doc()` clones from cache via `Document(io.BytesIO(cached_bytes))`.
+- **Manual table XML formatting** via `_set_table_borders()` and `_shade_cells()` helpers — bypasses python-docx's buggy table style API. Key-value tables are borderless; repeater tables get grid borders with shaded headers.
+- **Updated all templates** (`onboarding.py`, `expense-report.py`, `field-type-demo.py`) from `set_palette()`/`PALETTE_*` to `set_theme()`/`THEME_*`.
+- **Rewrote index.html demo template** from ~120 self-contained lines to ~55 lines using stencils helpers.
+- **80 tests** (up from 70): new tests for template builder (valid bytes, style stripping, style configuration, margins, cache), table XML assertions (borderless, grid, header shading), and theme system.
+- **Updated `TEMPLATE_GUIDE.md`** — replaced "Color palettes" with "Document themes", updated `new_doc` signature, table descriptions, and examples.
+
+**Decisions:**
+- Template cache keyed by frozen DocTheme instance (hashable because all fields are hashable) — different themes get different cached templates.
+- Stripping table styles at build time (not runtime) eliminates Word's theme engine auto-applying accent colors from the ~100 embedded table style definitions in python-docx's default template.
+- Title rendered as `add_heading(level=0)` using the pre-configured Title style, not manual run formatting — style inheritance means `run.font.color.rgb` returns `None` (tests check style, not run).
+
+---
+
+### 2026-03-10 — Plan: DocTheme + cached template + manual table styling (#53)
+**Issues:** #53
+
+Investigated why DOCX tables render with Word's "Light Grid Accent 1" style despite explicit style assignments. Root cause: `python-docx`'s default `Document()` template embeds ~100 table style definitions in `styles.xml` that Word's theme engine resolves with accent colors.
+
+Broader problem: formatting is scattered — colors in Palette, fonts as module constants, sizes hardcoded per-function, heading styles overridden per-run, page layout never set. Not extendable.
+
+**Decision:** Replace `Palette` + font constants + per-run overrides with a unified `DocTheme` dataclass (colors, fonts, sizes, page layout). Build a fully-styled DOCX template programmatically at import time, cache as bytes, clone in `new_doc()`. Table formatting via direct XML helpers (python-docx table style API has known bugs). 4 phases: core infrastructure, stencils refactor, consumer updates (templates + index.html demo), tests & docs.
+
+Abandoned prototype branch `feature/manual-table-styling`.
+
+---
+
 ### 2026-03-10 — Named Color Palettes for stencils.py (#48–#51)
 **Issues:** #48, #49, #50, #51
 

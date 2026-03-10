@@ -28,7 +28,7 @@ def generate_docx(data):
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
-    stencils.set_palette(stencils.PALETTE_CLASSIC)
+    stencils.set_theme(stencils.THEME_CLASSIC)
 
     first = data.get("first_name", "")
     last = data.get("last_name", "")
@@ -84,7 +84,9 @@ def generate_docx(data):
 
     stencils.longtext(doc, "Professional Bio", data.get("bio", ""))
     stencils.bullet_list(doc, "Key Skills", data.get("skills", ""))
-    stencils.bullet_list(doc, "Certifications & Licenses", data.get("certifications", ""))
+    stencils.bullet_list(
+        doc, "Certifications & Licenses", data.get("certifications", "")
+    )
     stencils.longtext(doc, "Notable Prior Projects", data.get("prior_projects", ""))
 
     # ── Section: Additional Information ────────────────────────
