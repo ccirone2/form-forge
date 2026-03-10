@@ -1,7 +1,7 @@
 """
 FormForge DOCX Template: Event Registration (Field Type Demo)
 =============================================================
-Demonstrates all 17 field types, wizard mode, and conditional visibility.
+Demonstrates all 18 field types, wizard mode, and conditional visibility.
 
 Field type value formats:
   - text/email/tel/date/select/radio/textarea → str
@@ -22,7 +22,7 @@ from docx.shared import Pt
 import stencils
 
 
-def generate_docx(data):
+def generate_docx(data: dict[str, str]) -> bytes:
     """
     Generate an Event Registration document from form data.
 
@@ -32,6 +32,8 @@ def generate_docx(data):
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
+    stencils.set_theme(stencils.THEME_MINIMAL)
+
     name = data.get("full_name", "")
     email = data.get("email", "")
     event_date = data.get("event_date", "")
@@ -171,9 +173,7 @@ def generate_docx(data):
 
     # signature — applicant signature
     doc.add_heading("Applicant Signature", level=1)
-    stencils.signature(
-        doc, data.get("applicant_signature", ""), "Applicant Signature"
-    )
+    stencils.signature(doc, data.get("applicant_signature", ""), "Applicant Signature")
     doc.add_paragraph("")
 
     # ── Footer ────────────────────────────────────────────

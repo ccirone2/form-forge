@@ -22,7 +22,7 @@ import json
 import stencils
 
 
-def generate_docx(data):
+def generate_docx(data: dict[str, str]) -> bytes:
     """
     Generate an Expense Report Document from form data.
 
@@ -32,6 +32,8 @@ def generate_docx(data):
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
+    stencils.set_theme(stencils.THEME_MODERN)
+
     name = data.get("employee_name", "")
     dept = data.get("department", "")
     report_date = data.get("report_date", "")

@@ -54,6 +54,7 @@ for p in pathlib.Path('schemas').glob('*.json'):
 | `template` | no | string | Path to the Python template file relative to repo root. Must match `^templates/.+\.py$`. Defaults to `templates/{schema-filename}.py`. |
 | `wizard` | no | boolean | When `true`, sections render as sequential steps with Next/Back navigation. See [Wizard Mode](#wizard-mode). |
 | `sections` | yes | array | Array of section objects. Minimum 1. |
+| `sampleData` | no | object | Inline sample form data (field ID to string value). Used by the **Load Sample Data** button when no fixture file exists. See [Sample Data](#sample-data). |
 
 No other top-level properties are allowed.
 
@@ -141,7 +142,7 @@ Examples:
 
 ## Field Types
 
-17 types are supported. The `type` value must be exactly one of these strings.
+18 types are supported. The `type` value must be exactly one of these strings.
 
 | Type | Renders As | `options` needed? | Special properties |
 |------|-----------|-------------------|--------------------|
@@ -296,6 +297,31 @@ The smallest valid schema:
   ]
 }
 ```
+
+## Sample Data
+
+The **Load Sample Data** button in the form UI lets users fill a form with representative data for quick preview and DOCX testing.
+
+### Fixture files (preferred)
+
+Place a JSON file at `tests/fixtures/{schemaName}_sample.json` where `{schemaName}` matches the schema filename without the `.json` extension (e.g., `schemas/onboarding.json` uses `tests/fixtures/onboarding_sample.json`). The file should contain a flat `{fieldId: stringValue}` object with values for all fields. `file` and `signature` fields can use empty strings.
+
+### Inline `sampleData` (fallback)
+
+If a fixture file is not available (e.g., the schema is hosted in a repo without `tests/fixtures/`), you can include sample data directly in the schema:
+
+```json
+{
+  "title": "My Form",
+  "sampleData": {
+    "full_name": "Jane Doe",
+    "email": "jane@example.com"
+  },
+  "sections": [...]
+}
+```
+
+The button tries the fixture file first, then falls back to `sampleData`.
 
 ## Tips
 

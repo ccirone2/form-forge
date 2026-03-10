@@ -45,4 +45,4 @@ For each task:
 - Never create tasks larger than ~2 hours of work
 - Always check docs/PLAN.md and docs/DEVLOG.md for context
 - Always create GitHub issues for planned tasks
-- Reference architecture from ARCHITECTURE.md
+- Reference architecture from CLAUDE.md

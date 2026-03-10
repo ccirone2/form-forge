@@ -14,6 +14,187 @@
 
 ## Log
 
+### 2026-03-10 — Refactor index.html for maintainability (#38 → #68–#71)
+**Issues:** #38, #68, #69, #70, #71
+
+Implemented all 4 sub-tasks of the refactor:
+
+- **#68 Eliminate monkey-patching** — Merged the duplicate `launchForm` (line 3230 override → single definition at line 1480). Inlined `loadDocs()` call directly into `connectRepo()` body, removing `_origConnectRepo` monkey-patch. Removed `_originalLaunchForm` and `_origConnectRepo` variables.
+- **#69 Unify validation** — Extracted shared `validateSection(section)` that validates directly from the DOM with explicit radio, checkbox, and address branches. Both `wizardValidateStep()` and `validateForm()` now delegate to it. Fixes divergence where `validateForm` previously lacked radio/checkbox-specific validation.
+- **#70 Extract createField** — Decomposed the 416-line `createField()` into 16 named creator functions (`createTextField`, `createDateField`, etc.) registered in a `fieldCreators` map. `createField()` is now a 28-line dispatcher handling labels, delegation, and hints.
+- **#71 Update CLAUDE.md** — Replaced the "touches three places" bullet with a complete 6-item checklist covering all actual touch points for adding a new field type.
+
+**Net result:** index.html reduced from 3270 → 3234 lines (−36). All 90 tests pass.
+
+---
+
+### 2026-03-10 — Miscellaneous cleanup (#43 → #61–#66)
+**Issues:** #43, #61, #62, #63, #64, #65, #66
+
+Implemented all 6 sub-tasks of the miscellaneous cleanup:
+
+- **#61 Token masking** — Changed `tokenInput` from `type="text"` to `type="password"` so GitHub tokens are masked while typing.
+- **#62 Event listener stacking** — Split `setupConditionalVisibility()` into three functions: `setupConditionalVisibility()` (attaches listeners + evaluates, called only from `buildForm()`), `evaluateAllConditionals()` (re-evaluates without attaching listeners, called from `populateForm()` and `resetForm()`), and `_buildConditionalDependencies()` (shared dependency map builder). Fixes memory leak where N populates caused N copies of evaluate handlers.
+- **#63 Schema spec fixes** — Changed `min`/`max` from `"type": "integer"` to `"type": "number"` in both `field` and `repeaterField` definitions (allows float constraints like `0.5`). Added `allOf` exclusion rules to `repeaterField`: `min`/`max`/`step` restricted to `number`, `currency_symbol` restricted to `currency`, `maxLength` restricted to `text`. 5 new schema tests (90 total).
+- **#64 Field type count** — Updated all references from "17" to "18" in SCHEMA_GUIDE.md, README.md, CLAUDE.md, field-type-demo.py, and field-type-demo.json.
+- **#65 Type hints** — Added `from __future__ import annotations` and type annotations to all public and private function signatures in `stencils.py` (16 functions). Added `generate_docx(data: dict[str, str]) -> bytes` to all 3 templates.
+- **#66 Configurable fallback URL** — Extracted the hardcoded `stencils.py` fallback URL into a `FORMFORGE_FALLBACK` constant (`{ owner, repo, branch }`) in the state section. URL is now derived from the constant via template literal.
+
+---
+
+### 2026-03-10 — Plan: Miscellaneous cleanup (#43 → #61–#66)
+**Issues:** #43, #61, #62, #63, #64, #65, #66
+
+Reviewed issue #43 (created 2026-03-04) for current relevancy. 6 of 8 original items are still applicable; 1 partially relevant (URL renamed from `_base.py` to `stencils.py`), 1 fixed (mid-function imports in `onboarding.py`). Updated issue body to reflect current state.
+
+Broke #43 into 6 independent tasks:
+- **#61** — Token input masking: `type="text"` → `type="password"` (bug, trivial)
+- **#62** — Event listener stacking in `setupConditionalVisibility` (bug, moderate)
+- **#63** — Schema spec: `min`/`max` accept floats + `repeaterField` exclusion rules (bug, moderate)
+- **#64** — Update field type count from "17" to "18" in all docs (documentation, trivial)
+- **#65** — Python type hints on all public function signatures (enhancement, moderate)
+- **#66** — Extract hardcoded stencils.py fallback URL to configurable constant (enhancement, low)
+
+All tasks are independent with no ordering constraints.
+
+---
+
+### 2026-03-10 — Wizard step indicator: clickable navigation + mobile responsive
+**Issues:** #59
+
+- **Clickable step circles** — Each wizard step in the indicator bar is now clickable. Navigation to any step is unrestricted — no intermediate validation on click. Validation still occurs at submit time.
+- **Checkmark icons** — Completed steps display a checkmark SVG instead of the step number, providing clear visual progress feedback.
+- **Hover effects** — Steps scale up slightly on hover with accent border color. Active step suppresses the scale to avoid visual jitter.
+- **Mobile responsive (≤600px)** — Step labels are hidden, circles shrink to 28px, connectors to 24px with tighter margins.
+- **Small screen (≤400px)** — Circles shrink further to 24px, connectors to 16px.
+- **Touch-friendly** — Added `touch-action: manipulation` to prevent double-tap zoom delay, `padding: 6px 0` for larger hit area.
+- **Keyboard accessible** — Steps have `role="button"`, `tabindex="0"`, and respond to Enter/Space keys.
+
+### 2026-03-10 -- DOCX styling and layout polish
+
+- **Title & Heading 1 horizontal rules** — Added bottom borders (`w:pBdr`) to Title and Heading 1 styles using `color_subtitle` for theme-matched lines.
+- **Heading spacing** — 6pt `space_after` on Heading 1, 4pt on Heading 2–6.
+- **Bullet list indent fix** — `bullet_list()` now overrides the numbering-level indent via XML (`w:left="720" w:hanging="360"`) instead of `paragraph_format.left_indent` which was ignored by Word's numbering definition. Bullet at 0.25", text at 0.5".
+- **Table section left margin** — First column cells get 0.25" left margin via `_set_cell_left_margin()`.
+- **Theme contrast for print** — Darkened `color_muted` and `color_footer` across all three themes for WCAG AA compliance and print reliability:
+  - Classic: muted #999→#767676, footer #AAA→#6B6B6B
+  - Minimal: subtitle #555→#4A4A4A, muted #AAA→#6B6B6B, footer #CCC→#595959
+  - Modern: subtitle #4A8FA3→#3A7A8C, muted #8FA9B2→#5A7A85, footer #B0C4CB→#4D6E78
+- **Theme margins** — All themes now use 0.75" bottom margin and 1.0" left/right.
+- **Cache-busters** — GitHub raw fetches append `?t=` timestamp to prevent stale responses.
+- **Wizard navigation** — Removed step-locking so users can freely navigate between wizard steps.
+- New tests: `test_bullet_list_indent`, `test_table_section_first_column_has_left_margin`.
+
+---
+
+### 2026-03-10 -- Load Sample Data button + sampleData schema property (#55, #56, #57)
+**Issues:** #55, #56, #57
+
+- **Load Sample Data button** added to the submit area alongside Save Data / Load Data. Clicking it fetches `tests/fixtures/{schemaName}_sample.json` from the connected GitHub repo via `ghFetchRaw()`, then calls `populateForm(data, { skipFileFields: true })`.
+- **`currentSchemaName` state variable** added and set in all 4 launch paths (GitHub launchForm, picker override, launchLocal, launchDemo). Derived from the schema file path by stripping `schemas/` prefix and `.json` suffix. Empty string for local/demo paths.
+- **Fallback to inline `sampleData`** — if no fixture file is found (404 or no connected repo), `loadSampleData()` checks `currentSchema.sampleData` and uses it directly. Added `sampleData` to `DEMO_SCHEMA` so the demo form works without a GitHub connection.
+- **`sampleData` schema property** — added optional `sampleData` object to `_schema.spec.json`. Allows schemas to ship inline sample data for repos without fixture files.
+- **3 new schema tests** (83 total): `test_sample_data_validates`, `test_sample_data_is_optional`, `test_rejects_sample_data_non_object`.
+- **SCHEMA_GUIDE.md** updated with Sample Data section documenting fixture naming convention and inline `sampleData` fallback.
+- All 3 existing fixture files verified complete for their schemas.
+- **Heading bold fix** — Added `_clear_bold()` helper that sets both `w:b` and `w:bCs` to `val="0"` on heading styles. Word's built-in headings carry `<w:bCs/>` (bold complex script) which renders bold even when `w:b` is disabled. Applied to Title and Heading 1-6. Consolidated the two heading loops into one.
+- **Table cell margins** changed from 0.02" to 0.03" on all tables.
+
+**Decisions:**
+- Fixture file takes precedence over inline `sampleData` — single source of truth for test suite and UI.
+- `skipFileFields: true` passed to `populateForm` since fixture files use empty strings for file/signature fields.
+- Local/demo paths set `currentSchemaName = ''` so the fixture fetch is skipped cleanly; they fall through to the `sampleData` check or show a toast.
+
+---
+
+### 2026-03-10 -- Plan: Load Sample Data button (#55, #56, #57)
+**Issues:** #55, #56, #57
+
+Planned a feature to add a "Load Sample Data" button alongside the existing Save Data / Load Data buttons in the form submit area. The button lets users instantly populate the form with representative fixture data so they can export a demo DOCX without manual input.
+
+**Decision: fetch from tests/fixtures/ as primary source.** Four approaches were considered (embedded in index.html, fetched from fixtures, schema-level sampleData property, auto-generated). Fetching tests/fixtures/{schemaName}_sample.json via the existing ghFetchRaw() utility is the simplest path -- the three fixture files already exist and cover all current schemas, and it avoids duplicating data inside index.html.
+
+**Decision: schema-level sampleData as optional fallback.** For repos that do not follow the fixture convention, a sampleData property in the schema JSON can supply inline sample values. This is optional and requires a _schema.spec.json update and schema validation tests.
+
+**Three tasks planned:**
+- **Task 1 (#55):** Core button + loadSampleData() function in index.html. Adds currentSchemaName state variable set across all 4 launch paths. ~1.5h.
+- **Task 2 (#56):** Fixture coverage verification and SCHEMA_GUIDE.md documentation of the fixture naming convention. ~30 min.
+- **Task 3 (#57):** sampleData schema property as fallback; spec update, tests, docs. Depends on #55. ~1h.
+
+Implementation order: Task 1 and Task 2 are independent. Task 3 waits for Task 1.
+
+---
+
+### 2026-03-10 — DOCX styling fixes: fonts, headings 3-6, spacing, tables
+
+- **Theme font override fix** — Added `_set_style_font()` helper that strips `w:asciiTheme`/`w:hAnsiTheme`/`w:cstheme`/`w:eastAsiaTheme` attributes from built-in Word styles (Title, Heading 1-6, Subtitle, List Bullet, Normal). Without this, Word's theme-linked font references silently override `python-docx`'s `style.font.name`, causing Calibri to render instead of Segoe UI.
+- **Heading 3-6 support** — Added `size_heading3` (12pt), `size_heading4`/`5`/`6` (11pt) to `DocTheme` dataclass and all three themes. Configured in `_build_template()` with heading font, theme colors, and `bold = False`.
+- **Normal style spacing** — Set `space_after = Pt(0)` on the Normal style (was defaulting to 10pt).
+- **Table cell margins** — Added `_set_cell_margins()` helper; applied 0.02" top/bottom margins to all tables (table_section, signatures, repeater_table).
+- **Repeater table borders** — Changed from full grid borders to horizontal-only (top, bottom, insideH); vertical borders (left, right, insideV) set to none.
+- **Repeater header bold** — Added `r.bold = True` on header row runs for proper semibold rendering.
+- **Color field rename** — Renamed `title`/`subtitle`/`muted`/`footer`/`accent` to `color_title`/`color_subtitle`/`color_muted`/`color_footer`/`color_accent` across DocTheme, all themes, stencils.py usage sites, and tests.
+- **THEME_MODERN margins** — Updated to bottom=0.75", left/right=1.5".
+- All 80 tests pass.
+
+---
+
+### 2026-03-10 — Implement DocTheme + cached template + manual table styling (#53)
+**Issues:** #53
+
+Replaced the piecemeal styling system (Palette + font constants + per-run overrides + built-in Word table styles) with a unified `DocTheme` system:
+
+- **`DocTheme` frozen dataclass** with 21 fields: 5 colors, 3 fonts, 8 sizes, 4 page margins. Replaces `Palette` (5 colors only) + `FONT_BODY/HEADING/CAPTION` constants + hardcoded sizes.
+- **3 built-in themes:** `THEME_CLASSIC`, `THEME_MODERN`, `THEME_MINIMAL` — drop-in replacements for the old `PALETTE_*` constants.
+- **Programmatic DOCX template** built once per theme at first use, cached as bytes. `_build_template()` creates a Document, strips all table styles except Normal Table, pre-configures 6 paragraph styles (Title, Heading 1, Heading 2, Subtitle, List Bullet, Normal) with theme colors/fonts/sizes, sets page margins, clears body content, and serializes to bytes. `new_doc()` clones from cache via `Document(io.BytesIO(cached_bytes))`.
+- **Manual table XML formatting** via `_set_table_borders()` and `_shade_cells()` helpers — bypasses python-docx's buggy table style API. Key-value tables are borderless; repeater tables get grid borders with shaded headers.
+- **Updated all templates** (`onboarding.py`, `expense-report.py`, `field-type-demo.py`) from `set_palette()`/`PALETTE_*` to `set_theme()`/`THEME_*`.
+- **Rewrote index.html demo template** from ~120 self-contained lines to ~55 lines using stencils helpers.
+- **80 tests** (up from 70): new tests for template builder (valid bytes, style stripping, style configuration, margins, cache), table XML assertions (borderless, grid, header shading), and theme system.
+- **Updated `TEMPLATE_GUIDE.md`** — replaced "Color palettes" with "Document themes", updated `new_doc` signature, table descriptions, and examples.
+
+**Decisions:**
+- Template cache keyed by frozen DocTheme instance (hashable because all fields are hashable) — different themes get different cached templates.
+- Stripping table styles at build time (not runtime) eliminates Word's theme engine auto-applying accent colors from the ~100 embedded table style definitions in python-docx's default template.
+- Title rendered as `add_heading(level=0)` using the pre-configured Title style, not manual run formatting — style inheritance means `run.font.color.rgb` returns `None` (tests check style, not run).
+
+---
+
+### 2026-03-10 — Plan: DocTheme + cached template + manual table styling (#53)
+**Issues:** #53
+
+Investigated why DOCX tables render with Word's "Light Grid Accent 1" style despite explicit style assignments. Root cause: `python-docx`'s default `Document()` template embeds ~100 table style definitions in `styles.xml` that Word's theme engine resolves with accent colors.
+
+Broader problem: formatting is scattered — colors in Palette, fonts as module constants, sizes hardcoded per-function, heading styles overridden per-run, page layout never set. Not extendable.
+
+**Decision:** Replace `Palette` + font constants + per-run overrides with a unified `DocTheme` dataclass (colors, fonts, sizes, page layout). Build a fully-styled DOCX template programmatically at import time, cache as bytes, clone in `new_doc()`. Table formatting via direct XML helpers (python-docx table style API has known bugs). 4 phases: core infrastructure, stencils refactor, consumer updates (templates + index.html demo), tests & docs.
+
+Abandoned prototype branch `feature/manual-table-styling`.
+
+---
+
+### 2026-03-10 — Named Color Palettes for stencils.py (#48–#51)
+**Issues:** #48, #49, #50, #51
+
+Added a palette system to `stencils.py` with 3 built-in palettes and custom palette support:
+
+- **`Palette` dataclass** with 5 semantic roles: `title`, `subtitle`, `muted`, `footer`, `accent`
+- **3 built-in palettes:** `PALETTE_CLASSIC` (bold navy/blue — default, preserves existing colors), `PALETTE_MINIMAL` (near-monochrome, extremely restrained), `PALETTE_MODERN` (contemporary teal/slate)
+- **`set_palette(palette)`** — switches the active palette for all subsequent stencils calls; raises `ValueError` on incomplete palettes
+- **`new_doc(palette=)`** — optional per-document palette override for title/subtitle colors without mutating global state
+- **Wired all 9 helper functions** to read from `_active_palette` instead of hardcoded constants
+- **Removed legacy `COLOR_*` module constants** (`COLOR_DARK_NAVY`, `COLOR_MEDIUM_BLUE`, `COLOR_SOFT_BLUE`, `COLOR_MUTED`, `COLOR_LIGHT_MUTED`) — all color access now goes through the palette system exclusively
+- **11 new tests** covering palette existence, role matching, switching, restoration, invalid palettes, custom palettes, and `new_doc()` overrides (70 total)
+- **Updated `TEMPLATE_GUIDE.md`** — rewrote "Color palette" section to document palettes, `set_palette()`, `new_doc(palette=)`, and custom `Palette` construction
+
+**Decisions:**
+- Used `dataclass(frozen=True)` for `Palette` to make palettes immutable and hashable
+- Default palette is `PALETTE_CLASSIC` — existing templates produce identical output with zero changes
+- Removed legacy `COLOR_*` constants entirely rather than keeping them as aliases — cleaner API, no backward compatibility needed
+- `new_doc(palette=)` is intentionally scoped to title/subtitle only; use `set_palette()` for full-document palette control
+
+---
+
 ### 2026-03-10 — Rename `_base.py` → `stencils.py` and Shorten Function Names
 
 - Renamed `templates/_base.py` to `templates/stencils.py`

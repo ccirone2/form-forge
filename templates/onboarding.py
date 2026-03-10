@@ -18,7 +18,7 @@ Field type notes:
 import stencils
 
 
-def generate_docx(data):
+def generate_docx(data: dict[str, str]) -> bytes:
     """
     Generate an Employee Onboarding Document from form data.
 
@@ -28,6 +28,8 @@ def generate_docx(data):
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
+    stencils.set_theme(stencils.THEME_CLASSIC)
+
     first = data.get("first_name", "")
     last = data.get("last_name", "")
     start = data.get("start_date", "TBD")
@@ -92,9 +94,9 @@ def generate_docx(data):
         doc,
         "Additional Information",
         [
-            ("Dietary Restrictions", data.get("dietary_restrictions", "")),
             ("Emergency Contact", data.get("emergency_contact", "")),
             ("Emergency Phone", data.get("emergency_phone", "")),
+            ("Dietary Restrictions", data.get("dietary_restrictions", "")),
             ("Notes", data.get("notes", "")),
         ],
     )

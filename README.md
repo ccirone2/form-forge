@@ -37,7 +37,7 @@ form-forge/
 │   ├── DEVLOG.md               ← development journal
 │   ├── SCHEMA_GUIDE.md         ← guide for writing new schemas
 │   ├── TEMPLATE_GUIDE.md       ← guide for writing new templates
-│   └── FIELD_TYPES.md          ← reference for all 17 field types
+│   └── FIELD_TYPES.md          ← reference for all 18 field types
 └── .github/workflows/
     └── validate.yml            ← CI: schema validation + pytest
 ```
