@@ -283,6 +283,7 @@ def _build_template(theme):
     _set_style_font(title_style, theme.font_heading)
     title_style.font.size = Pt(theme.size_title)
     title_style.font.color.rgb = theme.color_title
+    title_style.font.bold = False
     title_style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     for name, size, color in [
@@ -293,6 +294,7 @@ def _build_template(theme):
         _set_style_font(h, theme.font_heading)
         h.font.size = Pt(size)
         h.font.color.rgb = color
+        h.font.bold = False
 
     for name, size, color in [
         ("Heading 3", theme.size_heading3, theme.color_title),
