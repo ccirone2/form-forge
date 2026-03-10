@@ -21,16 +21,17 @@ Added a palette system to `stencils.py` with 3 built-in palettes and custom pale
 
 - **`Palette` dataclass** with 5 semantic roles: `title`, `subtitle`, `muted`, `footer`, `accent`
 - **3 built-in palettes:** `PALETTE_CLASSIC` (bold navy/blue — default, preserves existing colors), `PALETTE_MINIMAL` (near-monochrome, extremely restrained), `PALETTE_MODERN` (contemporary teal/slate)
-- **`set_palette(palette)`** — switches the active palette for all subsequent stencils calls; also updates legacy `COLOR_*` module constants for backward compatibility; raises `ValueError` on incomplete palettes
+- **`set_palette(palette)`** — switches the active palette for all subsequent stencils calls; raises `ValueError` on incomplete palettes
 - **`new_doc(palette=)`** — optional per-document palette override for title/subtitle colors without mutating global state
-- **Wired all 9 helper functions** to read from `_active_palette` instead of hardcoded `COLOR_*` constants
-- **13 new tests** covering palette existence, role matching, switching, restoration, invalid palettes, custom palettes, and `new_doc()` overrides (72 total)
-- **Updated `TEMPLATE_GUIDE.md`** — rewrote "Color palette" section to document palettes, `set_palette()`, `new_doc(palette=)`, custom `Palette` construction, and legacy constant mapping
+- **Wired all 9 helper functions** to read from `_active_palette` instead of hardcoded constants
+- **Removed legacy `COLOR_*` module constants** (`COLOR_DARK_NAVY`, `COLOR_MEDIUM_BLUE`, `COLOR_SOFT_BLUE`, `COLOR_MUTED`, `COLOR_LIGHT_MUTED`) — all color access now goes through the palette system exclusively
+- **11 new tests** covering palette existence, role matching, switching, restoration, invalid palettes, custom palettes, and `new_doc()` overrides (70 total)
+- **Updated `TEMPLATE_GUIDE.md`** — rewrote "Color palette" section to document palettes, `set_palette()`, `new_doc(palette=)`, and custom `Palette` construction
 
 **Decisions:**
 - Used `dataclass(frozen=True)` for `Palette` to make palettes immutable and hashable
 - Default palette is `PALETTE_CLASSIC` — existing templates produce identical output with zero changes
-- Legacy `COLOR_*` constants remain as module-level aliases updated by `set_palette()` — no breaking changes for existing template code
+- Removed legacy `COLOR_*` constants entirely rather than keeping them as aliases — cleaner API, no backward compatibility needed
 - `new_doc(palette=)` is intentionally scoped to title/subtitle only; use `set_palette()` for full-document palette control
 
 ---
