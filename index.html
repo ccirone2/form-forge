@@ -1318,7 +1318,7 @@ async function ghFetch(path) {
 }
 
 async function ghFetchRaw(path) {
-  const url = `https://raw.githubusercontent.com/${ghOwner}/${ghRepo}/${ghBranch}/${path}`;
+  const url = `https://raw.githubusercontent.com/${ghOwner}/${ghRepo}/${ghBranch}/${path}?t=${Date.now()}`;
   const resp = await fetch(url, { headers: ghToken ? { 'Authorization': `token ${ghToken}` } : {} });
   if (!resp.ok) throw new Error(`GitHub raw ${resp.status} for ${path}`);
   return resp.text();
@@ -1553,7 +1553,7 @@ async function loadBaseModule() {
     if (!baseCode) {
       try {
         const resp = await fetch(
-          'https://raw.githubusercontent.com/ccirone2/form-forge/develop/templates/stencils.py'
+          'https://raw.githubusercontent.com/ccirone2/form-forge/develop/templates/stencils.py?t=' + Date.now()
         );
         if (resp.ok) {
           baseCode = await resp.text();
@@ -1830,12 +1830,6 @@ function wizardValidateStep(stepIndex) {
 }
 
 function wizardNext(fromStep) {
-  const missing = wizardValidateStep(fromStep);
-  if (missing.length > 0) {
-    showToast(`Missing: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? '...' : ''}`, 'error');
-    log('Step validation failed: ' + missing.join(', '), 'error');
-    return;
-  }
   wizardGoTo(fromStep + 1);
 }
 

@@ -14,6 +14,23 @@
 
 ## Log
 
+### 2026-03-10 -- DOCX styling and layout polish
+
+- **Title & Heading 1 horizontal rules** — Added bottom borders (`w:pBdr`) to Title and Heading 1 styles using `color_subtitle` for theme-matched lines.
+- **Heading spacing** — 6pt `space_after` on Heading 1, 4pt on Heading 2–6.
+- **Bullet list indent fix** — `bullet_list()` now overrides the numbering-level indent via XML (`w:left="720" w:hanging="360"`) instead of `paragraph_format.left_indent` which was ignored by Word's numbering definition. Bullet at 0.25", text at 0.5".
+- **Table section left margin** — First column cells get 0.25" left margin via `_set_cell_left_margin()`.
+- **Theme contrast for print** — Darkened `color_muted` and `color_footer` across all three themes for WCAG AA compliance and print reliability:
+  - Classic: muted #999→#767676, footer #AAA→#6B6B6B
+  - Minimal: subtitle #555→#4A4A4A, muted #AAA→#6B6B6B, footer #CCC→#595959
+  - Modern: subtitle #4A8FA3→#3A7A8C, muted #8FA9B2→#5A7A85, footer #B0C4CB→#4D6E78
+- **Theme margins** — All themes now use 0.75" bottom margin and 1.0" left/right.
+- **Cache-busters** — GitHub raw fetches append `?t=` timestamp to prevent stale responses.
+- **Wizard navigation** — Removed step-locking so users can freely navigate between wizard steps.
+- New tests: `test_bullet_list_indent`, `test_table_section_first_column_has_left_margin`.
+
+---
+
 ### 2026-03-10 -- Load Sample Data button + sampleData schema property (#55, #56, #57)
 **Issues:** #55, #56, #57
 

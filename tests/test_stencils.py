@@ -101,11 +101,11 @@ def test_theme_modern_has_all_fields():
 
 
 def test_classic_theme_matches_legacy_colors():
-    """THEME_CLASSIC colors must match the original PALETTE_CLASSIC values."""
+    """THEME_CLASSIC colors must match expected values."""
     assert stencils.THEME_CLASSIC.color_title == RGBColor(0x33, 0x33, 0x66)
     assert stencils.THEME_CLASSIC.color_subtitle == RGBColor(0x66, 0x66, 0x99)
-    assert stencils.THEME_CLASSIC.color_muted == RGBColor(0x99, 0x99, 0x99)
-    assert stencils.THEME_CLASSIC.color_footer == RGBColor(0xAA, 0xAA, 0xAA)
+    assert stencils.THEME_CLASSIC.color_muted == RGBColor(0x76, 0x76, 0x76)
+    assert stencils.THEME_CLASSIC.color_footer == RGBColor(0x6B, 0x6B, 0x6B)
     assert stencils.THEME_CLASSIC.color_accent == RGBColor(0x1A, 0x1A, 0x3E)
 
 
@@ -236,8 +236,8 @@ def test_template_page_margins():
     section = doc.sections[0]
     assert section.top_margin == Inches(1.0)
     assert section.bottom_margin == Inches(0.75)
-    assert section.left_margin == Inches(1.5)
-    assert section.right_margin == Inches(1.5)
+    assert section.left_margin == Inches(1.0)
+    assert section.right_margin == Inches(1.0)
 
 
 def test_template_custom_margins():
@@ -337,6 +337,33 @@ def test_table_section_numeric_zero():
     assert table.rows[0].cells[1].text == "0"
 
 
+def test_table_section_first_column_has_left_margin():
+    doc = stencils.new_doc("Test")
+    stencils.table_section(doc, "Info", [("Name", "Alice"), ("Role", "Dev")])
+    table = doc.tables[0]
+    expected_twips = int(0.25 * 1440)  # 360 twips
+
+    for row in table.rows:
+        # First column cell should have left margin
+        tc0 = row.cells[0]._tc
+        tcPr0 = tc0.find(qn("w:tcPr"))
+        assert tcPr0 is not None
+        tcMar0 = tcPr0.find(qn("w:tcMar"))
+        assert tcMar0 is not None
+        left0 = tcMar0.find(qn("w:left"))
+        assert left0 is not None
+        assert int(left0.get(qn("w:w"))) == expected_twips
+
+        # Second column cell should NOT have a cell-level left margin
+        tc1 = row.cells[1]._tc
+        tcPr1 = tc1.find(qn("w:tcPr"))
+        if tcPr1 is not None:
+            tcMar1 = tcPr1.find(qn("w:tcMar"))
+            if tcMar1 is not None:
+                left1 = tcMar1.find(qn("w:left"))
+                assert left1 is None
+
+
 def test_repeater_table_with_items():
     doc = stencils.new_doc("Test")
     items = [
@@ -427,6 +454,16 @@ def test_bullet_list_with_items():
     assert "Python" in texts
     assert "JavaScript" in texts
     assert "Rust" in texts
+
+
+def test_bullet_list_indent():
+    doc = stencils.new_doc("Test")
+    stencils.bullet_list(doc, "Skills", "Python\nRust")
+    for p in doc.paragraphs:
+        if p.style.name == "List Bullet":
+            # Bullet at 0.25", text at 0.5" (left=0.5" with 0.25" hanging)
+            assert p.paragraph_format.left_indent == Inches(0.5)
+            assert p.paragraph_format.first_line_indent == Inches(-0.25)
 
 
 def test_bullet_list_empty():

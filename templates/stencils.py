@@ -130,8 +130,8 @@ class DocTheme:
 THEME_CLASSIC = DocTheme(
     color_title=RGBColor(0x33, 0x33, 0x66),
     color_subtitle=RGBColor(0x66, 0x66, 0x99),
-    color_muted=RGBColor(0x99, 0x99, 0x99),
-    color_footer=RGBColor(0xAA, 0xAA, 0xAA),
+    color_muted=RGBColor(0x76, 0x76, 0x76),
+    color_footer=RGBColor(0x6B, 0x6B, 0x6B),
     color_accent=RGBColor(0x1A, 0x1A, 0x3E),
     font_body="Segoe UI",
     font_heading="Segoe UI Semibold",
@@ -149,16 +149,16 @@ THEME_CLASSIC = DocTheme(
     size_caption=9,
     size_footer=8,
     margin_top=1.0,
-    margin_bottom=1.0,
+    margin_bottom=0.75,
     margin_left=1.0,
     margin_right=1.0,
 )
 
 THEME_MINIMAL = DocTheme(
     color_title=RGBColor(0x1A, 0x1A, 0x1A),
-    color_subtitle=RGBColor(0x55, 0x55, 0x55),
-    color_muted=RGBColor(0xAA, 0xAA, 0xAA),
-    color_footer=RGBColor(0xCC, 0xCC, 0xCC),
+    color_subtitle=RGBColor(0x4A, 0x4A, 0x4A),
+    color_muted=RGBColor(0x6B, 0x6B, 0x6B),
+    color_footer=RGBColor(0x59, 0x59, 0x59),
     color_accent=RGBColor(0x00, 0x00, 0x00),
     font_body="Segoe UI",
     font_heading="Segoe UI Semibold",
@@ -176,16 +176,16 @@ THEME_MINIMAL = DocTheme(
     size_caption=9,
     size_footer=8,
     margin_top=1.0,
-    margin_bottom=1.0,
+    margin_bottom=0.75,
     margin_left=1.0,
     margin_right=1.0,
 )
 
 THEME_MODERN = DocTheme(
     color_title=RGBColor(0x1B, 0x5E, 0x6E),
-    color_subtitle=RGBColor(0x4A, 0x8F, 0xA3),
-    color_muted=RGBColor(0x8F, 0xA9, 0xB2),
-    color_footer=RGBColor(0xB0, 0xC4, 0xCB),
+    color_subtitle=RGBColor(0x3A, 0x7A, 0x8C),
+    color_muted=RGBColor(0x5A, 0x7A, 0x85),
+    color_footer=RGBColor(0x4D, 0x6E, 0x78),
     color_accent=RGBColor(0x0D, 0x3D, 0x4A),
     font_body="Segoe UI",
     font_heading="Segoe UI Semibold",
@@ -204,8 +204,8 @@ THEME_MODERN = DocTheme(
     size_footer=8,
     margin_top=1.0,
     margin_bottom=0.75,
-    margin_left=1.5,
-    margin_right=1.5,
+    margin_left=1.0,
+    margin_right=1.0,
 )
 
 _active_theme = THEME_MODERN
@@ -302,6 +302,15 @@ def _build_template(theme):
     title_style.font.color.rgb = theme.color_title
     _clear_bold(title_style)
     title_style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title_pPr = title_style.element.get_or_add_pPr()
+    title_pPr.append(
+        parse_xml(
+            f'<w:pBdr {nsdecls("w")}>'
+            f'<w:bottom w:val="single" w:sz="4" w:space="1"'
+            f' w:color="{theme.color_subtitle}"/>'
+            f"</w:pBdr>"
+        )
+    )
 
     for name, size, color in [
         ("Heading 1", theme.size_heading1, theme.color_title),
@@ -316,6 +325,21 @@ def _build_template(theme):
         h.font.size = Pt(size)
         h.font.color.rgb = color
         _clear_bold(h)
+        if name == "Heading 1":
+            h.paragraph_format.space_after = Pt(6)
+        else:
+            h.paragraph_format.space_after = Pt(4)
+
+    # Add bottom border (horizontal rule) to Heading 1
+    h1_pPr = doc.styles["Heading 1"].element.get_or_add_pPr()
+    h1_pPr.append(
+        parse_xml(
+            f'<w:pBdr {nsdecls("w")}>'
+            f'<w:bottom w:val="single" w:sz="4" w:space="1"'
+            f' w:color="{theme.color_subtitle}"/>'
+            f"</w:pBdr>"
+        )
+    )
 
     try:
         sub = doc.styles["Subtitle"]
@@ -384,6 +408,19 @@ def _set_cell_margins(table, top=None, bottom=None):
         parts.append(f'<w:bottom w:w="{twips}" w:type="dxa"/>')
     parts.append("</w:tblCellMar>")
     tblPr.append(parse_xml("".join(parts)))
+
+
+def _set_cell_left_margin(cell, inches):
+    """Set left margin on an individual cell (overrides table default)."""
+    twips = int(inches * 1440)
+    tc = cell._tc
+    tcPr = tc.get_or_add_tcPr()
+    existing = tcPr.find(qn("w:tcMar"))
+    if existing is not None:
+        tcPr.remove(existing)
+    tcPr.append(
+        parse_xml(f'<w:tcMar {nsdecls("w")}>' f'<w:left w:w="{twips}" w:type="dxa"/>' f"</w:tcMar>")
+    )
 
 
 def _set_table_borders(table, val="single", sz=4, color="BFBFBF"):
@@ -488,6 +525,7 @@ def table_section(doc, heading, rows):
 
     for label, value in rows:
         row = table.add_row()
+        _set_cell_left_margin(row.cells[0], 0.25)
 
         lp = row.cells[0].paragraphs[0]
         lr = lp.add_run(label)
@@ -548,6 +586,12 @@ def bullet_list(doc, heading, items_str):
         items = [item.strip() for item in items_str.split("\n") if item.strip()]
         for item in items:
             p = doc.add_paragraph(style="List Bullet")
+            # Override numbering-level indent: bullet at 0.25", text at 0.5"
+            pPr = p._p.get_or_add_pPr()
+            existing_ind = pPr.find(qn("w:ind"))
+            if existing_ind is not None:
+                pPr.remove(existing_ind)
+            pPr.append(parse_xml(f'<w:ind {nsdecls("w")} w:left="720" w:hanging="360"/>'))
             run = p.add_run(item)
             run.font.size = Pt(t.size_table)
     else:
