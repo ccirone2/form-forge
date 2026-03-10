@@ -1862,20 +1862,6 @@ function wizardValidateStep(stepIndex) {
 
 function wizardStepClick(targetStep) {
   if (targetStep === wizardCurrentStep) return;
-  // Going backward — always allowed
-  if (targetStep < wizardCurrentStep) {
-    wizardGoTo(targetStep);
-    return;
-  }
-  // Going forward — validate all steps from current up to (but not including) target
-  for (let s = wizardCurrentStep; s < targetStep; s++) {
-    const missing = wizardValidateStep(s);
-    if (missing.length > 0) {
-      showToast(`Step ${s + 1} has required fields: ${missing.join(', ')}`, 'error');
-      wizardGoTo(s);
-      return;
-    }
-  }
   wizardGoTo(targetStep);
 }
 
