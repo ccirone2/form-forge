@@ -1,6 +1,6 @@
 {
   "title": "Event Registration",
-  "description": "Register for an upcoming event. This demo exercises all 17 field types, wizard mode, and conditional visibility.",
+  "description": "Register for an upcoming event. This demo exercises all 18 field types, wizard mode, and conditional visibility.",
   "icon": "🎪",
   "template": "templates/field-type-demo.py",
   "wizard": true,

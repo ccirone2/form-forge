@@ -15,6 +15,8 @@ Usage in templates:
     return stencils.finalize(doc)
 """
 
+from __future__ import annotations
+
 import io
 import json
 import base64
@@ -211,7 +213,7 @@ THEME_MODERN = DocTheme(
 _active_theme = THEME_MODERN
 
 
-def set_theme(theme):
+def set_theme(theme: DocTheme) -> None:
     """Set the active document theme for all subsequent stencils calls.
 
     Args:
@@ -237,7 +239,7 @@ def set_theme(theme):
 _template_cache = {}
 
 
-def _set_style_font(style, font_name):
+def _set_style_font(style: object, font_name: str) -> None:
     """Set font on a style and strip theme-linked font attributes.
 
     Word's built-in styles (Title, Heading 1-4, Subtitle, etc.) carry
@@ -252,11 +254,16 @@ def _set_style_font(style, font_name):
     if rPr is not None:
         rFonts = rPr.find(qn("w:rFonts"))
         if rFonts is not None:
-            for attr in ("w:asciiTheme", "w:hAnsiTheme", "w:cstheme", "w:eastAsiaTheme"):
+            for attr in (
+                "w:asciiTheme",
+                "w:hAnsiTheme",
+                "w:cstheme",
+                "w:eastAsiaTheme",
+            ):
                 rFonts.attrib.pop(qn(attr), None)
 
 
-def _clear_bold(style):
+def _clear_bold(style: object) -> None:
     """Explicitly disable bold on a style, including complex-script bold.
 
     Word's built-in heading styles carry ``<w:bCs/>`` (bold complex script)
@@ -273,7 +280,7 @@ def _clear_bold(style):
         rPr.append(parse_xml(f'<w:bCs {nsdecls("w")} w:val="0"/>'))
 
 
-def _build_template(theme):
+def _build_template(theme: DocTheme) -> bytes:
     """Build a DOCX template with all Word styles configured from a theme.
 
     The template has no body content — just style definitions, page layout,
@@ -287,7 +294,9 @@ def _build_template(theme):
     ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
     styles_el = doc.styles.element
     for style_el in styles_el.findall(f"{{{ns}}}style"):
-        if style_el.get(f"{{{ns}}}type") == "table" and not style_el.get(f"{{{ns}}}default"):
+        if style_el.get(f"{{{ns}}}type") == "table" and not style_el.get(
+            f"{{{ns}}}default"
+        ):
             styles_el.remove(style_el)
 
     # -- Configure paragraph styles ------------------------------------
@@ -305,7 +314,7 @@ def _build_template(theme):
     title_pPr = title_style.element.get_or_add_pPr()
     title_pPr.append(
         parse_xml(
-            f'<w:pBdr {nsdecls("w")}>'
+            f"<w:pBdr {nsdecls('w')}>"
             f'<w:bottom w:val="single" w:sz="4" w:space="1"'
             f' w:color="{theme.color_subtitle}"/>'
             f"</w:pBdr>"
@@ -334,7 +343,7 @@ def _build_template(theme):
     h1_pPr = doc.styles["Heading 1"].element.get_or_add_pPr()
     h1_pPr.append(
         parse_xml(
-            f'<w:pBdr {nsdecls("w")}>'
+            f"<w:pBdr {nsdecls('w')}>"
             f'<w:bottom w:val="single" w:sz="4" w:space="1"'
             f' w:color="{theme.color_subtitle}"/>'
             f"</w:pBdr>"
@@ -376,7 +385,7 @@ def _build_template(theme):
     return buf.getvalue()
 
 
-def _get_template(theme):
+def _get_template(theme: DocTheme) -> bytes:
     """Return cached template bytes for a theme, building if needed."""
     if theme not in _template_cache:
         _template_cache[theme] = _build_template(theme)
@@ -392,7 +401,9 @@ _template_cache[_active_theme] = _build_template(_active_theme)
 # ---------------------------------------------------------------------------
 
 
-def _set_cell_margins(table, top=None, bottom=None):
+def _set_cell_margins(
+    table: object, top: float | None = None, bottom: float | None = None
+) -> None:
     """Set default top/bottom cell margins for all cells in a table (inches)."""
     tbl = table._tbl
     tblPr = tbl.tblPr if tbl.tblPr is not None else tbl._add_tblPr()
@@ -410,7 +421,7 @@ def _set_cell_margins(table, top=None, bottom=None):
     tblPr.append(parse_xml("".join(parts)))
 
 
-def _set_cell_left_margin(cell, inches):
+def _set_cell_left_margin(cell: object, inches: float) -> None:
     """Set left margin on an individual cell (overrides table default)."""
     twips = int(inches * 1440)
     tc = cell._tc
@@ -419,11 +430,15 @@ def _set_cell_left_margin(cell, inches):
     if existing is not None:
         tcPr.remove(existing)
     tcPr.append(
-        parse_xml(f'<w:tcMar {nsdecls("w")}>' f'<w:left w:w="{twips}" w:type="dxa"/>' f"</w:tcMar>")
+        parse_xml(
+            f'<w:tcMar {nsdecls("w")}><w:left w:w="{twips}" w:type="dxa"/></w:tcMar>'
+        )
     )
 
 
-def _set_table_borders(table, val="single", sz=4, color="BFBFBF"):
+def _set_table_borders(
+    table: object, val: str = "single", sz: int = 4, color: str = "BFBFBF"
+) -> None:
     """Apply uniform borders to every edge of a table (or remove them)."""
     tbl = table._tbl
     tblPr = tbl.tblPr if tbl.tblPr is not None else tbl._add_tblPr()
@@ -443,7 +458,7 @@ def _set_table_borders(table, val="single", sz=4, color="BFBFBF"):
     tblPr.append(borders)
 
 
-def _shade_cells(row, fill_hex):
+def _shade_cells(row: object, fill_hex: str) -> None:
     """Apply background shading to every cell in a table row."""
     for cell in row.cells:
         shading = parse_xml(
@@ -457,7 +472,13 @@ def _shade_cells(row, fill_hex):
 # ---------------------------------------------------------------------------
 
 
-def new_doc(title_text, subtitle_text="", font_name=None, font_size=None, theme=None):
+def new_doc(
+    title_text: str,
+    subtitle_text: str = "",
+    font_name: str | None = None,
+    font_size: int | None = None,
+    theme: DocTheme | None = None,
+) -> Document:
     """
     Create a styled Document with a centered title and optional subtitle.
 
@@ -505,7 +526,7 @@ def new_doc(title_text, subtitle_text="", font_name=None, font_size=None, theme=
     return doc
 
 
-def table_section(doc, heading, rows):
+def table_section(doc: Document, heading: str, rows: list[tuple[str, str]]) -> None:
     """
     Add a heading followed by a borderless two-column key/value table.
     Labels in the first column use the heading font (semibold).
@@ -540,7 +561,7 @@ def table_section(doc, heading, rows):
     doc.add_paragraph("")
 
 
-def longtext(doc, heading, text):
+def longtext(doc: Document, heading: str, text: str) -> None:
     """
     Add a sub-heading followed by one or more paragraphs of body text.
     Respects newline characters as paragraph breaks.
@@ -569,7 +590,7 @@ def longtext(doc, heading, text):
     doc.add_paragraph("")
 
 
-def bullet_list(doc, heading, items_str):
+def bullet_list(doc: Document, heading: str, items_str: str) -> None:
     """
     Add a sub-heading followed by a bulleted list.
     Items are expected as a newline-separated string.
@@ -591,7 +612,9 @@ def bullet_list(doc, heading, items_str):
             existing_ind = pPr.find(qn("w:ind"))
             if existing_ind is not None:
                 pPr.remove(existing_ind)
-            pPr.append(parse_xml(f'<w:ind {nsdecls("w")} w:left="720" w:hanging="360"/>'))
+            pPr.append(
+                parse_xml(f'<w:ind {nsdecls("w")} w:left="720" w:hanging="360"/>')
+            )
             run = p.add_run(item)
             run.font.size = Pt(t.size_table)
     else:
@@ -604,7 +627,7 @@ def bullet_list(doc, heading, items_str):
     doc.add_paragraph("")
 
 
-def signatures(doc, labels):
+def signatures(doc: Document, labels: list[str]) -> None:
     """
     Add a signature block with underlines and labels in a grid layout.
     Labels are arranged in pairs (two per row).
@@ -635,7 +658,7 @@ def signatures(doc, labels):
         run.font.color.rgb = t.color_muted
 
 
-def footer(doc):
+def footer(doc: Document) -> None:
     """
     Add the standard FormForge auto-generated footer paragraph.
 
@@ -656,7 +679,7 @@ def footer(doc):
     fr.italic = True
 
 
-def address(doc, heading, raw_json):
+def address(doc: Document, heading: str, raw_json: str) -> None:
     """
     Add a formatted mailing address block under a heading.
     Parses a JSON string with keys: street, city, state, zip.
@@ -706,7 +729,12 @@ def address(doc, heading, raw_json):
     doc.add_paragraph("")
 
 
-def image(doc, b64_str, width_inches=3.0, placeholder="No image uploaded."):
+def image(
+    doc: Document,
+    b64_str: str,
+    width_inches: float = 3.0,
+    placeholder: str = "No image uploaded.",
+) -> None:
     """
     Embed a base64 data-URI image or render a placeholder if absent/invalid.
 
@@ -731,7 +759,9 @@ def image(doc, b64_str, width_inches=3.0, placeholder="No image uploaded."):
     r.font.color.rgb = _active_theme.color_muted
 
 
-def signature(doc, b64_str, label, width_inches=2.5):
+def signature(
+    doc: Document, b64_str: str, label: str, width_inches: float = 2.5
+) -> None:
     """
     Add a signature image (or placeholder underline) with a label beneath.
 
@@ -759,7 +789,13 @@ def signature(doc, b64_str, label, width_inches=2.5):
     lr.font.color.rgb = t.color_muted
 
 
-def repeater_table(doc, headers, items, field_keys, currency_keys=None):
+def repeater_table(
+    doc: Document,
+    headers: list[str],
+    items: list[dict[str, str]],
+    field_keys: list[str],
+    currency_keys: list[str] | None = None,
+) -> None:
     """
     Render a repeater field as a headed table with a shaded header row.
 
@@ -771,10 +807,7 @@ def repeater_table(doc, headers, items, field_keys, currency_keys=None):
         currency_keys: Optional set/list of field_keys that should be
                        formatted as currency (e.g. ["amount", "unit_cost"]).
     """
-    if currency_keys is None:
-        currency_keys = set()
-    else:
-        currency_keys = set(currency_keys)
+    _currency_set = set(currency_keys) if currency_keys else set()
 
     t = _active_theme
 
@@ -814,7 +847,7 @@ def repeater_table(doc, headers, items, field_keys, currency_keys=None):
             row = table.add_row()
             for col_idx, key in enumerate(field_keys):
                 val = item.get(key, "")
-                if key in currency_keys:
+                if key in _currency_set:
                     try:
                         val = f"${float(val):,.2f}"
                     except (ValueError, TypeError):
@@ -831,7 +864,7 @@ def repeater_table(doc, headers, items, field_keys, currency_keys=None):
     doc.add_paragraph("")
 
 
-def finalize(doc):
+def finalize(doc: Document) -> bytes:
     """
     Serialize a Document to bytes.
 

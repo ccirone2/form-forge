@@ -18,7 +18,7 @@ Field type notes:
 import stencils
 
 
-def generate_docx(data):
+def generate_docx(data: dict[str, str]) -> bytes:
     """
     Generate an Employee Onboarding Document from form data.
 

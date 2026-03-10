@@ -488,9 +488,7 @@ def _minimal_schema():
         "sections": [
             {
                 "title": "Section 1",
-                "fields": [
-                    {"id": "name", "label": "Name", "type": "text"}
-                ],
+                "fields": [{"id": "name", "label": "Name", "type": "text"}],
             }
         ],
     }
@@ -522,3 +520,168 @@ def test_rejects_sample_data_non_object():
         assert False, "Should have raised ValidationError"
     except jsonschema.ValidationError:
         pass
+
+
+# ---------------------------------------------------------------------------
+#  min/max float support
+# ---------------------------------------------------------------------------
+
+
+def test_number_field_accepts_float_min_max():
+    """min/max on a number field should accept float values like 0.5."""
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "rating",
+                        "label": "Rating",
+                        "type": "number",
+                        "min": 0.5,
+                        "max": 9.5,
+                        "step": 0.5,
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+# ---------------------------------------------------------------------------
+#  repeaterField exclusion rules
+# ---------------------------------------------------------------------------
+
+
+def test_rejects_min_on_select_repeater_field():
+    """min is not allowed on a select repeater sub-field."""
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "items",
+                        "label": "Items",
+                        "type": "repeater",
+                        "fields": [
+                            {
+                                "id": "cat",
+                                "label": "Category",
+                                "type": "select",
+                                "options": ["A", "B"],
+                                "min": 1,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    try:
+        jsonschema.validate(instance=bad, schema=spec)
+        assert False, "Should have raised ValidationError"
+    except jsonschema.ValidationError:
+        pass
+
+
+def test_rejects_currency_symbol_on_text_repeater_field():
+    """currency_symbol is not allowed on a text repeater sub-field."""
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "items",
+                        "label": "Items",
+                        "type": "repeater",
+                        "fields": [
+                            {
+                                "id": "name",
+                                "label": "Name",
+                                "type": "text",
+                                "currency_symbol": "$",
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    try:
+        jsonschema.validate(instance=bad, schema=spec)
+        assert False, "Should have raised ValidationError"
+    except jsonschema.ValidationError:
+        pass
+
+
+def test_rejects_max_length_on_number_repeater_field():
+    """maxLength is not allowed on a number repeater sub-field."""
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "items",
+                        "label": "Items",
+                        "type": "repeater",
+                        "fields": [
+                            {
+                                "id": "qty",
+                                "label": "Qty",
+                                "type": "number",
+                                "maxLength": 5,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    try:
+        jsonschema.validate(instance=bad, schema=spec)
+        assert False, "Should have raised ValidationError"
+    except jsonschema.ValidationError:
+        pass
+
+
+def test_repeater_number_field_accepts_min_max():
+    """min/max/step should be allowed on a number repeater sub-field."""
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "items",
+                        "label": "Items",
+                        "type": "repeater",
+                        "fields": [
+                            {
+                                "id": "qty",
+                                "label": "Qty",
+                                "type": "number",
+                                "min": 1,
+                                "max": 100,
+                                "step": 1,
+                            }
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)

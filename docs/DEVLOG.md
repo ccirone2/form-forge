@@ -14,6 +14,37 @@
 
 ## Log
 
+### 2026-03-10 — Miscellaneous cleanup (#43 → #61–#66)
+**Issues:** #43, #61, #62, #63, #64, #65, #66
+
+Implemented all 6 sub-tasks of the miscellaneous cleanup:
+
+- **#61 Token masking** — Changed `tokenInput` from `type="text"` to `type="password"` so GitHub tokens are masked while typing.
+- **#62 Event listener stacking** — Split `setupConditionalVisibility()` into three functions: `setupConditionalVisibility()` (attaches listeners + evaluates, called only from `buildForm()`), `evaluateAllConditionals()` (re-evaluates without attaching listeners, called from `populateForm()` and `resetForm()`), and `_buildConditionalDependencies()` (shared dependency map builder). Fixes memory leak where N populates caused N copies of evaluate handlers.
+- **#63 Schema spec fixes** — Changed `min`/`max` from `"type": "integer"` to `"type": "number"` in both `field` and `repeaterField` definitions (allows float constraints like `0.5`). Added `allOf` exclusion rules to `repeaterField`: `min`/`max`/`step` restricted to `number`, `currency_symbol` restricted to `currency`, `maxLength` restricted to `text`. 5 new schema tests (90 total).
+- **#64 Field type count** — Updated all references from "17" to "18" in SCHEMA_GUIDE.md, README.md, CLAUDE.md, field-type-demo.py, and field-type-demo.json.
+- **#65 Type hints** — Added `from __future__ import annotations` and type annotations to all public and private function signatures in `stencils.py` (16 functions). Added `generate_docx(data: dict[str, str]) -> bytes` to all 3 templates.
+- **#66 Configurable fallback URL** — Extracted the hardcoded `stencils.py` fallback URL into a `FORMFORGE_FALLBACK` constant (`{ owner, repo, branch }`) in the state section. URL is now derived from the constant via template literal.
+
+---
+
+### 2026-03-10 — Plan: Miscellaneous cleanup (#43 → #61–#66)
+**Issues:** #43, #61, #62, #63, #64, #65, #66
+
+Reviewed issue #43 (created 2026-03-04) for current relevancy. 6 of 8 original items are still applicable; 1 partially relevant (URL renamed from `_base.py` to `stencils.py`), 1 fixed (mid-function imports in `onboarding.py`). Updated issue body to reflect current state.
+
+Broke #43 into 6 independent tasks:
+- **#61** — Token input masking: `type="text"` → `type="password"` (bug, trivial)
+- **#62** — Event listener stacking in `setupConditionalVisibility` (bug, moderate)
+- **#63** — Schema spec: `min`/`max` accept floats + `repeaterField` exclusion rules (bug, moderate)
+- **#64** — Update field type count from "17" to "18" in all docs (documentation, trivial)
+- **#65** — Python type hints on all public function signatures (enhancement, moderate)
+- **#66** — Extract hardcoded stencils.py fallback URL to configurable constant (enhancement, low)
+
+All tasks are independent with no ordering constraints.
+
+---
+
 ### 2026-03-10 — Wizard step indicator: clickable navigation + mobile responsive
 **Issues:** #59
 
