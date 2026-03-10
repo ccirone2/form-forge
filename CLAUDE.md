@@ -48,7 +48,13 @@ Fields can have an optional `visible_when` object: `{ "field": "<source_id>", "e
 - **Schema field IDs** follow the pattern `^[a-z][a-z0-9_]*$`.
 - **`generate_docx(data)`** is the required entry point for all templates. `data` is a dict keyed by field `id`. All values are strings (complex types like address/repeater are JSON strings).
 - The HTML app fetches schemas/templates from GitHub via the public API — file paths in schemas (e.g., `"template": "templates/onboarding.py"`) are relative to the repo root.
-- Adding a new field type touches three places: `createField()` switch in index.html, `collectFormData()` in index.html, and the template .py file.
+- Adding a new field type touches these places:
+  1. `fieldCreators` map + new `create*Field()` function in index.html
+  2. `collectFormData()` in index.html
+  3. `populateForm()` in index.html
+  4. `validateSection()` in index.html (if the type needs special validation, e.g. address/checkbox/radio)
+  5. `_schema.spec.json` — `fieldType` enum + `allOf` exclusion blocks for type-specific properties
+  6. Template `.py` files, `docs/FIELD_TYPES.md`, and the expected-types set in `tests/test_schemas.py`
 
 ## Development
 

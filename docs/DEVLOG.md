@@ -14,6 +14,20 @@
 
 ## Log
 
+### 2026-03-10 — Refactor index.html for maintainability (#38 → #68–#71)
+**Issues:** #38, #68, #69, #70, #71
+
+Implemented all 4 sub-tasks of the refactor:
+
+- **#68 Eliminate monkey-patching** — Merged the duplicate `launchForm` (line 3230 override → single definition at line 1480). Inlined `loadDocs()` call directly into `connectRepo()` body, removing `_origConnectRepo` monkey-patch. Removed `_originalLaunchForm` and `_origConnectRepo` variables.
+- **#69 Unify validation** — Extracted shared `validateSection(section)` that validates directly from the DOM with explicit radio, checkbox, and address branches. Both `wizardValidateStep()` and `validateForm()` now delegate to it. Fixes divergence where `validateForm` previously lacked radio/checkbox-specific validation.
+- **#70 Extract createField** — Decomposed the 416-line `createField()` into 16 named creator functions (`createTextField`, `createDateField`, etc.) registered in a `fieldCreators` map. `createField()` is now a 28-line dispatcher handling labels, delegation, and hints.
+- **#71 Update CLAUDE.md** — Replaced the "touches three places" bullet with a complete 6-item checklist covering all actual touch points for adding a new field type.
+
+**Net result:** index.html reduced from 3270 → 3234 lines (−36). All 90 tests pass.
+
+---
+
 ### 2026-03-10 — Miscellaneous cleanup (#43 → #61–#66)
 **Issues:** #43, #61, #62, #63, #64, #65, #66
 
