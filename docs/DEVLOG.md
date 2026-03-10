@@ -17,7 +17,7 @@
 ### 2026-03-10 — Wizard step indicator: clickable navigation + mobile responsive
 **Issues:** #59
 
-- **Clickable step circles** — Each wizard step in the indicator bar is now clickable. Clicking a previous step navigates back immediately; clicking a future step validates all intermediate steps first and shows a toast error if required fields are missing.
+- **Clickable step circles** — Each wizard step in the indicator bar is now clickable. Navigation to any step is unrestricted — no intermediate validation on click. Validation still occurs at submit time.
 - **Checkmark icons** — Completed steps display a checkmark SVG instead of the step number, providing clear visual progress feedback.
 - **Hover effects** — Steps scale up slightly on hover with accent border color. Active step suppresses the scale to avoid visual jitter.
 - **Mobile responsive (≤600px)** — Step labels are hidden, circles shrink to 28px, connectors to 24px with tighter margins.
