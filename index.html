@@ -3021,6 +3021,28 @@ const DEMO_SCHEMA = {
   description: "Complete this form to generate a pre-filled onboarding document.",
   icon: "👋",
   template: "templates/onboarding.py",
+  sampleData: {
+    first_name: "Alice",
+    last_name: "Johnson",
+    email: "alice.johnson@example.com",
+    phone: "555-0123",
+    date_of_birth: "1992-05-14",
+    start_date: "2026-04-01",
+    department: "Engineering",
+    job_title: "Senior Developer",
+    employment_type: "Full-Time",
+    manager: "Bob Smith",
+    laptop_preference: "MacBook Pro 14\"",
+    equipment_needs: "Monitor, Keyboard",
+    software_access: "GitHub, Jira, Figma",
+    bio: "Experienced full-stack developer with 8 years in web applications.\nPassionate about clean architecture and mentoring.",
+    skills: "Python\nTypeScript\nReact\nPostgreSQL",
+    certifications: "AWS Solutions Architect\nPMP",
+    emergency_contact: "Bob Johnson",
+    emergency_phone: "555-9876",
+    onboarding_goals: "Complete team onboarding\nSet up development environment\nShip first PR",
+    notes: "Prefers standing desk if available."
+  },
   sections: [
     { title: "Personal Information", fields: [
       { id: "first_name", label: "First Name", type: "text", required: true, placeholder: "Jane" },
