@@ -14,6 +14,17 @@
 
 ## Log
 
+### 2026-03-10 — Wizard step indicator: clickable navigation + mobile responsive
+**Issues:** #59
+
+- **Clickable step circles** — Each wizard step in the indicator bar is now clickable. Clicking a previous step navigates back immediately; clicking a future step validates all intermediate steps first and shows a toast error if required fields are missing.
+- **Checkmark icons** — Completed steps display a checkmark SVG instead of the step number, providing clear visual progress feedback.
+- **Hover effects** — Steps scale up slightly on hover with accent border color. Active step suppresses the scale to avoid visual jitter.
+- **Mobile responsive (≤600px)** — Step labels are hidden, circles shrink to 28px, connectors to 24px with tighter margins.
+- **Small screen (≤400px)** — Circles shrink further to 24px, connectors to 16px.
+- **Touch-friendly** — Added `touch-action: manipulation` to prevent double-tap zoom delay, `padding: 6px 0` for larger hit area.
+- **Keyboard accessible** — Steps have `role="button"`, `tabindex="0"`, and respond to Enter/Space keys.
+
 ### 2026-03-10 -- DOCX styling and layout polish
 
 - **Title & Heading 1 horizontal rules** — Added bottom borders (`w:pBdr`) to Title and Heading 1 styles using `color_subtitle` for theme-matched lines.
