@@ -8,7 +8,7 @@ from pathlib import Path
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 TEMPLATES = Path(__file__).resolve().parent.parent / "templates"
 
-# Add templates/ to path so `import _base` works
+# Add templates/ to path so `import stencils` works
 sys.path.insert(0, str(TEMPLATES))
 
 

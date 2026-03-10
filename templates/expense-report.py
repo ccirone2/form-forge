@@ -19,7 +19,7 @@ Field type notes:
 
 import json
 
-import _base
+import stencils
 
 
 def generate_docx(data):
@@ -37,7 +37,7 @@ def generate_docx(data):
     report_date = data.get("report_date", "")
     form_ver = data.get("form_version", "")
 
-    doc = _base.new_doc(
+    doc = stencils.new_doc(
         "Expense Report",
         f"{name} — {dept} — {report_date}",
     )
@@ -49,7 +49,7 @@ def generate_docx(data):
     except (ValueError, TypeError):
         total_fmt = f"${total}"
 
-    _base.add_table_section(
+    stencils.table_section(
         doc,
         "Report Details",
         [
@@ -70,7 +70,7 @@ def generate_docx(data):
     except (json.JSONDecodeError, TypeError):
         items = []
 
-    _base.add_repeater_table(
+    stencils.repeater_table(
         doc,
         headers=["Description", "Amount", "Category"],
         items=items,
@@ -79,7 +79,7 @@ def generate_docx(data):
     )
 
     # ── Number of Receipts (number field) ───────────────────
-    _base.add_table_section(
+    stencils.table_section(
         doc,
         "Receipts",
         [("Number of receipts attached", data.get("item_count", "0"))],
@@ -87,7 +87,7 @@ def generate_docx(data):
 
     # ── Receipt Photo (file field) ──────────────────────────
     doc.add_heading("Receipt / Invoice", level=1)
-    _base.add_image_or_placeholder(
+    stencils.image(
         doc,
         data.get("receipt_photo", ""),
         width_inches=3.0,
@@ -98,10 +98,10 @@ def generate_docx(data):
     # ── Notes ───────────────────────────────────────────────
     notes = data.get("notes", "")
     if notes and notes.strip():
-        _base.add_longtext(doc, "Additional Notes", notes)
+        stencils.longtext(doc, "Additional Notes", notes)
 
     # ── Mailing Address (address field) ─────────────────────
-    _base.add_address_block(
+    stencils.address(
         doc,
         "Reimbursement Mailing Address",
         data.get("mailing_address", "{}"),
@@ -113,10 +113,10 @@ def generate_docx(data):
         ("Employee Signature", "employee_signature"),
         ("Manager Signature", "manager_signature"),
     ]:
-        _base.add_signature_line(doc, data.get(field_id, ""), label)
+        stencils.signature(doc, data.get(field_id, ""), label)
     doc.add_paragraph("")
 
     # ── Footer ──────────────────────────────────────────────
-    _base.add_footer(doc)
+    stencils.footer(doc)
 
-    return _base.finalize(doc)
+    return stencils.finalize(doc)

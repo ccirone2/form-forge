@@ -861,7 +861,7 @@
 // ============================================================
 let pyodide = null;
 let pyodideReady = false;
-let baseModuleLoaded = false;  // Whether _base.py has been loaded into Pyodide
+let baseModuleLoaded = false;  // Whether stencils.py has been loaded into Pyodide
 let currentSchema = null;
 let wizardCurrentStep = 0;  // Current wizard step index (0-based)
 let currentTemplateCode = null;
@@ -1335,7 +1335,7 @@ async function connectRepo() {
   const parts = repoInput.split('/');
   ghOwner = parts[0];
   ghRepo = parts.slice(1).join('/');
-  baseModuleLoaded = false;  // Reset so _base.py is fetched from the new repo
+  baseModuleLoaded = false;  // Reset so stencils.py is fetched from the new repo
 
   statusEl.className = 'repo-status';
   statusEl.textContent = 'Connecting...';
@@ -1525,8 +1525,8 @@ async function initPyodide() {
 async function loadBaseModule() {
   if (baseModuleLoaded) return;
 
-  showOverlay('Loading shared template base...');
-  log('Loading _base.py module...', 'info');
+  showOverlay('Loading shared template stencils...');
+  log('Loading stencils.py module...', 'info');
 
   try {
     let baseCode = null;
@@ -1534,10 +1534,10 @@ async function loadBaseModule() {
     // Try fetching from connected GitHub repo first
     if (ghOwner && ghRepo) {
       try {
-        baseCode = await ghFetchRaw('templates/_base.py');
-        log('_base.py loaded from repo', 'success');
+        baseCode = await ghFetchRaw('templates/stencils.py');
+        log('stencils.py loaded from repo', 'success');
       } catch (e) {
-        log('_base.py not found in repo, using built-in', 'info');
+        log('stencils.py not found in repo, using built-in', 'info');
       }
     }
 
@@ -1545,29 +1545,29 @@ async function loadBaseModule() {
     if (!baseCode) {
       try {
         const resp = await fetch(
-          'https://raw.githubusercontent.com/ccirone2/form-forge/develop/templates/_base.py'
+          'https://raw.githubusercontent.com/ccirone2/form-forge/develop/templates/stencils.py'
         );
         if (resp.ok) {
           baseCode = await resp.text();
-          log('_base.py loaded from FormForge repo', 'success');
+          log('stencils.py loaded from FormForge repo', 'success');
         }
       } catch (e) {
-        log('Could not fetch _base.py from FormForge repo', 'info');
+        log('Could not fetch stencils.py from FormForge repo', 'info');
       }
     }
 
     if (baseCode) {
-      // Write _base.py to Pyodide's virtual filesystem so templates
-      // can use a standard `import _base` statement
-      pyodide.FS.writeFile('/home/pyodide/_base.py', baseCode);
-      await pyodide.runPythonAsync('import _base');
+      // Write stencils.py to Pyodide's virtual filesystem so templates
+      // can use a standard `import stencils` statement
+      pyodide.FS.writeFile('/home/pyodide/stencils.py', baseCode);
+      await pyodide.runPythonAsync('import stencils');
       baseModuleLoaded = true;
-      log('_base module loaded into Pyodide', 'success');
+      log('stencils module loaded into Pyodide', 'success');
     } else {
-      log('_base.py unavailable — templates must be self-contained', 'info');
+      log('stencils.py unavailable — templates must be self-contained', 'info');
     }
   } catch (err) {
-    log('Warning: could not load _base module: ' + err.message, 'error');
+    log('Warning: could not load stencils module: ' + err.message, 'error');
   }
 }
 

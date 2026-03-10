@@ -26,11 +26,11 @@ form-forge/
 │   ├── _schema.spec.json       ← JSON Schema spec that validates all schemas
 │   └── *.json                  ← form definitions
 ├── templates/
-│   ├── _base.py                ← shared helpers for all templates
+│   ├── stencils.py             ← shared helpers for all templates
 │   └── *.py                    ← Python DOCX generation scripts
 ├── tests/
 │   ├── fixtures/               ← sample data for template tests
-│   ├── test_base.py            ← unit tests for _base.py utilities (14 tests)
+│   ├── test_stencils.py        ← unit tests for stencils.py utilities (27 tests)
 │   ├── test_templates.py       ← integration tests for templates (4 tests)
 │   └── test_schemas.py         ← schema validation tests (26 tests)
 ├── docs/
@@ -78,18 +78,18 @@ No build system or package manager required.
 
 ### 2. Create a template (`templates/my-form.py`)
 
-Every template must export a `generate_docx(data)` function that accepts a dict (keyed by field `id`) and returns DOCX bytes. Use the shared `_base` helpers:
+Every template must export a `generate_docx(data)` function that accepts a dict (keyed by field `id`) and returns DOCX bytes. Use the shared `stencils` helpers:
 
 ```python
-import _base
+import stencils
 
 def generate_docx(data):
-    doc = _base.new_doc("My Document")
+    doc = stencils.new_doc("My Document")
     doc.add_paragraph(f"Name: {data.get('field_name', '')}")
-    return _base.finalize(doc)
+    return stencils.finalize(doc)
 ```
 
-See `docs/TEMPLATE_GUIDE.md` for the full `_base` API.
+See `docs/TEMPLATE_GUIDE.md` for the full `stencils` API.
 
 ## Supported Field Types
 

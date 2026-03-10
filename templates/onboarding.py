@@ -15,7 +15,7 @@ Field type notes:
   - list → newline-separated str (e.g. "Python\\nJavaScript\\nRust")
 """
 
-import _base
+import stencils
 
 
 def generate_docx(data):
@@ -32,13 +32,13 @@ def generate_docx(data):
     last = data.get("last_name", "")
     start = data.get("start_date", "TBD")
 
-    doc = _base.new_doc(
+    doc = stencils.new_doc(
         "Employee Onboarding Document",
         f"Prepared for {first} {last} — Start Date: {start}",
     )
 
     # ── Section: Personal Information ──────────────────────────
-    _base.add_table_section(
+    stencils.table_section(
         doc,
         "Personal Information",
         [
@@ -52,7 +52,7 @@ def generate_docx(data):
     )
 
     # ── Section: Role & Department ─────────────────────────────
-    _base.add_table_section(
+    stencils.table_section(
         doc,
         "Role & Department",
         [
@@ -67,7 +67,7 @@ def generate_docx(data):
     equipment = data.get("equipment_needs", "")
     software = data.get("software_access", "")
 
-    _base.add_table_section(
+    stencils.table_section(
         doc,
         "Equipment & Access",
         [
@@ -80,15 +80,15 @@ def generate_docx(data):
     # ── Section: Skills & Experience ───────────────────────────
     doc.add_heading("Skills & Experience", level=1)
 
-    _base.add_longtext(doc, "Professional Bio", data.get("bio", ""))
-    _base.add_bullet_list(doc, "Key Skills", data.get("skills", ""))
-    _base.add_bullet_list(
+    stencils.longtext(doc, "Professional Bio", data.get("bio", ""))
+    stencils.bullet_list(doc, "Key Skills", data.get("skills", ""))
+    stencils.bullet_list(
         doc, "Certifications & Licenses", data.get("certifications", "")
     )
-    _base.add_longtext(doc, "Notable Prior Projects", data.get("prior_projects", ""))
+    stencils.longtext(doc, "Notable Prior Projects", data.get("prior_projects", ""))
 
     # ── Section: Additional Information ────────────────────────
-    _base.add_table_section(
+    stencils.table_section(
         doc,
         "Additional Information",
         [
@@ -99,10 +99,10 @@ def generate_docx(data):
         ],
     )
 
-    _base.add_bullet_list(doc, "First 90 Days Goals", data.get("onboarding_goals", ""))
+    stencils.bullet_list(doc, "First 90 Days Goals", data.get("onboarding_goals", ""))
 
     # ── Signatures ─────────────────────────────────────────────
-    _base.add_signatures(
+    stencils.signatures(
         doc,
         [
             "Employee Signature",
@@ -113,6 +113,6 @@ def generate_docx(data):
     )
 
     # ── Footer ─────────────────────────────────────────────────
-    _base.add_footer(doc)
+    stencils.footer(doc)
 
-    return _base.finalize(doc)
+    return stencils.finalize(doc)

@@ -19,7 +19,7 @@ Field type value formats:
 import json
 from docx.shared import Pt
 
-import _base
+import stencils
 
 
 def generate_docx(data):
@@ -37,13 +37,13 @@ def generate_docx(data):
     event_date = data.get("event_date", "")
     form_ver = data.get("form_version", "")
 
-    doc = _base.new_doc(
+    doc = stencils.new_doc(
         "Event Registration",
         f"{name} — {event_date}",
     )
 
     # ── Step 1: Applicant Info ────────────────────────────
-    _base.add_table_section(
+    stencils.table_section(
         doc,
         "Applicant Info",
         [
@@ -59,7 +59,7 @@ def generate_docx(data):
     event_type = data.get("event_type", "")
     attendance = data.get("attendance_mode", "")
 
-    _base.add_table_section(
+    stencils.table_section(
         doc,
         "Event Details",
         [
@@ -80,7 +80,7 @@ def generate_docx(data):
     # longtext — detailed proposal
     proposal = data.get("detailed_proposal", "")
     if proposal and proposal.strip():
-        _base.add_longtext(doc, "Detailed Proposal", proposal)
+        stencils.longtext(doc, "Detailed Proposal", proposal)
 
     # address (conditional — in-person only)
     raw_addr = data.get("venue_address", "{}")
@@ -90,7 +90,7 @@ def generate_docx(data):
         addr = {}
 
     if addr.get("street"):
-        _base.add_address_block(doc, "Venue Address", raw_addr)
+        stencils.address(doc, "Venue Address", raw_addr)
 
     # checkbox (conditional — in-person dietary restrictions)
     dietary = data.get("dietary_restrictions", "")
@@ -122,7 +122,7 @@ def generate_docx(data):
 
     attendees = data.get("attendee_count", "")
 
-    _base.add_table_section(
+    stencils.table_section(
         doc,
         "Budget & Logistics",
         [
@@ -139,7 +139,7 @@ def generate_docx(data):
     except (json.JSONDecodeError, TypeError):
         items = []
 
-    _base.add_repeater_table(
+    stencils.repeater_table(
         doc,
         headers=["Item", "Qty", "Unit Cost", "Category"],
         items=items,
@@ -150,13 +150,13 @@ def generate_docx(data):
     # list — special requests
     special = data.get("special_requests", "")
     if special and special.strip():
-        _base.add_bullet_list(doc, "Special Requests", special)
+        stencils.bullet_list(doc, "Special Requests", special)
 
     # ── Step 4: Attachments & Approval ────────────────────
 
     # file — supporting document
     doc.add_heading("Supporting Document", level=1)
-    _base.add_image_or_placeholder(
+    stencils.image(
         doc,
         data.get("supporting_doc", ""),
         width_inches=3.0,
@@ -167,16 +167,16 @@ def generate_docx(data):
     # textarea — additional notes
     notes = data.get("additional_notes", "")
     if notes and notes.strip():
-        _base.add_longtext(doc, "Additional Notes", notes)
+        stencils.longtext(doc, "Additional Notes", notes)
 
     # signature — applicant signature
     doc.add_heading("Applicant Signature", level=1)
-    _base.add_signature_line(
+    stencils.signature(
         doc, data.get("applicant_signature", ""), "Applicant Signature"
     )
     doc.add_paragraph("")
 
     # ── Footer ────────────────────────────────────────────
-    _base.add_footer(doc)
+    stencils.footer(doc)
 
-    return _base.finalize(doc)
+    return stencils.finalize(doc)

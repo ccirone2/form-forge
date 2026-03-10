@@ -14,6 +14,20 @@
 
 ## Log
 
+### 2026-03-10 — Rename `_base.py` → `stencils.py` and Shorten Function Names
+
+- Renamed `templates/_base.py` to `templates/stencils.py`
+- Renamed `tests/test_base.py` to `tests/test_stencils.py`
+- Dropped `add_` prefix from all helper functions: `add_table_section` → `table_section`, `add_longtext` → `longtext`, `add_bullet_list` → `bullet_list`, `add_signatures` → `signatures`, `add_footer` → `footer`, `add_address_block` → `address`, `add_image_or_placeholder` → `image`, `add_signature_line` → `signature`, `add_repeater_table` → `repeater_table`; `new_doc` and `finalize` unchanged
+- Updated all call sites in 3 template files, test files, `index.html` (Pyodide loader), `CLAUDE.md`, `README.md`, and `docs/TEMPLATE_GUIDE.md`
+- All 59 tests pass, linting clean
+
+**Decisions:**
+- `stencils` is a more descriptive module name than the underscore-prefixed `_base`
+- Shorter function names (`stencils.footer(doc)` vs `_base.add_footer(doc)`) reduce verbosity since the module name already provides context
+
+---
+
 ### 2026-03-04 — Keyboard Accessibility for Interactive Elements (#42)
 **Issues:** #42
 

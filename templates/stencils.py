@@ -1,18 +1,18 @@
 """
-FormForge Shared Template Base
-==============================
+FormForge Shared Template Stencils
+===================================
 Shared helper functions for all FormForge DOCX templates.
-Works in both standard Python (import _base) and Pyodide (via exec()).
+Works in both standard Python (import stencils) and Pyodide (via exec()).
 
 Usage in templates:
-    import _base
-    doc = _base.new_doc("My Form Title", "Subtitle here")
-    _base.add_table_section(doc, "Section Name", [("Label", "Value"), ...])
-    _base.add_longtext(doc, "Notes", some_text)
-    _base.add_bullet_list(doc, "Skills", newline_separated_str)
-    _base.add_signatures(doc, ["Signer 1", "Signer 2"])
-    _base.add_footer(doc)
-    return _base.finalize(doc)
+    import stencils
+    doc = stencils.new_doc("My Form Title", "Subtitle here")
+    stencils.table_section(doc, "Section Name", [("Label", "Value"), ...])
+    stencils.longtext(doc, "Notes", some_text)
+    stencils.bullet_list(doc, "Skills", newline_separated_str)
+    stencils.signatures(doc, ["Signer 1", "Signer 2"])
+    stencils.footer(doc)
+    return stencils.finalize(doc)
 """
 
 import io
@@ -72,7 +72,7 @@ def new_doc(title_text, subtitle_text="", font_name="Calibri", font_size=11):
     return doc
 
 
-def add_table_section(doc, heading, rows):
+def table_section(doc, heading, rows):
     """
     Add a heading followed by a two-column key/value table.
 
@@ -103,7 +103,7 @@ def add_table_section(doc, heading, rows):
     doc.add_paragraph("")
 
 
-def add_longtext(doc, heading, text):
+def longtext(doc, heading, text):
     """
     Add a sub-heading followed by one or more paragraphs of body text.
     Respects newline characters as paragraph breaks.
@@ -131,7 +131,7 @@ def add_longtext(doc, heading, text):
     doc.add_paragraph("")
 
 
-def add_bullet_list(doc, heading, items_str):
+def bullet_list(doc, heading, items_str):
     """
     Add a sub-heading followed by a bulleted list.
     Items are expected as a newline-separated string.
@@ -159,7 +159,7 @@ def add_bullet_list(doc, heading, items_str):
     doc.add_paragraph("")
 
 
-def add_signatures(doc, labels):
+def signatures(doc, labels):
     """
     Add a signature block with underlines and labels in a grid layout.
     Labels are arranged in pairs (two per row).
@@ -187,7 +187,7 @@ def add_signatures(doc, labels):
         run.font.color.rgb = COLOR_MUTED
 
 
-def add_footer(doc):
+def footer(doc):
     """
     Add the standard FormForge auto-generated footer paragraph.
 
@@ -206,7 +206,7 @@ def add_footer(doc):
     fr.italic = True
 
 
-def add_address_block(doc, heading, raw_json):
+def address(doc, heading, raw_json):
     """
     Add a formatted mailing address block under a heading.
     Parses a JSON string with keys: street, city, state, zip.
@@ -255,7 +255,7 @@ def add_address_block(doc, heading, raw_json):
     doc.add_paragraph("")
 
 
-def add_image_or_placeholder(
+def image(
     doc, b64_str, width_inches=3.0, placeholder="No image uploaded."
 ):
     """
@@ -282,7 +282,7 @@ def add_image_or_placeholder(
     r.font.color.rgb = COLOR_MUTED
 
 
-def add_signature_line(doc, b64_str, label, width_inches=2.5):
+def signature(doc, b64_str, label, width_inches=2.5):
     """
     Add a signature image (or placeholder underline) with a label beneath.
 
@@ -308,7 +308,7 @@ def add_signature_line(doc, b64_str, label, width_inches=2.5):
     lr.font.color.rgb = COLOR_MUTED
 
 
-def add_repeater_table(doc, headers, items, field_keys, currency_keys=None):
+def repeater_table(doc, headers, items, field_keys, currency_keys=None):
     """
     Render a repeater field as a headed table.
 

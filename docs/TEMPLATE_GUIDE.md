@@ -10,7 +10,7 @@ Place template files in the `templates/` directory of your repo:
 templates/
 ├── onboarding.py
 ├── expense-report.py
-└── _base.py         ← shared helpers, auto-loaded by FormForge
+└── stencils.py      ← shared helpers, auto-loaded by FormForge
 ```
 
 Each schema references its template via the `template` field (e.g. `"template": "templates/onboarding.py"`). If omitted, FormForge looks for `templates/{schema-filename}.py`.
@@ -32,34 +32,34 @@ def generate_docx(data):
 
 The function receives a flat dictionary where keys are field `id` values from the schema and values are always strings. It must return the raw bytes of a valid `.docx` file.
 
-## The `_base` Module
+## The `stencils` Module
 
-FormForge provides a shared helper module at `templates/_base.py`. It is loaded into Pyodide's virtual filesystem once per session (before any template runs) via `loadBaseModule()` in `index.html`. All templates should import it:
+FormForge provides a shared helper module at `templates/stencils.py`. It is loaded into Pyodide's virtual filesystem once per session (before any template runs) via `loadBaseModule()` in `index.html`. All templates should import it:
 
 ```python
-import _base
+import stencils
 ```
 
 This works identically in Pyodide and in standard Python (for local testing).
 
-### `_base.new_doc(title_text, subtitle_text="", font_name="Calibri", font_size=11)`
+### `stencils.new_doc(title_text, subtitle_text="", font_name="Calibri", font_size=11)`
 
 Creates a styled `Document` with a centered title and optional subtitle. Sets the Normal style font. Returns the `Document` instance.
 
 ```python
-doc = _base.new_doc("Employee Onboarding Document", f"Prepared for {first} {last}")
+doc = stencils.new_doc("Employee Onboarding Document", f"Prepared for {first} {last}")
 ```
 
 - Title is colored `COLOR_MEDIUM_BLUE`, centered.
 - Subtitle (if provided) is colored `COLOR_SOFT_BLUE`, centered, 12pt.
 - An empty paragraph spacer follows each.
 
-### `_base.add_table_section(doc, heading, rows)`
+### `stencils.table_section(doc, heading, rows)`
 
 Adds a level-1 heading followed by a two-column key/value table. An empty paragraph spacer is appended after.
 
 ```python
-_base.add_table_section(doc, "Personal Information", [
+stencils.table_section(doc, "Personal Information", [
     ("First Name", data.get("first_name", "")),
     ("Last Name", data.get("last_name", "")),
     ("Email", data.get("email", "")),
@@ -71,28 +71,28 @@ _base.add_table_section(doc, "Personal Information", [
 - Table style: `Light Grid Accent 1`, centered.
 - Both columns use 10pt font; label is bold.
 
-### `_base.add_longtext(doc, heading, text)`
+### `stencils.longtext(doc, heading, text)`
 
 Adds a level-2 heading followed by one or more paragraphs split on `\n`. If `text` is empty, renders "No information provided." in muted italic.
 
 ```python
-_base.add_longtext(doc, "Professional Bio", data.get("bio", ""))
+stencils.longtext(doc, "Professional Bio", data.get("bio", ""))
 ```
 
-### `_base.add_bullet_list(doc, heading, items_str)`
+### `stencils.bullet_list(doc, heading, items_str)`
 
 Adds a level-2 heading followed by a `List Bullet` style paragraph for each newline-separated item. If `items_str` is empty, renders "No items listed." in muted italic.
 
 ```python
-_base.add_bullet_list(doc, "Key Skills", data.get("skills", ""))
+stencils.bullet_list(doc, "Key Skills", data.get("skills", ""))
 ```
 
-### `_base.add_signatures(doc, labels)`
+### `stencils.signatures(doc, labels)`
 
 Adds a level-1 "Signatures" heading and a grid of signature blocks — two per row — each with an underline and a muted label.
 
 ```python
-_base.add_signatures(doc, [
+stencils.signatures(doc, [
     "Employee Signature", "Date",
     "HR Representative", "Date",
 ])
@@ -100,12 +100,12 @@ _base.add_signatures(doc, [
 
 Labels are paired into rows of two. If you need signature image embedding instead (e.g., for canvas `signature` fields), handle that manually — see the expense-report template for an example.
 
-### `_base.finalize(doc)`
+### `stencils.finalize(doc)`
 
 Serializes the `Document` to bytes and returns them. Always call this as the last line of `generate_docx`.
 
 ```python
-return _base.finalize(doc)
+return stencils.finalize(doc)
 ```
 
 ### Color palette
@@ -114,16 +114,16 @@ Use these constants anywhere you need consistent colors:
 
 | Constant | Value | Usage |
 |---|---|---|
-| `_base.COLOR_DARK_NAVY` | `#1A1A3E` | Heavy emphasis |
-| `_base.COLOR_MEDIUM_BLUE` | `#333366` | Titles |
-| `_base.COLOR_SOFT_BLUE` | `#666699` | Subtitles |
-| `_base.COLOR_MUTED` | `#999999` | Placeholder / empty-state text |
-| `_base.COLOR_LIGHT_MUTED` | `#AAAAAA` | Footer text |
+| `stencils.COLOR_DARK_NAVY` | `#1A1A3E` | Heavy emphasis |
+| `stencils.COLOR_MEDIUM_BLUE` | `#333366` | Titles |
+| `stencils.COLOR_SOFT_BLUE` | `#666699` | Subtitles |
+| `stencils.COLOR_MUTED` | `#999999` | Placeholder / empty-state text |
+| `stencils.COLOR_LIGHT_MUTED` | `#AAAAAA` | Footer text |
 
 Example:
 
 ```python
-run.font.color.rgb = _base.COLOR_MUTED
+run.font.color.rgb = stencils.COLOR_MUTED
 ```
 
 ## Understanding the Data Dictionary
@@ -140,9 +140,9 @@ All values in `data` are strings, regardless of field type. `heading` fields are
 | `longtext` | String with `\n` paragraph breaks | `"First paragraph.\nSecond paragraph."` |
 | `checkbox` | Comma-separated string | `"GitHub, Jira, Figma"` |
 | `list` | Newline-separated string | `"Python\nJavaScript\nRust"` |
-| `number` | Numeric string | `"42.5"` |
-| `currency` | Numeric string | `"1250.00"` |
-| `hidden` | Static string from `default_value` | `"2.1"` |
+| `number` | Number input with min/max/step | `"42.5"` |
+| `currency` | Number input with currency prefix | `"1250.00"` |
+| `hidden` | Static string from `default_value` | `"1.0"` |
 | `address` | JSON object string | `'{"street":"123 Main","city":"Springfield","state":"IL","zip":"62701"}'` |
 | `file` | Base64 data URI string or `""` | `"data:image/png;base64,iVBOR..."` |
 | `signature` | Base64 PNG data URI string or `""` | `"data:image/png;base64,iVBOR..."` |
@@ -161,7 +161,7 @@ Templates do not need special handling for `visible_when`. Use the same `data.ge
 # Works correctly whether the field was visible or hidden
 notes = data.get("notes", "")
 if notes and notes.strip():
-    _base.add_longtext(doc, "Additional Notes", notes)
+    stencils.longtext(doc, "Additional Notes", notes)
 ```
 
 ## Wizard Forms
@@ -258,7 +258,7 @@ tool_list = [t.strip() for t in tools.split(",") if t.strip()] if tools else []
 
 ### `longtext` → paragraphs
 
-Use `_base.add_longtext()` — it handles the split and the empty case. If you need inline control:
+Use `stencils.longtext()` — it handles the split and the empty case. If you need inline control:
 
 ```python
 bio = data.get("bio", "")
@@ -269,7 +269,7 @@ for paragraph in bio.split("\n"):
 
 ### `list` → bullets
 
-Use `_base.add_bullet_list()` — it handles the split and the empty case. If you need inline control:
+Use `stencils.bullet_list()` — it handles the split and the empty case. If you need inline control:
 
 ```python
 skills = data.get("skills", "")
@@ -281,24 +281,24 @@ for item in skills.split("\n"):
 ## Minimal Template
 
 ```python
-import _base
+import stencils
 
 def generate_docx(data):
-    doc = _base.new_doc("My Document", data.get("title", ""))
+    doc = stencils.new_doc("My Document", data.get("title", ""))
 
-    _base.add_table_section(doc, "Details", [
+    stencils.table_section(doc, "Details", [
         ("Name", data.get("name", "")),
         ("Date", data.get("date", "")),
     ])
 
-    _base.add_bullet_list(doc, "Action Items", data.get("actions", ""))
+    stencils.bullet_list(doc, "Action Items", data.get("actions", ""))
 
-    return _base.finalize(doc)
+    return stencils.finalize(doc)
 ```
 
-## Template Without `_base` (Standalone)
+## Template Without `stencils` (Standalone)
 
-If you need a fully self-contained template without `_base`:
+If you need a fully self-contained template without `stencils`:
 
 ```python
 import io
@@ -336,7 +336,7 @@ fp = doc.add_paragraph()
 fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
 fr = fp.add_run("Auto-generated by FormForge. Review all information for accuracy.")
 fr.font.size = Pt(8)
-fr.font.color.rgb = _base.COLOR_LIGHT_MUTED
+fr.font.color.rgb = stencils.COLOR_LIGHT_MUTED
 fr.italic = True
 ```
 
@@ -346,7 +346,7 @@ fr.italic = True
 doc.add_page_break()
 ```
 
-### Manual key-value table (without `add_table_section`)
+### Manual key-value table (without `table_section`)
 
 ```python
 from docx.enum.table import WD_TABLE_ALIGNMENT
@@ -403,4 +403,4 @@ Or use FormForge's Local Files feature to drop in your `.json` and `.py` and tes
 - Handle empty strings gracefully — show `"—"` or `"Not provided"` rather than blank cells.
 - Use `doc.add_paragraph("")` for vertical spacing between sections.
 - Test with both fully filled and mostly empty form data.
-- For signature image embedding, use `_base.add_signatures()` only for blank underline blocks. If the schema uses `signature` field type, embed the canvas image with `doc.add_picture()` as shown in expense-report.py.
+- For signature image embedding, use `stencils.signatures()` only for blank underline blocks. If the schema uses `signature` field type, embed the canvas image with `doc.add_picture()` as shown in expense-report.py.
