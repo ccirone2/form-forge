@@ -78,13 +78,6 @@ PALETTE_MODERN = Palette(
 
 _active_palette = PALETTE_CLASSIC
 
-# Legacy color constants — updated by set_palette() to reflect the active palette
-COLOR_DARK_NAVY = PALETTE_CLASSIC.accent
-COLOR_MEDIUM_BLUE = PALETTE_CLASSIC.title
-COLOR_SOFT_BLUE = PALETTE_CLASSIC.subtitle
-COLOR_MUTED = PALETTE_CLASSIC.muted
-COLOR_LIGHT_MUTED = PALETTE_CLASSIC.footer
-
 
 def set_palette(palette):
     """Set the active color palette for all subsequent stencils calls.
@@ -96,19 +89,13 @@ def set_palette(palette):
     Raises:
         ValueError: If palette is missing any required role field.
     """
-    global _active_palette, COLOR_DARK_NAVY, COLOR_MEDIUM_BLUE
-    global COLOR_SOFT_BLUE, COLOR_MUTED, COLOR_LIGHT_MUTED
+    global _active_palette
 
     missing = [r for r in _PALETTE_ROLES if not hasattr(palette, r)]
     if missing:
         raise ValueError(f"Palette missing required roles: {', '.join(missing)}")
 
     _active_palette = palette
-    COLOR_DARK_NAVY = palette.accent
-    COLOR_MEDIUM_BLUE = palette.title
-    COLOR_SOFT_BLUE = palette.subtitle
-    COLOR_MUTED = palette.muted
-    COLOR_LIGHT_MUTED = palette.footer
 
 
 def new_doc(

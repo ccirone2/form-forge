@@ -125,14 +125,6 @@ def test_finalize_returns_valid_docx():
     assert result[:2] == b"PK"
 
 
-def test_color_constants_exist():
-    assert stencils.COLOR_DARK_NAVY is not None
-    assert stencils.COLOR_MEDIUM_BLUE is not None
-    assert stencils.COLOR_SOFT_BLUE is not None
-    assert stencils.COLOR_MUTED is not None
-    assert stencils.COLOR_LIGHT_MUTED is not None
-
-
 # ── Palette tests (#48–#51) ─────────────────────────────────
 
 
@@ -187,15 +179,6 @@ def test_set_palette_switches_title_color():
         stencils.set_palette(stencils.PALETTE_CLASSIC)
 
 
-def test_set_palette_updates_color_constants():
-    try:
-        stencils.set_palette(stencils.PALETTE_MINIMAL)
-        assert stencils.COLOR_MEDIUM_BLUE == stencils.PALETTE_MINIMAL.title
-        assert stencils.COLOR_MUTED == stencils.PALETTE_MINIMAL.muted
-    finally:
-        stencils.set_palette(stencils.PALETTE_CLASSIC)
-
-
 def test_set_palette_invalid_raises():
     import pytest
 
@@ -223,12 +206,9 @@ def test_set_palette_custom_palette():
 
 
 def test_set_palette_restores_classic():
-    from docx.shared import RGBColor
-
     stencils.set_palette(stencils.PALETTE_MINIMAL)
     stencils.set_palette(stencils.PALETTE_CLASSIC)
-    assert stencils.COLOR_MEDIUM_BLUE == RGBColor(0x33, 0x33, 0x66)
-    assert stencils.COLOR_MUTED == RGBColor(0x99, 0x99, 0x99)
+    assert stencils._active_palette is stencils.PALETTE_CLASSIC
 
 
 def test_new_doc_palette_override():
