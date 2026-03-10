@@ -315,8 +315,13 @@
     margin-bottom: 32px; padding: 0 16px;
   }
   .wizard-step {
-    display: flex; align-items: center; gap: 0; cursor: default;
+    display: flex; align-items: center; gap: 0; cursor: pointer;
+    padding: 6px 0; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
+  .wizard-step:hover .wizard-step-circle {
+    transform: scale(1.1); border-color: var(--accent);
+  }
+  .wizard-step.active:hover .wizard-step-circle { transform: none; }
   .wizard-step-circle {
     width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
     justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0;
@@ -412,6 +417,14 @@
   @media (max-width: 600px) {
     .autosave-prompt { flex-direction: column; align-items: flex-start; }
     .submit-area { flex-wrap: wrap; }
+    .wizard-step-label { display: none; }
+    .wizard-step-circle { width: 28px; height: 28px; font-size: 12px; }
+    .wizard-step-connector { width: 24px; margin: 0 4px; }
+    .wizard-indicator { padding: 0 8px; }
+  }
+  @media (max-width: 400px) {
+    .wizard-step-circle { width: 24px; height: 24px; font-size: 11px; }
+    .wizard-step-connector { width: 16px; margin: 0 2px; }
   }
 
   /* Overlay */
@@ -1620,6 +1633,12 @@ function buildForm(schema) {
       const step = document.createElement('div');
       step.className = 'wizard-step' + (i === 0 ? ' active' : '');
       step.dataset.stepIndex = i;
+      step.dataset.stepNumber = section.step || (i + 1);
+      step.setAttribute('role', 'button');
+      step.setAttribute('tabindex', '0');
+      step.setAttribute('aria-label', `Step ${section.step || (i + 1)}: ${section.title}`);
+      step.onclick = () => wizardStepClick(i);
+      step.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); wizardStepClick(i); } };
       const circle = document.createElement('div');
       circle.className = 'wizard-step-circle';
       circle.textContent = section.step || (i + 1);
@@ -1841,6 +1860,11 @@ function wizardValidateStep(stepIndex) {
   return missing;
 }
 
+function wizardStepClick(targetStep) {
+  if (targetStep === wizardCurrentStep) return;
+  wizardGoTo(targetStep);
+}
+
 function wizardNext(fromStep) {
   wizardGoTo(fromStep + 1);
 }
@@ -1866,9 +1890,17 @@ function wizardGoTo(stepIndex) {
   // Update step indicator
   form.querySelectorAll('.wizard-step').forEach(el => {
     const idx = parseInt(el.dataset.stepIndex);
+    const circle = el.querySelector('.wizard-step-circle');
     el.classList.remove('active', 'completed');
-    if (idx === stepIndex) el.classList.add('active');
-    else if (idx < stepIndex) el.classList.add('completed');
+    if (idx === stepIndex) {
+      el.classList.add('active');
+      circle.innerHTML = el.dataset.stepNumber;
+    } else if (idx < stepIndex) {
+      el.classList.add('completed');
+      circle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+    } else {
+      circle.innerHTML = el.dataset.stepNumber;
+    }
   });
   form.querySelectorAll('.wizard-step-connector').forEach(el => {
     const idx = parseInt(el.dataset.connectorIndex);
