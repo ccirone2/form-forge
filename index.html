@@ -684,7 +684,7 @@
       <div class="config-row">
         <div class="field-grow">
           <label>owner / repo</label>
-          <input type="text" id="repoInput" placeholder="myorg/form-templates" spellcheck="false">
+          <input type="text" id="repoInput" placeholder="myorg/form-templates" value="ccirone2/form-forge" spellcheck="false">
         </div>
         <div class="field-grow" style="max-width: 200px;">
           <label>branch (optional)</label>
@@ -1329,7 +1329,7 @@ async function ghFetchRaw(path) {
 // ============================================================
 async function connectRepo() {
   const repoInput = document.getElementById('repoInput').value.trim();
-  ghBranch = document.getElementById('branchInput').value.trim() || 'main';
+  ghBranch = document.getElementById('branchInput').value.trim() || 'main';  // fallback, may be overridden below
   ghToken = document.getElementById('tokenInput').value.trim();
   const statusEl = document.getElementById('repoStatus');
 
@@ -1349,6 +1349,18 @@ async function connectRepo() {
   document.getElementById('connectBtn').disabled = true;
 
   try {
+    // If no branch specified, fetch the repo's default branch
+    if (!document.getElementById('branchInput').value.trim()) {
+      const headers = { Accept: 'application/vnd.github.v3+json' };
+      if (ghToken) headers.Authorization = `token ${ghToken}`;
+      const repoRes = await fetch(`https://api.github.com/repos/${ghOwner}/${ghRepo}`, { headers });
+      if (repoRes.ok) {
+        const repoData = await repoRes.json();
+        ghBranch = repoData.default_branch;
+        log(`Using default branch: ${ghBranch}`, 'info');
+      }
+    }
+
     // Fetch schemas/ directory
     log(`Fetching schemas from ${ghOwner}/${ghRepo}@${ghBranch}...`, 'info');
     const schemaFiles = await ghFetch('schemas');
