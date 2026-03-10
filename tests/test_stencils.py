@@ -371,8 +371,10 @@ def test_repeater_table_has_grid_borders():
         field_keys=["a"],
     )
     borders = _table_border_vals(doc.tables[0])
-    for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+    for edge in ("top", "bottom", "insideH"):
         assert borders.get(edge) == "single", f"{edge} should be 'single'"
+    for edge in ("left", "right", "insideV"):
+        assert borders.get(edge) == "none", f"{edge} should be 'none'"
 
 
 def test_repeater_table_header_is_shaded():

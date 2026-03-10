@@ -213,6 +213,26 @@ def set_theme(theme):
 _template_cache = {}
 
 
+def _set_style_font(style, font_name):
+    """Set font on a style and strip theme-linked font attributes.
+
+    Word's built-in styles (Title, Heading 1-4, Subtitle, etc.) carry
+    ``w:asciiTheme`` / ``w:hAnsiTheme`` attributes on their ``rFonts``
+    element.  These theme references take priority over explicit font
+    names, causing python-docx's ``style.font.name = ...`` to be ignored
+    when the document is opened in Word.  This helper removes the theme
+    attributes so the explicit font actually takes effect.
+    """
+    style.font.name = font_name
+    rPr = style.element.rPr
+    if rPr is not None:
+        rFonts = rPr.find(qn("w:rFonts"))
+        if rFonts is not None:
+            for attr in ("w:asciiTheme", "w:hAnsiTheme",
+                         "w:cstheme", "w:eastAsiaTheme"):
+                rFonts.attrib.pop(qn(attr), None)
+
+
 def _build_template(theme):
     """Build a DOCX template with all Word styles configured from a theme.
 
@@ -234,11 +254,12 @@ def _build_template(theme):
 
     # -- Configure paragraph styles ------------------------------------
     normal = doc.styles["Normal"]
-    normal.font.name = theme.font_body
+    _set_style_font(normal, theme.font_body)
     normal.font.size = Pt(theme.size_body)
+    normal.paragraph_format.space_after = Pt(0)
 
     title_style = doc.styles["Title"]
-    title_style.font.name = theme.font_heading
+    _set_style_font(title_style, theme.font_heading)
     title_style.font.size = Pt(theme.size_title)
     title_style.font.color.rgb = theme.title
     title_style.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -248,13 +269,13 @@ def _build_template(theme):
         (2, "Heading 2", theme.size_heading2, theme.subtitle),
     ]:
         h = doc.styles[name]
-        h.font.name = theme.font_heading
+        _set_style_font(h, theme.font_heading)
         h.font.size = Pt(size)
         h.font.color.rgb = color
 
     try:
         sub = doc.styles["Subtitle"]
-        sub.font.name = theme.font_caption
+        _set_style_font(sub, theme.font_caption)
         sub.font.size = Pt(theme.size_subtitle)
         sub.font.color.rgb = theme.subtitle
         sub.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -263,7 +284,7 @@ def _build_template(theme):
 
     try:
         lb = doc.styles["List Bullet"]
-        lb.font.name = theme.font_body
+        _set_style_font(lb, theme.font_body)
         lb.font.size = Pt(theme.size_table)
     except KeyError:
         pass
@@ -301,6 +322,24 @@ _template_cache[_active_theme] = _build_template(_active_theme)
 # ---------------------------------------------------------------------------
 #  Table formatting helpers
 # ---------------------------------------------------------------------------
+
+
+def _set_cell_margins(table, top=None, bottom=None):
+    """Set default top/bottom cell margins for all cells in a table (inches)."""
+    tbl = table._tbl
+    tblPr = tbl.tblPr if tbl.tblPr is not None else tbl._add_tblPr()
+    existing = tblPr.find(qn("w:tblCellMar"))
+    if existing is not None:
+        tblPr.remove(existing)
+    parts = [f"<w:tblCellMar {nsdecls('w')}>"]
+    if top is not None:
+        twips = int(top * 1440)
+        parts.append(f'<w:top w:w="{twips}" w:type="dxa"/>')
+    if bottom is not None:
+        twips = int(bottom * 1440)
+        parts.append(f'<w:bottom w:w="{twips}" w:type="dxa"/>')
+    parts.append("</w:tblCellMar>")
+    tblPr.append(parse_xml("".join(parts)))
 
 
 def _set_table_borders(table, val="single", sz=4, color="BFBFBF"):
@@ -401,6 +440,7 @@ def table_section(doc, heading, rows):
     table = doc.add_table(rows=0, cols=2)
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     _set_table_borders(table, val="none", sz=0, color="auto")
+    _set_cell_margins(table, top=0.02, bottom=0.02)
 
     for label, value in rows:
         row = table.add_row()
@@ -494,6 +534,7 @@ def signatures(doc, labels):
     num_cols = min(len(labels), 2)
     sig_table = doc.add_table(rows=num_rows, cols=num_cols)
     sig_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    _set_cell_margins(sig_table, top=0.02, bottom=0.02)
 
     for i, label in enumerate(labels):
         cell = sig_table.rows[i // 2].cells[i % 2]
@@ -652,7 +693,23 @@ def repeater_table(doc, headers, items, field_keys, currency_keys=None):
     if items:
         table = doc.add_table(rows=1, cols=len(headers))
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
-        _set_table_borders(table, val="single", sz=4, color=str(t.muted))
+        border_color = str(t.muted)
+        tbl = table._tbl
+        tblPr = tbl.tblPr if tbl.tblPr is not None else tbl._add_tblPr()
+        existing = tblPr.find(qn("w:tblBorders"))
+        if existing is not None:
+            tblPr.remove(existing)
+        tblPr.append(parse_xml(
+            f"<w:tblBorders {nsdecls('w')}>"
+            f'<w:top w:val="single" w:sz="4" w:space="0" w:color="{border_color}"/>'
+            f'<w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+            f'<w:bottom w:val="single" w:sz="4" w:space="0" w:color="{border_color}"/>'
+            f'<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+            f'<w:insideH w:val="single" w:sz="4" w:space="0" w:color="{border_color}"/>'
+            f'<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+            f"</w:tblBorders>"
+        ))
+        _set_cell_margins(table, top=0.02, bottom=0.02)
 
         header_row = table.rows[0]
         _shade_cells(header_row, str(t.accent))
@@ -660,6 +717,7 @@ def repeater_table(doc, headers, items, field_keys, currency_keys=None):
             cell_p = header_row.cells[i].paragraphs[0]
             r = cell_p.add_run(header_text)
             r.font.name = t.font_heading
+            r.bold = True
             r.font.size = Pt(t.size_table)
             r.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
 
