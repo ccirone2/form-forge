@@ -61,10 +61,19 @@ if echo "$CMD" | grep -qE 'git\s+clean\s+-[a-zA-Z]*f'; then
   block "git clean -f deletes untracked files permanently"
 fi
 
-# ── 2. Push to main/master ───────────────────────────────────────────
+# ── 2. Protect main/master branch ────────────────────────────────────
 
 if echo "$CMD" | grep -qE 'git\s+push\b' && echo "$CMD" | grep -qE '\b(main|master)\b'; then
   block "direct push to main/master — use a feature branch + PR"
+fi
+
+# Merge into main/master (catches: git merge X while on main, or git checkout main && git merge)
+if echo "$CMD" | grep -qE 'git\s+checkout\s+(main|master)\b'; then
+  block "switching to main/master — develop is the working branch"
+fi
+
+if echo "$CMD" | grep -qE 'git\s+merge\b.*\b(main|master)\b'; then
+  block "merging into/from main/master — use a PR to merge develop into main"
 fi
 
 # ── 3. Destructive file operations ───────────────────────────────────
