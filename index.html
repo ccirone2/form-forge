@@ -624,6 +624,27 @@
   .profile-dropdown-empty {
     padding: 14px; text-align: center; font-size: 12px; color: var(--text-muted);
   }
+  .profile-field-wrapper {
+    position: relative; display: flex; align-items: center;
+  }
+  .profile-field-wrapper > input,
+  .profile-field-wrapper > select {
+    flex: 1; padding-right: 32px;
+  }
+  .profile-field-indicator {
+    position: absolute; right: 6px; top: 50%;
+    transform: translateY(-50%);
+    width: 22px; height: 22px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: none; border: 1px solid transparent; border-radius: 4px;
+    color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+    opacity: 0.45; z-index: 2;
+  }
+  .profile-field-indicator:hover {
+    opacity: 1; background: var(--surface-2); border-color: var(--border);
+    color: var(--accent);
+  }
+  .profile-field-indicator svg { width: 14px; height: 14px; pointer-events: none; }
 
   /* ===== 30. RESPONSIVE / MEDIA QUERIES ===== */
   @media (max-width: 600px) {
@@ -3609,6 +3630,8 @@ function collectProfileFromForm(schema) {
 // --- Dropdown ---
 
 let _activeDropdownField = null;
+const _dismissedProfileFields = new Set();
+let _profileFocusTimer = null;
 
 function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
   const dd = document.getElementById('profileDropdown');
@@ -3735,8 +3758,12 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
   });
 }
 
-function hideProfileDropdown() {
+function hideProfileDropdown(dismissed) {
+  clearTimeout(_profileFocusTimer);
   const dd = document.getElementById('profileDropdown');
+  if (dismissed && _activeDropdownField && _activeDropdownField.id) {
+    _dismissedProfileFields.add(_activeDropdownField.id);
+  }
   if (dd) dd.style.display = 'none';
   _activeDropdownField = null;
 }
@@ -3848,8 +3875,38 @@ function toggleProfileNav() {
 
 // --- Field-level focus handlers ---
 
+function _addProfileIndicator(el, profileKey, field) {
+  // Wrap the input in a relative container if not already wrapped
+  const parent = el.parentNode;
+  if (parent.classList.contains('profile-field-wrapper')) return;
+  const wrapper = document.createElement('div');
+  wrapper.className = 'profile-field-wrapper';
+  parent.insertBefore(wrapper, el);
+  wrapper.appendChild(el);
+
+  // Create the indicator icon button
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'profile-field-indicator';
+  btn.title = 'Fill from profile';
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Toggle: if dropdown is already showing for this field, hide it
+    if (_activeDropdownField === el) {
+      hideProfileDropdown();
+      return;
+    }
+    showProfileDropdown(el, profileKey, field);
+  });
+  wrapper.appendChild(btn);
+}
+
 function setupProfileDropdowns(schema) {
   if (!schema) return;
+  _dismissedProfileFields.clear();
+
   for (const section of schema.sections) {
     for (const field of section.fields) {
       const profileKey = getMatchedProfileKey(field);
@@ -3858,12 +3915,34 @@ function setupProfileDropdowns(schema) {
       if (field.type === 'address') {
         const streetEl = document.getElementById(`${field.id}_street`);
         if (streetEl) {
-          streetEl.addEventListener('focus', () => showProfileDropdown(streetEl, 'address', field));
+          _addProfileIndicator(streetEl, 'address', field);
+          streetEl.addEventListener('focus', () => {
+            if (streetEl.value.trim() || getProfiles().length === 0) return;
+            if (_dismissedProfileFields.has(streetEl.id)) return;
+            clearTimeout(_profileFocusTimer);
+            _profileFocusTimer = setTimeout(() => {
+              if (document.activeElement === streetEl) {
+                showProfileDropdown(streetEl, 'address', field);
+              }
+            }, 300);
+          });
+          streetEl.addEventListener('blur', () => clearTimeout(_profileFocusTimer));
         }
       } else {
         const el = document.getElementById(field.id);
         if (el) {
-          el.addEventListener('focus', () => showProfileDropdown(el, profileKey, field));
+          _addProfileIndicator(el, profileKey, field);
+          el.addEventListener('focus', () => {
+            if (el.value.trim() || getProfiles().length === 0) return;
+            if (_dismissedProfileFields.has(el.id)) return;
+            clearTimeout(_profileFocusTimer);
+            _profileFocusTimer = setTimeout(() => {
+              if (document.activeElement === el) {
+                showProfileDropdown(el, profileKey, field);
+              }
+            }, 300);
+          });
+          el.addEventListener('blur', () => clearTimeout(_profileFocusTimer));
         }
       }
     }
@@ -3875,8 +3954,9 @@ function setupProfileDropdowns(schema) {
     if (dd.style.display === 'none') return;
     if (dd.contains(e.target)) return;
     if (e.target.closest('.profile-btn')) return;
+    if (e.target.closest('.profile-field-indicator')) return;
     if (e.target === _activeDropdownField) return;
-    hideProfileDropdown();
+    hideProfileDropdown(true);
   });
 
   updateProfileBadge();
@@ -4221,7 +4301,7 @@ function handleGlobalKeydown(e) {
   if (e.key === 'Escape') {
     const dd = document.getElementById('profileDropdown');
     if (dd && dd.style.display !== 'none') {
-      hideProfileDropdown();
+      hideProfileDropdown(true);
       return;
     }
     if (formViewActive) {
