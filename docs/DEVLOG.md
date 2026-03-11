@@ -14,26 +14,22 @@
 
 ## Log
 
-<<<<<<< HEAD
-### 2026-03-10 — Code quality: SVG icon reuse, event delegation, CSS organization (#92)
-**Issue:** #92
+### 2026-03-10 — Profile dropdown auto-focus refinement (#87)
+**Issue:** #87
 
-Internal refactoring for maintainability — no user-facing behavior changes.
+Refined the profile dropdown UX to reduce friction when tabbing through form fields.
 
-- **SVG sprite sheet** — Created a hidden `<svg>` sprite block at the top of `<body>` with 22 reusable `<symbol>` definitions (arrow-right, arrow-left, github, plus, check, export, save, upload, file, file-upload, file-code, info, play, folder, book, code, grid, bolt, file-text, reset, person, lock). Replaced all inline SVG duplicates in HTML and JS `innerHTML` assignments with `<svg><use href="#icon-name"/></svg>` references. The GitHub icon SVG path (previously duplicated in two ~18-line inline SVGs) is now defined once.
-- **Event delegation** — Replaced per-element event listeners with delegated handlers on parent containers:
-  - Picker cards: single click/keydown handler on `#pickerGrid` instead of per-card listeners
-  - List items: single keydown/input/click handler on `.list-items` container instead of per-row listeners in `addListItem()`
-  - Repeater row removes: single click handler on rows container instead of per-row remove button listener
-  - Profile dropdown items: single click handler on dropdown instead of per-item/per-button listeners
-- **CSS table of contents** — Added a 30-section table of contents comment at the top of `<style>`, with numbered section markers (`1. Variables & Resets` through `30. Responsive / Media Queries`). Extracted utility classes (`.font-mono`, `.sr-only`) into a dedicated section.
-- **Named constants** — Replaced magic numbers with named constants at the top of the script block:
-  - `AUTOSAVE_SIZE_LIMIT` (50 KB) — autosave threshold for skipping large values
-  - `AUTOSAVE_DEBOUNCE_MS` (2000 ms) — debounce delay for autosave
-  - `TOAST_DURATION_MS` (3500 ms) — toast auto-dismiss duration
-  - `DEFAULT_MAX_ROWS` (10) — default max rows for repeater fields
+**Changes:**
+- **Guard on focus handler** (`setupProfileDropdowns()`): The dropdown now only auto-shows on focus when the field is empty (`!el.value.trim()`) AND saved profiles exist (`getProfiles().length > 0`). Previously it appeared on every focus regardless of field state.
+- **300ms debounce** (`setupProfileDropdowns()`): Added a `setTimeout` delay before showing the dropdown on focus. If the user tabs past the field within 300ms, the timer is cleared via a `blur` listener and the dropdown never appears. The timer is also cleared in `hideProfileDropdown()` to prevent stale triggers.
+- **Dismissal tracking** (`hideProfileDropdown()`, `_dismissedProfileFields`): A `Set` tracks field IDs where the user explicitly dismissed the dropdown (via Escape or click-outside). Once dismissed, the auto-focus trigger is suppressed for that field until page reload. The icon button still works regardless.
+- **Profile icon indicator** (`_addProfileIndicator()`): Each profile-matchable input now has a small person icon button at its right edge. Clicking it toggles the profile dropdown, providing a non-intrusive alternative to the auto-focus behavior. The input is wrapped in a `.profile-field-wrapper` div for positioning.
+- **CSS styles**: Added `.profile-field-wrapper` (relative positioning container), `.profile-field-indicator` (the icon button with subtle opacity, accent color on hover), and padding-right on wrapped inputs to prevent text overlap with the icon.
 
-All 95 tests pass. No functional changes.
+**Decisions:**
+- The icon button always works even after dismissal, giving users an explicit opt-in path
+- Dismissal state is per-field and resets on page reload (not persisted to localStorage) to keep the scope simple
+- The debounce uses `setTimeout`/`clearTimeout` pattern with a single shared timer variable rather than per-field timers
 
 ---
 
