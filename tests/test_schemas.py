@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import jsonschema
+import pytest
 
 SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "schemas"
 SPEC_PATH = SCHEMAS_DIR / "_schema.spec.json"
@@ -94,21 +95,15 @@ def test_rejects_missing_title():
             {"title": "S", "fields": [{"id": "x", "label": "X", "type": "text"}]}
         ]
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_empty_sections():
     spec = _load_spec()
     bad = {"title": "T", "sections": []}
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_invalid_field_id():
@@ -122,11 +117,8 @@ def test_rejects_invalid_field_id():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_unknown_field_type():
@@ -140,11 +132,8 @@ def test_rejects_unknown_field_type():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_select_without_options():
@@ -158,11 +147,8 @@ def test_rejects_select_without_options():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_hidden_without_default_value():
@@ -176,11 +162,8 @@ def test_rejects_hidden_without_default_value():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_repeater_without_fields():
@@ -194,11 +177,8 @@ def test_rejects_repeater_without_fields():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_options_on_text_field():
@@ -212,11 +192,8 @@ def test_rejects_options_on_text_field():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_min_on_text_field():
@@ -230,11 +207,8 @@ def test_rejects_min_on_text_field():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 # --- Wizard schema tests ---
@@ -306,11 +280,8 @@ def test_rejects_wizard_non_boolean():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_step_non_integer():
@@ -327,11 +298,8 @@ def test_rejects_step_non_integer():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_step_zero():
@@ -348,11 +316,8 @@ def test_rejects_step_zero():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 # --- visible_when tests ---
@@ -405,11 +370,8 @@ def test_rejects_visible_when_missing_field():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_visible_when_missing_equals():
@@ -431,11 +393,8 @@ def test_rejects_visible_when_missing_equals():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_visible_when_extra_property():
@@ -461,11 +420,8 @@ def test_rejects_visible_when_extra_property():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_existing_schemas_still_validate_after_visible_when():
@@ -515,11 +471,8 @@ def test_rejects_sample_data_non_object():
     spec = _load_spec()
     schema = _minimal_schema()
     schema["sampleData"] = "not an object"
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=schema, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 # ---------------------------------------------------------------------------
@@ -583,11 +536,8 @@ def test_rejects_min_on_select_repeater_field():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_currency_symbol_on_text_repeater_field():
@@ -616,11 +566,8 @@ def test_rejects_currency_symbol_on_text_repeater_field():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_max_length_on_number_repeater_field():
@@ -649,11 +596,8 @@ def test_rejects_max_length_on_number_repeater_field():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_repeater_number_field_accepts_min_max():
@@ -685,3 +629,28 @@ def test_repeater_number_field_accepts_min_max():
         ],
     }
     jsonschema.validate(instance=schema, schema=spec)
+
+
+# ---------------------------------------------------------------------------
+#  Duplicate field ID check
+# ---------------------------------------------------------------------------
+
+
+def _collect_all_ids(schema):
+    """Collect all field IDs from a schema, including repeater sub-fields."""
+    ids = []
+    for section in schema.get("sections", []):
+        for field in section.get("fields", []):
+            ids.append(field["id"])
+            for sub in field.get("fields", []):
+                ids.append(sub["id"])
+    return ids
+
+
+def test_no_duplicate_field_ids():
+    """Every schema must have unique field IDs across all sections."""
+    for path in _schema_files():
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        ids = _collect_all_ids(schema)
+        dupes = [i for i in ids if ids.count(i) > 1]
+        assert len(ids) == len(set(ids)), f"Duplicate field IDs in {path.name}: {dupes}"

@@ -14,6 +14,26 @@
 
 ## Log
 
+### 2026-03-10 — Improve test coverage: round-trip assertions, edge cases, visible_when paths (#40)
+**Issues:** #40
+
+Upgraded the test suite from smoke-only checks to meaningful content verification, added missing coverage paths, and modernized test patterns. Test count: 90 → 95.
+
+**Changes:**
+- **`tests/test_schemas.py`:** Refactored all 19 negative tests from `try/except` + `assert False` to idiomatic `pytest.raises`. Added `_collect_all_ids()` helper and `test_no_duplicate_field_ids` test that validates unique field IDs across all sections (including repeater sub-fields) in every schema.
+- **`tests/test_templates.py`:** Added `_full_text()` helper that reads DOCX bytes back via `python-docx` and extracts all paragraph + table cell text. Added 3 round-trip content tests (`test_onboarding_content_round_trip`, `test_expense_report_content_round_trip`, `test_field_type_demo_content_round_trip`) that verify actual field values appear in generated documents. Added `test_field_type_demo_virtual_path` that exercises the `visible_when` hidden-field path (Virtual attendance mode).
+- **`tests/fixtures/expense-report_sample.json`:** Added 1x1 PNG base64 data URI to `receipt_photo` and `employee_signature` fields.
+- **`tests/fixtures/field-type-demo_sample.json`:** Added 1x1 PNG base64 data URI to `applicant_signature` field.
+- **`tests/fixtures/field-type-demo_virtual_sample.json`:** New fixture with `attendance_mode=Virtual`, `virtual_platform=Zoom`, and empty strings for hidden fields (`venue_address`, `dietary_restrictions`).
+- **`docs/PLAN.md`:** Added implementation plan for issue #40.
+
+**Decisions:**
+- Used a minimal 1x1 PNG (~120 chars) for base64 fixtures to keep files small while exercising the image embed code path
+- Kept existing smoke tests (valid ZIP checks) alongside new content tests — they cover different failure modes
+- `_full_text()` scans both paragraphs and table cells since `table_section()` writes to table cells, not standalone paragraphs
+
+---
+
 ### 2026-03-10 — User profile autofill: inline dropdown with multi-profile support (#73, #74, #75)
 **Issues:** #73, #74, #75
 

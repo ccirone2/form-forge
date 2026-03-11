@@ -6,9 +6,9 @@
   "total_amount": "1375.50",
   "line_items": "[{\"description\":\"Flight to NYC\",\"amount\":\"450.00\",\"category\":\"Travel\"},{\"description\":\"Client dinner\",\"amount\":\"125.50\",\"category\":\"Meals\"},{\"description\":\"Hotel 2 nights\",\"amount\":\"800.00\",\"category\":\"Lodging\"}]",
   "item_count": "3",
-  "receipt_photo": "",
+  "receipt_photo": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
   "notes": "Business trip for client onsite meeting, March 1-3.",
   "mailing_address": "{\"street\":\"123 Main Street\",\"city\":\"Springfield\",\"state\":\"IL\",\"zip\":\"62701\"}",
-  "employee_signature": "",
+  "employee_signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
   "manager_signature": ""
 }
