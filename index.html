@@ -6,6 +6,42 @@
 <title>FormForge — GitHub-Driven Form Builder</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /*
+   * CSS TABLE OF CONTENTS
+   * =====================
+   * 1. Variables & Resets
+   * 2. Utility Classes
+   * 3. Header
+   * 4. Views & Layout
+   * 5. Setup View
+   * 6. Picker Grid
+   * 7. Form View
+   * 8. Form Sections & Fields
+   * 9. Input Styles
+   * 10. Checkbox & Radio
+   * 11. Layout Helpers (fields-row)
+   * 12. Long Text
+   * 13. List Entry
+   * 14. Currency
+   * 15. Heading (non-input divider)
+   * 16. Address
+   * 17. File Upload
+   * 18. Signature Pad
+   * 19. Repeater
+   * 20. Wizard
+   * 21. Buttons
+   * 22. Autosave Prompt
+   * 23. Loading Overlay
+   * 24. Toast
+   * 25. Console Panel
+   * 26. Token Input
+   * 27. Source Divider
+   * 28. Drop Zones
+   * 29. Docs Section
+   * 30. Responsive / Media Queries
+   */
+
+  /* ===== 1. VARIABLES & RESETS ===== */
   :root {
     --bg: #0f1117;
     --surface: #181a22;
@@ -23,6 +59,11 @@
     --radius: 10px;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ===== 2. UTILITY CLASSES ===== */
+  /* (reserved for future utility classes) */
+
+  /* ===== 3. HEADER ===== */
   body {
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
@@ -31,7 +72,7 @@
     line-height: 1.6;
   }
 
-  /* ===== HEADER ===== */
+  /* (header styles continued) */
   .app-header {
     padding: 16px 40px;
     border-bottom: 1px solid var(--border);
@@ -61,12 +102,12 @@
   .status-badge.loading .status-dot { animation: pulse 1.2s ease-in-out infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-  /* ===== VIEWS ===== */
+  /* ===== 4. VIEWS & LAYOUT ===== */
   .view { display: none; }
   .view.active { display: block; }
   .main-container { max-width: 820px; margin: 0 auto; padding: 40px 24px 80px; }
 
-  /* ===== SETUP VIEW ===== */
+  /* ===== 5. SETUP VIEW ===== */
   .setup-hero { text-align: center; margin-bottom: 40px; }
   .setup-hero h2 { font-size: 32px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 8px; }
   .setup-hero p { color: var(--text-muted); font-size: 15px; max-width: 520px; margin: 0 auto; }
@@ -102,7 +143,7 @@
   .repo-status.success { color: var(--success); }
   .repo-status.error { color: var(--error); }
 
-  /* ===== PICKER GRID ===== */
+  /* ===== 6. PICKER GRID ===== */
   .picker-section { margin-top: 32px; }
   .picker-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
   .picker-grid {
@@ -131,7 +172,7 @@
 
   .launch-area { margin-top: 32px; text-align: center; }
 
-  /* ===== FORM VIEW ===== */
+  /* ===== 7. FORM VIEW ===== */
   .form-nav {
     display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
   }
@@ -155,6 +196,7 @@
   }
   .schema-info svg { flex-shrink: 0; }
 
+  /* ===== 8. FORM SECTIONS & FIELDS ===== */
   .form-section {
     margin-bottom: 32px; padding: 28px; background: var(--surface);
     border: 1px solid var(--border); border-radius: var(--radius); transition: border-color 0.2s;
@@ -170,7 +212,7 @@
   .field-label .required { color: var(--error); margin-left: 2px; }
   .field-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
-  /* Inputs */
+  /* ===== 9. INPUT STYLES ===== */
   input[type="text"], input[type="date"], input[type="email"], input[type="tel"],
   input[type="number"], textarea, select {
     width: 100%; padding: 10px 14px; background: var(--surface-2);
@@ -187,6 +229,7 @@
   }
   select option { background: var(--surface-2); color: var(--text); }
 
+  /* ===== 10. CHECKBOX & RADIO ===== */
   .checkbox-group, .radio-group { display: flex; flex-direction: column; gap: 10px; }
   .checkbox-item, .radio-item {
     display: flex; align-items: center; gap: 10px; cursor: pointer;
@@ -198,17 +241,18 @@
   }
   .checkbox-item label, .radio-item label { font-size: 14px; cursor: pointer; user-select: none; }
 
+  /* ===== 11. LAYOUT HELPERS (fields-row) ===== */
   .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 600px) { .fields-row { grid-template-columns: 1fr; } }
 
-  /* Long text */
+  /* ===== 12. LONG TEXT ===== */
   .longtext-wrapper textarea { min-height: 160px; line-height: 1.7; }
   .longtext-counter {
     text-align: right; font-size: 11px; font-family: 'JetBrains Mono', monospace;
     color: var(--text-muted); margin-top: 4px; opacity: 0.7;
   }
 
-  /* List entry */
+  /* ===== 13. LIST ENTRY ===== */
   .list-entry-wrapper { display: flex; flex-direction: column; gap: 8px; }
   .list-items { display: flex; flex-direction: column; gap: 6px; }
   .list-item-row { display: flex; align-items: center; gap: 8px; animation: listItemIn 0.2s ease; }
@@ -236,7 +280,7 @@
   .list-or-divider::before, .list-or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .list-bulk-textarea { min-height: 80px; font-size: 13px; line-height: 1.6; }
 
-  /* Currency */
+  /* ===== 14. CURRENCY ===== */
   .currency-wrapper {
     display: flex; align-items: center; gap: 0;
   }
@@ -249,7 +293,7 @@
     border-radius: 0 8px 8px 0; flex: 1;
   }
 
-  /* Heading (non-input divider) */
+  /* ===== 15. HEADING (non-input divider) ===== */
   .field-heading {
     font-size: 15px; font-weight: 600; color: var(--text);
     border-bottom: 2px solid var(--border); padding-bottom: 8px; margin-top: 8px;
@@ -258,13 +302,13 @@
     font-size: 12px; color: var(--text-muted); margin-top: 4px;
   }
 
-  /* Address */
+  /* ===== 16. ADDRESS ===== */
   .address-group { display: flex; flex-direction: column; gap: 8px; }
   .address-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
   .address-sub-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
   @media (max-width: 600px) { .address-row { grid-template-columns: 1fr; } }
 
-  /* File upload */
+  /* ===== 17. FILE UPLOAD ===== */
   .file-upload-wrapper { display: flex; flex-direction: column; gap: 8px; }
   .file-preview {
     max-width: 200px; max-height: 200px; border-radius: 8px;
@@ -272,7 +316,7 @@
   }
   .file-info { font-size: 12px; color: var(--text-muted); }
 
-  /* Signature pad */
+  /* ===== 18. SIGNATURE PAD ===== */
   .signature-pad-wrapper { display: flex; flex-direction: column; gap: 8px; }
   .signature-canvas {
     border: 2px dashed var(--border); border-radius: 8px; cursor: crosshair;
@@ -286,7 +330,7 @@
   }
   .btn-clear-sig:hover { border-color: var(--error); color: var(--error); }
 
-  /* Repeater */
+  /* ===== 19. REPEATER ===== */
   .repeater-wrapper { display: flex; flex-direction: column; gap: 10px; }
   .repeater-row {
     padding: 12px; border: 1px solid var(--border); border-radius: 8px;
@@ -309,7 +353,7 @@
   }
   .btn-remove-row:hover { color: var(--error); border-color: var(--error); }
 
-  /* Wizard */
+  /* ===== 20. WIZARD ===== */
   .wizard-indicator {
     display: flex; align-items: center; justify-content: center; gap: 0;
     margin-bottom: 32px; padding: 0 16px;
@@ -366,7 +410,7 @@
   .form-section.wizard-hidden { display: none; }
   .field-group.conditional-hidden { display: none; }
 
-  /* Buttons */
+  /* ===== 21. BUTTONS ===== */
   .submit-area { margin-top: 40px; display: flex; flex-direction: column; gap: 16px; }
   .submit-area-primary { display: flex; }
   .submit-area-primary .btn-primary {
@@ -405,6 +449,7 @@
   .btn-secondary svg { opacity: 0.7; }
   .btn-secondary:hover svg { opacity: 1; }
 
+  /* ===== 22. AUTOSAVE PROMPT ===== */
   .autosave-prompt {
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
     padding: 12px 20px; margin-bottom: 24px;
@@ -566,6 +611,7 @@
     padding: 14px; text-align: center; font-size: 12px; color: var(--text-muted);
   }
 
+  /* ===== 30. RESPONSIVE / MEDIA QUERIES ===== */
   @media (max-width: 600px) {
     .autosave-prompt { flex-direction: column; align-items: flex-start; }
     .submit-area-secondary { flex-wrap: wrap; }
@@ -583,7 +629,7 @@
     .wizard-step-connector { width: 16px; margin: 0 2px; }
   }
 
-  /* Overlay */
+  /* ===== 23. LOADING OVERLAY ===== */
   .loading-overlay {
     position: fixed; inset: 0; background: rgba(15,17,23,0.85); backdrop-filter: blur(4px);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -594,7 +640,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-size: 14px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
 
-  /* Toast */
+  /* ===== 24. TOAST ===== */
   .toast {
     position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: var(--radius);
     font-size: 14px; font-weight: 500; background: var(--surface); border: 1px solid var(--success);
@@ -613,7 +659,7 @@
   }
   .toast-dismiss:hover { opacity: 1; }
 
-  /* Console */
+  /* ===== 25. CONSOLE PANEL ===== */
   .console-panel { margin-top: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .console-header {
     display: flex; align-items: center; justify-content: space-between; padding: 10px 16px;
@@ -631,7 +677,7 @@
   .log-entry.success { color: var(--success); }
   .log-entry.error { color: var(--error); }
 
-  /* Token input */
+  /* ===== 26. TOKEN INPUT ===== */
   .token-toggle {
     font-size: 12px; color: var(--text-muted); cursor: pointer; margin-top: 8px;
     font-family: 'JetBrains Mono', monospace; user-select: none;
@@ -641,7 +687,7 @@
   .token-row.hidden { display: none; }
   .token-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
-  /* Source divider */
+  /* ===== 27. SOURCE DIVIDER ===== */
   .source-divider {
     display: flex; align-items: center; gap: 16px; margin: 24px 0;
     color: var(--text-muted); font-size: 12px; font-family: 'JetBrains Mono', monospace;
@@ -650,7 +696,7 @@
     content: ''; flex: 1; height: 1px; background: var(--border);
   }
 
-  /* Drop zones */
+  /* ===== 28. DROP ZONES ===== */
   .local-upload-row {
     display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
   }
@@ -689,7 +735,7 @@
   .local-status.error { color: var(--error); }
   .local-status.success { color: var(--success); }
 
-  /* Docs section */
+  /* ===== 29. DOCS SECTION ===== */
   .docs-section { display: flex; flex-direction: column; gap: 12px; }
   .docs-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -775,6 +821,98 @@
 </head>
 <body>
 
+<!-- ===== SVG SPRITE SHEET (hidden) ===== -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <!-- Arrow right: used in Open Form, Open Selected Form, wizard Next -->
+  <symbol id="icon-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M5 12h14M12 5l7 7-7 7"/>
+  </symbol>
+  <!-- Arrow left / back: used in Back to picker, wizard Back -->
+  <symbol id="icon-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M19 12H5M12 19l-7-7 7-7"/>
+  </symbol>
+  <!-- GitHub logo: used in GitHub Repository heading, Connect button -->
+  <symbol id="icon-github" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/>
+  </symbol>
+  <!-- Plus: used in Add item, Add row, Save profile action -->
+  <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M12 5v14M5 12h14"/>
+  </symbol>
+  <!-- Check / complete: used in wizard completed step -->
+  <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 6L9 17l-5-5"/>
+  </symbol>
+  <!-- Export / download: used in Export to DOCX -->
+  <symbol id="icon-export" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+  </symbol>
+  <!-- Save / floppy: used in Save Data -->
+  <symbol id="icon-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+  </symbol>
+  <!-- Upload: used in Load Data -->
+  <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+  </symbol>
+  <!-- File/document: used in Schema Guide, Sample Data -->
+  <symbol id="icon-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+  </symbol>
+  <!-- File with upload arrow: used in schema drop zone -->
+  <symbol id="icon-file-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/>
+  </symbol>
+  <!-- File with code: used in template drop zone -->
+  <symbol id="icon-file-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12l-2 4 2 4"/><path d="M14 12l2 4-2 4"/>
+  </symbol>
+  <!-- Info circle -->
+  <symbol id="icon-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>
+  </symbol>
+  <!-- Play triangle: used in demo button -->
+  <symbol id="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polygon points="5 3 19 12 5 21 5 3"/>
+  </symbol>
+  <!-- Folder: used in Local Files heading -->
+  <symbol id="icon-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+  </symbol>
+  <!-- Book: used in How It Works heading -->
+  <symbol id="icon-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/>
+  </symbol>
+  <!-- Code brackets: used in Template Guide -->
+  <symbol id="icon-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+  </symbol>
+  <!-- Grid: used in Field Types Reference -->
+  <symbol id="icon-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+  </symbol>
+  <!-- Lightning bolt: used in Example Schema -->
+  <symbol id="icon-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+  </symbol>
+  <!-- Sample data / document with lines -->
+  <symbol id="icon-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+  </symbol>
+  <!-- Reset / refresh -->
+  <symbol id="icon-reset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/>
+  </symbol>
+  <!-- Person: used in Profiles button -->
+  <symbol id="icon-person" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </symbol>
+  <!-- Lock: used in local files security notice -->
+  <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+  </symbol>
+</svg>
+
 <!-- Loading overlay -->
 <div class="loading-overlay hidden" id="loadingOverlay">
   <div class="spinner"></div>
@@ -800,7 +938,7 @@
       <p>Connect a GitHub repo for shared org-wide forms, or load schema and template files directly from your machine for fully private, offline use. No data ever leaves your browser.</p>
       <div class="demo-btn-wrapper">
         <button class="btn-secondary btn-demo" onclick="launchDemo()">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <svg width="15" height="15"><use href="#icon-play"/></svg>
           Try the demo form
         </button>
       </div>
@@ -809,7 +947,7 @@
     <!-- ===== LOCAL FILES ===== -->
     <div class="config-card" id="localCard">
       <h3>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        <svg width="16" height="16" class="icon-inline"><use href="#icon-folder"/></svg>
         Local Files <span class="section-label-muted">(private, offline)</span>
       </h3>
       <p class="config-card-description">
@@ -821,7 +959,7 @@
         <div class="drop-zone" id="schemaDropZone" tabindex="0">
           <input type="file" id="localSchemaFile" accept=".json" hidden>
           <div class="drop-zone-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg>
+            <svg width="28" height="28"><use href="#icon-file-upload"/></svg>
           </div>
           <div class="drop-zone-label">Schema JSON</div>
           <div class="drop-zone-hint">Drop .json or click to browse</div>
@@ -832,7 +970,7 @@
         <div class="drop-zone" id="templateDropZone" tabindex="0">
           <input type="file" id="localTemplateFile" accept=".py" hidden>
           <div class="drop-zone-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12l-2 4 2 4"/><path d="M14 12l2 4-2 4"/></svg>
+            <svg width="28" height="28"><use href="#icon-file-code"/></svg>
           </div>
           <div class="drop-zone-label">Template Python</div>
           <div class="drop-zone-hint">Drop .py or click to browse</div>
@@ -842,7 +980,7 @@
 
       <div class="local-launch-row">
         <button class="btn-connect" id="localLaunchBtn" disabled onclick="launchLocal()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <svg width="16" height="16"><use href="#icon-arrow-right"/></svg>
           Open Form
         </button>
         <span class="local-status" id="localStatus"></span>
@@ -857,7 +995,7 @@
     <!-- ===== GITHUB ===== -->
     <div class="config-card">
       <h3>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+        <svg width="16" height="16" class="icon-inline"><use href="#icon-github"/></svg>
         GitHub Repository <span class="section-label-muted">(shared, org-wide)</span>
       </h3>
       <div class="config-row">
@@ -870,7 +1008,7 @@
           <input type="text" id="branchInput" placeholder="main" spellcheck="false">
         </div>
         <button class="btn-connect" id="connectBtn" onclick="connectRepo()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+          <svg width="16" height="16"><use href="#icon-github"/></svg>
           Connect
         </button>
       </div>
@@ -895,7 +1033,7 @@
 
     <div class="config-card how-it-works-card">
       <h3>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+        <svg width="16" height="16" class="icon-inline"><use href="#icon-book"/></svg>
         How It Works
       </h3>
       <p class="how-it-works-description">
@@ -914,7 +1052,7 @@
       <div class="docs-card">
         <div class="docs-card-header" onclick="toggleDocs('schemaGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="schemaGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('schemaGuide')}">
           <h3>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <svg width="15" height="15" class="icon-inline"><use href="#icon-file"/></svg>
             <span id="schemaGuideTitle">Schema Guide</span>
           </h3>
           <span class="docs-toggle" id="schemaGuideToggle">&#9654;</span>
@@ -928,7 +1066,7 @@
       <div class="docs-card">
         <div class="docs-card-header" onclick="toggleDocs('templateGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="templateGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('templateGuide')}">
           <h3>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <svg width="15" height="15" class="icon-inline"><use href="#icon-code"/></svg>
             <span id="templateGuideTitle">Template Guide</span>
           </h3>
           <span class="docs-toggle" id="templateGuideToggle">&#9654;</span>
@@ -942,7 +1080,7 @@
       <div class="docs-card">
         <div class="docs-card-header" onclick="toggleDocs('fieldTypes')" tabindex="0" role="button" aria-expanded="false" aria-controls="fieldTypes" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('fieldTypes')}">
           <h3>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <svg width="15" height="15" class="icon-inline"><use href="#icon-grid"/></svg>
             <span id="fieldTypesTitle">Field Types Reference</span>
           </h3>
           <span class="docs-toggle" id="fieldTypesToggle">&#9654;</span>
@@ -956,7 +1094,7 @@
       <div class="docs-card">
         <div class="docs-card-header" onclick="toggleDocs('exampleSchema')" tabindex="0" role="button" aria-expanded="false" aria-controls="exampleSchema" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('exampleSchema')}">
           <h3>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <svg width="15" height="15" class="icon-inline"><use href="#icon-bolt"/></svg>
             <span id="exampleSchemaTitle">Example Schema &amp; Template</span>
           </h3>
           <span class="docs-toggle" id="exampleSchemaToggle">&#9654;</span>
@@ -975,7 +1113,7 @@
       <div class="picker-grid" id="pickerGrid"></div>
       <div class="launch-area">
         <button class="btn-primary" id="launchBtn" disabled onclick="launchForm()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <svg width="16" height="16"><use href="#icon-arrow-right"/></svg>
           Open Selected Form
         </button>
       </div>
@@ -988,12 +1126,12 @@
   <div class="main-container">
     <div class="form-nav">
       <button class="btn-back" onclick="showView('setup')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <svg width="14" height="14"><use href="#icon-arrow-left"/></svg>
         Back to picker
       </button>
       <span class="form-nav-info" id="formNavInfo"></span>
       <button class="profile-btn" id="profileNavBtn" onclick="toggleProfileNav()" title="Saved Profiles">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <svg width="14" height="14"><use href="#icon-person"/></svg>
         Profiles <span class="profile-badge" id="profileBadge" style="display:none">0</span>
       </button>
     </div>
@@ -1002,7 +1140,7 @@
     <p class="form-description" id="formDescription"></p>
 
     <div class="schema-info" id="schemaInfo">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <svg width="16" height="16"><use href="#icon-info"/></svg>
       <span id="schemaInfoText"></span>
     </div>
 
@@ -1011,26 +1149,26 @@
     <div class="submit-area">
       <div class="submit-area-primary">
         <button class="btn-primary" id="exportBtn" disabled onclick="handleExport()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <svg width="16" height="16"><use href="#icon-export"/></svg>
           Export to DOCX
         </button>
       </div>
       <div class="submit-area-secondary">
         <button class="btn-secondary" onclick="saveFormData()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <svg width="14" height="14"><use href="#icon-save"/></svg>
           Save Data
         </button>
         <button class="btn-secondary" onclick="document.getElementById('loadDataInput').click()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <svg width="14" height="14"><use href="#icon-upload"/></svg>
           Load Data
         </button>
         <input type="file" accept=".json" id="loadDataInput" class="hidden-input" onchange="handleLoadDataFile(event)">
         <button class="btn-secondary" onclick="loadSampleData()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <svg width="14" height="14"><use href="#icon-file-text"/></svg>
           Sample Data
         </button>
         <button class="btn-reset" onclick="resetForm()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+          <svg width="14" height="14"><use href="#icon-reset"/></svg>
           Reset
         </button>
       </div>
@@ -1053,6 +1191,14 @@
 <div class="profile-dropdown" id="profileDropdown" style="display:none"></div>
 
 <script>
+// ============================================================
+//  NAMED CONSTANTS
+// ============================================================
+const AUTOSAVE_SIZE_LIMIT = 50 * 1024;    // 50 KB — skip file/signature values larger than this in autosave
+const AUTOSAVE_DEBOUNCE_MS = 2000;        // ms to wait after last input before autosaving
+const TOAST_DURATION_MS = 3500;           // ms before toast auto-dismisses
+const DEFAULT_MAX_ROWS = 10;              // default max repeater rows when schema omits max_rows
+
 // ============================================================
 //  STATE
 // ============================================================
@@ -1129,7 +1275,7 @@ function showToast(msg, type = 'success') {
   toast.appendChild(msgSpan);
   toast.appendChild(dismissBtn);
   toast.className = `toast ${type} show`;
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), TOAST_DURATION_MS);
 }
 
 function showOverlay(msg) {
@@ -1454,7 +1600,7 @@ async function launchLocal() {
     buildForm(currentSchema);
     document.getElementById('formNavInfo').textContent = `${schema.title || 'Local Form'} · local files`;
     document.getElementById('schemaInfoText').innerHTML =
-      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' +
+      '<svg width="12" height="12" class="icon-inline"><use href="#icon-lock"/></svg>' +
       'Loaded from <strong>local files</strong> — no data was sent to any server.';
 
     if (!pyodideReady) await initPyodide();
@@ -1656,14 +1802,22 @@ function renderPicker() {
       <p>${escapeHtml(s.description || 'No description')}</p>
       <span class="card-badge">${s.schema.sections ? s.schema.sections.length + ' sections' : 'schema'}</span>
     `;
-    card.addEventListener('click', () => selectSchema(i));
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        selectSchema(i);
-      }
-    });
     grid.appendChild(card);
+  });
+
+  // Event delegation: handle clicks and keyboard on picker cards via the grid
+  grid.addEventListener('click', (e) => {
+    const card = e.target.closest('.picker-card');
+    if (card && card.dataset.idx !== undefined) selectSchema(parseInt(card.dataset.idx));
+  });
+  grid.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const card = e.target.closest('.picker-card');
+      if (card && card.dataset.idx !== undefined) {
+        e.preventDefault();
+        selectSchema(parseInt(card.dataset.idx));
+      }
+    }
   });
 }
 
@@ -1907,7 +2061,7 @@ function buildForm(schema) {
         const backBtn = document.createElement('button');
         backBtn.type = 'button';
         backBtn.className = 'btn-wizard btn-wizard-back';
-        backBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Back';
+        backBtn.innerHTML = '<svg width="14" height="14"><use href="#icon-arrow-left"/></svg> Back';
         backBtn.onclick = () => wizardGoTo(sectionIdx - 1);
         nav.appendChild(backBtn);
       } else {
@@ -1918,7 +2072,7 @@ function buildForm(schema) {
         const nextBtn = document.createElement('button');
         nextBtn.type = 'button';
         nextBtn.className = 'btn-wizard btn-wizard-next';
-        nextBtn.innerHTML = 'Next <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+        nextBtn.innerHTML = 'Next <svg width="14" height="14"><use href="#icon-arrow-right"/></svg>';
         nextBtn.onclick = () => wizardNext(sectionIdx);
         nav.appendChild(nextBtn);
       }
@@ -2119,7 +2273,7 @@ function wizardGoTo(stepIndex) {
       circle.innerHTML = el.dataset.stepNumber;
     } else if (idx < stepIndex) {
       el.classList.add('completed');
-      circle.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+      circle.innerHTML = '<svg width="14" height="14"><use href="#icon-check"/></svg>';
     } else {
       circle.innerHTML = el.dataset.stepNumber;
     }
@@ -2226,12 +2380,51 @@ function createListField(field, group) {
   wrapper.className = 'list-entry-wrapper';
   const itemsContainer = document.createElement('div');
   itemsContainer.className = 'list-items'; itemsContainer.id = `${field.id}_items`;
+  // Store metadata on the container for delegated handlers
+  itemsContainer.dataset.listField = field.id;
+  itemsContainer.dataset.placeholder = field.placeholder || '';
   const countEl = document.createElement('div');
   countEl.className = 'list-item-count'; countEl.id = `${field.id}_count`; countEl.textContent = '0 items';
 
+  // Delegated event handlers on the items container
+  itemsContainer.addEventListener('keydown', (e) => {
+    const input = e.target.closest('.list-item-input');
+    if (!input) return;
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addListItem(field.id, field.placeholder || '', itemsContainer, countEl);
+      const inputs = itemsContainer.querySelectorAll('.list-item-input');
+      inputs[inputs.length - 1].focus();
+    }
+    if (e.key === 'Backspace' && input.value === '' && itemsContainer.children.length > 1) {
+      e.preventDefault();
+      const inputs = Array.from(itemsContainer.querySelectorAll('.list-item-input'));
+      const idx = inputs.indexOf(input);
+      input.closest('.list-item-row').remove();
+      renumberListItems(itemsContainer); updateListCount(itemsContainer, countEl);
+      const remaining = itemsContainer.querySelectorAll('.list-item-input');
+      if (remaining.length > 0) remaining[Math.max(0, idx - 1)].focus();
+    }
+  });
+  itemsContainer.addEventListener('input', (e) => {
+    if (e.target.closest('.list-item-input')) updateListCount(itemsContainer, countEl);
+  });
+  itemsContainer.addEventListener('click', (e) => {
+    const removeBtn = e.target.closest('.btn-remove-item');
+    if (!removeBtn) return;
+    const row = removeBtn.closest('.list-item-row');
+    if (!row) return;
+    if (itemsContainer.children.length <= 1) {
+      row.querySelector('.list-item-input').value = '';
+      updateListCount(itemsContainer, countEl);
+      return;
+    }
+    row.remove(); renumberListItems(itemsContainer); updateListCount(itemsContainer, countEl);
+  });
+
   const addBtn = document.createElement('button');
   addBtn.type = 'button'; addBtn.className = 'btn-add-item';
-  addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add item';
+  addBtn.innerHTML = '<svg width="14" height="14"><use href="#icon-plus"/></svg> Add item';
   addBtn.addEventListener('click', () => {
     addListItem(field.id, field.placeholder || '', itemsContainer, countEl);
     const inputs = itemsContainer.querySelectorAll('.list-item-input');
@@ -2424,9 +2617,19 @@ function createRepeaterField(field, group) {
   const rowsContainer = document.createElement('div');
   rowsContainer.id = `${field.id}_rows`;
   const minRows = field.min_rows || 1;
-  const maxRows = field.max_rows || 10;
+  const maxRows = field.max_rows || DEFAULT_MAX_ROWS;
   const subFields = field.fields || [];
   let rowCount = 0;
+
+  // Delegated click handler for repeater row remove buttons
+  rowsContainer.addEventListener('click', (e) => {
+    const removeBtn = e.target.closest('.btn-remove-row');
+    if (!removeBtn) return;
+    if (rowsContainer.children.length <= minRows) return;
+    removeBtn.closest('.repeater-row').remove();
+    updateRepeaterNumbers();
+    updateAddBtn();
+  });
 
   function addRepeaterRow() {
     if (rowCount >= maxRows) return;
@@ -2439,12 +2642,7 @@ function createRepeaterField(field, group) {
     rowLabel.textContent = `#${rowIdx + 1}`;
     const removeBtn = document.createElement('button');
     removeBtn.type = 'button'; removeBtn.className = 'btn-remove-row'; removeBtn.innerHTML = '&times;';
-    removeBtn.addEventListener('click', () => {
-      if (rowsContainer.children.length <= minRows) return;
-      row.remove();
-      updateRepeaterNumbers();
-      updateAddBtn();
-    });
+    // No individual click handler — handled via delegation on rowsContainer
     header.appendChild(rowLabel); header.appendChild(removeBtn);
     const fieldsDiv = document.createElement('div');
     fieldsDiv.className = 'repeater-row-fields';
@@ -2507,7 +2705,7 @@ function createRepeaterField(field, group) {
   actionsDiv.className = 'repeater-actions';
   const addBtn = document.createElement('button');
   addBtn.type = 'button'; addBtn.className = 'btn-add-item';
-  addBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Add row';
+  addBtn.innerHTML = '<svg width="14" height="14"><use href="#icon-plus"/></svg> Add row';
   addBtn.addEventListener('click', addRepeaterRow);
   function updateAddBtn() { addBtn.disabled = rowsContainer.children.length >= maxRows; }
 
@@ -2583,31 +2781,12 @@ function addListItem(fieldId, placeholder, container, countEl, value = '') {
   input.type = 'text'; input.className = 'list-item-input';
   input.dataset.listField = fieldId; input.placeholder = placeholder; input.value = value;
 
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addListItem(fieldId, placeholder, container, countEl);
-      const inputs = container.querySelectorAll('.list-item-input');
-      inputs[inputs.length - 1].focus();
-    }
-    if (e.key === 'Backspace' && input.value === '' && container.children.length > 1) {
-      e.preventDefault();
-      const inputs = Array.from(container.querySelectorAll('.list-item-input'));
-      const idx = inputs.indexOf(input);
-      row.remove(); renumberListItems(container); updateListCount(container, countEl);
-      const remaining = container.querySelectorAll('.list-item-input');
-      if (remaining.length > 0) remaining[Math.max(0, idx - 1)].focus();
-    }
-  });
-  input.addEventListener('input', () => updateListCount(container, countEl));
+  // No individual event listeners — keydown, input, and remove-click
+  // are handled via delegation on the itemsContainer (see createListField)
 
   const removeBtn = document.createElement('button');
   removeBtn.type = 'button'; removeBtn.className = 'btn-remove-item';
   removeBtn.innerHTML = '&times;'; removeBtn.title = 'Remove item';
-  removeBtn.addEventListener('click', () => {
-    if (container.children.length <= 1) { input.value = ''; updateListCount(container, countEl); return; }
-    row.remove(); renumberListItems(container); updateListCount(container, countEl);
-  });
 
   row.appendChild(num); row.appendChild(input); row.appendChild(removeBtn);
   container.appendChild(row);
@@ -3010,9 +3189,9 @@ function autosaveFormData() {
   try {
     const data = collectFormData();
 
-    // Skip large file/signature values (>50KB) to stay under localStorage limits
+    // Skip large file/signature values (>AUTOSAVE_SIZE_LIMIT) to stay under localStorage limits
     for (const [key, value] of Object.entries(data)) {
-      if (typeof value === 'string' && value.length > 50 * 1024) {
+      if (typeof value === 'string' && value.length > AUTOSAVE_SIZE_LIMIT) {
         data[key] = '';
       }
     }
@@ -3042,7 +3221,7 @@ function setupAutosave() {
   const handler = () => {
     formDirty = true;
     clearTimeout(autosaveTimer);
-    autosaveTimer = setTimeout(autosaveFormData, 2000);
+    autosaveTimer = setTimeout(autosaveFormData, AUTOSAVE_DEBOUNCE_MS);
   };
 
   form._autosaveHandler = handler;
@@ -3317,7 +3496,7 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
   }
 
   html += `<div class="profile-dropdown-action" id="profileSaveAction">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    <svg width="12" height="12"><use href="#icon-plus"/></svg>
     Save current form as profile
   </div>`;
 
@@ -3337,52 +3516,51 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
 
   _activeDropdownField = anchorEl;
 
-  // Item click -> apply profile
-  dd.querySelectorAll('.profile-dropdown-item').forEach(item => {
-    item.addEventListener('click', (e) => {
-      if (e.target.closest('.profile-delete-btn') || e.target.closest('.profile-edit-btn')) return;
-      const idx = parseInt(item.dataset.index);
-      const p = getProfiles()[idx];
-      if (p && currentSchema) {
-        applyProfileToForm(p, currentSchema);
+  // Delegated click handler for all dropdown interactions (guard prevents accumulation)
+  if (!dd._clickDelegated) {
+    dd._clickDelegated = true;
+    dd.addEventListener('click', (e) => {
+      // Edit button
+      const editBtn = e.target.closest('.profile-edit-btn');
+      if (editBtn) {
+        e.stopPropagation();
+        showProfileEditor(parseInt(editBtn.dataset.edit), anchorEl);
+        return;
+      }
+      // Delete button
+      const deleteBtn = e.target.closest('.profile-delete-btn');
+      if (deleteBtn) {
+        e.stopPropagation();
+        deleteProfile(parseInt(deleteBtn.dataset.delete));
+        showProfileDropdown(anchorEl, profileKey, fieldDef, showAll);
+        showToast('Profile deleted');
+        return;
+      }
+      // Profile item click -> apply profile
+      const item = e.target.closest('.profile-dropdown-item');
+      if (item && item.dataset.index !== undefined) {
+        const p = getProfiles()[parseInt(item.dataset.index)];
+        if (p && currentSchema) {
+          applyProfileToForm(p, currentSchema);
+          hideProfileDropdown();
+        }
+        return;
+      }
+      // Save action
+      if (e.target.closest('#profileSaveAction')) {
+        if (!currentSchema) return;
+        const data = collectProfileFromForm(currentSchema);
+        if (Object.keys(data).length === 0) {
+          showToast('Fill in some fields first', 'error');
+          return;
+        }
+        addProfile(data);
         hideProfileDropdown();
+        showToast(`Profile "${getProfileDisplayName(data)}" saved`);
+        log(`New profile saved: ${getProfileDisplayName(data)}`, 'success');
       }
     });
-  });
-
-  // Edit buttons
-  dd.querySelectorAll('.profile-edit-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const idx = parseInt(btn.dataset.edit);
-      showProfileEditor(idx, anchorEl);
-    });
-  });
-
-  // Delete buttons
-  dd.querySelectorAll('.profile-delete-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const idx = parseInt(btn.dataset.delete);
-      deleteProfile(idx);
-      showProfileDropdown(anchorEl, profileKey, fieldDef, showAll);
-      showToast('Profile deleted');
-    });
-  });
-
-  // Save action
-  dd.querySelector('#profileSaveAction')?.addEventListener('click', () => {
-    if (!currentSchema) return;
-    const data = collectProfileFromForm(currentSchema);
-    if (Object.keys(data).length === 0) {
-      showToast('Fill in some fields first', 'error');
-      return;
-    }
-    addProfile(data);
-    hideProfileDropdown();
-    showToast(`Profile "${getProfileDisplayName(data)}" saved`);
-    log(`New profile saved: ${getProfileDisplayName(data)}`, 'success');
-  });
+  }
 
   // Arrow key navigation within dropdown (attach once to avoid listener accumulation)
   if (!dd._keyNavAttached) {

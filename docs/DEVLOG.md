@@ -14,6 +14,28 @@
 
 ## Log
 
+### 2026-03-10 — Code quality: SVG icon reuse, event delegation, CSS organization (#92)
+**Issue:** #92
+
+Internal refactoring for maintainability — no user-facing behavior changes.
+
+- **SVG sprite sheet** — Created a hidden `<svg>` sprite block at the top of `<body>` with 22 reusable `<symbol>` definitions (arrow-right, arrow-left, github, plus, check, export, save, upload, file, file-upload, file-code, info, play, folder, book, code, grid, bolt, file-text, reset, person, lock). Replaced all inline SVG duplicates in HTML and JS `innerHTML` assignments with `<svg><use href="#icon-name"/></svg>` references. The GitHub icon SVG path (previously duplicated in two ~18-line inline SVGs) is now defined once.
+- **Event delegation** — Replaced per-element event listeners with delegated handlers on parent containers:
+  - Picker cards: single click/keydown handler on `#pickerGrid` instead of per-card listeners
+  - List items: single keydown/input/click handler on `.list-items` container instead of per-row listeners in `addListItem()`
+  - Repeater row removes: single click handler on rows container instead of per-row remove button listener
+  - Profile dropdown items: single click handler on dropdown instead of per-item/per-button listeners
+- **CSS table of contents** — Added a 30-section table of contents comment at the top of `<style>`, with numbered section markers (`1. Variables & Resets` through `30. Responsive / Media Queries`). Extracted utility classes (`.font-mono`, `.sr-only`) into a dedicated section.
+- **Named constants** — Replaced magic numbers with named constants at the top of the script block:
+  - `AUTOSAVE_SIZE_LIMIT` (50 KB) — autosave threshold for skipping large values
+  - `AUTOSAVE_DEBOUNCE_MS` (2000 ms) — debounce delay for autosave
+  - `TOAST_DURATION_MS` (3500 ms) — toast auto-dismiss duration
+  - `DEFAULT_MAX_ROWS` (10) — default max rows for repeater fields
+
+All 95 tests pass. No functional changes.
+
+---
+
 ### 2026-03-10 — Keyboard shortcuts and navigation (#85)
 **Issues:** #85
 
