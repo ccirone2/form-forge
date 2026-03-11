@@ -414,9 +414,69 @@
     from { opacity: 0; transform: translateY(-8px); }
     to { opacity: 1; transform: translateY(0); }
   }
+
+  /* ===== USER PROFILE ===== */
+  .profile-btn {
+    margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 12px; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted); font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+  }
+  .profile-btn:hover { border-color: var(--text-muted); color: var(--text); }
+  .profile-btn svg { flex-shrink: 0; }
+
+  .profile-modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    animation: fadeInPrompt 0.2s ease-out;
+  }
+  .profile-modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 28px 32px 24px; width: 100%; max-width: 480px;
+    max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .profile-modal h3 {
+    font-size: 18px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .profile-modal h3 svg { color: var(--accent); flex-shrink: 0; }
+  .profile-field { margin-bottom: 14px; }
+  .profile-field label {
+    display: block; font-size: 12px; font-weight: 500; color: var(--text-muted);
+    margin-bottom: 4px; font-family: 'JetBrains Mono', monospace;
+  }
+  .profile-field input {
+    width: 100%; padding: 9px 12px; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    transition: border-color 0.2s; outline: none;
+  }
+  .profile-field input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .profile-address-heading {
+    font-size: 12px; font-weight: 500; color: var(--text-muted);
+    margin: 18px 0 8px; font-family: 'JetBrains Mono', monospace;
+    border-top: 1px solid var(--border); padding-top: 14px;
+  }
+  .profile-address-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .profile-address-grid .profile-field:first-child { grid-column: 1 / -1; }
+  .profile-actions {
+    display: flex; gap: 8px; margin-top: 20px; padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .profile-actions .btn-primary { flex: 1; }
+  .profile-save-from-form {
+    display: block; text-align: center; margin-top: 12px;
+    font-size: 12px; color: var(--accent); cursor: pointer;
+    text-decoration: none; transition: color 0.2s;
+  }
+  .profile-save-from-form:hover { color: var(--accent-hover); }
+
   @media (max-width: 600px) {
     .autosave-prompt { flex-direction: column; align-items: flex-start; }
     .submit-area { flex-wrap: wrap; }
+    .profile-modal { margin: 16px; padding: 20px; }
+    .profile-address-grid { grid-template-columns: 1fr; }
     .wizard-step-label { display: none; }
     .wizard-step-circle { width: 28px; height: 28px; font-size: 12px; }
     .wizard-step-connector { width: 24px; margin: 0 4px; }
@@ -826,6 +886,10 @@
         Back to picker
       </button>
       <span class="form-nav-info" id="formNavInfo"></span>
+      <button class="profile-btn" onclick="showProfileEditor()" title="My Profile">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        My Profile
+      </button>
     </div>
 
     <h2 class="form-title" id="formTitle"></h2>
@@ -871,6 +935,65 @@
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+
+<!-- Profile Modal -->
+<div class="profile-modal-overlay" id="profileModal" style="display:none" onclick="if(event.target===this)closeProfileModal()">
+  <div class="profile-modal">
+    <h3>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      My Profile
+    </h3>
+    <div class="profile-field">
+      <label for="profile_first_name">first name</label>
+      <input type="text" id="profile_first_name" placeholder="Jane">
+    </div>
+    <div class="profile-field">
+      <label for="profile_last_name">last name</label>
+      <input type="text" id="profile_last_name" placeholder="Doe">
+    </div>
+    <div class="profile-field">
+      <label for="profile_name">full name</label>
+      <input type="text" id="profile_name" placeholder="Jane Doe">
+    </div>
+    <div class="profile-field">
+      <label for="profile_email">email</label>
+      <input type="email" id="profile_email" placeholder="jane@example.com">
+    </div>
+    <div class="profile-field">
+      <label for="profile_phone">phone</label>
+      <input type="tel" id="profile_phone" placeholder="(555) 123-4567">
+    </div>
+    <div class="profile-field">
+      <label for="profile_department">department</label>
+      <input type="text" id="profile_department" placeholder="Engineering">
+    </div>
+    <div class="profile-address-heading">address</div>
+    <div class="profile-address-grid">
+      <div class="profile-field">
+        <label for="profile_street">street</label>
+        <input type="text" id="profile_street" placeholder="123 Main St">
+      </div>
+      <div class="profile-field">
+        <label for="profile_city">city</label>
+        <input type="text" id="profile_city" placeholder="Springfield">
+      </div>
+      <div class="profile-field">
+        <label for="profile_state">state</label>
+        <input type="text" id="profile_state" placeholder="IL">
+      </div>
+      <div class="profile-field">
+        <label for="profile_zip">zip</label>
+        <input type="text" id="profile_zip" placeholder="62701">
+      </div>
+    </div>
+    <div class="profile-actions">
+      <button class="btn-primary" onclick="saveProfileFromModal()">Save Profile</button>
+      <button class="btn-secondary" onclick="clearProfile()">Clear</button>
+      <button class="btn-secondary" onclick="closeProfileModal()">Cancel</button>
+    </div>
+    <a href="#" class="profile-save-from-form" onclick="fillProfileFromForm(); return false;">Save from current form</a>
+  </div>
+</div>
 
 <script>
 // ============================================================
@@ -2913,6 +3036,133 @@ function formatTimeAgo(isoString) {
   if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
   if (diffDays === 1) return 'yesterday';
   return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+}
+
+// ============================================================
+//  USER PROFILE
+// ============================================================
+
+const PROFILE_STORAGE_KEY = 'formforge_user_profile';
+
+const PROFILE_FIELDS = [
+  'first_name', 'last_name', 'name', 'email', 'phone', 'department'
+];
+
+function getProfile() {
+  try {
+    const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    console.warn('Failed to read profile:', err.message);
+    return null;
+  }
+}
+
+function saveProfile(data) {
+  try {
+    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.warn('Failed to save profile:', err.message);
+  }
+}
+
+function showProfileEditor() {
+  const profile = getProfile() || {};
+  for (const key of PROFILE_FIELDS) {
+    const el = document.getElementById(`profile_${key}`);
+    if (el) el.value = profile[key] || '';
+  }
+  const addr = profile.address || {};
+  for (const sub of ['street', 'city', 'state', 'zip']) {
+    const el = document.getElementById(`profile_${sub}`);
+    if (el) el.value = addr[sub] || '';
+  }
+  document.getElementById('profileModal').style.display = '';
+  document.addEventListener('keydown', _profileEscHandler);
+}
+
+function closeProfileModal() {
+  document.getElementById('profileModal').style.display = 'none';
+  document.removeEventListener('keydown', _profileEscHandler);
+}
+
+function _profileEscHandler(e) {
+  if (e.key === 'Escape') closeProfileModal();
+}
+
+function saveProfileFromModal() {
+  const data = {};
+  for (const key of PROFILE_FIELDS) {
+    const val = (document.getElementById(`profile_${key}`)?.value || '').trim();
+    if (val) data[key] = val;
+  }
+  const address = {};
+  let hasAddress = false;
+  for (const sub of ['street', 'city', 'state', 'zip']) {
+    const val = (document.getElementById(`profile_${sub}`)?.value || '').trim();
+    if (val) { address[sub] = val; hasAddress = true; }
+  }
+  if (hasAddress) data.address = address;
+  saveProfile(data);
+  closeProfileModal();
+  showToast('Profile saved');
+  log('User profile saved to localStorage', 'success');
+}
+
+function clearProfile() {
+  try { localStorage.removeItem(PROFILE_STORAGE_KEY); } catch (e) { /* ignore */ }
+  for (const key of PROFILE_FIELDS) {
+    const el = document.getElementById(`profile_${key}`);
+    if (el) el.value = '';
+  }
+  for (const sub of ['street', 'city', 'state', 'zip']) {
+    const el = document.getElementById(`profile_${sub}`);
+    if (el) el.value = '';
+  }
+  closeProfileModal();
+  showToast('Profile cleared');
+  log('User profile cleared', 'info');
+}
+
+function fillProfileFromForm() {
+  if (!currentSchema) return;
+  const REVERSE_MATCHERS = {
+    first_name: { types: ['text'], pattern: /\bfirst\s*name\b/i },
+    last_name:  { types: ['text'], pattern: /\blast\s*name\b/i },
+    name:       { types: ['text'], pattern: /^(full\s+)?name$|^employee\s+name$/i },
+    email:      { types: ['email'], pattern: /email|e-?mail/i },
+    phone:      { types: ['tel'], pattern: /phone|telephone|mobile|cell/i },
+    department: { types: ['select', 'text'], pattern: /^department$/i },
+  };
+  for (const section of currentSchema.sections) {
+    for (const field of section.fields) {
+      // Address fields
+      if (field.type === 'address') {
+        const street = document.getElementById(`${field.id}_street`)?.value || '';
+        if (street) {
+          document.getElementById('profile_street').value = street;
+          document.getElementById('profile_city').value = document.getElementById(`${field.id}_city`)?.value || '';
+          document.getElementById('profile_state').value = document.getElementById(`${field.id}_state`)?.value || '';
+          document.getElementById('profile_zip').value = document.getElementById(`${field.id}_zip`)?.value || '';
+        }
+        continue;
+      }
+      // Other fields
+      for (const [profileKey, matcher] of Object.entries(REVERSE_MATCHERS)) {
+        if (matcher.types.includes(field.type) && matcher.pattern.test(field.label)) {
+          const val = field.type === 'select'
+            ? document.getElementById(field.id)?.value
+            : document.getElementById(field.id)?.value;
+          if (val) {
+            const el = document.getElementById(`profile_${profileKey}`);
+            if (el) el.value = val;
+          }
+          break;
+        }
+      }
+    }
+  }
+  showToast('Profile fields updated from form');
 }
 
 // ============================================================

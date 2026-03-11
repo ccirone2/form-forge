@@ -14,6 +14,42 @@
 
 ## Log
 
+### 2026-03-10 — Profile modal UI and localStorage CRUD (#74)
+**Issues:** #74 (parent: #73)
+
+Added the user profile editor modal and localStorage persistence — the foundation for cross-form autofill.
+
+**Changes (all in `index.html`):**
+- **CSS (~55 lines):** `.profile-btn` (form-nav icon button), `.profile-modal-overlay` / `.profile-modal` (centered modal card with backdrop blur), `.profile-field` / `.profile-address-grid` (form inputs with 2-column address layout), responsive mobile styles
+- **HTML:** Profile button in `.form-nav` with person SVG icon, modal overlay with inputs for first name, last name, full name, email, phone, department, and address (street/city/state/zip)
+- **JS (~110 lines):** `getProfile()` / `saveProfile()` / `clearProfile()` for localStorage CRUD, `showProfileEditor()` / `closeProfileModal()` for modal lifecycle with Escape key support, `saveProfileFromModal()` to persist modal inputs, `fillProfileFromForm()` to reverse-match current form fields into profile modal inputs
+
+**UI details:**
+- Profile button right-aligned in form nav bar via `margin-left: auto`
+- Modal closes on backdrop click or Escape key
+- "Save from current form" link scans filled fields using label heuristics to populate the modal
+- All profile fields are optional — users fill what they want
+
+---
+
+### 2026-03-10 — Plan: User Profile Autofill (#73 → #74–#75)
+**Issues:** #73, #74, #75
+
+Planned a localStorage-based "My Profile" feature to reduce duplicate data entry across forms. Users save personal info (name, email, phone, address, department) once, and matching fields are auto-detected and offered for autofill on form load.
+
+**Tasks:**
+- **#74** — Profile modal UI and localStorage CRUD (CSS, HTML, JS for editor modal + persistence)
+- **#75** — Field matching engine and autofill prompt (type+label heuristics, banner UI, integration with postLaunchHook/resetForm)
+
+**Decisions:**
+- User Profile only (no schema-level `autofill_from` linking for now)
+- Match fields using dual criteria: field type + label regex — avoids false positives
+- Only fill empty fields — never overwrite autosave-restored or manually entered data
+- Profile banner appears after autosave restore to respect the restore flow
+- All changes in `index.html` only — no schema spec or test changes needed
+
+---
+
 ### 2026-03-10 — Refactor index.html for maintainability (#38 → #68–#71)
 **Issues:** #38, #68, #69, #70, #71
 
