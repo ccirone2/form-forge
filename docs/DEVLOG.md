@@ -14,6 +14,20 @@
 
 ## Log
 
+### 2026-03-10 — Quick UX wins: submit hierarchy, reset confirm, toast polish (#83)
+**Issue:** #83
+
+Batch of small, high-impact UX improvements in `index.html`:
+
+- **Submit area button hierarchy** — Restructured the 5-button flat row into a clear visual hierarchy: Export to DOCX sits alone as the dominant primary CTA (larger, full-width accent), Save/Load/Sample Data are grouped in a secondary row below with smaller sizing, and Reset is right-aligned with a muted danger style that only shows color on hover.
+- **Reset confirmation** — Added `confirm('Reset all fields? This cannot be undone.')` guard at the top of `resetForm()` to prevent accidental data loss.
+- **Toast improvements** — Added `role="alert"` and `aria-live="polite"` to the toast element for screen reader announcements. Added a dismiss button (x) so users don't have to wait 3.5s. Added mobile-responsive positioning (centered bottom bar on narrow screens via `@media (max-width: 600px)`). Added `warning` border-color style for warning toasts.
+- **Inline styles cleanup** — Extracted ~15 inline `style="..."` attributes into proper CSS classes: `.demo-btn-wrapper`, `.btn-demo`, `.section-label-muted`, `.config-card-description`, `.local-launch-row`, `.branch-input-wrapper`, `.docs-source-divider`, `.how-it-works-card`, `.how-it-works-description`, `.how-it-works-pre`, `.icon-inline`, `.hidden-input`, `.docs-rendered-md-link`. Only `style="display:none;"` on the JS-toggled pickerSection remains as inline.
+
+All 95 tests pass.
+
+---
+
 ### 2026-03-10 — Navigation guards for unsaved form data (#86)
 **Issue:** #86
 
