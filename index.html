@@ -1647,6 +1647,9 @@ function renderPicker() {
     const card = document.createElement('div');
     card.className = 'picker-card';
     card.dataset.idx = i;
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', escapeHtml(s.name));
     card.innerHTML = `
       <div class="card-icon">${escapeHtml(s.icon || '')}</div>
       <h4>${escapeHtml(s.name)}</h4>
@@ -1654,6 +1657,12 @@ function renderPicker() {
       <span class="card-badge">${s.schema.sections ? s.schema.sections.length + ' sections' : 'schema'}</span>
     `;
     card.addEventListener('click', () => selectSchema(i));
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        selectSchema(i);
+      }
+    });
     grid.appendChild(card);
   });
 }
@@ -3374,6 +3383,37 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
     showToast(`Profile "${getProfileDisplayName(data)}" saved`);
     log(`New profile saved: ${getProfileDisplayName(data)}`, 'success');
   });
+
+  // Arrow key navigation within dropdown (attach once to avoid listener accumulation)
+  if (!dd._keyNavAttached) {
+    dd.addEventListener('keydown', (e) => {
+      const items = Array.from(dd.querySelectorAll('.profile-dropdown-item'));
+      if (items.length === 0) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const focused = dd.querySelector('.profile-dropdown-item:focus');
+        let idx = items.indexOf(focused);
+        if (e.key === 'ArrowDown') {
+          idx = idx < items.length - 1 ? idx + 1 : 0;
+        } else {
+          idx = idx > 0 ? idx - 1 : items.length - 1;
+        }
+        items[idx].focus();
+      } else if (e.key === 'Enter') {
+        const focused = dd.querySelector('.profile-dropdown-item:focus');
+        if (focused) {
+          e.preventDefault();
+          focused.click();
+        }
+      }
+    });
+    dd._keyNavAttached = true;
+  }
+
+  // Make dropdown items focusable for arrow key navigation
+  dd.querySelectorAll('.profile-dropdown-item').forEach(item => {
+    item.setAttribute('tabindex', '-1');
+  });
 }
 
 function hideProfileDropdown() {
@@ -3510,7 +3550,7 @@ function setupProfileDropdowns(schema) {
     }
   }
 
-  // Global dismiss on click outside or Escape
+  // Global dismiss on click outside (Escape is handled by the global keyboard shortcut handler)
   document.addEventListener('mousedown', (e) => {
     const dd = document.getElementById('profileDropdown');
     if (dd.style.display === 'none') return;
@@ -3518,9 +3558,6 @@ function setupProfileDropdowns(schema) {
     if (e.target.closest('.profile-btn')) return;
     if (e.target === _activeDropdownField) return;
     hideProfileDropdown();
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') hideProfileDropdown();
   });
 
   updateProfileBadge();
@@ -3822,6 +3859,53 @@ def generate_docx(data):
 `;
 
 // ============================================================
+//  KEYBOARD SHORTCUTS
+// ============================================================
+function handleGlobalKeydown(e) {
+  const formViewActive = document.getElementById('view-form').classList.contains('active');
+  const mod = e.metaKey || e.ctrlKey;
+
+  // Ctrl/Cmd+S — Save form data (form view only)
+  if (mod && e.key === 's') {
+    if (formViewActive) {
+      e.preventDefault();
+      saveFormData();
+    }
+    return;
+  }
+
+  // Ctrl/Cmd+Enter — Export to DOCX (form view only)
+  if (mod && e.key === 'Enter') {
+    if (formViewActive) {
+      e.preventDefault();
+      handleExport();
+    }
+    return;
+  }
+
+  // Escape — dismiss profile dropdown first, then back to picker with dirty guard
+  if (e.key === 'Escape') {
+    const dd = document.getElementById('profileDropdown');
+    if (dd && dd.style.display !== 'none') {
+      hideProfileDropdown();
+      return;
+    }
+    if (formViewActive) {
+      e.preventDefault();
+      const autosaveKey = typeof getAutosaveKey === 'function' ? getAutosaveKey() : null;
+      const hasAutosave = autosaveKey && localStorage.getItem(autosaveKey);
+      const formData = typeof collectFormData === 'function' ? collectFormData() : {};
+      const hasData = Object.keys(formData).some(k => formData[k] !== '');
+      if (hasData || hasAutosave) {
+        if (!confirm('You have unsaved form data. Leave this form?')) return;
+      }
+      showView('setup');
+    }
+    return;
+  }
+}
+
+// ============================================================
 //  BOOT
 // ============================================================
 window.addEventListener('beforeunload', (e) => {
@@ -3834,6 +3918,9 @@ window.addEventListener('beforeunload', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize drag-and-drop zones for local files
   initDropZones();
+
+  // Global keyboard shortcuts
+  document.addEventListener('keydown', handleGlobalKeydown);
 
   // No pre-populated schemas — picker is purely for GitHub results
   repoSchemas = [];
