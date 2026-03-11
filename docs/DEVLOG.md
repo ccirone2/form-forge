@@ -14,6 +14,44 @@
 
 ## Log
 
+### 2026-03-10 — Code quality: SVG icon reuse, event delegation, CSS organization (#92)
+**Issue:** #92
+
+Internal refactoring for maintainability — no user-facing behavior changes.
+
+- **SVG sprite sheet** — Created a hidden `<svg>` sprite block at the top of `<body>` with 22 reusable `<symbol>` definitions. Replaced all inline SVG duplicates in HTML and JS `innerHTML` assignments with `<svg><use href="#icon-name"/></svg>` references.
+- **Event delegation** — Replaced per-element event listeners with delegated handlers on parent containers for picker cards, list items, repeater row removes, and profile dropdown items.
+- **CSS table of contents** — Added a 30-section numbered ToC at the top of `<style>` with corresponding section markers throughout.
+- **Named constants** — Replaced magic numbers with `AUTOSAVE_SIZE_LIMIT`, `AUTOSAVE_DEBOUNCE_MS`, `TOAST_DURATION_MS`, and `DEFAULT_MAX_ROWS`.
+
+---
+
+### 2026-03-10 — Inline form validation with field-level error states (#84)
+**Issue:** #84
+
+Added inline validation with field-level error states to replace toast-only feedback.
+
+- **Field-level error styling** — Invalid `.field-group` elements receive a `.field-error` class with red border, error glow, and inline error message.
+- **Scroll to first error** — On validation failure, the first invalid field scrolls into view smoothly.
+- **Validate on blur** — Required fields validate on blur for immediate feedback; errors clear on input/change.
+- **Wizard validation gates** — `wizardNext()` and `wizardStepClick()` block forward navigation on validation failure.
+- **ARIA** — Error messages have `role="alert"` for screen reader announcements.
+
+---
+
+### 2026-03-10 — Profile dropdown auto-focus refinement (#87)
+**Issue:** #87
+
+Refined profile dropdown UX to reduce friction when tabbing through form fields.
+
+- **Guard on focus** — Dropdown only auto-shows when field is empty and profiles exist.
+- **300ms debounce** — Quick tab-throughs no longer trigger the dropdown.
+- **Dismissal tracking** — Dismissed fields (Escape/click-outside) won't reshow until page reload.
+- **Profile icon indicator** — Added subtle person icon button at right edge of matching inputs as a manual trigger.
+- **Listener guard** — Prevented accumulated mousedown listeners across form launches.
+
+---
+
 ### 2026-03-10 — Loading states, error recovery, and progress feedback (#91)
 **Issues:** #91
 
