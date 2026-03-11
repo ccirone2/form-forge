@@ -24,17 +24,22 @@ form-forge/
 ├── index.html                  ← single-file app (HTML + CSS + JS)
 ├── schemas/
 │   ├── _schema.spec.json       ← JSON Schema spec that validates all schemas
-│   └── *.json                  ← form definitions
+│   ├── onboarding.json         ← employee onboarding form
+│   ├── expense-report.json     ← expense report form
+│   └── field-type-demo.json    ← demo form showcasing all field types
 ├── templates/
 │   ├── stencils.py             ← shared helpers for all templates
-│   └── *.py                    ← Python DOCX generation scripts
+│   ├── onboarding.py           ← employee onboarding template
+│   ├── expense-report.py       ← expense report template
+│   └── field-type-demo.py      ← demo template showcasing all field types
 ├── tests/
 │   ├── fixtures/               ← sample data for template tests
-│   ├── test_stencils.py        ← unit tests for stencils.py utilities (27 tests)
-│   ├── test_templates.py       ← integration tests for templates (4 tests)
-│   └── test_schemas.py         ← schema validation tests (26 tests)
+│   ├── test_stencils.py        ← unit tests for stencils.py utilities (50 tests)
+│   ├── test_templates.py       ← integration tests for templates (10 tests)
+│   └── test_schemas.py         ← schema validation tests (35 tests)
 ├── docs/
 │   ├── DEVLOG.md               ← development journal
+│   ├── PLAN.md                 ← structured implementation plans
 │   ├── SCHEMA_GUIDE.md         ← guide for writing new schemas
 │   ├── TEMPLATE_GUIDE.md       ← guide for writing new templates
 │   └── FIELD_TYPES.md          ← reference for all 18 field types
@@ -153,7 +158,7 @@ Hidden fields are excluded from validation but are always included in `data` pas
 GitHub Actions runs on every push and pull request to `develop` and `main`:
 
 - **Schema validation** — validates all `schemas/*.json` against `schemas/_schema.spec.json`
-- **Tests** — runs `PYTHONPATH=. pytest tests/ -v` (44 tests)
+- **Tests** — runs `PYTHONPATH=. pytest tests/ -v` (95 tests)
 
 See `.github/workflows/validate.yml`.
 
@@ -163,7 +168,7 @@ See `.github/workflows/validate.yml`.
 # Run locally
 python -m http.server 8000
 
-# Run all tests (44 tests)
+# Run all tests (95 tests)
 PYTHONPATH=. python -m pytest tests/ -v
 
 # Lint

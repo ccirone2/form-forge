@@ -10,7 +10,7 @@ FormForge is a **client-side-only** browser application that turns GitHub-hosted
 
 ## Architecture
 
-- **`index.html`** — The entire frontend: HTML + CSS + JS in one file (~3200 lines). Contains the form builder, GitHub API integration, Pyodide loader, validation, and UI. Do not split this file.
+- **`index.html`** — The entire frontend: HTML + CSS + JS in one file (~4600 lines). Contains the form builder, GitHub API integration, Pyodide loader, validation, and UI. Do not split this file.
 - **`schemas/_schema.spec.json`** — JSON Schema (draft 2020-12) that validates all form schemas. Enforces required fields, valid field types (18 enumerated), conditional constraints (e.g., `select` requires `options`, `repeater` requires `fields`), and `additionalProperties: false` at all levels.
 - **`schemas/*.json`** — Form definitions. Each schema has `title`, `description`, `icon`, `template` (path to .py), and `sections[]` containing `fields[]` with `id`, `label`, `type`, etc.
 - **`templates/stencils.py`** — Shared helper module for all templates. Provides `set_theme()`, `new_doc()`, `table_section()`, `longtext()`, `bullet_list()`, `signatures()`, `footer()`, `address()`, `image()`, `signature()`, `repeater_table()`, `finalize()`, and a `DocTheme` system with built-in themes (`THEME_CLASSIC`, `THEME_MINIMAL`, `THEME_MODERN`). Loaded into Pyodide's virtual filesystem once via `loadBaseModule()` before any template runs.
@@ -65,7 +65,7 @@ No build system or package manager. Pyodide and python-docx load from CDN at run
 # Run locally — open index.html directly or use HTTP server for CORS
 python -m http.server 8000
 
-# Run all tests (90 tests)
+# Run all tests (95 tests)
 PYTHONPATH=. python -m pytest tests/ -v
 
 # Run a single test file
@@ -82,8 +82,8 @@ ruff format templates/ tests/
 ### Test structure
 
 - `tests/test_stencils.py` — Unit tests for all `stencils.py` utilities (50 tests)
-- `tests/test_templates.py` — Integration tests that load each template with sample data and verify valid DOCX output (6 tests)
-- `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas, wizard, and visible_when (34 tests)
+- `tests/test_templates.py` — Integration tests that load each template with sample data and verify valid DOCX output (10 tests)
+- `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas, wizard, and visible_when (35 tests)
 - `tests/fixtures/*.json` — Sample form data matching each schema's field IDs
 - Templates are loaded via `importlib.util.spec_from_file_location()` with `sys.path` including `templates/` so `import stencils` resolves
 

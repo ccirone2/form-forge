@@ -100,7 +100,62 @@ stencils.signatures(doc, [
 ])
 ```
 
-Labels are paired into rows of two. If you need signature image embedding instead (e.g., for canvas `signature` fields), handle that manually — see the expense-report template for an example.
+Labels are paired into rows of two. If you need signature image embedding instead (e.g., for canvas `signature` fields), use `stencils.signature()` (see below) or handle it manually.
+
+### `stencils.footer(doc)`
+
+Adds a centered, italicized auto-generated disclaimer paragraph at the bottom of the document. Uses the active theme's caption font and footer color.
+
+```python
+stencils.footer(doc)
+```
+
+### `stencils.address(doc, heading, raw_json)`
+
+Adds a level-2 heading followed by a formatted mailing address block. Parses a JSON string with keys `street`, `city`, `state`, `zip`. Handles missing/empty components gracefully, showing "No address provided." in muted italic if the street is empty.
+
+```python
+stencils.address(doc, "Mailing Address", data.get("mailing_address", "{}"))
+```
+
+### `stencils.image(doc, b64_str, width_inches=3.0, placeholder="No image uploaded.")`
+
+Embeds a base64 data-URI image in the document, or renders a muted italic placeholder if the string is empty or invalid.
+
+```python
+stencils.image(doc, data.get("receipt_photo", ""))
+stencils.image(doc, data.get("logo", ""), width_inches=2.0, placeholder="No logo provided.")
+```
+
+### `stencils.signature(doc, b64_str, label, width_inches=2.5)`
+
+Adds a signature image (from a canvas `signature` field) with a label beneath it. If no image data is provided, renders an underline placeholder instead.
+
+```python
+stencils.signature(doc, data.get("employee_signature", ""), "Employee Signature")
+```
+
+### `stencils.repeater_table(doc, headers, items, field_keys, currency_keys=None)`
+
+Renders a repeater field as a styled table with a shaded header row. Pass the parsed JSON items and the column configuration.
+
+```python
+import json
+
+items = json.loads(data.get("line_items", "[]"))
+stencils.repeater_table(
+    doc,
+    headers=["Description", "Amount", "Category"],
+    items=items,
+    field_keys=["description", "amount", "category"],
+    currency_keys=["amount"],
+)
+```
+
+- `headers` — display names for each column
+- `items` — list of dicts (the parsed repeater JSON array)
+- `field_keys` — dict keys corresponding to each column, in order
+- `currency_keys` — optional list of field keys to format as currency (`$X,XXX.XX`)
 
 ### `stencils.finalize(doc)`
 
@@ -482,4 +537,4 @@ Or use FormForge's Local Files feature to drop in your `.json` and `.py` and tes
 - Handle empty strings gracefully — show `"—"` or `"Not provided"` rather than blank cells.
 - Use `doc.add_paragraph("")` for vertical spacing between sections.
 - Test with both fully filled and mostly empty form data.
-- For signature image embedding, use `stencils.signatures()` only for blank underline blocks. If the schema uses `signature` field type, embed the canvas image with `doc.add_picture()` as shown in expense-report.py.
+- For signature image embedding, use `stencils.signature()` to embed a canvas signature with a label, or `stencils.signatures()` for blank underline blocks (e.g., for a printed sign-here area).
