@@ -671,7 +671,8 @@
     z-index: 1000; gap: 16px;
   }
   .loading-overlay.hidden { display: none; }
-  .hidden { display: none !important; }
+  #overlaySpinner.hidden { display: none !important; }
+  .progress-steps.hidden { display: none; }
   .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-size: 14px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
@@ -1372,6 +1373,7 @@ function hideOverlay() {
   for (let i = 1; i <= 3; i++) {
     const step = document.getElementById('progressStep' + i);
     step.className = 'progress-step';
+    step.querySelector('.step-icon').textContent = String(i);
   }
   for (let i = 1; i <= 2; i++) {
     const conn = document.getElementById('progressConn' + i);
@@ -1862,7 +1864,7 @@ async function connectRepo() {
             return {
               name: schema.title || baseName,
               description: schema.description || '',
-              icon: schema.icon || '',
+              icon: schema.icon || '📄',
               schemaPath: file.path,
               templatePath: schema.template || `templates/${baseName}.py`,
               schema: schema
@@ -2066,7 +2068,9 @@ async function initPyodide(opts = {}) {
       document.getElementById('loadingText').textContent = 'Failed to load export engine';
       showOverlayRetry('Retry Loading Pyodide', () => {
         hideOverlay();
-        initPyodide();
+        initPyodide().catch(err => {
+          log('Retry failed: ' + err.message, 'error');
+        });
       });
     }
     throw err;
@@ -2081,10 +2085,11 @@ function preloadPyodide() {
   pyodidePreloadPromise = initPyodide({ silent: true })
     .then(() => {
       log('Background: Pyodide preload complete', 'success');
+      pyodidePreloadPromise = null;
     })
     .catch(err => {
       log('Background: Pyodide preload failed (will retry on export): ' + err.message, 'error');
-      pyodidePreloadPromise = null;  // Allow retry later
+      pyodidePreloadPromise = null;
     });
 }
 
