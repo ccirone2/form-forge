@@ -14,6 +14,20 @@
 
 ## Log
 
+### 2026-03-10 — Navigation guards for unsaved form data (#86)
+**Issue:** #86
+
+Added dirty-state tracking and navigation guards to prevent accidental data loss:
+
+- **`formDirty` flag** — New state variable tracks whether the form has unsaved changes. Set `true` on any `input`/`change` event (via the existing autosave handler in `setupAutosave()`) and on `populateForm()` calls (load data, sample data, autosave restore). Reset to `false` after successful export, save data, form reset, and on fresh form launch (via `postLaunchHook()`).
+- **In-app navigation guard** — `showView()` now checks `formDirty` when navigating from the form view back to setup. Prompts the user with a confirm dialog before discarding changes. Protects both the "Back to picker" button and the FormForge logo click.
+- **Browser unload guard** — Added `beforeunload` handler that prevents browser close/refresh/back when the form has unsaved changes.
+- **Reset confirm** — `resetForm()` now prompts the user before clearing the form if there are unsaved changes.
+
+All 90 tests pass (frontend-only changes).
+
+---
+
 ### 2026-03-10 — Refactor index.html for maintainability (#38 → #68–#71)
 **Issues:** #38, #68, #69, #70, #71
 
