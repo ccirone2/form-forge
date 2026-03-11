@@ -14,6 +14,33 @@
 
 ## Log
 
+### 2026-03-11 — Add new field types: time, url, toggle, datetime, multi_select (#101)
+**Issue:** #101
+
+Added 5 new field types bringing the total from 18 to 23.
+
+- **`time`** — Native time picker (`<input type="time">`), outputs `HH:MM` string. Column-pair type. Allowed in repeaters.
+- **`url`** — URL input with browser validation (`<input type="url">`), outputs URL string. Column-pair type. Allowed in repeaters.
+- **`toggle`** — Boolean yes/no switch, outputs `"true"`/`"false"`. Distinct from `checkbox` (multi-select). Column-pair type. Allowed in repeaters.
+- **`datetime`** — Combined date+time picker (`<input type="datetime-local">`), outputs ISO-like string. Column-pair type.
+- **`multi_select`** — Searchable multi-select dropdown with tag/chip UI, requires `options`. Outputs comma-separated string. Full-width type.
+
+**Files changed:**
+- `schemas/_schema.spec.json` — Updated `fieldType` and `repeaterFieldType` enums, all `allOf` constraint blocks
+- `index.html` — CSS for toggle switch and multi-select; 5 new creator functions; `collectFormData`, `populateForm`, `isFieldEmpty`, column-pairing updates
+- `schemas/field-type-demo.json` — Added all 5 new types to the demo schema
+- `templates/field-type-demo.py` — Handle new types in DOCX generation
+- `tests/fixtures/field-type-demo_sample.json` — Sample data for new fields
+- `tests/test_schemas.py` — 9 new tests (positive + negative validation for new types, repeater eligibility)
+- `docs/FIELD_TYPES.md`, `docs/SCHEMA_GUIDE.md`, `docs/TEMPLATE_GUIDE.md` — Documented all 5 types
+
+**Decisions:**
+- `time`, `url`, `toggle` allowed as repeater sub-fields (simple inputs); `datetime` and `multi_select` excluded (too wide/complex for repeater rows)
+- `toggle` always has a value (`true`/`false`), so `isFieldEmpty` returns false — a required toggle always passes validation
+- `multi_select` uses same comma-separated output format as `checkbox` for template compatibility
+
+---
+
 ### 2026-03-11 — Responsive design polish for mobile and tablet (#89)
 **Issue:** #89
 

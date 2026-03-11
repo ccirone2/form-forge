@@ -254,11 +254,16 @@ All values in `data` are strings, regardless of field type. `heading` fields are
 |---|---|---|
 | `text`, `email`, `tel` | Plain string | `"Jane Doe"` |
 | `date` | ISO format (`YYYY-MM-DD`) | `"2025-03-15"` |
+| `time` | 24-hour format (`HH:MM`) | `"09:30"` |
+| `url` | URL string | `"https://example.com"` |
+| `datetime` | ISO-like format (`YYYY-MM-DDTHH:MM`) | `"2026-06-15T14:30"` |
 | `select` | Selected option string | `"Engineering"` |
 | `radio` | Selected option string | `"Full-Time"` |
 | `textarea` | Plain string | `"Some notes here"` |
 | `longtext` | String with `\n` paragraph breaks | `"First paragraph.\nSecond paragraph."` |
 | `checkbox` | Comma-separated string | `"GitHub, Jira, Figma"` |
+| `multi_select` | Comma-separated string | `"AI/ML, Cloud, Security"` |
+| `toggle` | Boolean string | `"true"` or `"false"` |
 | `list` | Newline-separated string | `"Python\nJavaScript\nRust"` |
 | `number` | Numeric string | `"42.5"` |
 | `currency` | Numeric string (no symbol) | `"1250.00"` |
@@ -369,11 +374,38 @@ except (ValueError, TypeError):
 
 Always wrap numeric conversions in `try/except` — the field may be empty if it was optional and unfilled.
 
-### `checkbox` → list
+### `checkbox` / `multi_select` → list
+
+Both `checkbox` and `multi_select` output comma-separated strings. Parse them the same way:
 
 ```python
 tools = data.get("tools_used", "")
 tool_list = [t.strip() for t in tools.split(",") if t.strip()] if tools else []
+```
+
+### `toggle` → boolean
+
+```python
+agreed = data.get("agree_terms", "false") == "true"
+```
+
+### `time` → formatted time
+
+```python
+raw = data.get("start_time", "")
+if raw:
+    h, m = raw.split(":")
+    formatted = f"{int(h) % 12 or 12}:{m} {'AM' if int(h) < 12 else 'PM'}"
+```
+
+### `datetime` → formatted date and time
+
+```python
+from datetime import datetime
+raw = data.get("deadline", "")
+if raw:
+    dt = datetime.fromisoformat(raw)
+    formatted = dt.strftime("%B %d, %Y at %I:%M %p")
 ```
 
 ### `longtext` → paragraphs

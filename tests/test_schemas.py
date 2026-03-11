@@ -56,6 +56,11 @@ def test_spec_enumerates_all_field_types():
         "file",
         "signature",
         "repeater",
+        "time",
+        "url",
+        "toggle",
+        "datetime",
+        "multi_select",
     }
     actual_types = set(spec["$defs"]["fieldType"]["enum"])
     assert actual_types == expected_types
@@ -645,6 +650,187 @@ def _collect_all_ids(schema):
             for sub in field.get("fields", []):
                 ids.append(sub["id"])
     return ids
+
+
+# ---------------------------------------------------------------------------
+#  New field types: time, url, toggle, datetime, multi_select
+# ---------------------------------------------------------------------------
+
+
+def test_time_field_validates():
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [{"id": "start_time", "label": "Start Time", "type": "time"}],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_url_field_validates():
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "website",
+                        "label": "Website",
+                        "type": "url",
+                        "placeholder": "https://example.com",
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_toggle_field_validates():
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "agree",
+                        "label": "Agree?",
+                        "type": "toggle",
+                        "required": True,
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_datetime_field_validates():
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [{"id": "deadline", "label": "Deadline", "type": "datetime"}],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_multi_select_field_validates():
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "topics",
+                        "label": "Topics",
+                        "type": "multi_select",
+                        "options": ["AI", "Cloud", "Security"],
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_rejects_multi_select_without_options():
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [{"id": "topics", "label": "Topics", "type": "multi_select"}],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=bad, schema=spec)
+
+
+def test_rejects_options_on_toggle():
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "agree",
+                        "label": "Agree",
+                        "type": "toggle",
+                        "options": ["Yes", "No"],
+                    }
+                ],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=bad, schema=spec)
+
+
+def test_rejects_options_on_time():
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "t",
+                        "label": "T",
+                        "type": "time",
+                        "options": ["09:00"],
+                    }
+                ],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=bad, schema=spec)
+
+
+def test_repeater_with_time_url_toggle():
+    """time, url, and toggle are valid repeater sub-field types."""
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "items",
+                        "label": "Items",
+                        "type": "repeater",
+                        "fields": [
+                            {"id": "start", "label": "Start", "type": "time"},
+                            {"id": "link", "label": "Link", "type": "url"},
+                            {"id": "done", "label": "Done", "type": "toggle"},
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
 
 
 def test_no_duplicate_field_ids():

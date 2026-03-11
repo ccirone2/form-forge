@@ -142,7 +142,7 @@ Examples:
 
 ## Field Types
 
-18 types are supported. The `type` value must be exactly one of these strings.
+23 types are supported. The `type` value must be exactly one of these strings.
 
 | Type | Renders As | `options` needed? | Special properties |
 |------|-----------|-------------------|--------------------|
@@ -150,11 +150,16 @@ Examples:
 | `email` | Email input with browser validation | no | — |
 | `tel` | Phone number input | no | — |
 | `date` | Native date picker (value: `YYYY-MM-DD`) | no | — |
+| `time` | Native time picker (value: `HH:MM`) | no | — |
+| `url` | URL input with browser validation | no | — |
+| `datetime` | Combined date and time picker | no | — |
 | `textarea` | Multi-line text (3 rows) | no | — |
 | `longtext` | Large textarea with character counter (6 rows) | no | `maxLength` |
 | `select` | Dropdown menu | yes | — |
 | `radio` | Radio button group | yes | — |
 | `checkbox` | Multi-select checkbox group | yes | — |
+| `multi_select` | Searchable multi-select with tags | yes | — |
+| `toggle` | Boolean yes/no switch | no | — |
 | `list` | Dynamic add/remove rows with bulk paste | no | — |
 | `number` | Numeric input | no | `min`, `max`, `step` |
 | `currency` | Numeric input with currency prefix | no | `currency_symbol` |
@@ -169,7 +174,7 @@ See `docs/FIELD_TYPES.md` for detailed examples, template handling code, and lay
 
 ## Options Arrays
 
-For `select`, `radio`, and `checkbox` fields, the `options` array defines the available choices:
+For `select`, `radio`, `checkbox`, and `multi_select` fields, the `options` array defines the available choices:
 
 ```json
 {
@@ -186,7 +191,7 @@ For `radio` and `checkbox`, do not include an empty string.
 
 ## Repeater Sub-Fields
 
-The `repeater` type requires a nested `fields` array. Sub-fields support a restricted set of types: `text`, `email`, `tel`, `number`, `currency`, and `select`. Sub-field IDs follow the same pattern (`^[a-z][a-z0-9_]*$`) and must be unique within the repeater (they do not need to be unique across the whole schema).
+The `repeater` type requires a nested `fields` array. Sub-fields support a restricted set of types: `text`, `email`, `tel`, `number`, `currency`, `select`, `time`, `url`, and `toggle`. Sub-field IDs follow the same pattern (`^[a-z][a-z0-9_]*$`) and must be unique within the repeater (they do not need to be unique across the whole schema).
 
 ```json
 {

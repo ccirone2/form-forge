@@ -215,7 +215,8 @@
 
   /* ===== 9. INPUT STYLES ===== */
   input[type="text"], input[type="date"], input[type="email"], input[type="tel"],
-  input[type="number"], textarea, select {
+  input[type="number"], input[type="time"], input[type="url"], input[type="datetime-local"],
+  textarea, select {
     width: 100%; padding: 10px 14px; background: var(--surface-2);
     border: 1px solid var(--border); border-radius: 8px; color: var(--text);
     font-family: 'DM Sans', sans-serif; font-size: 14px;
@@ -241,6 +242,61 @@
     width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0;
   }
   .checkbox-item label, .radio-item label { font-size: 14px; cursor: pointer; user-select: none; }
+
+  /* ===== 10b. TOGGLE SWITCH ===== */
+  .toggle-wrapper { display: flex; align-items: center; gap: 12px; }
+  .toggle-switch { position: relative; display: inline-block; width: 48px; height: 26px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .toggle-slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 13px; transition: 0.2s;
+  }
+  .toggle-slider:before {
+    position: absolute; content: ""; height: 20px; width: 20px;
+    left: 2px; bottom: 2px; background: var(--text-muted);
+    border-radius: 50%; transition: 0.2s;
+  }
+  .toggle-switch input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
+  .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); background: white; }
+  .toggle-switch input:focus + .toggle-slider { box-shadow: 0 0 0 3px var(--accent-glow); }
+  .toggle-label-text { font-size: 14px; user-select: none; color: var(--text-muted); }
+
+  /* ===== 10c. MULTI-SELECT ===== */
+  .multi-select-wrapper { position: relative; }
+  .multi-select-display {
+    display: flex; flex-wrap: wrap; gap: 6px; min-height: 42px;
+    padding: 8px 12px; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s; align-items: center;
+  }
+  .multi-select-display:focus-within { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .multi-select-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; background: var(--accent); color: white;
+    border-radius: 4px; font-size: 12px; font-weight: 500;
+  }
+  .multi-select-tag-remove { cursor: pointer; font-size: 14px; line-height: 1; opacity: 0.8; }
+  .multi-select-tag-remove:hover { opacity: 1; }
+  .multi-select-search {
+    border: none; outline: none; background: transparent;
+    color: var(--text); font-size: 14px; font-family: 'DM Sans', sans-serif;
+    flex: 1; min-width: 80px; padding: 0;
+  }
+  .multi-select-dropdown {
+    position: absolute; top: 100%; left: 0; right: 0;
+    max-height: 200px; overflow-y: auto; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px;
+    margin-top: 4px; z-index: 100; display: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .multi-select-dropdown.open { display: block; }
+  .multi-select-option {
+    padding: 8px 12px; cursor: pointer; font-size: 14px; transition: background 0.1s;
+  }
+  .multi-select-option:hover { background: var(--surface-2); }
+  .multi-select-option.selected { background: rgba(99,102,241,0.1); }
+  .multi-select-placeholder { color: var(--text-muted); font-size: 14px; pointer-events: none; }
 
   /* ===== 11. LAYOUT HELPERS (fields-row) ===== */
   .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -414,7 +470,8 @@
   /* Field-level validation errors */
   .field-group.field-error input,
   .field-group.field-error textarea,
-  .field-group.field-error select {
+  .field-group.field-error select,
+  .field-group.field-error .multi-select-display {
     border-color: var(--error);
     box-shadow: 0 0 0 3px var(--error-glow);
   }
@@ -2300,7 +2357,7 @@ function buildForm(schema) {
     sectionTitle.textContent = section.title;
     sectionDiv.appendChild(sectionTitle);
 
-    const shortTypes = ['text', 'email', 'tel', 'date', 'select', 'number', 'currency'];
+    const shortTypes = ['text', 'email', 'tel', 'date', 'select', 'number', 'currency', 'time', 'url', 'toggle', 'datetime'];
     let rowBuffer = [];
 
     function flushRow() {
@@ -2462,6 +2519,11 @@ function _buildConditionalDependencies(schema) {
 }
 
 function getFieldValue(fieldId) {
+  // Toggle: return "true"/"false" based on checked state
+  const toggleEl = document.getElementById(fieldId);
+  if (toggleEl && toggleEl.closest('.toggle-wrapper')) {
+    return toggleEl.checked ? 'true' : 'false';
+  }
   // Radio: get selected value
   const radio = document.querySelector(`input[name="${fieldId}"][type="radio"]:checked`);
   if (radio) return radio.value;
@@ -2588,7 +2650,9 @@ function setupInlineValidation(schema) {
 // ============================================================
 
 function isFieldEmpty(field) {
-  if (field.type === 'address') {
+  if (field.type === 'toggle') {
+    return false; // toggle always has a value (true/false)
+  } else if (field.type === 'address') {
     const el = document.getElementById(`${field.id}_street`);
     return !el || !el.value.trim();
   } else if (field.type === 'checkbox') {
@@ -3132,6 +3196,124 @@ function createRepeaterField(field, group) {
   setTimeout(() => { for (let i = 0; i < minRows; i++) addRepeaterRow(); }, 0);
 }
 
+function createTimeField(field, group) {
+  const input = document.createElement('input');
+  input.type = 'time'; input.id = field.id; input.name = field.id;
+  input.required = field.required || false;
+  group.appendChild(input);
+}
+
+function createUrlField(field, group) {
+  const input = document.createElement('input');
+  input.type = 'url'; input.id = field.id; input.name = field.id;
+  input.placeholder = field.placeholder || 'https://';
+  input.required = field.required || false;
+  group.appendChild(input);
+}
+
+function createDatetimeField(field, group) {
+  const input = document.createElement('input');
+  input.type = 'datetime-local'; input.id = field.id; input.name = field.id;
+  input.required = field.required || false;
+  group.appendChild(input);
+}
+
+function createToggleField(field, group) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'toggle-wrapper';
+  const lbl = document.createElement('label');
+  lbl.className = 'toggle-switch';
+  const input = document.createElement('input');
+  input.type = 'checkbox'; input.id = field.id; input.name = field.id;
+  const slider = document.createElement('span');
+  slider.className = 'toggle-slider';
+  lbl.appendChild(input); lbl.appendChild(slider);
+  const text = document.createElement('span');
+  text.className = 'toggle-label-text'; text.textContent = 'No';
+  input.addEventListener('change', () => { text.textContent = input.checked ? 'Yes' : 'No'; });
+  wrapper.appendChild(lbl); wrapper.appendChild(text);
+  group.appendChild(wrapper);
+}
+
+function createMultiSelectField(field, group) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'multi-select-wrapper';
+  const hidden = document.createElement('input');
+  hidden.type = 'hidden'; hidden.id = field.id; hidden.name = field.id;
+  const display = document.createElement('div');
+  display.className = 'multi-select-display';
+  display.setAttribute('tabindex', '0');
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text'; searchInput.className = 'multi-select-search';
+  searchInput.placeholder = field.placeholder || 'Type to search...';
+  const dropdown = document.createElement('div');
+  dropdown.className = 'multi-select-dropdown';
+  const options = (field.options || []).filter(o => o !== '');
+  const selected = new Set();
+
+  function updateHiddenValue() { hidden.value = Array.from(selected).join(', '); }
+
+  function renderTags() {
+    display.querySelectorAll('.multi-select-tag').forEach(t => t.remove());
+    const ph = display.querySelector('.multi-select-placeholder');
+    if (ph) ph.remove();
+    if (selected.size === 0) {
+      const placeholder = document.createElement('span');
+      placeholder.className = 'multi-select-placeholder';
+      placeholder.textContent = field.placeholder || 'Select options...';
+      display.insertBefore(placeholder, searchInput);
+    } else {
+      for (const val of selected) {
+        const tag = document.createElement('span');
+        tag.className = 'multi-select-tag';
+        tag.textContent = val;
+        const removeBtn = document.createElement('span');
+        removeBtn.className = 'multi-select-tag-remove';
+        removeBtn.textContent = '\u00d7';
+        removeBtn.dataset.value = val;
+        tag.appendChild(removeBtn);
+        display.insertBefore(tag, searchInput);
+      }
+    }
+    updateHiddenValue();
+  }
+
+  function renderDropdown(filter) {
+    dropdown.innerHTML = '';
+    const f = (filter || '').toLowerCase();
+    for (const opt of options) {
+      if (f && !opt.toLowerCase().includes(f)) continue;
+      const item = document.createElement('div');
+      item.className = 'multi-select-option' + (selected.has(opt) ? ' selected' : '');
+      item.textContent = opt; item.dataset.value = opt;
+      dropdown.appendChild(item);
+    }
+  }
+
+  display.addEventListener('click', (e) => {
+    const removeBtn = e.target.closest('.multi-select-tag-remove');
+    if (removeBtn) { selected.delete(removeBtn.dataset.value); renderTags(); renderDropdown(searchInput.value); return; }
+    dropdown.classList.add('open'); searchInput.focus();
+  });
+  searchInput.addEventListener('input', () => { renderDropdown(searchInput.value); dropdown.classList.add('open'); });
+  searchInput.addEventListener('focus', () => { renderDropdown(searchInput.value); dropdown.classList.add('open'); });
+  dropdown.addEventListener('click', (e) => {
+    const option = e.target.closest('.multi-select-option');
+    if (!option) return;
+    const val = option.dataset.value;
+    if (selected.has(val)) selected.delete(val); else selected.add(val);
+    renderTags(); renderDropdown(searchInput.value); searchInput.focus();
+  });
+  document.addEventListener('click', (e) => { if (!wrapper.contains(e.target)) dropdown.classList.remove('open'); });
+
+  display.appendChild(searchInput);
+  wrapper.appendChild(hidden); wrapper.appendChild(display); wrapper.appendChild(dropdown);
+  group.appendChild(wrapper);
+  // Expose internal state for populateForm
+  wrapper._multiSelect = { selected, renderTags, renderDropdown };
+  renderTags(); renderDropdown();
+}
+
 // Field type → creator function map
 const fieldCreators = {
   text: createTextField, email: createTextField, tel: createTextField,
@@ -3139,7 +3321,9 @@ const fieldCreators = {
   select: createSelectField, radio: createRadioField, checkbox: createCheckboxField,
   list: createListField, number: createNumberField, currency: createCurrencyField,
   heading: createHeadingField, hidden: createHiddenField, address: createAddressField,
-  file: createFileField, signature: createSignatureField, repeater: createRepeaterField
+  file: createFileField, signature: createSignatureField, repeater: createRepeaterField,
+  time: createTimeField, url: createUrlField, toggle: createToggleField,
+  datetime: createDatetimeField, multi_select: createMultiSelectField
 };
 
 // ============================================================
@@ -3262,8 +3446,11 @@ function collectFormData() {
           });
         }
         data[field.id] = JSON.stringify(rows);
+      } else if (field.type === 'toggle') {
+        const el = document.getElementById(field.id);
+        data[field.id] = el && el.checked ? 'true' : 'false';
       } else {
-        // text, email, tel, date, textarea, longtext, select, number, currency, hidden, file, signature
+        // text, email, tel, date, time, url, datetime, textarea, longtext, select, multi_select, number, currency, hidden, file, signature
         const el = document.getElementById(field.id);
         data[field.id] = el ? el.value : '';
       }
@@ -3431,8 +3618,28 @@ function populateForm(data, options = {}) {
             el.dispatchEvent(new Event('input', { bubbles: true }));
           }
 
+        } else if (field.type === 'toggle') {
+          const el = document.getElementById(field.id);
+          if (el) {
+            el.checked = value === 'true';
+            const text = el.closest('.toggle-wrapper')?.querySelector('.toggle-label-text');
+            if (text) text.textContent = el.checked ? 'Yes' : 'No';
+          }
+
+        } else if (field.type === 'multi_select') {
+          const hidden = document.getElementById(field.id);
+          if (hidden) {
+            const wrapper = hidden.closest('.multi-select-wrapper');
+            if (wrapper && wrapper._multiSelect) {
+              const ms = wrapper._multiSelect;
+              ms.selected.clear();
+              if (value) value.split(', ').forEach(v => { if (v.trim()) ms.selected.add(v.trim()); });
+              ms.renderTags(); ms.renderDropdown();
+            }
+          }
+
         } else {
-          // text, email, tel, date, textarea, select, number, currency, hidden
+          // text, email, tel, date, time, url, datetime, textarea, select, number, currency, hidden
           const el = document.getElementById(field.id);
           if (el) el.value = value;
         }
