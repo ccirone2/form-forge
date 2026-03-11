@@ -410,6 +410,19 @@
   .form-section.wizard-hidden { display: none; }
   .field-group.conditional-hidden { display: none; }
 
+  /* Field-level validation errors */
+  .field-group.field-error input,
+  .field-group.field-error textarea,
+  .field-group.field-error select {
+    border-color: var(--error);
+    box-shadow: 0 0 0 3px var(--error-glow);
+  }
+  .field-error-msg {
+    color: var(--error);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
   /* ===== 21. BUTTONS ===== */
   .submit-area { margin-top: 40px; display: flex; flex-direction: column; gap: 16px; }
   .submit-area-primary { display: flex; }
@@ -2094,6 +2107,9 @@ function buildForm(schema) {
   // Set up conditional visibility (visible_when)
   setupConditionalVisibility(schema);
 
+  // Set up inline validation (blur + clear-on-input)
+  setupInlineValidation(schema);
+
   const totalFields = schema.sections.reduce((a, s) => a + s.fields.length, 0);
   log(`Form built: ${schema.sections.length} sections, ${totalFields} fields${isWizard ? ' (wizard mode)' : ''}`, 'success');
 }
@@ -2201,8 +2217,113 @@ function isFieldConditionallyHidden(fieldId) {
 }
 
 // ============================================================
+//  FIELD-LEVEL ERROR HELPERS
+// ============================================================
+
+function showFieldError(fieldGroup, msg) {
+  if (!fieldGroup) return;
+  fieldGroup.classList.add('field-error');
+  // Avoid duplicate error messages
+  let errEl = fieldGroup.querySelector('.field-error-msg');
+  if (!errEl) {
+    errEl = document.createElement('div');
+    errEl.className = 'field-error-msg';
+    fieldGroup.appendChild(errEl);
+  }
+  errEl.textContent = msg;
+}
+
+function clearFieldError(fieldGroup) {
+  if (!fieldGroup) return;
+  fieldGroup.classList.remove('field-error');
+  const errEl = fieldGroup.querySelector('.field-error-msg');
+  if (errEl) errEl.remove();
+}
+
+function clearAllFieldErrors() {
+  document.querySelectorAll('.field-group.field-error').forEach(clearFieldError);
+}
+
+function findFieldGroup(fieldId) {
+  return document.querySelector(`.field-group[data-field-id="${fieldId}"]`);
+}
+
+/**
+ * Set up inline validation: blur validates required fields,
+ * input/change clears error state.
+ */
+function setupInlineValidation(schema) {
+  for (const section of schema.sections) {
+    for (const field of section.fields) {
+      if (field.type === 'heading' || field.type === 'hidden') continue;
+      const group = findFieldGroup(field.id);
+      if (!group) continue;
+
+      // Helper: validate this single field on blur
+      const validateOnBlur = () => {
+        if (!field.required) return;
+        if (isFieldConditionallyHidden(field.id)) return;
+        if (isFieldEmpty(field)) {
+          showFieldError(group, 'This field is required');
+        }
+      };
+
+      // Helper: clear error on user interaction
+      const clearOnInput = () => {
+        if (group.classList.contains('field-error')) {
+          clearFieldError(group);
+        }
+      };
+
+      if (field.type === 'checkbox' || field.type === 'radio') {
+        // Checkbox/radio: validate on blur isn't natural, but clear on change
+        document.querySelectorAll(`input[name="${field.id}"]`).forEach(el => {
+          el.addEventListener('change', clearOnInput);
+          el.addEventListener('blur', validateOnBlur);
+        });
+      } else if (field.type === 'address') {
+        // Address: attach to the street subfield (primary required check)
+        const street = document.getElementById(`${field.id}_street`);
+        if (street) {
+          street.addEventListener('blur', validateOnBlur);
+          street.addEventListener('input', clearOnInput);
+        }
+        // Also clear on any address subfield input
+        ['city', 'state', 'zip'].forEach(sub => {
+          const el = document.getElementById(`${field.id}_${sub}`);
+          if (el) el.addEventListener('input', clearOnInput);
+        });
+      } else {
+        const el = document.getElementById(field.id);
+        if (el) {
+          el.addEventListener('blur', validateOnBlur);
+          el.addEventListener('input', clearOnInput);
+          el.addEventListener('change', clearOnInput);
+        }
+      }
+    }
+  }
+}
+
+// ============================================================
 //  VALIDATION (shared by wizard and full-form)
 // ============================================================
+
+function isFieldEmpty(field) {
+  if (field.type === 'address') {
+    const el = document.getElementById(`${field.id}_street`);
+    return !el || !el.value.trim();
+  } else if (field.type === 'checkbox') {
+    const checked = document.querySelectorAll(`input[name="${field.id}"]:checked`);
+    return checked.length === 0;
+  } else if (field.type === 'radio') {
+    const selected = document.querySelector(`input[name="${field.id}"]:checked`);
+    return !selected;
+  } else {
+    const el = document.getElementById(field.id);
+    return !el || !el.value || !el.value.trim();
+  }
+}
 
 function validateSection(section) {
   const missing = [];
@@ -2210,18 +2331,27 @@ function validateSection(section) {
     if (field.type === 'heading' || field.type === 'hidden') continue;
     if (!field.required) continue;
     if (isFieldConditionallyHidden(field.id)) continue;
-    if (field.type === 'address') {
-      const el = document.getElementById(`${field.id}_street`);
-      if (!el || !el.value.trim()) missing.push(field.label);
-    } else if (field.type === 'checkbox') {
-      const checked = document.querySelectorAll(`input[name="${field.id}"]:checked`);
-      if (checked.length === 0) missing.push(field.label);
-    } else if (field.type === 'radio') {
-      const selected = document.querySelector(`input[name="${field.id}"]:checked`);
-      if (!selected) missing.push(field.label);
+    if (isFieldEmpty(field)) missing.push(field.label);
+  }
+  return missing;
+}
+
+/**
+ * Validate a section and apply field-level error states.
+ * Returns array of missing field labels (empty = valid).
+ */
+function validateSectionWithErrors(section) {
+  const missing = [];
+  for (const field of section.fields) {
+    if (field.type === 'heading' || field.type === 'hidden') continue;
+    const group = findFieldGroup(field.id);
+    if (!field.required) { clearFieldError(group); continue; }
+    if (isFieldConditionallyHidden(field.id)) { clearFieldError(group); continue; }
+    if (isFieldEmpty(field)) {
+      missing.push(field.label);
+      showFieldError(group, 'This field is required');
     } else {
-      const el = document.getElementById(field.id);
-      if (!el || !el.value || !el.value.trim()) missing.push(field.label);
+      clearFieldError(group);
     }
   }
   return missing;
@@ -2238,10 +2368,27 @@ function wizardValidateStep(stepIndex) {
 
 function wizardStepClick(targetStep) {
   if (targetStep === wizardCurrentStep) return;
+  // Only validate when moving forward
+  if (targetStep > wizardCurrentStep && currentSchema) {
+    const missing = validateSectionWithErrors(currentSchema.sections[wizardCurrentStep]);
+    if (missing.length > 0) {
+      showToast(`Missing: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? '...' : ''}`, 'error');
+      scrollToFirstError();
+      return;
+    }
+  }
   wizardGoTo(targetStep);
 }
 
 function wizardNext(fromStep) {
+  if (currentSchema) {
+    const missing = validateSectionWithErrors(currentSchema.sections[fromStep]);
+    if (missing.length > 0) {
+      showToast(`Missing: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? '...' : ''}`, 'error');
+      scrollToFirstError();
+      return;
+    }
+  }
   wizardGoTo(fromStep + 1);
 }
 
@@ -2738,6 +2885,7 @@ const fieldCreators = {
 function createField(field) {
   const group = document.createElement('div');
   group.className = 'field-group';
+  group.dataset.fieldId = field.id;
 
   // Label (skip for heading and hidden — they handle their own rendering)
   if (field.type === 'heading' || field.type === 'hidden') {
@@ -3809,12 +3957,34 @@ function validateForm() {
   return missing;
 }
 
+/**
+ * Validate the full form with field-level error states.
+ * Returns array of missing field labels (empty = valid).
+ */
+function validateFormWithErrors() {
+  if (!currentSchema) return [];
+  clearAllFieldErrors();
+  const missing = [];
+  for (const section of currentSchema.sections) {
+    missing.push(...validateSectionWithErrors(section));
+  }
+  return missing;
+}
+
+function scrollToFirstError() {
+  const firstError = document.querySelector('.field-group.field-error');
+  if (firstError) {
+    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
 // ============================================================
 //  RESET
 // ============================================================
 function resetForm() {
   if (formDirty && !confirm('Reset form? All unsaved changes will be lost.')) return;
   document.getElementById('dynamicForm').reset();
+  clearAllFieldErrors();
   if (currentSchema) {
     for (const section of currentSchema.sections) {
       for (const field of section.fields) {
@@ -3862,10 +4032,11 @@ function resetForm() {
 async function handleExport() {
   if (!pyodideReady) { showToast('Pyodide not ready', 'error'); return; }
 
-  const missing = validateForm();
+  const missing = validateFormWithErrors();
   if (missing.length > 0) {
     showToast(`Missing: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? '...' : ''}`, 'error');
     log('Validation failed: ' + missing.join(', '), 'error');
+    scrollToFirstError();
     return;
   }
 

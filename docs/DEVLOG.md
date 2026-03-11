@@ -14,6 +14,7 @@
 
 ## Log
 
+<<<<<<< HEAD
 ### 2026-03-10 — Code quality: SVG icon reuse, event delegation, CSS organization (#92)
 **Issue:** #92
 
