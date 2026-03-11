@@ -14,6 +14,23 @@
 
 ## Log
 
+### 2026-03-10 — Keyboard shortcuts and navigation (#85)
+**Issues:** #85
+
+Added global keyboard shortcuts and improved keyboard accessibility for picker cards and the profile dropdown.
+
+**Changes:**
+- **Global keyboard shortcuts** (`index.html`): Added a `handleGlobalKeydown()` function registered in the BOOT section via `document.addEventListener('keydown', ...)`. Supports `Ctrl/Cmd+S` (save form data), `Ctrl/Cmd+Enter` (export to DOCX), and `Escape` (dismiss profile dropdown first, then navigate back to picker with a dirty guard confirmation). All shortcuts use `event.metaKey || event.ctrlKey` for cross-platform Mac/Windows support and call `event.preventDefault()` to override browser defaults.
+- **Picker card keyboard navigation** (`renderPicker()`): Added `tabindex="0"`, `role="button"`, and `aria-label` attributes to each picker card. Added `keydown` listener so Enter/Space selects the card (same as click).
+- **Profile dropdown keyboard navigation** (`showProfileDropdown()`): Added `tabindex="-1"` to each `.profile-dropdown-item` and a `keydown` listener on the dropdown container for ArrowUp/ArrowDown (cycle focus through items) and Enter (trigger click on focused item). Removed the standalone Escape keydown listener from `setupProfileDropdowns()` since the global handler now covers it.
+
+**Decisions:**
+- The Escape dirty guard uses `confirm()` to warn users about unsaved data before navigating back — checks both autosave storage and non-empty form fields
+- Profile dropdown Escape is handled first (higher priority) before the back-to-picker action
+- Dropdown items use `tabindex="-1"` (not `0`) so they are focusable programmatically via arrow keys but do not appear in the normal tab order
+
+---
+
 ### 2026-03-10 — Improve test coverage: round-trip assertions, edge cases, visible_when paths (#40)
 **Issues:** #40
 
