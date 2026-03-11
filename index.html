@@ -421,89 +421,61 @@
     padding: 7px 12px; background: var(--surface-2); border: 1px solid var(--border);
     border-radius: 8px; color: var(--text-muted); font-family: 'DM Sans', sans-serif;
     font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+    position: relative;
   }
   .profile-btn:hover { border-color: var(--text-muted); color: var(--text); }
   .profile-btn svg { flex-shrink: 0; }
+  .profile-btn .profile-badge {
+    background: var(--accent); color: #fff; font-size: 10px; font-weight: 700;
+    min-width: 16px; height: 16px; border-radius: 8px; display: inline-flex;
+    align-items: center; justify-content: center; padding: 0 4px;
+  }
 
-  .profile-modal-overlay {
-    position: fixed; inset: 0; z-index: 200;
-    background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(4px);
-    display: flex; align-items: center; justify-content: center;
-    animation: fadeInPrompt 0.2s ease-out;
-  }
-  .profile-modal {
+  .profile-dropdown {
+    position: absolute; z-index: 150;
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; padding: 28px 32px 24px; width: 100%; max-width: 480px;
-    max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    min-width: 260px; max-width: 340px; overflow: hidden;
+    animation: fadeInPrompt 0.15s ease-out;
   }
-  .profile-modal h3 {
-    font-size: 18px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 20px;
+  .profile-dropdown-item {
     display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; cursor: pointer; transition: background 0.15s;
+    border-bottom: 1px solid var(--border);
   }
-  .profile-modal h3 svg { color: var(--accent); flex-shrink: 0; }
-  .profile-field { margin-bottom: 14px; }
-  .profile-field label {
-    display: block; font-size: 12px; font-weight: 500; color: var(--text-muted);
-    margin-bottom: 4px; font-family: 'JetBrains Mono', monospace;
+  .profile-dropdown-item:last-child { border-bottom: none; }
+  .profile-dropdown-item:hover { background: var(--surface-2); }
+  .profile-dropdown-item-info { flex: 1; min-width: 0; }
+  .profile-dropdown-item-name {
+    font-size: 13px; font-weight: 600; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .profile-field input {
-    width: 100%; padding: 9px 12px; background: var(--surface-2);
-    border: 1px solid var(--border); border-radius: 8px; color: var(--text);
-    font-family: 'DM Sans', sans-serif; font-size: 14px;
-    transition: border-color 0.2s; outline: none;
+  .profile-dropdown-item-preview {
+    font-size: 12px; color: var(--text-muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .profile-field input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
-  .profile-address-heading {
-    font-size: 12px; font-weight: 500; color: var(--text-muted);
-    margin: 18px 0 8px; font-family: 'JetBrains Mono', monospace;
-    border-top: 1px solid var(--border); padding-top: 14px;
+  .profile-dropdown-item .profile-delete-btn {
+    background: none; border: none; color: var(--text-muted); cursor: pointer;
+    padding: 2px 4px; font-size: 14px; line-height: 1; border-radius: 4px;
+    transition: all 0.15s; flex-shrink: 0; opacity: 0;
   }
-  .profile-address-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .profile-address-grid .profile-field:first-child { grid-column: 1 / -1; }
-  .profile-actions {
-    display: flex; gap: 8px; margin-top: 20px; padding-top: 16px;
+  .profile-dropdown-item:hover .profile-delete-btn { opacity: 1; }
+  .profile-dropdown-item .profile-delete-btn:hover { color: var(--error); background: rgba(239,68,68,0.1); }
+  .profile-dropdown-action {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; cursor: pointer; transition: background 0.15s;
+    font-size: 12px; color: var(--accent); font-weight: 500;
     border-top: 1px solid var(--border);
   }
-  .profile-actions .btn-primary { flex: 1; }
-  .profile-save-from-form {
-    display: block; text-align: center; margin-top: 12px;
-    font-size: 12px; color: var(--accent); cursor: pointer;
-    text-decoration: none; transition: color 0.2s;
+  .profile-dropdown-action:hover { background: var(--surface-2); }
+  .profile-dropdown-action svg { flex-shrink: 0; }
+  .profile-dropdown-empty {
+    padding: 14px; text-align: center; font-size: 12px; color: var(--text-muted);
   }
-  .profile-save-from-form:hover { color: var(--accent-hover); }
-
-  .profile-prompt {
-    display: flex; align-items: center; justify-content: space-between; gap: 16px;
-    padding: 12px 20px; margin-bottom: 24px;
-    background: var(--surface-2); border-left: 3px solid var(--accent);
-    border-radius: var(--radius); animation: fadeInPrompt 0.3s ease-out;
-  }
-  .profile-prompt .profile-prompt-msg {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 13px; color: var(--text-muted); flex: 1;
-  }
-  .profile-prompt .profile-prompt-msg svg { color: var(--accent); flex-shrink: 0; }
-  .profile-prompt .profile-prompt-msg strong { color: var(--text); }
-  .profile-prompt .profile-prompt-actions { display: flex; gap: 8px; flex-shrink: 0; }
-  .profile-prompt .btn-fill {
-    padding: 6px 16px; background: var(--accent); color: #fff; border: none;
-    border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 13px;
-    font-weight: 600; cursor: pointer; transition: background 0.2s;
-  }
-  .profile-prompt .btn-fill:hover { background: var(--accent-hover); }
-  .profile-prompt .btn-skip {
-    padding: 6px 16px; background: transparent; color: var(--text-muted); border: 1px solid var(--border);
-    border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 13px;
-    font-weight: 500; cursor: pointer; transition: all 0.2s;
-  }
-  .profile-prompt .btn-skip:hover { border-color: var(--text-muted); color: var(--text); }
 
   @media (max-width: 600px) {
     .autosave-prompt { flex-direction: column; align-items: flex-start; }
-    .profile-prompt { flex-direction: column; align-items: flex-start; }
     .submit-area { flex-wrap: wrap; }
-    .profile-modal { margin: 16px; padding: 20px; }
-    .profile-address-grid { grid-template-columns: 1fr; }
     .wizard-step-label { display: none; }
     .wizard-step-circle { width: 28px; height: 28px; font-size: 12px; }
     .wizard-step-connector { width: 24px; margin: 0 4px; }
@@ -913,9 +885,9 @@
         Back to picker
       </button>
       <span class="form-nav-info" id="formNavInfo"></span>
-      <button class="profile-btn" onclick="showProfileEditor()" title="My Profile">
+      <button class="profile-btn" id="profileNavBtn" onclick="toggleProfileNav()" title="Saved Profiles">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        My Profile
+        Profiles <span class="profile-badge" id="profileBadge" style="display:none">0</span>
       </button>
     </div>
 
@@ -963,64 +935,8 @@
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- Profile Modal -->
-<div class="profile-modal-overlay" id="profileModal" style="display:none" onclick="if(event.target===this)closeProfileModal()">
-  <div class="profile-modal">
-    <h3>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      My Profile
-    </h3>
-    <div class="profile-field">
-      <label for="profile_first_name">first name</label>
-      <input type="text" id="profile_first_name" placeholder="Jane">
-    </div>
-    <div class="profile-field">
-      <label for="profile_last_name">last name</label>
-      <input type="text" id="profile_last_name" placeholder="Doe">
-    </div>
-    <div class="profile-field">
-      <label for="profile_name">full name</label>
-      <input type="text" id="profile_name" placeholder="Jane Doe">
-    </div>
-    <div class="profile-field">
-      <label for="profile_email">email</label>
-      <input type="email" id="profile_email" placeholder="jane@example.com">
-    </div>
-    <div class="profile-field">
-      <label for="profile_phone">phone</label>
-      <input type="tel" id="profile_phone" placeholder="(555) 123-4567">
-    </div>
-    <div class="profile-field">
-      <label for="profile_department">department</label>
-      <input type="text" id="profile_department" placeholder="Engineering">
-    </div>
-    <div class="profile-address-heading">address</div>
-    <div class="profile-address-grid">
-      <div class="profile-field">
-        <label for="profile_street">street</label>
-        <input type="text" id="profile_street" placeholder="123 Main St">
-      </div>
-      <div class="profile-field">
-        <label for="profile_city">city</label>
-        <input type="text" id="profile_city" placeholder="Springfield">
-      </div>
-      <div class="profile-field">
-        <label for="profile_state">state</label>
-        <input type="text" id="profile_state" placeholder="IL">
-      </div>
-      <div class="profile-field">
-        <label for="profile_zip">zip</label>
-        <input type="text" id="profile_zip" placeholder="62701">
-      </div>
-    </div>
-    <div class="profile-actions">
-      <button class="btn-primary" onclick="saveProfileFromModal()">Save Profile</button>
-      <button class="btn-secondary" onclick="clearProfile()">Clear</button>
-      <button class="btn-secondary" onclick="closeProfileModal()">Cancel</button>
-    </div>
-    <a href="#" class="profile-save-from-form" onclick="fillProfileFromForm(); return false;">Save from current form</a>
-  </div>
-</div>
+<!-- Profile Dropdown (shared, positioned dynamically) -->
+<div class="profile-dropdown" id="profileDropdown" style="display:none"></div>
 
 <script>
 // ============================================================
@@ -3066,92 +2982,11 @@ function formatTimeAgo(isoString) {
 }
 
 // ============================================================
-//  USER PROFILE
+//  USER PROFILE (multi-profile, inline dropdown)
 // ============================================================
 
-const PROFILE_STORAGE_KEY = 'formforge_user_profile';
+const PROFILES_STORAGE_KEY = 'formforge_user_profiles';
 
-const PROFILE_FIELDS = [
-  'first_name', 'last_name', 'name', 'email', 'phone', 'department'
-];
-
-function getProfile() {
-  try {
-    const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (err) {
-    console.warn('Failed to read profile:', err.message);
-    return null;
-  }
-}
-
-function saveProfile(data) {
-  try {
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(data));
-  } catch (err) {
-    console.warn('Failed to save profile:', err.message);
-  }
-}
-
-function showProfileEditor() {
-  const profile = getProfile() || {};
-  for (const key of PROFILE_FIELDS) {
-    const el = document.getElementById(`profile_${key}`);
-    if (el) el.value = profile[key] || '';
-  }
-  const addr = profile.address || {};
-  for (const sub of ['street', 'city', 'state', 'zip']) {
-    const el = document.getElementById(`profile_${sub}`);
-    if (el) el.value = addr[sub] || '';
-  }
-  document.getElementById('profileModal').style.display = '';
-  document.addEventListener('keydown', _profileEscHandler);
-}
-
-function closeProfileModal() {
-  document.getElementById('profileModal').style.display = 'none';
-  document.removeEventListener('keydown', _profileEscHandler);
-}
-
-function _profileEscHandler(e) {
-  if (e.key === 'Escape') closeProfileModal();
-}
-
-function saveProfileFromModal() {
-  const data = {};
-  for (const key of PROFILE_FIELDS) {
-    const val = (document.getElementById(`profile_${key}`)?.value || '').trim();
-    if (val) data[key] = val;
-  }
-  const address = {};
-  let hasAddress = false;
-  for (const sub of ['street', 'city', 'state', 'zip']) {
-    const val = (document.getElementById(`profile_${sub}`)?.value || '').trim();
-    if (val) { address[sub] = val; hasAddress = true; }
-  }
-  if (hasAddress) data.address = address;
-  saveProfile(data);
-  closeProfileModal();
-  showToast('Profile saved');
-  log('User profile saved to localStorage', 'success');
-}
-
-function clearProfile() {
-  try { localStorage.removeItem(PROFILE_STORAGE_KEY); } catch (e) { /* ignore */ }
-  for (const key of PROFILE_FIELDS) {
-    const el = document.getElementById(`profile_${key}`);
-    if (el) el.value = '';
-  }
-  for (const sub of ['street', 'city', 'state', 'zip']) {
-    const el = document.getElementById(`profile_${sub}`);
-    if (el) el.value = '';
-  }
-  closeProfileModal();
-  showToast('Profile cleared');
-  log('User profile cleared', 'info');
-}
-
-// Shared matchers: profile key -> { types, pattern }
 const PROFILE_MATCHERS = {
   first_name: { types: ['text'], pattern: /\bfirst\s*name\b/i },
   last_name:  { types: ['text'], pattern: /\blast\s*name\b/i },
@@ -3161,138 +2996,280 @@ const PROFILE_MATCHERS = {
   department: { types: ['select', 'text'], pattern: /^department$/i },
 };
 
-function matchProfileToFields(schema, profile) {
-  const matched = {};
+// --- Storage ---
+
+function getProfiles() {
+  try {
+    const raw = localStorage.getItem(PROFILES_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+    // Migrate old single-profile format
+    const old = localStorage.getItem('formforge_user_profile');
+    if (old) {
+      const parsed = JSON.parse(old);
+      const arr = [parsed];
+      localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(arr));
+      localStorage.removeItem('formforge_user_profile');
+      return arr;
+    }
+    return [];
+  } catch (err) {
+    console.warn('Failed to read profiles:', err.message);
+    return [];
+  }
+}
+
+function saveProfiles(arr) {
+  try { localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(arr)); }
+  catch (err) { console.warn('Failed to save profiles:', err.message); }
+}
+
+function addProfile(data) {
+  const profiles = getProfiles();
+  profiles.push(data);
+  saveProfiles(profiles);
+  updateProfileBadge();
+  return profiles;
+}
+
+function deleteProfile(index) {
+  const profiles = getProfiles();
+  profiles.splice(index, 1);
+  saveProfiles(profiles);
+  updateProfileBadge();
+  return profiles;
+}
+
+function getProfileDisplayName(profile) {
+  if (profile.name) return profile.name;
+  if (profile.first_name || profile.last_name) return [profile.first_name, profile.last_name].filter(Boolean).join(' ');
+  if (profile.email) return profile.email;
+  return 'Unnamed Profile';
+}
+
+function updateProfileBadge() {
+  const badge = document.getElementById('profileBadge');
+  if (!badge) return;
+  const count = getProfiles().length;
+  badge.textContent = count;
+  badge.style.display = count > 0 ? '' : 'none';
+}
+
+// --- Matching ---
+
+function getMatchedProfileKey(field) {
+  if (field.type === 'address') return 'address';
+  for (const [key, matcher] of Object.entries(PROFILE_MATCHERS)) {
+    if (matcher.types.includes(field.type) && matcher.pattern.test(field.label)) return key;
+  }
+  return null;
+}
+
+function getProfilePreview(profile, profileKey) {
+  if (profileKey === 'address' && profile.address) {
+    const a = profile.address;
+    return [a.street, a.city, a.state, a.zip].filter(Boolean).join(', ');
+  }
+  return profile[profileKey] || '';
+}
+
+function applyProfileToForm(profile, schema) {
+  let filled = 0;
   for (const section of schema.sections) {
     for (const field of section.fields) {
       if (field.type === 'heading' || field.type === 'hidden') continue;
-      // Address: match any address field
       if (field.type === 'address' && profile.address) {
-        matched[field.id] = { type: 'address', value: profile.address };
+        const addr = profile.address;
+        for (const sub of ['street', 'city', 'state', 'zip']) {
+          const el = document.getElementById(`${field.id}_${sub}`);
+          if (el && addr[sub]) { el.value = addr[sub]; el.dispatchEvent(new Event('input', { bubbles: true })); }
+        }
+        filled++;
         continue;
       }
-      // Other types: match via PROFILE_MATCHERS
-      for (const [profileKey, matcher] of Object.entries(PROFILE_MATCHERS)) {
-        if (!profile[profileKey]) continue;
-        if (!matcher.types.includes(field.type)) continue;
-        if (!matcher.pattern.test(field.label)) continue;
-        // For select fields, check that the profile value is in the options
-        if (field.type === 'select' && field.options && !field.options.includes(profile[profileKey])) continue;
-        matched[field.id] = { type: field.type, value: profile[profileKey] };
-        break;
-      }
-    }
-  }
-  return matched;
-}
-
-function checkProfileAutofill() {
-  const profile = getProfile();
-  if (!profile || !currentSchema) return;
-  const matched = matchProfileToFields(currentSchema, profile);
-  // Filter to only empty fields
-  const emptyMatched = {};
-  for (const [fieldId, info] of Object.entries(matched)) {
-    if (info.type === 'address') {
-      const street = document.getElementById(`${fieldId}_street`);
-      if (street && !street.value.trim()) emptyMatched[fieldId] = info;
-    } else {
-      const el = document.getElementById(fieldId);
-      if (el && !el.value.trim()) emptyMatched[fieldId] = info;
-    }
-  }
-  if (Object.keys(emptyMatched).length > 0) {
-    showProfilePrompt(emptyMatched);
-  }
-}
-
-function showProfilePrompt(matchedData) {
-  const existing = document.querySelector('.profile-prompt');
-  if (existing) existing.remove();
-
-  const count = Object.keys(matchedData).length;
-  const prompt = document.createElement('div');
-  prompt.className = 'profile-prompt';
-  prompt.innerHTML = `
-    <span class="profile-prompt-msg">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <strong>${count} field${count === 1 ? '' : 's'}</strong> can be filled from your profile
-    </span>
-    <div class="profile-prompt-actions">
-      <button class="btn-fill" type="button">Fill</button>
-      <button class="btn-skip" type="button">Skip</button>
-    </div>
-  `;
-
-  prompt.querySelector('.btn-fill').addEventListener('click', () => {
-    applyProfileData(matchedData);
-    prompt.remove();
-  });
-
-  prompt.querySelector('.btn-skip').addEventListener('click', () => {
-    prompt.remove();
-    log('Profile autofill skipped', 'info');
-  });
-
-  const form = document.getElementById('dynamicForm');
-  if (form) {
-    form.parentNode.insertBefore(prompt, form);
-  }
-}
-
-function applyProfileData(matchedData) {
-  let filled = 0;
-  for (const [fieldId, info] of Object.entries(matchedData)) {
-    if (info.type === 'address') {
-      const addr = info.value;
-      for (const sub of ['street', 'city', 'state', 'zip']) {
-        const el = document.getElementById(`${fieldId}_${sub}`);
-        if (el && !el.value.trim() && addr[sub]) {
-          el.value = addr[sub];
-          el.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-      }
-      filled++;
-    } else {
-      const el = document.getElementById(fieldId);
-      if (el && !el.value.trim()) {
-        el.value = info.value;
+      const profileKey = getMatchedProfileKey(field);
+      if (!profileKey || !profile[profileKey]) continue;
+      if (field.type === 'select' && field.options && !field.options.includes(profile[profileKey])) continue;
+      const el = document.getElementById(field.id);
+      if (el) {
+        el.value = profile[profileKey];
         el.dispatchEvent(new Event('input', { bubbles: true }));
+        if (field.type === 'select') el.dispatchEvent(new Event('change', { bubbles: true }));
         filled++;
       }
     }
   }
   showToast(`${filled} field${filled === 1 ? '' : 's'} filled from profile`);
-  log(`Profile autofill applied: ${filled} field(s)`, 'success');
+  log(`Profile "${getProfileDisplayName(profile)}" applied: ${filled} field(s)`, 'success');
 }
 
-function fillProfileFromForm() {
-  if (!currentSchema) return;
-  for (const section of currentSchema.sections) {
+function collectProfileFromForm(schema) {
+  const data = {};
+  for (const section of schema.sections) {
     for (const field of section.fields) {
       if (field.type === 'address') {
-        const street = document.getElementById(`${field.id}_street`)?.value || '';
+        const street = document.getElementById(`${field.id}_street`)?.value?.trim() || '';
         if (street) {
-          document.getElementById('profile_street').value = street;
-          document.getElementById('profile_city').value = document.getElementById(`${field.id}_city`)?.value || '';
-          document.getElementById('profile_state').value = document.getElementById(`${field.id}_state`)?.value || '';
-          document.getElementById('profile_zip').value = document.getElementById(`${field.id}_zip`)?.value || '';
+          data.address = {
+            street,
+            city: document.getElementById(`${field.id}_city`)?.value?.trim() || '',
+            state: document.getElementById(`${field.id}_state`)?.value?.trim() || '',
+            zip: document.getElementById(`${field.id}_zip`)?.value?.trim() || '',
+          };
         }
         continue;
       }
-      for (const [profileKey, matcher] of Object.entries(PROFILE_MATCHERS)) {
-        if (matcher.types.includes(field.type) && matcher.pattern.test(field.label)) {
-          const val = document.getElementById(field.id)?.value;
-          if (val) {
-            const el = document.getElementById(`profile_${profileKey}`);
-            if (el) el.value = val;
-          }
-          break;
+      const profileKey = getMatchedProfileKey(field);
+      if (!profileKey) continue;
+      const val = document.getElementById(field.id)?.value?.trim();
+      if (val && !data[profileKey]) data[profileKey] = val;
+    }
+  }
+  return data;
+}
+
+// --- Dropdown ---
+
+let _activeDropdownField = null;
+
+function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
+  const dd = document.getElementById('profileDropdown');
+  const profiles = getProfiles();
+
+  let html = '';
+  if (profiles.length === 0) {
+    html = '<div class="profile-dropdown-empty">No saved profiles</div>';
+  } else {
+    profiles.forEach((p, i) => {
+      const name = getProfileDisplayName(p);
+      const preview = showAll ? (p.email || '') : getProfilePreview(p, profileKey);
+      if (!showAll && !preview) return;
+      html += `<div class="profile-dropdown-item" data-index="${i}">
+        <div class="profile-dropdown-item-info">
+          <div class="profile-dropdown-item-name">${name}</div>
+          ${preview ? `<div class="profile-dropdown-item-preview">${preview}</div>` : ''}
+        </div>
+        <button class="profile-delete-btn" data-delete="${i}" title="Delete profile">&times;</button>
+      </div>`;
+    });
+    if (!html) html = '<div class="profile-dropdown-empty">No matching profiles</div>';
+  }
+
+  html += `<div class="profile-dropdown-action" id="profileSaveAction">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    Save current form as profile
+  </div>`;
+
+  dd.innerHTML = html;
+  dd.style.display = '';
+
+  // Position below anchor
+  const rect = anchorEl.getBoundingClientRect();
+  dd.style.position = 'fixed';
+  dd.style.top = (rect.bottom + 4) + 'px';
+  dd.style.left = rect.left + 'px';
+  // Keep within viewport
+  const ddRect = dd.getBoundingClientRect();
+  if (ddRect.right > window.innerWidth - 8) {
+    dd.style.left = Math.max(8, window.innerWidth - ddRect.width - 8) + 'px';
+  }
+
+  _activeDropdownField = anchorEl;
+
+  // Item click -> apply profile
+  dd.querySelectorAll('.profile-dropdown-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('.profile-delete-btn')) return;
+      const idx = parseInt(item.dataset.index);
+      const p = getProfiles()[idx];
+      if (p && currentSchema) {
+        applyProfileToForm(p, currentSchema);
+        hideProfileDropdown();
+      }
+    });
+  });
+
+  // Delete buttons
+  dd.querySelectorAll('.profile-delete-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.delete);
+      deleteProfile(idx);
+      showProfileDropdown(anchorEl, profileKey, fieldDef, showAll);
+      showToast('Profile deleted');
+    });
+  });
+
+  // Save action
+  dd.querySelector('#profileSaveAction')?.addEventListener('click', () => {
+    if (!currentSchema) return;
+    const data = collectProfileFromForm(currentSchema);
+    if (Object.keys(data).length === 0) {
+      showToast('Fill in some fields first', 'error');
+      return;
+    }
+    addProfile(data);
+    hideProfileDropdown();
+    showToast(`Profile "${getProfileDisplayName(data)}" saved`);
+    log(`New profile saved: ${getProfileDisplayName(data)}`, 'success');
+  });
+}
+
+function hideProfileDropdown() {
+  const dd = document.getElementById('profileDropdown');
+  if (dd) dd.style.display = 'none';
+  _activeDropdownField = null;
+}
+
+// --- Nav button management dropdown ---
+
+function toggleProfileNav() {
+  const dd = document.getElementById('profileDropdown');
+  if (dd.style.display !== 'none' && _activeDropdownField === document.getElementById('profileNavBtn')) {
+    hideProfileDropdown();
+    return;
+  }
+  const btn = document.getElementById('profileNavBtn');
+  showProfileDropdown(btn, null, null, true);
+}
+
+// --- Field-level focus handlers ---
+
+function setupProfileDropdowns(schema) {
+  if (!schema) return;
+  for (const section of schema.sections) {
+    for (const field of section.fields) {
+      const profileKey = getMatchedProfileKey(field);
+      if (!profileKey) continue;
+
+      if (field.type === 'address') {
+        const streetEl = document.getElementById(`${field.id}_street`);
+        if (streetEl) {
+          streetEl.addEventListener('focus', () => showProfileDropdown(streetEl, 'address', field));
         }
+      } else if (field.type === 'select') {
+        const el = document.getElementById(field.id);
+        if (el) el.addEventListener('focus', () => showProfileDropdown(el, profileKey, field));
+      } else {
+        const el = document.getElementById(field.id);
+        if (el) el.addEventListener('focus', () => showProfileDropdown(el, profileKey, field));
       }
     }
   }
-  showToast('Profile fields updated from form');
+
+  // Global dismiss on click outside or Escape
+  document.addEventListener('mousedown', (e) => {
+    const dd = document.getElementById('profileDropdown');
+    if (dd.style.display === 'none') return;
+    if (dd.contains(e.target)) return;
+    if (e.target.closest('.profile-btn')) return;
+    if (e.target === _activeDropdownField) return;
+    hideProfileDropdown();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideProfileDropdown();
+  });
+
+  updateProfileBadge();
 }
 
 // ============================================================
@@ -3347,7 +3324,7 @@ function postLaunchHook() {
   } else {
     checkAutosaveRestore();
   }
-  checkProfileAutofill();
+  setupProfileDropdowns(currentSchema);
 }
 
 // ============================================================
@@ -3400,9 +3377,8 @@ function resetForm() {
   // Remove autosave prompt if visible
   const prompt = document.querySelector('.autosave-prompt');
   if (prompt) prompt.remove();
-  // Remove profile prompt if visible
-  const profilePrompt = document.querySelector('.profile-prompt');
-  if (profilePrompt) profilePrompt.remove();
+  // Hide profile dropdown if visible
+  hideProfileDropdown();
   log('Form reset', 'info');
 }
 

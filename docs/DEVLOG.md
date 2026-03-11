@@ -14,40 +14,31 @@
 
 ## Log
 
-### 2026-03-10 — Field matching engine and autofill prompt (#75)
-**Issues:** #75 (parent: #73)
+### 2026-03-10 — User profile autofill: inline dropdown redesign (#73, #74, #75)
+**Issues:** #73, #74, #75
 
-Added the field matching engine and autofill prompt banner that completes the user profile autofill feature.
-
-**Changes (all in `index.html`):**
-- **CSS (~20 lines):** `.profile-prompt` banner styled like `.autosave-prompt` but with accent (indigo) border-left instead of warning, responsive stacking on mobile
-- **JS (~110 lines):** `PROFILE_MATCHERS` config (type+label regex for 7 profile keys), `matchProfileToFields()` to walk schema and return matched `{fieldId: value}` map, `checkProfileAutofill()` that filters to empty-only fields and shows banner, `showProfilePrompt()` / `applyProfileData()` for banner UI and field population
-- **Integration:** `postLaunchHook()` calls `checkProfileAutofill()` after autosave restore; `resetForm()` removes `.profile-prompt` banner
-- **Refactored** `fillProfileFromForm()` to reuse shared `PROFILE_MATCHERS` instead of duplicate `REVERSE_MATCHERS`
-
-**Matching rules:**
-- Fields must match both type AND label regex (e.g., `email` type + label containing "email")
-- Select fields only match when the profile value exists in the field's options
-- Address fields match any `address`-type field (no label check needed)
-- Only empty fields are offered for autofill — manually filled or autosave-restored values are never overwritten
-
----
-
-### 2026-03-10 — Profile modal UI and localStorage CRUD (#74)
-**Issues:** #74 (parent: #73)
-
-Added the user profile editor modal and localStorage persistence — the foundation for cross-form autofill.
+Redesigned the user profile autofill from a modal+banner approach to an inline on-focus dropdown with multi-profile support. All management is done inline — no modal needed.
 
 **Changes (all in `index.html`):**
-- **CSS (~55 lines):** `.profile-btn` (form-nav icon button), `.profile-modal-overlay` / `.profile-modal` (centered modal card with backdrop blur), `.profile-field` / `.profile-address-grid` (form inputs with 2-column address layout), responsive mobile styles
-- **HTML:** Profile button in `.form-nav` with person SVG icon, modal overlay with inputs for first name, last name, full name, email, phone, department, and address (street/city/state/zip)
-- **JS (~110 lines):** `getProfile()` / `saveProfile()` / `clearProfile()` for localStorage CRUD, `showProfileEditor()` / `closeProfileModal()` for modal lifecycle with Escape key support, `saveProfileFromModal()` to persist modal inputs, `fillProfileFromForm()` to reverse-match current form fields into profile modal inputs
+- **CSS (~60 lines):** `.profile-btn` with badge counter, `.profile-dropdown` (absolute-positioned card with shadow), `.profile-dropdown-item` (hover-reveal delete button), `.profile-dropdown-action` (save link), `.profile-dropdown-empty` (empty state)
+- **HTML:** "Profiles" nav button with badge, single shared `<div class="profile-dropdown">` container
+- **JS (~200 lines):**
+  - **Multi-profile storage:** `getProfiles()` / `saveProfiles()` / `addProfile()` / `deleteProfile()` — array in localStorage under `formforge_user_profiles`, with migration from old single-profile format
+  - **Auto-naming:** `getProfileDisplayName()` derives name from `name`, `first_name`+`last_name`, or `email`
+  - **Field matching:** `PROFILE_MATCHERS` (type+label regex for 7 keys), `getMatchedProfileKey()` tests a single field
+  - **Dropdown:** `showProfileDropdown()` renders profile items with field-specific preview values, delete buttons, and "Save current form as profile" action. Positioned via `getBoundingClientRect()` with viewport overflow correction
+  - **Apply:** `applyProfileToForm()` fills all matched empty fields (text, email, tel, select, address sub-inputs), dispatches `input` events for autosave
+  - **Collect:** `collectProfileFromForm()` reverse-matches form fields to build a profile object
+  - **Nav button:** `toggleProfileNav()` opens dropdown showing all profiles (with email preview)
+  - **Field focus:** `setupProfileDropdowns()` attaches focus handlers to all matched fields
+  - **Dismiss:** Global mousedown + Escape key listeners
 
-**UI details:**
-- Profile button right-aligned in form nav bar via `margin-left: auto`
-- Modal closes on backdrop click or Escape key
-- "Save from current form" link scans filled fields using label heuristics to populate the modal
-- All profile fields are optional — users fill what they want
+**UX flow:**
+1. Fill form fields → click any matched field → dropdown appears with "Save current form as profile"
+2. On next visit, click any matched field → dropdown shows saved profiles with field-specific preview
+3. Click a profile → all matched empty fields are filled, toast shows count
+4. Nav "Profiles" button shows all profiles for management (apply/delete)
+5. Badge on nav button shows profile count
 
 ---
 
