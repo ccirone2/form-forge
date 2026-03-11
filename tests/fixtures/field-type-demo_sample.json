@@ -4,6 +4,8 @@
   "email": "jane@example.com",
   "phone": "(555) 123-4567",
   "event_date": "2026-06-15",
+  "event_time": "09:00",
+  "website": "https://techconf2026.example.com",
   "event_type": "Conference",
   "event_description": "Annual technology conference bringing together industry leaders to discuss emerging trends in AI and cloud computing.",
   "detailed_proposal": "This conference will span two days and feature keynote speakers, panel discussions, and hands-on workshops.\n\nDay 1 focuses on AI/ML advancements, with sessions on large language models, computer vision, and responsible AI practices.\n\nDay 2 covers cloud infrastructure, DevOps best practices, and security in distributed systems.",
@@ -11,11 +13,14 @@
   "venue_address": "{\"street\":\"100 Convention Center Dr\",\"city\":\"Austin\",\"state\":\"TX\",\"zip\":\"78701\"}",
   "dietary_restrictions": "Vegetarian,Gluten-free",
   "virtual_platform": "",
+  "session_topics": "AI/ML, Cloud, Security",
   "budget_amount": "25000.00",
   "attendee_count": "150",
   "expense_items": "[{\"item_name\":\"Venue rental\",\"quantity\":\"1\",\"unit_cost\":\"10000.00\",\"category\":\"Venue\"},{\"item_name\":\"Catering per person\",\"quantity\":\"150\",\"unit_cost\":\"45.00\",\"category\":\"Catering\"},{\"item_name\":\"AV equipment\",\"quantity\":\"1\",\"unit_cost\":\"3000.00\",\"category\":\"Equipment\"},{\"item_name\":\"Printed programs\",\"quantity\":\"200\",\"unit_cost\":\"5.00\",\"category\":\"Marketing\"}]",
   "special_requests": "Wheelchair-accessible venue\nLive captioning for keynotes\nRecording permission for all sessions",
+  "submission_deadline": "2026-05-01T17:00",
   "supporting_doc": "",
+  "agree_terms": "true",
   "additional_notes": "Please ensure the venue has adequate parking for 100+ vehicles. We will also need a dedicated registration desk area near the main entrance.",
   "applicant_signature": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
 }

@@ -24,6 +24,11 @@ Every field in a schema has a `type` that controls how it renders in the form an
 | `file` | File upload with preview | base64 data URI | none |
 | `signature` | Canvas drawing pad | base64 PNG data URI | none |
 | `repeater` | Dynamic group of rows | JSON array string | `fields` |
+| `time` | Native time picker | `"09:30"` | none |
+| `url` | URL input with browser validation | `"https://example.com"` | none |
+| `toggle` | Boolean yes/no switch | `"true"` or `"false"` | none |
+| `datetime` | Combined date and time picker | `"2026-06-15T14:30"` | none |
+| `multi_select` | Searchable multi-select dropdown with tags | `"A, B, C"` | `options` |
 
 ## Common Optional Properties
 
@@ -40,8 +45,8 @@ These apply to any field type unless noted otherwise in the type's section below
 
 Fields are automatically arranged in the form:
 
-- `text`, `email`, `tel`, `date`, `select`, `number`, `currency` — paired into **two-column rows** when consecutive
-- `textarea`, `longtext`, `list`, `radio`, `checkbox`, `heading`, `address`, `file`, `signature`, `repeater` — always **full-width**, breaks any pairing
+- `text`, `email`, `tel`, `date`, `select`, `number`, `currency`, `time`, `url`, `toggle`, `datetime` — paired into **two-column rows** when consecutive
+- `textarea`, `longtext`, `list`, `radio`, `checkbox`, `heading`, `address`, `file`, `signature`, `repeater`, `multi_select` — always **full-width**, breaks any pairing
 - `hidden` — not rendered in the visible layout at all
 
 You control layout through field ordering. Two consecutive `text` fields pair up. A `text` followed by a `longtext` will not.
@@ -392,6 +397,97 @@ for item in items:
     category = item.get('category', '')
 ```
 
+## time
+
+Native browser time picker. Value is always in `HH:MM` format (24-hour).
+
+```json
+{ "id": "start_time", "label": "Start Time", "type": "time", "required": true }
+```
+
+**Template:** `data.get('start_time', '')` → `"09:30"`
+
+To reformat in your template:
+
+```python
+raw = data.get('start_time', '')
+if raw:
+    h, m = raw.split(':')
+    formatted = f"{int(h) % 12 or 12}:{m} {'AM' if int(h) < 12 else 'PM'}"
+```
+
+## url
+
+URL input with browser-level URL format validation. Includes `https://` placeholder by default.
+
+```json
+{ "id": "website", "label": "Website", "type": "url", "placeholder": "https://example.com" }
+```
+
+**Template:** `data.get('website', '')` → `"https://example.com"`
+
+## toggle
+
+Boolean yes/no switch. Renders as a toggle switch UI element. Distinct from `checkbox` which is a multi-select group — `toggle` is a single on/off control.
+
+```json
+{ "id": "agree_terms", "label": "I agree to the terms", "type": "toggle", "required": true }
+```
+
+The toggle always has a value (`"true"` or `"false"`) — it can never be empty. A required toggle will always pass validation.
+
+**Template:** Value is `"true"` or `"false"`.
+
+```python
+agreed = data.get('agree_terms', 'false') == 'true'
+doc.add_paragraph(f"Terms accepted: {'Yes' if agreed else 'No'}")
+```
+
+## datetime
+
+Combined date and time picker. Renders as `<input type="datetime-local">`. Value is in ISO-like format `YYYY-MM-DDTHH:MM`.
+
+```json
+{ "id": "deadline", "label": "Submission Deadline", "type": "datetime" }
+```
+
+**Template:** `data.get('deadline', '')` → `"2026-06-15T14:30"`
+
+To reformat in your template:
+
+```python
+from datetime import datetime
+raw = data.get('deadline', '')
+if raw:
+    dt = datetime.fromisoformat(raw)
+    formatted = dt.strftime('%B %d, %Y at %I:%M %p')
+    # "June 15, 2026 at 02:30 PM"
+```
+
+## multi_select
+
+Searchable multi-select dropdown with tag/chip UI. Requires an `options` array. Users can select multiple items, which appear as removable tags. Includes a search/filter input.
+
+```json
+{
+  "id": "topics",
+  "label": "Topics of Interest",
+  "type": "multi_select",
+  "options": ["AI/ML", "Cloud", "Security", "DevOps", "Frontend", "Backend"],
+  "hint": "Select all that apply"
+}
+```
+
+Distinct from `checkbox`: `multi_select` is better for long option lists (5+ items) because it includes search filtering and takes less vertical space. Use `checkbox` for short lists (2-5 items) where all options should be visible at once.
+
+**Template:** Value is a comma-separated string of selected items, same format as `checkbox`.
+
+```python
+topics = data.get('topics', '')  # "AI/ML, Cloud, Security"
+if topics:
+    items = [t.strip() for t in topics.split(',') if t.strip()]
+```
+
 ---
 
 ## Conditional Visibility (`visible_when`)
@@ -424,12 +520,13 @@ Any top-level field can include a `visible_when` object to make it appear only w
 - `select` — attaches a `change` listener on the `<select>` element
 - `radio` — attaches `change` listeners on all `<input type="radio">` elements for that name
 - `checkbox` — attaches `change` listeners; `equals` must match the full comma-separated string of checked values
-- `text`, `email`, `tel`, `date`, `textarea`, `longtext`, `number`, `currency` — attaches `input` and `change` listeners on the element
+- `text`, `email`, `tel`, `date`, `time`, `url`, `datetime`, `textarea`, `longtext`, `number`, `currency` — attaches `input` and `change` listeners on the element
+- `toggle` — attaches a `change` listener on the checkbox input
 
 **Supported target field types** (the field with `visible_when`):
-Works for any type that renders a direct element with `id = field.id`: `text`, `email`, `tel`, `date`, `textarea`, `longtext`, `select`, `number`, `currency`, `hidden`, `file`, `signature`.
+Works for any type that renders a direct element with `id = field.id`: `text`, `email`, `tel`, `date`, `time`, `url`, `datetime`, `textarea`, `longtext`, `select`, `number`, `currency`, `hidden`, `file`, `signature`, `toggle`.
 
-Does **not** reliably work as a target for: `checkbox`, `radio`, `list`, `address`, `repeater`, `heading` — these types do not render a single element with `id = field.id`, so the visibility logic cannot find their field group.
+Does **not** reliably work as a target for: `checkbox`, `radio`, `list`, `address`, `repeater`, `heading`, `multi_select` — these types do not render a single element with `id = field.id`, so the visibility logic cannot find their field group.
 
 `visible_when` is not supported inside `repeater` sub-fields.
 
@@ -442,11 +539,16 @@ Does **not** reliably work as a target for: `checkbox`, `radio`, `list`, `addres
 | A short answer (name, title, ID) | `text` |
 | An email address | `email` |
 | A phone number | `tel` |
+| A website or link | `url` |
 | A calendar date | `date` |
+| A clock time | `time` |
+| A date and time together | `datetime` |
 | A brief comment (1-3 lines) | `textarea` |
 | Extended writing (bio, description) | `longtext` |
 | One choice from a fixed list | `select` (5+ options) or `radio` (2-4 options) |
-| Multiple choices from a fixed list | `checkbox` |
+| Multiple choices from a short list | `checkbox` (2-5 options visible at once) |
+| Multiple choices from a long list | `multi_select` (5+ options, with search) |
+| A yes/no boolean answer | `toggle` |
 | A user-defined list of items | `list` |
 | A numeric value with constraints | `number` |
 | A dollar/currency amount | `currency` |

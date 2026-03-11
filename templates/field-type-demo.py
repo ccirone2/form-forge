@@ -1,7 +1,7 @@
 """
 FormForge DOCX Template: Event Registration (Field Type Demo)
 =============================================================
-Demonstrates all 18 field types, wizard mode, and conditional visibility.
+Demonstrates all 23 field types, wizard mode, and conditional visibility.
 
 Field type value formats:
   - text/email/tel/date/select/radio/textarea → str
@@ -14,6 +14,11 @@ Field type value formats:
   - address → JSON string: {"street","city","state","zip"}
   - file/signature → base64 data URI str or ""
   - repeater → JSON array string: [{"field":"value"}, ...]
+  - time → str (e.g. "09:00")
+  - url → str (e.g. "https://example.com")
+  - toggle → str ("true" or "false")
+  - datetime → str (e.g. "2026-06-15T14:30")
+  - multi_select → comma-separated str (e.g. "AI/ML, Cloud")
 """
 
 import json
@@ -53,6 +58,8 @@ def generate_docx(data: dict[str, str]) -> bytes:
             ("Email", email),
             ("Phone", data.get("phone", "")),
             ("Preferred Date", event_date),
+            ("Preferred Time", data.get("event_time", "")),
+            ("Website", data.get("website", "")),
             ("Form Version", form_ver),
         ],
     )
@@ -115,6 +122,18 @@ def generate_docx(data: dict[str, str]) -> bytes:
         r.font.size = Pt(10)
         doc.add_paragraph("")
 
+    # multi_select — session topics
+    topics = data.get("session_topics", "")
+    if topics and topics.strip():
+        doc.add_heading("Session Topics", level=2)
+        for topic in topics.split(","):
+            topic = topic.strip()
+            if topic:
+                p = doc.add_paragraph(style="List Bullet")
+                r = p.add_run(topic)
+                r.font.size = Pt(10)
+        doc.add_paragraph("")
+
     # ── Step 3: Budget & Items ────────────────────────────
     budget = data.get("budget_amount", "0")
     try:
@@ -154,6 +173,17 @@ def generate_docx(data: dict[str, str]) -> bytes:
     if special and special.strip():
         stencils.bullet_list(doc, "Special Requests", special)
 
+    # datetime — submission deadline
+    deadline = data.get("submission_deadline", "")
+    if deadline and deadline.strip():
+        # Format datetime-local value (e.g. "2026-05-01T17:00")
+        deadline_display = deadline.replace("T", " at ")
+        stencils.table_section(
+            doc,
+            "Deadline",
+            [("Proposal Submission Deadline", deadline_display)],
+        )
+
     # ── Step 4: Attachments & Approval ────────────────────
 
     # file — supporting document
@@ -170,6 +200,14 @@ def generate_docx(data: dict[str, str]) -> bytes:
     notes = data.get("additional_notes", "")
     if notes and notes.strip():
         stencils.longtext(doc, "Additional Notes", notes)
+
+    # toggle — terms agreement
+    agree = data.get("agree_terms", "false")
+    stencils.table_section(
+        doc,
+        "Terms",
+        [("Agreed to Terms & Conditions", "Yes" if agree == "true" else "No")],
+    )
 
     # signature — applicant signature
     doc.add_heading("Applicant Signature", level=1)

@@ -1,6 +1,6 @@
 {
   "title": "Event Registration",
-  "description": "Register for an upcoming event. This demo exercises all 18 field types, wizard mode, and conditional visibility.",
+  "description": "Register for an upcoming event. This demo exercises all 23 field types, wizard mode, and conditional visibility.",
   "icon": "🎪",
   "template": "templates/field-type-demo.py",
   "wizard": true,
@@ -40,6 +40,17 @@
           "label": "Preferred Event Date",
           "type": "date",
           "required": true
+        },
+        {
+          "id": "event_time",
+          "label": "Preferred Start Time",
+          "type": "time"
+        },
+        {
+          "id": "website",
+          "label": "Website",
+          "type": "url",
+          "placeholder": "https://example.com"
         }
       ]
     },
@@ -101,6 +112,13 @@
           "type": "text",
           "placeholder": "e.g., Zoom, Teams, Google Meet",
           "visible_when": { "field": "attendance_mode", "equals": "Virtual" }
+        },
+        {
+          "id": "session_topics",
+          "label": "Session Topics of Interest",
+          "type": "multi_select",
+          "options": ["AI/ML", "Cloud", "Security", "DevOps", "Frontend", "Backend", "Mobile", "Data Science"],
+          "hint": "Select all topics you'd like to see covered"
         }
       ]
     },
@@ -142,6 +160,12 @@
           "label": "Special Requests",
           "type": "list",
           "hint": "One request per line"
+        },
+        {
+          "id": "submission_deadline",
+          "label": "Proposal Submission Deadline",
+          "type": "datetime",
+          "hint": "Date and time when proposals are due"
         }
       ]
     },
@@ -162,6 +186,12 @@
           "label": "Additional Notes",
           "type": "textarea",
           "placeholder": "Anything else we should know..."
+        },
+        {
+          "id": "agree_terms",
+          "label": "I agree to the terms and conditions",
+          "type": "toggle",
+          "required": true
         },
         {
           "id": "applicant_signature",
