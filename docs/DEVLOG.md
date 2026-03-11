@@ -14,22 +14,16 @@
 
 ## Log
 
-### 2026-03-10 — Profile dropdown auto-focus refinement (#87)
-**Issue:** #87
+### 2026-03-10 — Loading states, error recovery, and progress feedback (#91)
+**Issues:** #91
 
-Refined the profile dropdown UX to reduce friction when tabbing through form fields.
+Improved UX around loading, errors, and progress feedback across the app:
 
-**Changes:**
-- **Guard on focus handler** (`setupProfileDropdowns()`): The dropdown now only auto-shows on focus when the field is empty (`!el.value.trim()`) AND saved profiles exist (`getProfiles().length > 0`). Previously it appeared on every focus regardless of field state.
-- **300ms debounce** (`setupProfileDropdowns()`): Added a `setTimeout` delay before showing the dropdown on focus. If the user tabs past the field within 300ms, the timer is cleared via a `blur` listener and the dropdown never appears. The timer is also cleared in `hideProfileDropdown()` to prevent stale triggers.
-- **Dismissal tracking** (`hideProfileDropdown()`, `_dismissedProfileFields`): A `Set` tracks field IDs where the user explicitly dismissed the dropdown (via Escape or click-outside). Once dismissed, the auto-focus trigger is suppressed for that field until page reload. The icon button still works regardless.
-- **Profile icon indicator** (`_addProfileIndicator()`): Each profile-matchable input now has a small person icon button at its right edge. Clicking it toggles the profile dropdown, providing a non-intrusive alternative to the auto-focus behavior. The input is wrapped in a `.profile-field-wrapper` div for positioning.
-- **CSS styles**: Added `.profile-field-wrapper` (relative positioning container), `.profile-field-indicator` (the icon button with subtle opacity, accent color on hover), and padding-right on wrapped inputs to prevent text overlap with the icon.
-
-**Decisions:**
-- The icon button always works even after dismissal, giving users an explicit opt-in path
-- Dismissal state is per-field and resets on page reload (not persisted to localStorage) to keep the scope simple
-- The debounce uses `setTimeout`/`clearTimeout` pattern with a single shared timer variable rather than per-field timers
+- **Multi-step Pyodide progress indicator** — `initPyodide()` now shows a 3-step progress indicator (Pyodide runtime, Python runtime, python-docx) with numbered circles that light up as each phase completes, replacing the single static message.
+- **Retry on failure** — Pyodide load failures now show a "Retry Loading Pyodide" button in the overlay instead of just a toast error. GitHub connect failures show an inline "Retry" button next to the error message.
+- **Lazy Pyodide preloading** — `preloadPyodide()` fires silently in the background after DOMContentLoaded, so Pyodide is often already loaded by the time the user launches a form. Launch functions await the preload promise if one is running, showing "Preparing export engine..." in the overlay.
+- **Parallel schema fetching** — `connectRepo()` now uses `Promise.all()` to fetch all schemas in parallel instead of sequentially in a for-loop.
+- **Export progress feedback** — `handleExport()` now logs detailed progress to the console panel in real-time: field serialization, template execution timing (with `performance.now()`), and download preparation.
 
 ---
 
