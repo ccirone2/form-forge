@@ -997,6 +997,7 @@ let selectedSchemaIdx = -1;
 let currentSchemaName = '';  // Derived schema name (e.g., 'onboarding' from 'schemas/onboarding.json')
 let pendingDataUrl = null;   // ?data= URL param, consumed after form launch
 let autosaveTimer = null;    // Debounce timer for autosave
+let formDirty = false;       // Whether the form has unsaved changes
 
 // GitHub config
 let ghOwner = '';
@@ -1011,6 +1012,11 @@ const FORMFORGE_FALLBACK = { owner: 'ccirone2', repo: 'form-forge', branch: 'dev
 //  VIEW MANAGEMENT
 // ============================================================
 function showView(name) {
+  // Guard: warn if leaving form with unsaved changes
+  const formView = document.getElementById('view-form');
+  if (formView.classList.contains('active') && name === 'setup' && formDirty) {
+    if (!confirm('You have unsaved changes. Leave anyway?')) return;
+  }
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(`view-${name}`).classList.add('active');
 }
@@ -2758,6 +2764,9 @@ function populateForm(data, options = {}) {
   // Re-evaluate conditional visibility (no new listeners — buildForm already attached them)
   if (currentSchema) evaluateAllConditionals(currentSchema);
 
+  // Mark form as dirty (user loaded data = form has unsaved content)
+  formDirty = true;
+
   // Show warning toast if mismatches found
   if (warnings > 0 && !silent) {
     showToast(`Form populated with ${warnings} warning${warnings !== 1 ? 's' : ''} — check console`, 'warning');
@@ -2794,6 +2803,7 @@ function saveFormData() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 
+  formDirty = false;
   showToast('Form data saved successfully.', 'success');
   log(`saveFormData: downloaded ${filename}`, 'info');
 }
@@ -2939,6 +2949,7 @@ function setupAutosave() {
   }
 
   const handler = () => {
+    formDirty = true;
     clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(autosaveFormData, 2000);
   };
@@ -3479,6 +3490,7 @@ async function loadPendingDataUrl() {
 //  POST-LAUNCH HOOK
 // ============================================================
 function postLaunchHook() {
+  formDirty = false;
   setupAutosave();
   if (pendingDataUrl) {
     loadPendingDataUrl();
@@ -3504,6 +3516,7 @@ function validateForm() {
 //  RESET
 // ============================================================
 function resetForm() {
+  if (formDirty && !confirm('Reset form? All unsaved changes will be lost.')) return;
   document.getElementById('dynamicForm').reset();
   if (currentSchema) {
     for (const section of currentSchema.sections) {
@@ -3542,6 +3555,7 @@ function resetForm() {
   document.querySelectorAll('.profile-filled').forEach(el => el.classList.remove('profile-filled'));
   // Hide profile dropdown if visible
   hideProfileDropdown();
+  formDirty = false;
   log('Form reset', 'info');
 }
 
@@ -3586,6 +3600,7 @@ docx_bytes = generate_docx(form_data)
 
     showToast('DOCX exported successfully!');
     log('Download triggered: ' + a.download, 'success');
+    formDirty = false;
 
     // Clear autosave after successful export
     try { localStorage.removeItem(getAutosaveKey()); } catch (e) { /* ignore */ }
@@ -3727,6 +3742,13 @@ def generate_docx(data):
 // ============================================================
 //  BOOT
 // ============================================================
+window.addEventListener('beforeunload', (e) => {
+  if (formDirty) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize drag-and-drop zones for local files
   initDropZones();
