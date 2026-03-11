@@ -31,6 +31,34 @@ Added global keyboard shortcuts and improved keyboard accessibility for picker c
 
 ---
 
+### 2026-03-10 — Quick UX wins: submit hierarchy, reset confirm, toast polish (#83)
+**Issue:** #83
+
+Batch of small, high-impact UX improvements in `index.html`:
+
+- **Submit area button hierarchy** — Restructured the 5-button flat row into a clear visual hierarchy: Export to DOCX sits alone as the dominant primary CTA (larger, full-width accent), Save/Load/Sample Data are grouped in a secondary row below with smaller sizing, and Reset is right-aligned with a muted danger style that only shows color on hover.
+- **Reset confirmation** — Added `confirm('Reset all fields? This cannot be undone.')` guard at the top of `resetForm()` to prevent accidental data loss.
+- **Toast improvements** — Added `role="alert"` and `aria-live="polite"` to the toast element for screen reader announcements. Added a dismiss button (x) so users don't have to wait 3.5s. Added mobile-responsive positioning (centered bottom bar on narrow screens via `@media (max-width: 600px)`). Added `warning` border-color style for warning toasts.
+- **Inline styles cleanup** — Extracted ~15 inline `style="..."` attributes into proper CSS classes: `.demo-btn-wrapper`, `.btn-demo`, `.section-label-muted`, `.config-card-description`, `.local-launch-row`, `.branch-input-wrapper`, `.docs-source-divider`, `.how-it-works-card`, `.how-it-works-description`, `.how-it-works-pre`, `.icon-inline`, `.hidden-input`, `.docs-rendered-md-link`. Only `style="display:none;"` on the JS-toggled pickerSection remains as inline.
+
+All 95 tests pass.
+
+---
+
+### 2026-03-10 — Navigation guards for unsaved form data (#86)
+**Issue:** #86
+
+Added dirty-state tracking and navigation guards to prevent accidental data loss:
+
+- **`formDirty` flag** — New state variable tracks whether the form has unsaved changes. Set `true` on any `input`/`change` event (via the existing autosave handler in `setupAutosave()`) and on `populateForm()` calls (load data, sample data, autosave restore). Reset to `false` after successful export, save data, form reset, and on fresh form launch (via `postLaunchHook()`).
+- **In-app navigation guard** — `showView()` now checks `formDirty` when navigating from the form view back to setup. Prompts the user with a confirm dialog before discarding changes. Protects both the "Back to picker" button and the FormForge logo click.
+- **Browser unload guard** — Added `beforeunload` handler that prevents browser close/refresh/back when the form has unsaved changes.
+- **Reset confirm** — `resetForm()` now prompts the user before clearing the form if there are unsaved changes.
+
+All 95 tests pass (frontend-only changes).
+
+---
+
 ### 2026-03-10 — Improve test coverage: round-trip assertions, edge cases, visible_when paths (#40)
 **Issues:** #40
 
