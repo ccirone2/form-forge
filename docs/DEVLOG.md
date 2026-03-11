@@ -14,31 +14,38 @@
 
 ## Log
 
-### 2026-03-10 — User profile autofill: inline dropdown redesign (#73, #74, #75)
+### 2026-03-10 — User profile autofill: inline dropdown with multi-profile support (#73, #74, #75)
 **Issues:** #73, #74, #75
 
 Redesigned the user profile autofill from a modal+banner approach to an inline on-focus dropdown with multi-profile support. All management is done inline — no modal needed.
 
 **Changes (all in `index.html`):**
-- **CSS (~60 lines):** `.profile-btn` with badge counter, `.profile-dropdown` (absolute-positioned card with shadow), `.profile-dropdown-item` (hover-reveal delete button), `.profile-dropdown-action` (save link), `.profile-dropdown-empty` (empty state)
+- **CSS (~100 lines):** `.profile-btn` with badge counter, `.profile-dropdown` (fixed-positioned card with shadow), `.profile-dropdown-item` (hover-reveal edit/delete buttons), `.profile-filled` (subtle purple highlight for auto-filled fields), `.profile-editor` (inline editor within dropdown)
 - **HTML:** "Profiles" nav button with badge, single shared `<div class="profile-dropdown">` container
-- **JS (~200 lines):**
+- **JS (~350 lines):**
   - **Multi-profile storage:** `getProfiles()` / `saveProfiles()` / `addProfile()` / `deleteProfile()` — array in localStorage under `formforge_user_profiles`, with migration from old single-profile format
   - **Auto-naming:** `getProfileDisplayName()` derives name from `name`, `first_name`+`last_name`, or `email`
-  - **Field matching:** `PROFILE_MATCHERS` (type+label regex for 7 keys), `getMatchedProfileKey()` tests a single field
-  - **Dropdown:** `showProfileDropdown()` renders profile items with field-specific preview values, delete buttons, and "Save current form as profile" action. Positioned via `getBoundingClientRect()` with viewport overflow correction
-  - **Apply:** `applyProfileToForm()` fills all matched empty fields (text, email, tel, select, address sub-inputs), dispatches `input` events for autosave
+  - **Field matching:** `PROFILE_MATCHERS` (type+label regex for 8 keys including job_title), `getMatchedProfileKey()` tests a single field
+  - **Dropdown:** `showProfileDropdown()` renders profile items with field-specific preview values, edit/delete buttons, and "Save current form as profile" action. Positioned via `getBoundingClientRect()` with viewport overflow correction
+  - **Profile editor:** `showProfileEditor()` renders inline editor within dropdown for viewing/editing all profile fields (name, email, phone, department, job title, address)
+  - **Apply:** `applyProfileToForm()` fills all matched empty fields, adds `.profile-filled` highlight class, attaches one-time input listener to clear highlight on user edit
   - **Collect:** `collectProfileFromForm()` reverse-matches form fields to build a profile object
-  - **Nav button:** `toggleProfileNav()` opens dropdown showing all profiles (with email preview)
+  - **Nav button:** `toggleProfileNav()` opens dropdown showing all profiles with edit/delete actions
   - **Field focus:** `setupProfileDropdowns()` attaches focus handlers to all matched fields
   - **Dismiss:** Global mousedown + Escape key listeners
+
+**Profile fields (matched via type + label regex):**
+`first_name`, `last_name`, `name`, `email`, `phone`, `department`, `job_title`, `address`
+
+To add a new profile field: add entry to `PROFILE_MATCHERS` and `PROFILE_FIELD_LABELS` (~line 3040).
 
 **UX flow:**
 1. Fill form fields → click any matched field → dropdown appears with "Save current form as profile"
 2. On next visit, click any matched field → dropdown shows saved profiles with field-specific preview
-3. Click a profile → all matched empty fields are filled, toast shows count
-4. Nav "Profiles" button shows all profiles for management (apply/delete)
-5. Badge on nav button shows profile count
+3. Click a profile → all matched empty fields are filled with purple highlight, toast shows count
+4. Highlight clears when the user manually edits a field
+5. Nav "Profiles" button shows all profiles for management (edit/delete)
+6. Edit button opens inline editor with all profile fields
 
 ---
 
