@@ -470,7 +470,8 @@
   /* Field-level validation errors */
   .field-group.field-error input,
   .field-group.field-error textarea,
-  .field-group.field-error select {
+  .field-group.field-error select,
+  .field-group.field-error .multi-select-display {
     border-color: var(--error);
     box-shadow: 0 0 0 3px var(--error-glow);
   }
@@ -2518,6 +2519,11 @@ function _buildConditionalDependencies(schema) {
 }
 
 function getFieldValue(fieldId) {
+  // Toggle: return "true"/"false" based on checked state
+  const toggleEl = document.getElementById(fieldId);
+  if (toggleEl && toggleEl.closest('.toggle-wrapper')) {
+    return toggleEl.checked ? 'true' : 'false';
+  }
   // Radio: get selected value
   const radio = document.querySelector(`input[name="${fieldId}"][type="radio"]:checked`);
   if (radio) return radio.value;
