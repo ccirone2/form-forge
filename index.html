@@ -469,6 +469,50 @@
   }
   .profile-dropdown-action:hover { background: var(--surface-2); }
   .profile-dropdown-action svg { flex-shrink: 0; }
+  .profile-filled {
+    background: rgba(99, 102, 241, 0.08) !important;
+    border-color: rgba(99, 102, 241, 0.35) !important;
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12);
+  }
+  .profile-dropdown-item-actions { display: flex; gap: 2px; flex-shrink: 0; }
+  .profile-dropdown-item .profile-edit-btn {
+    background: none; border: none; color: var(--text-muted); cursor: pointer;
+    padding: 2px 4px; font-size: 12px; line-height: 1; border-radius: 4px;
+    transition: all 0.15s; opacity: 0;
+  }
+  .profile-dropdown-item:hover .profile-edit-btn { opacity: 1; }
+  .profile-dropdown-item .profile-edit-btn:hover { color: var(--accent); background: rgba(99,102,241,0.1); }
+  .profile-editor { padding: 12px 14px; }
+  .profile-editor-title {
+    font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .profile-editor-field { margin-bottom: 8px; }
+  .profile-editor-field label {
+    display: block; font-size: 11px; color: var(--text-muted);
+    font-weight: 500; margin-bottom: 2px;
+  }
+  .profile-editor-field input {
+    width: 100%; padding: 6px 8px; font-size: 12px; font-family: 'DM Sans', sans-serif;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); outline: none; box-sizing: border-box;
+  }
+  .profile-editor-field input:focus { border-color: var(--accent); }
+  .profile-editor-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .profile-editor-actions { display: flex; gap: 6px; margin-top: 10px; }
+  .profile-editor-actions button {
+    flex: 1; padding: 6px 10px; font-size: 12px; font-weight: 500; border-radius: 6px;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; border: 1px solid var(--border);
+    transition: all 0.15s;
+  }
+  .profile-editor-actions .pe-save {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+  .profile-editor-actions .pe-save:hover { opacity: 0.9; }
+  .profile-editor-actions .pe-cancel {
+    background: var(--surface-2); color: var(--text-muted);
+  }
+  .profile-editor-actions .pe-cancel:hover { background: var(--surface); }
   .profile-dropdown-empty {
     padding: 14px; text-align: center; font-size: 12px; color: var(--text-muted);
   }
@@ -2994,6 +3038,12 @@ const PROFILE_MATCHERS = {
   email:      { types: ['email'], pattern: /email|e-?mail/i },
   phone:      { types: ['tel'], pattern: /phone|telephone|mobile|cell/i },
   department: { types: ['select', 'text'], pattern: /^department$/i },
+  job_title:  { types: ['text'], pattern: /\b(job\s*title|position|role)\b/i },
+};
+
+const PROFILE_FIELD_LABELS = {
+  first_name: 'First Name', last_name: 'Last Name', name: 'Full Name',
+  email: 'Email', phone: 'Phone', department: 'Department', job_title: 'Job Title',
 };
 
 // --- Storage ---
@@ -3081,7 +3131,12 @@ function applyProfileToForm(profile, schema) {
         const addr = profile.address;
         for (const sub of ['street', 'city', 'state', 'zip']) {
           const el = document.getElementById(`${field.id}_${sub}`);
-          if (el && addr[sub]) { el.value = addr[sub]; el.dispatchEvent(new Event('input', { bubbles: true })); }
+          if (el && addr[sub]) {
+            el.value = addr[sub];
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.classList.add('profile-filled');
+            el.addEventListener('input', () => el.classList.remove('profile-filled'), { once: true });
+          }
         }
         filled++;
         continue;
@@ -3094,6 +3149,8 @@ function applyProfileToForm(profile, schema) {
         el.value = profile[profileKey];
         el.dispatchEvent(new Event('input', { bubbles: true }));
         if (field.type === 'select') el.dispatchEvent(new Event('change', { bubbles: true }));
+        el.classList.add('profile-filled');
+        el.addEventListener('input', () => el.classList.remove('profile-filled'), { once: true });
         filled++;
       }
     }
@@ -3148,7 +3205,10 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
           <div class="profile-dropdown-item-name">${name}</div>
           ${preview ? `<div class="profile-dropdown-item-preview">${preview}</div>` : ''}
         </div>
-        <button class="profile-delete-btn" data-delete="${i}" title="Delete profile">&times;</button>
+        <div class="profile-dropdown-item-actions">
+          ${showAll ? `<button class="profile-edit-btn" data-edit="${i}" title="Edit profile">✎</button>` : ''}
+          <button class="profile-delete-btn" data-delete="${i}" title="Delete profile">&times;</button>
+        </div>
       </div>`;
     });
     if (!html) html = '<div class="profile-dropdown-empty">No matching profiles</div>';
@@ -3178,13 +3238,22 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
   // Item click -> apply profile
   dd.querySelectorAll('.profile-dropdown-item').forEach(item => {
     item.addEventListener('click', (e) => {
-      if (e.target.closest('.profile-delete-btn')) return;
+      if (e.target.closest('.profile-delete-btn') || e.target.closest('.profile-edit-btn')) return;
       const idx = parseInt(item.dataset.index);
       const p = getProfiles()[idx];
       if (p && currentSchema) {
         applyProfileToForm(p, currentSchema);
         hideProfileDropdown();
       }
+    });
+  });
+
+  // Edit buttons
+  dd.querySelectorAll('.profile-edit-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.edit);
+      showProfileEditor(idx, anchorEl);
     });
   });
 
@@ -3220,6 +3289,99 @@ function hideProfileDropdown() {
   _activeDropdownField = null;
 }
 
+function showProfileEditor(index, anchorEl) {
+  const dd = document.getElementById('profileDropdown');
+  const profiles = getProfiles();
+  const p = profiles[index] || {};
+  const addr = p.address || {};
+
+  const fields = Object.entries(PROFILE_FIELD_LABELS).map(([key, label]) =>
+    `<div class="profile-editor-field">
+      <label>${label}</label>
+      <input type="text" data-key="${key}" value="${(p[key] || '').replace(/"/g, '&quot;')}" />
+    </div>`
+  ).join('');
+
+  const addrFields = `<div class="profile-editor-field">
+    <label>Address</label>
+    <input type="text" data-addr="street" value="${(addr.street || '').replace(/"/g, '&quot;')}" placeholder="Street" />
+  </div>
+  <div class="profile-editor-row">
+    <div class="profile-editor-field">
+      <input type="text" data-addr="city" value="${(addr.city || '').replace(/"/g, '&quot;')}" placeholder="City" />
+    </div>
+    <div class="profile-editor-field">
+      <input type="text" data-addr="state" value="${(addr.state || '').replace(/"/g, '&quot;')}" placeholder="State" />
+    </div>
+  </div>
+  <div class="profile-editor-field">
+    <input type="text" data-addr="zip" value="${(addr.zip || '').replace(/"/g, '&quot;')}" placeholder="ZIP" style="max-width:120px" />
+  </div>`;
+
+  dd.innerHTML = `<div class="profile-editor">
+    <div class="profile-editor-title">
+      <span>${index < profiles.length ? 'Edit Profile' : 'New Profile'}</span>
+    </div>
+    ${fields}
+    ${addrFields}
+    <div class="profile-editor-actions">
+      <button class="pe-save" id="peEditorSave">Save</button>
+      <button class="pe-cancel" id="peEditorCancel">Cancel</button>
+    </div>
+  </div>`;
+
+  // Reposition
+  const rect = anchorEl.getBoundingClientRect();
+  dd.style.position = 'fixed';
+  dd.style.top = (rect.bottom + 4) + 'px';
+  dd.style.left = rect.left + 'px';
+  const ddRect = dd.getBoundingClientRect();
+  if (ddRect.right > window.innerWidth - 8) {
+    dd.style.left = Math.max(8, window.innerWidth - ddRect.width - 8) + 'px';
+  }
+  if (ddRect.bottom > window.innerHeight - 8) {
+    dd.style.top = Math.max(8, rect.top - ddRect.height - 4) + 'px';
+  }
+
+  dd.querySelector('#peEditorSave').addEventListener('click', () => {
+    const updated = {};
+    dd.querySelectorAll('input[data-key]').forEach(inp => {
+      const v = inp.value.trim();
+      if (v) updated[inp.dataset.key] = v;
+    });
+    const addrInputs = dd.querySelectorAll('input[data-addr]');
+    const addrData = {};
+    let hasAddr = false;
+    addrInputs.forEach(inp => {
+      const v = inp.value.trim();
+      if (v) { addrData[inp.dataset.addr] = v; hasAddr = true; }
+    });
+    if (hasAddr) updated.address = addrData;
+    if (Object.keys(updated).length === 0) {
+      showToast('Fill in at least one field', 'error');
+      return;
+    }
+    if (index < profiles.length) {
+      profiles[index] = updated;
+      saveProfiles(profiles);
+    } else {
+      addProfile(updated);
+    }
+    showToast(`Profile "${getProfileDisplayName(updated)}" saved`);
+    showProfileDropdown(anchorEl, null, null, true);
+  });
+
+  dd.querySelector('#peEditorCancel').addEventListener('click', () => {
+    showProfileDropdown(anchorEl, null, null, true);
+  });
+
+  // Stop clicks inside editor from dismissing
+  dd.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('mousedown', e => e.stopPropagation());
+    inp.addEventListener('focus', e => e.stopPropagation());
+  });
+}
+
 // --- Nav button management dropdown ---
 
 function toggleProfileNav() {
@@ -3246,12 +3408,11 @@ function setupProfileDropdowns(schema) {
         if (streetEl) {
           streetEl.addEventListener('focus', () => showProfileDropdown(streetEl, 'address', field));
         }
-      } else if (field.type === 'select') {
-        const el = document.getElementById(field.id);
-        if (el) el.addEventListener('focus', () => showProfileDropdown(el, profileKey, field));
       } else {
         const el = document.getElementById(field.id);
-        if (el) el.addEventListener('focus', () => showProfileDropdown(el, profileKey, field));
+        if (el) {
+          el.addEventListener('focus', () => showProfileDropdown(el, profileKey, field));
+        }
       }
     }
   }
@@ -3377,6 +3538,8 @@ function resetForm() {
   // Remove autosave prompt if visible
   const prompt = document.querySelector('.autosave-prompt');
   if (prompt) prompt.remove();
+  // Clear profile-filled highlights
+  document.querySelectorAll('.profile-filled').forEach(el => el.classList.remove('profile-filled'));
   // Hide profile dropdown if visible
   hideProfileDropdown();
   log('Form reset', 'info');
