@@ -3291,28 +3291,31 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
     log(`New profile saved: ${getProfileDisplayName(data)}`, 'success');
   });
 
-  // Arrow key navigation within dropdown
-  dd.addEventListener('keydown', (e) => {
-    const items = Array.from(dd.querySelectorAll('.profile-dropdown-item'));
-    if (items.length === 0) return;
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-      e.preventDefault();
-      const focused = dd.querySelector('.profile-dropdown-item:focus');
-      let idx = items.indexOf(focused);
-      if (e.key === 'ArrowDown') {
-        idx = idx < items.length - 1 ? idx + 1 : 0;
-      } else {
-        idx = idx > 0 ? idx - 1 : items.length - 1;
-      }
-      items[idx].focus();
-    } else if (e.key === 'Enter') {
-      const focused = dd.querySelector('.profile-dropdown-item:focus');
-      if (focused) {
+  // Arrow key navigation within dropdown (attach once to avoid listener accumulation)
+  if (!dd._keyNavAttached) {
+    dd.addEventListener('keydown', (e) => {
+      const items = Array.from(dd.querySelectorAll('.profile-dropdown-item'));
+      if (items.length === 0) return;
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
-        focused.click();
+        const focused = dd.querySelector('.profile-dropdown-item:focus');
+        let idx = items.indexOf(focused);
+        if (e.key === 'ArrowDown') {
+          idx = idx < items.length - 1 ? idx + 1 : 0;
+        } else {
+          idx = idx > 0 ? idx - 1 : items.length - 1;
+        }
+        items[idx].focus();
+      } else if (e.key === 'Enter') {
+        const focused = dd.querySelector('.profile-dropdown-item:focus');
+        if (focused) {
+          e.preventDefault();
+          focused.click();
+        }
       }
-    }
-  });
+    });
+    dd._keyNavAttached = true;
+  }
 
   // Make dropdown items focusable for arrow key navigation
   dd.querySelectorAll('.profile-dropdown-item').forEach(item => {
