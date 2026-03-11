@@ -24,7 +24,80 @@ Added dirty-state tracking and navigation guards to prevent accidental data loss
 - **Browser unload guard** — Added `beforeunload` handler that prevents browser close/refresh/back when the form has unsaved changes.
 - **Reset confirm** — `resetForm()` now prompts the user before clearing the form if there are unsaved changes.
 
-All 90 tests pass (frontend-only changes).
+All 95 tests pass (frontend-only changes).
+
+---
+
+### 2026-03-10 — Improve test coverage: round-trip assertions, edge cases, visible_when paths (#40)
+**Issues:** #40
+
+Upgraded the test suite from smoke-only checks to meaningful content verification, added missing coverage paths, and modernized test patterns. Test count: 90 → 95.
+
+**Changes:**
+- **`tests/test_schemas.py`:** Refactored all 19 negative tests from `try/except` + `assert False` to idiomatic `pytest.raises`. Added `_collect_all_ids()` helper and `test_no_duplicate_field_ids` test that validates unique field IDs across all sections (including repeater sub-fields) in every schema.
+- **`tests/test_templates.py`:** Added `_full_text()` helper that reads DOCX bytes back via `python-docx` and extracts all paragraph + table cell text. Added 3 round-trip content tests (`test_onboarding_content_round_trip`, `test_expense_report_content_round_trip`, `test_field_type_demo_content_round_trip`) that verify actual field values appear in generated documents. Added `test_field_type_demo_virtual_path` that exercises the `visible_when` hidden-field path (Virtual attendance mode).
+- **`tests/fixtures/expense-report_sample.json`:** Added 1x1 PNG base64 data URI to `receipt_photo` and `employee_signature` fields.
+- **`tests/fixtures/field-type-demo_sample.json`:** Added 1x1 PNG base64 data URI to `applicant_signature` field.
+- **`tests/fixtures/field-type-demo_virtual_sample.json`:** New fixture with `attendance_mode=Virtual`, `virtual_platform=Zoom`, and empty strings for hidden fields (`venue_address`, `dietary_restrictions`).
+- **`docs/PLAN.md`:** Added implementation plan for issue #40.
+
+**Decisions:**
+- Used a minimal 1x1 PNG (~120 chars) for base64 fixtures to keep files small while exercising the image embed code path
+- Kept existing smoke tests (valid ZIP checks) alongside new content tests — they cover different failure modes
+- `_full_text()` scans both paragraphs and table cells since `table_section()` writes to table cells, not standalone paragraphs
+
+---
+
+### 2026-03-10 — User profile autofill: inline dropdown with multi-profile support (#73, #74, #75)
+**Issues:** #73, #74, #75
+
+Redesigned the user profile autofill from a modal+banner approach to an inline on-focus dropdown with multi-profile support. All management is done inline — no modal needed.
+
+**Changes (all in `index.html`):**
+- **CSS (~100 lines):** `.profile-btn` with badge counter, `.profile-dropdown` (fixed-positioned card with shadow), `.profile-dropdown-item` (hover-reveal edit/delete buttons), `.profile-filled` (subtle purple highlight for auto-filled fields), `.profile-editor` (inline editor within dropdown)
+- **HTML:** "Profiles" nav button with badge, single shared `<div class="profile-dropdown">` container
+- **JS (~350 lines):**
+  - **Multi-profile storage:** `getProfiles()` / `saveProfiles()` / `addProfile()` / `deleteProfile()` — array in localStorage under `formforge_user_profiles`, with migration from old single-profile format
+  - **Auto-naming:** `getProfileDisplayName()` derives name from `name`, `first_name`+`last_name`, or `email`
+  - **Field matching:** `PROFILE_MATCHERS` (type+label regex for 8 keys including job_title), `getMatchedProfileKey()` tests a single field
+  - **Dropdown:** `showProfileDropdown()` renders profile items with field-specific preview values, edit/delete buttons, and "Save current form as profile" action. Positioned via `getBoundingClientRect()` with viewport overflow correction
+  - **Profile editor:** `showProfileEditor()` renders inline editor within dropdown for viewing/editing all profile fields (name, email, phone, department, job title, address)
+  - **Apply:** `applyProfileToForm()` fills all matched empty fields, adds `.profile-filled` highlight class, attaches one-time input listener to clear highlight on user edit
+  - **Collect:** `collectProfileFromForm()` reverse-matches form fields to build a profile object
+  - **Nav button:** `toggleProfileNav()` opens dropdown showing all profiles with edit/delete actions
+  - **Field focus:** `setupProfileDropdowns()` attaches focus handlers to all matched fields
+  - **Dismiss:** Global mousedown + Escape key listeners
+
+**Profile fields (matched via type + label regex):**
+`first_name`, `last_name`, `name`, `email`, `phone`, `department`, `job_title`, `address`
+
+To add a new profile field: add entry to `PROFILE_MATCHERS` and `PROFILE_FIELD_LABELS` (~line 3040).
+
+**UX flow:**
+1. Fill form fields → click any matched field → dropdown appears with "Save current form as profile"
+2. On next visit, click any matched field → dropdown shows saved profiles with field-specific preview
+3. Click a profile → all matched empty fields are filled with purple highlight, toast shows count
+4. Highlight clears when the user manually edits a field
+5. Nav "Profiles" button shows all profiles for management (edit/delete)
+6. Edit button opens inline editor with all profile fields
+
+---
+
+### 2026-03-10 — Plan: User Profile Autofill (#73 → #74–#75)
+**Issues:** #73, #74, #75
+
+Planned a localStorage-based "My Profile" feature to reduce duplicate data entry across forms. Users save personal info (name, email, phone, address, department) once, and matching fields are auto-detected and offered for autofill on form load.
+
+**Tasks:**
+- **#74** — Profile modal UI and localStorage CRUD (CSS, HTML, JS for editor modal + persistence)
+- **#75** — Field matching engine and autofill prompt (type+label heuristics, banner UI, integration with postLaunchHook/resetForm)
+
+**Decisions:**
+- User Profile only (no schema-level `autofill_from` linking for now)
+- Match fields using dual criteria: field type + label regex — avoids false positives
+- Only fill empty fields — never overwrite autosave-restored or manually entered data
+- Profile banner appears after autosave restore to respect the restore flow
+- All changes in `index.html` only — no schema spec or test changes needed
 
 ---
 
