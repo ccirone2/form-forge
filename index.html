@@ -367,7 +367,25 @@
   .field-group.conditional-hidden { display: none; }
 
   /* Buttons */
-  .submit-area { margin-top: 40px; display: flex; align-items: center; gap: 16px; }
+  .submit-area { margin-top: 40px; display: flex; flex-direction: column; gap: 16px; }
+  .submit-area-primary { display: flex; }
+  .submit-area-primary .btn-primary {
+    padding: 14px 36px; font-size: 15px;
+  }
+  .submit-area-secondary {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .submit-area-secondary .btn-secondary {
+    padding: 9px 18px; font-size: 13px;
+  }
+  .btn-reset {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 18px; background: transparent; color: var(--text-muted);
+    border: 1px solid transparent; border-radius: 8px; font-family: 'DM Sans', sans-serif;
+    font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+    margin-left: auto; opacity: 0.7;
+  }
+  .btn-reset:hover { border-color: var(--error); color: var(--error); opacity: 1; }
   .btn-primary {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 12px 28px; background: var(--accent); color: #fff; border: none;
@@ -414,13 +432,49 @@
     from { opacity: 0; transform: translateY(-8px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  /* ===== INLINE-STYLE REPLACEMENT CLASSES ===== */
+  .demo-btn-wrapper { margin-top: 20px; }
+  .btn-demo { border-color: var(--accent); color: var(--accent-hover); }
+  .section-label-muted {
+    font-size: 11px; font-weight: 400; color: var(--text-muted); margin-left: 6px;
+  }
+  .config-card-description {
+    font-size: 13px; color: var(--text-muted); margin-bottom: 16px;
+  }
+  .local-launch-row {
+    margin-top: 16px; display: flex; align-items: center; gap: 12px;
+  }
+  .branch-input-wrapper { max-width: 200px; }
+  .docs-source-divider { margin-top: 32px; }
+  .how-it-works-card { background: var(--surface-2); border-style: dashed; }
+  .how-it-works-description {
+    font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-bottom: 12px;
+  }
+  .how-it-works-description strong { color: var(--text); }
+  .how-it-works-description code {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    background: var(--bg); padding: 1px 5px; border-radius: 4px; color: var(--accent-hover);
+  }
+  .how-it-works-pre {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted);
+    line-height: 1.8; padding: 4px 0; margin: 0;
+  }
+  .icon-inline {
+    vertical-align: -2px; margin-right: 6px;
+  }
+  .hidden-input { display: none; }
+
   @media (max-width: 600px) {
     .autosave-prompt { flex-direction: column; align-items: flex-start; }
-    .submit-area { flex-wrap: wrap; }
+    .submit-area-secondary { flex-wrap: wrap; }
     .wizard-step-label { display: none; }
     .wizard-step-circle { width: 28px; height: 28px; font-size: 12px; }
     .wizard-step-connector { width: 24px; margin: 0 4px; }
     .wizard-indicator { padding: 0 8px; }
+    .toast {
+      left: 16px; right: 16px; bottom: 16px;
+      text-align: center; justify-content: center;
+    }
   }
   @media (max-width: 400px) {
     .wizard-step-circle { width: 24px; height: 24px; font-size: 11px; }
@@ -444,9 +498,18 @@
     font-size: 14px; font-weight: 500; background: var(--surface); border: 1px solid var(--success);
     color: var(--success); box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 2000;
+    display: flex; align-items: center; gap: 12px;
   }
   .toast.show { transform: translateY(0); opacity: 1; }
   .toast.error { border-color: var(--error); color: var(--error); }
+  .toast.warning { border-color: var(--warning); color: var(--warning); }
+  .toast-msg { flex: 1; }
+  .toast-dismiss {
+    background: none; border: none; color: inherit; cursor: pointer;
+    font-size: 18px; line-height: 1; padding: 0 2px; opacity: 0.6;
+    transition: opacity 0.15s; flex-shrink: 0;
+  }
+  .toast-dismiss:hover { opacity: 1; }
 
   /* Console */
   .console-panel { margin-top: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
@@ -605,6 +668,7 @@
   .docs-rendered-md td { padding: 7px 10px; border: 1px solid var(--border); }
   .docs-rendered-md hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   .docs-rendered-md blockquote { border-left: 3px solid var(--accent); padding-left: 14px; margin: 8px 0; color: var(--text-muted); font-style: italic; }
+  .docs-rendered-md-link { color: var(--accent-hover); }
 </style>
 </head>
 <body>
@@ -632,8 +696,8 @@
     <div class="setup-hero">
       <h2>Load Your Forms</h2>
       <p>Connect a GitHub repo for shared org-wide forms, or load schema and template files directly from your machine for fully private, offline use. No data ever leaves your browser.</p>
-      <div style="margin-top: 20px;">
-        <button class="btn-secondary" onclick="launchDemo()" style="border-color: var(--accent); color: var(--accent-hover);">
+      <div class="demo-btn-wrapper">
+        <button class="btn-secondary btn-demo" onclick="launchDemo()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           Try the demo form
         </button>
@@ -643,10 +707,10 @@
     <!-- ===== LOCAL FILES ===== -->
     <div class="config-card" id="localCard">
       <h3>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
-        Local Files <span style="font-size: 11px; font-weight: 400; color: var(--text-muted); margin-left: 6px;">(private, offline)</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        Local Files <span class="section-label-muted">(private, offline)</span>
       </h3>
-      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+      <p class="config-card-description">
         Load a schema <code>.json</code> and its template <code>.py</code> directly from your machine. Files are read in-browser only — nothing is uploaded anywhere.
       </p>
 
@@ -674,7 +738,7 @@
         </div>
       </div>
 
-      <div style="margin-top: 16px; display: flex; align-items: center; gap: 12px;">
+      <div class="local-launch-row">
         <button class="btn-connect" id="localLaunchBtn" disabled onclick="launchLocal()">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           Open Form
@@ -691,15 +755,15 @@
     <!-- ===== GITHUB ===== -->
     <div class="config-card">
       <h3>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
-        GitHub Repository <span style="font-size: 11px; font-weight: 400; color: var(--text-muted); margin-left: 6px;">(shared, org-wide)</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+        GitHub Repository <span class="section-label-muted">(shared, org-wide)</span>
       </h3>
       <div class="config-row">
         <div class="field-grow">
           <label>owner / repo</label>
           <input type="text" id="repoInput" placeholder="myorg/form-templates" value="ccirone2/form-forge" spellcheck="false">
         </div>
-        <div class="field-grow" style="max-width: 200px;">
+        <div class="field-grow branch-input-wrapper">
           <label>branch (optional)</label>
           <input type="text" id="branchInput" placeholder="main" spellcheck="false">
         </div>
@@ -723,19 +787,19 @@
     </div>
 
     <!-- ===== DOCUMENTATION ===== -->
-    <div class="source-divider" style="margin-top: 32px;">
+    <div class="source-divider docs-source-divider">
       <span>documentation — creating custom forms</span>
     </div>
 
-    <div class="config-card" style="background: var(--surface-2); border-style: dashed;">
+    <div class="config-card how-it-works-card">
       <h3>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
         How It Works
       </h3>
-      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-bottom: 12px;">
-        Every form needs two files: a <strong style="color: var(--text);">schema</strong> (<code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 4px; color: var(--accent-hover);">.json</code>) that defines the form fields, and a <strong style="color: var(--text);">template</strong> (<code style="font-family: 'JetBrains Mono', monospace; font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 4px; color: var(--accent-hover);">.py</code>) that generates the DOCX output. The schema drives the UI; the template drives the document. No data ever leaves the browser.
+      <p class="how-it-works-description">
+        Every form needs two files: a <strong>schema</strong> (<code>.json</code>) that defines the form fields, and a <strong>template</strong> (<code>.py</code>) that generates the DOCX output. The schema drives the UI; the template drives the document. No data ever leaves the browser.
       </p>
-      <pre style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.8; padding: 4px 0; margin: 0;">your-repo/                         ← or just two local files
+      <pre class="how-it-works-pre">your-repo/                         ← or just two local files
 ├── schemas/
 │   └── my-form.json               ← defines fields, sections, layout
 └── templates/
@@ -748,7 +812,7 @@
       <div class="docs-card">
         <div class="docs-card-header" onclick="toggleDocs('schemaGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="schemaGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('schemaGuide')}">
           <h3>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             <span id="schemaGuideTitle">Schema Guide</span>
           </h3>
           <span class="docs-toggle" id="schemaGuideToggle">&#9654;</span>
@@ -762,7 +826,7 @@
       <div class="docs-card">
         <div class="docs-card-header" onclick="toggleDocs('templateGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="templateGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('templateGuide')}">
           <h3>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             <span id="templateGuideTitle">Template Guide</span>
           </h3>
           <span class="docs-toggle" id="templateGuideToggle">&#9654;</span>
@@ -776,7 +840,7 @@
       <div class="docs-card">
         <div class="docs-card-header" onclick="toggleDocs('fieldTypes')" tabindex="0" role="button" aria-expanded="false" aria-controls="fieldTypes" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('fieldTypes')}">
           <h3>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
             <span id="fieldTypesTitle">Field Types Reference</span>
           </h3>
           <span class="docs-toggle" id="fieldTypesToggle">&#9654;</span>
@@ -790,7 +854,7 @@
       <div class="docs-card">
         <div class="docs-card-header" onclick="toggleDocs('exampleSchema')" tabindex="0" role="button" aria-expanded="false" aria-controls="exampleSchema" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('exampleSchema')}">
           <h3>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -2px; margin-right: 6px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             <span id="exampleSchemaTitle">Example Schema &amp; Template</span>
           </h3>
           <span class="docs-toggle" id="exampleSchemaToggle">&#9654;</span>
@@ -839,24 +903,31 @@
     <form id="dynamicForm" novalidate></form>
 
     <div class="submit-area">
-      <button class="btn-primary" id="exportBtn" disabled onclick="handleExport()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-        Export to DOCX
-      </button>
-      <button class="btn-secondary" onclick="saveFormData()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Save Data
-      </button>
-      <button class="btn-secondary" onclick="document.getElementById('loadDataInput').click()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Load Data
-      </button>
-      <input type="file" accept=".json" id="loadDataInput" style="display:none" onchange="handleLoadDataFile(event)">
-      <button class="btn-secondary" onclick="loadSampleData()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        Load Sample Data
-      </button>
-      <button class="btn-secondary" onclick="resetForm()">Reset</button>
+      <div class="submit-area-primary">
+        <button class="btn-primary" id="exportBtn" disabled onclick="handleExport()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Export to DOCX
+        </button>
+      </div>
+      <div class="submit-area-secondary">
+        <button class="btn-secondary" onclick="saveFormData()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Data
+        </button>
+        <button class="btn-secondary" onclick="document.getElementById('loadDataInput').click()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Load Data
+        </button>
+        <input type="file" accept=".json" id="loadDataInput" class="hidden-input" onchange="handleLoadDataFile(event)">
+        <button class="btn-secondary" onclick="loadSampleData()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Sample Data
+        </button>
+        <button class="btn-reset" onclick="resetForm()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+          Reset
+        </button>
+      </div>
     </div>
 
     <div class="console-panel">
@@ -870,7 +941,7 @@
 </div>
 
 <!-- Toast -->
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="alert" aria-live="polite"></div>
 
 <script>
 // ============================================================
@@ -927,11 +998,23 @@ function toggleConsole() {
   header.setAttribute('aria-expanded', !body.classList.contains('collapsed'));
 }
 
+let toastTimer = null;
 function showToast(msg, type = 'success') {
   const toast = document.getElementById('toast');
-  toast.textContent = msg;
+  clearTimeout(toastTimer);
+  toast.innerHTML = '';
+  const msgSpan = document.createElement('span');
+  msgSpan.className = 'toast-msg';
+  msgSpan.textContent = msg;
+  const dismissBtn = document.createElement('button');
+  dismissBtn.className = 'toast-dismiss';
+  dismissBtn.setAttribute('aria-label', 'Dismiss');
+  dismissBtn.innerHTML = '&times;';
+  dismissBtn.onclick = () => toast.classList.remove('show');
+  toast.appendChild(msgSpan);
+  toast.appendChild(dismissBtn);
   toast.className = `toast ${type} show`;
-  setTimeout(() => toast.classList.remove('show'), 3500);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
 }
 
 function showOverlay(msg) {
@@ -1009,7 +1092,7 @@ function renderMarkdown(md) {
       .replace(/\*([^*]+)\*/g, '<em>$1</em>')
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
         const safeUrl = /^https?:\/\//i.test(url) ? url : '#';
-        return `<a href="${safeUrl}" target="_blank" style="color:var(--accent-hover)">${text}</a>`;
+        return `<a href="${safeUrl}" target="_blank" class="docs-rendered-md-link">${text}</a>`;
       });
   }
 
@@ -1256,7 +1339,7 @@ async function launchLocal() {
     buildForm(currentSchema);
     document.getElementById('formNavInfo').textContent = `${schema.title || 'Local Form'} · local files`;
     document.getElementById('schemaInfoText').innerHTML =
-      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: -1px; margin-right: 4px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' +
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-inline"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' +
       'Loaded from <strong>local files</strong> — no data was sent to any server.';
 
     if (!pyodideReady) await initPyodide();
@@ -2985,6 +3068,7 @@ function validateForm() {
 //  RESET
 // ============================================================
 function resetForm() {
+  if (!confirm('Reset all fields? This cannot be undone.')) return;
   document.getElementById('dynamicForm').reset();
   if (currentSchema) {
     for (const section of currentSchema.sections) {
