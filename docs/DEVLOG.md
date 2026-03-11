@@ -19,7 +19,7 @@
 
 Internal refactoring for maintainability — no user-facing behavior changes.
 
-- **SVG sprite sheet** — Created a hidden `<svg>` sprite block at the top of `<body>` with 21 reusable `<symbol>` definitions (arrow-right, arrow-left, github, plus, check, export, save, upload, file, file-upload, file-code, info, play, folder, book, code, grid, bolt, file-text, reset, person, lock). Replaced all inline SVG duplicates in HTML and JS `innerHTML` assignments with `<svg><use href="#icon-name"/></svg>` references. The GitHub icon SVG path (previously duplicated in two ~18-line inline SVGs) is now defined once.
+- **SVG sprite sheet** — Created a hidden `<svg>` sprite block at the top of `<body>` with 22 reusable `<symbol>` definitions (arrow-right, arrow-left, github, plus, check, export, save, upload, file, file-upload, file-code, info, play, folder, book, code, grid, bolt, file-text, reset, person, lock). Replaced all inline SVG duplicates in HTML and JS `innerHTML` assignments with `<svg><use href="#icon-name"/></svg>` references. The GitHub icon SVG path (previously duplicated in two ~18-line inline SVGs) is now defined once.
 - **Event delegation** — Replaced per-element event listeners with delegated handlers on parent containers:
   - Picker cards: single click/keydown handler on `#pickerGrid` instead of per-card listeners
   - List items: single keydown/input/click handler on `.list-items` container instead of per-row listeners in `addListItem()`

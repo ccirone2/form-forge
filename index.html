@@ -61,11 +61,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   /* ===== 2. UTILITY CLASSES ===== */
-  .font-mono { font-family: 'JetBrains Mono', monospace; }
-  .sr-only {
-    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-    overflow: hidden; clip: rect(0,0,0,0); border: 0;
-  }
+  /* (reserved for future utility classes) */
 
   /* ===== 3. HEADER ===== */
   body {
@@ -200,6 +196,7 @@
   }
   .schema-info svg { flex-shrink: 0; }
 
+  /* ===== 8. FORM SECTIONS & FIELDS ===== */
   .form-section {
     margin-bottom: 32px; padding: 28px; background: var(--surface);
     border: 1px solid var(--border); border-radius: var(--radius); transition: border-color 0.2s;
@@ -215,7 +212,7 @@
   .field-label .required { color: var(--error); margin-left: 2px; }
   .field-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
-  /* Inputs */
+  /* ===== 9. INPUT STYLES ===== */
   input[type="text"], input[type="date"], input[type="email"], input[type="tel"],
   input[type="number"], textarea, select {
     width: 100%; padding: 10px 14px; background: var(--surface-2);
@@ -232,6 +229,7 @@
   }
   select option { background: var(--surface-2); color: var(--text); }
 
+  /* ===== 10. CHECKBOX & RADIO ===== */
   .checkbox-group, .radio-group { display: flex; flex-direction: column; gap: 10px; }
   .checkbox-item, .radio-item {
     display: flex; align-items: center; gap: 10px; cursor: pointer;
@@ -243,17 +241,18 @@
   }
   .checkbox-item label, .radio-item label { font-size: 14px; cursor: pointer; user-select: none; }
 
+  /* ===== 11. LAYOUT HELPERS (fields-row) ===== */
   .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 600px) { .fields-row { grid-template-columns: 1fr; } }
 
-  /* Long text */
+  /* ===== 12. LONG TEXT ===== */
   .longtext-wrapper textarea { min-height: 160px; line-height: 1.7; }
   .longtext-counter {
     text-align: right; font-size: 11px; font-family: 'JetBrains Mono', monospace;
     color: var(--text-muted); margin-top: 4px; opacity: 0.7;
   }
 
-  /* List entry */
+  /* ===== 13. LIST ENTRY ===== */
   .list-entry-wrapper { display: flex; flex-direction: column; gap: 8px; }
   .list-items { display: flex; flex-direction: column; gap: 6px; }
   .list-item-row { display: flex; align-items: center; gap: 8px; animation: listItemIn 0.2s ease; }
@@ -281,7 +280,7 @@
   .list-or-divider::before, .list-or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .list-bulk-textarea { min-height: 80px; font-size: 13px; line-height: 1.6; }
 
-  /* Currency */
+  /* ===== 14. CURRENCY ===== */
   .currency-wrapper {
     display: flex; align-items: center; gap: 0;
   }
@@ -294,7 +293,7 @@
     border-radius: 0 8px 8px 0; flex: 1;
   }
 
-  /* Heading (non-input divider) */
+  /* ===== 15. HEADING (non-input divider) ===== */
   .field-heading {
     font-size: 15px; font-weight: 600; color: var(--text);
     border-bottom: 2px solid var(--border); padding-bottom: 8px; margin-top: 8px;
@@ -303,13 +302,13 @@
     font-size: 12px; color: var(--text-muted); margin-top: 4px;
   }
 
-  /* Address */
+  /* ===== 16. ADDRESS ===== */
   .address-group { display: flex; flex-direction: column; gap: 8px; }
   .address-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
   .address-sub-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
   @media (max-width: 600px) { .address-row { grid-template-columns: 1fr; } }
 
-  /* File upload */
+  /* ===== 17. FILE UPLOAD ===== */
   .file-upload-wrapper { display: flex; flex-direction: column; gap: 8px; }
   .file-preview {
     max-width: 200px; max-height: 200px; border-radius: 8px;
@@ -317,7 +316,7 @@
   }
   .file-info { font-size: 12px; color: var(--text-muted); }
 
-  /* Signature pad */
+  /* ===== 18. SIGNATURE PAD ===== */
   .signature-pad-wrapper { display: flex; flex-direction: column; gap: 8px; }
   .signature-canvas {
     border: 2px dashed var(--border); border-radius: 8px; cursor: crosshair;
@@ -331,7 +330,7 @@
   }
   .btn-clear-sig:hover { border-color: var(--error); color: var(--error); }
 
-  /* Repeater */
+  /* ===== 19. REPEATER ===== */
   .repeater-wrapper { display: flex; flex-direction: column; gap: 10px; }
   .repeater-row {
     padding: 12px; border: 1px solid var(--border); border-radius: 8px;
@@ -354,7 +353,7 @@
   }
   .btn-remove-row:hover { color: var(--error); border-color: var(--error); }
 
-  /* Wizard */
+  /* ===== 20. WIZARD ===== */
   .wizard-indicator {
     display: flex; align-items: center; justify-content: center; gap: 0;
     margin-bottom: 32px; padding: 0 16px;
@@ -411,7 +410,7 @@
   .form-section.wizard-hidden { display: none; }
   .field-group.conditional-hidden { display: none; }
 
-  /* Buttons */
+  /* ===== 21. BUTTONS ===== */
   .submit-area { margin-top: 40px; display: flex; flex-direction: column; gap: 16px; }
   .submit-area-primary { display: flex; }
   .submit-area-primary .btn-primary {
@@ -450,6 +449,7 @@
   .btn-secondary svg { opacity: 0.7; }
   .btn-secondary:hover svg { opacity: 1; }
 
+  /* ===== 22. AUTOSAVE PROMPT ===== */
   .autosave-prompt {
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
     padding: 12px 20px; margin-bottom: 24px;
@@ -611,6 +611,7 @@
     padding: 14px; text-align: center; font-size: 12px; color: var(--text-muted);
   }
 
+  /* ===== 30. RESPONSIVE / MEDIA QUERIES ===== */
   @media (max-width: 600px) {
     .autosave-prompt { flex-direction: column; align-items: flex-start; }
     .submit-area-secondary { flex-wrap: wrap; }
@@ -628,7 +629,7 @@
     .wizard-step-connector { width: 16px; margin: 0 2px; }
   }
 
-  /* Overlay */
+  /* ===== 23. LOADING OVERLAY ===== */
   .loading-overlay {
     position: fixed; inset: 0; background: rgba(15,17,23,0.85); backdrop-filter: blur(4px);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -639,7 +640,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-size: 14px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
 
-  /* Toast */
+  /* ===== 24. TOAST ===== */
   .toast {
     position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: var(--radius);
     font-size: 14px; font-weight: 500; background: var(--surface); border: 1px solid var(--success);
@@ -658,7 +659,7 @@
   }
   .toast-dismiss:hover { opacity: 1; }
 
-  /* Console */
+  /* ===== 25. CONSOLE PANEL ===== */
   .console-panel { margin-top: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
   .console-header {
     display: flex; align-items: center; justify-content: space-between; padding: 10px 16px;
@@ -676,7 +677,7 @@
   .log-entry.success { color: var(--success); }
   .log-entry.error { color: var(--error); }
 
-  /* Token input */
+  /* ===== 26. TOKEN INPUT ===== */
   .token-toggle {
     font-size: 12px; color: var(--text-muted); cursor: pointer; margin-top: 8px;
     font-family: 'JetBrains Mono', monospace; user-select: none;
@@ -686,7 +687,7 @@
   .token-row.hidden { display: none; }
   .token-hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
 
-  /* Source divider */
+  /* ===== 27. SOURCE DIVIDER ===== */
   .source-divider {
     display: flex; align-items: center; gap: 16px; margin: 24px 0;
     color: var(--text-muted); font-size: 12px; font-family: 'JetBrains Mono', monospace;
@@ -695,7 +696,7 @@
     content: ''; flex: 1; height: 1px; background: var(--border);
   }
 
-  /* Drop zones */
+  /* ===== 28. DROP ZONES ===== */
   .local-upload-row {
     display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
   }
@@ -734,7 +735,7 @@
   .local-status.error { color: var(--error); }
   .local-status.success { color: var(--success); }
 
-  /* Docs section */
+  /* ===== 29. DOCS SECTION ===== */
   .docs-section { display: flex; flex-direction: column; gap: 12px; }
   .docs-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
@@ -821,7 +822,7 @@
 <body>
 
 <!-- ===== SVG SPRITE SHEET (hidden) ===== -->
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
   <!-- Arrow right: used in Open Form, Open Selected Form, wizard Next -->
   <symbol id="icon-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
     <path d="M5 12h14M12 5l7 7-7 7"/>
@@ -3515,48 +3516,51 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
 
   _activeDropdownField = anchorEl;
 
-  // Delegated click handler for all dropdown interactions
-  dd.addEventListener('click', (e) => {
-    // Edit button
-    const editBtn = e.target.closest('.profile-edit-btn');
-    if (editBtn) {
-      e.stopPropagation();
-      showProfileEditor(parseInt(editBtn.dataset.edit), anchorEl);
-      return;
-    }
-    // Delete button
-    const deleteBtn = e.target.closest('.profile-delete-btn');
-    if (deleteBtn) {
-      e.stopPropagation();
-      deleteProfile(parseInt(deleteBtn.dataset.delete));
-      showProfileDropdown(anchorEl, profileKey, fieldDef, showAll);
-      showToast('Profile deleted');
-      return;
-    }
-    // Profile item click -> apply profile
-    const item = e.target.closest('.profile-dropdown-item');
-    if (item && item.dataset.index !== undefined) {
-      const p = getProfiles()[parseInt(item.dataset.index)];
-      if (p && currentSchema) {
-        applyProfileToForm(p, currentSchema);
-        hideProfileDropdown();
-      }
-      return;
-    }
-    // Save action
-    if (e.target.closest('#profileSaveAction')) {
-      if (!currentSchema) return;
-      const data = collectProfileFromForm(currentSchema);
-      if (Object.keys(data).length === 0) {
-        showToast('Fill in some fields first', 'error');
+  // Delegated click handler for all dropdown interactions (guard prevents accumulation)
+  if (!dd._clickDelegated) {
+    dd._clickDelegated = true;
+    dd.addEventListener('click', (e) => {
+      // Edit button
+      const editBtn = e.target.closest('.profile-edit-btn');
+      if (editBtn) {
+        e.stopPropagation();
+        showProfileEditor(parseInt(editBtn.dataset.edit), anchorEl);
         return;
       }
-      addProfile(data);
-      hideProfileDropdown();
-      showToast(`Profile "${getProfileDisplayName(data)}" saved`);
-      log(`New profile saved: ${getProfileDisplayName(data)}`, 'success');
-    }
-  });
+      // Delete button
+      const deleteBtn = e.target.closest('.profile-delete-btn');
+      if (deleteBtn) {
+        e.stopPropagation();
+        deleteProfile(parseInt(deleteBtn.dataset.delete));
+        showProfileDropdown(anchorEl, profileKey, fieldDef, showAll);
+        showToast('Profile deleted');
+        return;
+      }
+      // Profile item click -> apply profile
+      const item = e.target.closest('.profile-dropdown-item');
+      if (item && item.dataset.index !== undefined) {
+        const p = getProfiles()[parseInt(item.dataset.index)];
+        if (p && currentSchema) {
+          applyProfileToForm(p, currentSchema);
+          hideProfileDropdown();
+        }
+        return;
+      }
+      // Save action
+      if (e.target.closest('#profileSaveAction')) {
+        if (!currentSchema) return;
+        const data = collectProfileFromForm(currentSchema);
+        if (Object.keys(data).length === 0) {
+          showToast('Fill in some fields first', 'error');
+          return;
+        }
+        addProfile(data);
+        hideProfileDropdown();
+        showToast(`Profile "${getProfileDisplayName(data)}" saved`);
+        log(`New profile saved: ${getProfileDisplayName(data)}`, 'success');
+      }
+    });
+  }
 
   // Arrow key navigation within dropdown (attach once to avoid listener accumulation)
   if (!dd._keyNavAttached) {
