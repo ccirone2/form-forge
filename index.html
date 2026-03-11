@@ -647,18 +647,99 @@
   .profile-field-indicator svg { width: 14px; height: 14px; pointer-events: none; }
 
   /* ===== 30. RESPONSIVE / MEDIA QUERIES ===== */
+
+  /* --- Tablet (max 768px) --- */
+  @media (max-width: 768px) {
+    .app-header { padding: 12px 20px; }
+    .main-container { padding: 24px 16px 60px; }
+    .setup-hero h2 { font-size: 26px; }
+    .config-card { padding: 20px; }
+    .form-section { padding: 20px; }
+  }
+
+  /* --- Mobile (max 600px) --- */
   @media (max-width: 600px) {
+    /* Header: tighter padding, hide status text */
+    .app-header { padding: 10px 12px; }
+    .app-header h1 { font-size: 17px; }
+    #statusText { display: none; }
+    .status-badge { padding: 6px 8px; }
+
+    /* Setup hero */
+    .setup-hero h2 { font-size: 22px; }
+    .setup-hero p { font-size: 13px; }
+    .setup-hero { margin-bottom: 24px; }
+
+    /* Config cards: stack inputs vertically */
+    .config-row { flex-direction: column; align-items: stretch; }
+    .config-row .field-grow { flex: none; }
+    .branch-input-wrapper { max-width: none; }
+    .btn-connect { width: 100%; justify-content: center; }
+
+    /* Form sections */
+    .form-section { padding: 16px; margin-bottom: 20px; }
+
+    /* Submit area: stack vertically */
+    .submit-area-primary { width: 100%; }
+    .submit-area-primary .btn-primary { width: 100%; justify-content: center; }
+    .submit-area-secondary {
+      flex-direction: column; align-items: stretch;
+    }
+    .submit-area-secondary .btn-secondary { width: 100%; justify-content: center; }
+    .btn-reset { margin-left: 0; width: 100%; justify-content: center; }
+
+    /* Touch targets: minimum 44px tap targets */
+    .btn-remove-item { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+    .btn-remove-row { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+    .profile-delete-btn { min-width: 44px; min-height: 44px; display: inline-flex !important; align-items: center; justify-content: center; opacity: 1 !important; }
+    .profile-edit-btn { min-width: 44px; min-height: 44px; display: inline-flex !important; align-items: center; justify-content: center; opacity: 1 !important; }
+    .token-toggle { padding: 10px 0; min-height: 44px; display: inline-flex; align-items: center; }
+
+    /* Autosave prompt */
     .autosave-prompt { flex-direction: column; align-items: flex-start; }
-    .submit-area-secondary { flex-wrap: wrap; }
+
+    /* Local upload row */
+    .local-launch-row { flex-direction: column; align-items: stretch; }
+    .local-launch-row .btn-connect { width: 100%; justify-content: center; }
+
+    /* Wizard */
     .wizard-step-label { display: none; }
     .wizard-step-circle { width: 28px; height: 28px; font-size: 12px; }
     .wizard-step-connector { width: 24px; margin: 0 4px; }
     .wizard-indicator { padding: 0 8px; }
+
+    /* Toast */
     .toast {
       left: 16px; right: 16px; bottom: 16px;
       text-align: center; justify-content: center;
     }
+
+    /* Picker grid: single column on mobile */
+    .picker-grid { grid-template-columns: 1fr; }
+
+    /* Profile dropdown: bottom-sheet on mobile */
+    .profile-dropdown {
+      position: fixed !important;
+      top: auto !important;
+      left: 0 !important;
+      right: 0;
+      bottom: 0;
+      max-width: none;
+      min-width: 0;
+      width: 100%;
+      border-radius: 16px 16px 0 0;
+      max-height: 70vh;
+      overflow-y: auto;
+      box-shadow: 0 -4px 30px rgba(0,0,0,0.5);
+      animation: slideUpSheet 0.2s ease-out;
+    }
   }
+
+  @keyframes slideUpSheet {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
   @media (max-width: 400px) {
     .wizard-step-circle { width: 24px; height: 24px; font-size: 11px; }
     .wizard-step-connector { width: 16px; margin: 0 2px; }
@@ -3818,15 +3899,21 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
   dd.innerHTML = html;
   dd.style.display = '';
 
-  // Position below anchor
-  const rect = anchorEl.getBoundingClientRect();
-  dd.style.position = 'fixed';
-  dd.style.top = (rect.bottom + 4) + 'px';
-  dd.style.left = rect.left + 'px';
-  // Keep within viewport
-  const ddRect = dd.getBoundingClientRect();
-  if (ddRect.right > window.innerWidth - 8) {
-    dd.style.left = Math.max(8, window.innerWidth - ddRect.width - 8) + 'px';
+  // Position below anchor (desktop) or bottom-sheet (mobile)
+  if (window.innerWidth <= 600) {
+    dd.style.position = '';
+    dd.style.top = '';
+    dd.style.left = '';
+  } else {
+    const rect = anchorEl.getBoundingClientRect();
+    dd.style.position = 'fixed';
+    dd.style.top = (rect.bottom + 4) + 'px';
+    dd.style.left = rect.left + 'px';
+    // Keep within viewport
+    const ddRect = dd.getBoundingClientRect();
+    if (ddRect.right > window.innerWidth - 8) {
+      dd.style.left = Math.max(8, window.innerWidth - ddRect.width - 8) + 'px';
+    }
   }
 
   _activeDropdownField = anchorEl;

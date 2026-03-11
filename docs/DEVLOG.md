@@ -14,6 +14,27 @@
 
 ## Log
 
+### 2026-03-11 — Responsive design polish for mobile and tablet (#89)
+**Issue:** #89
+
+Systematic responsive pass across all UI components for mobile and tablet viewports.
+
+- **Tablet breakpoint (768px)** — Reduced header/container padding, form section and config card padding from 28px to 20px
+- **Header (600px)** — Tighter padding (10px 12px), smaller title font, status badge shows dot only (text hidden)
+- **Config cards** — `.config-row` stacks vertically on mobile; Connect button goes full-width
+- **Form sections** — Padding reduced to 16px on mobile
+- **Submit area** — All buttons stack vertically at full-width: export on top, secondary actions below, reset at bottom
+- **Touch targets** — Remove-item, remove-row, profile delete/edit buttons, and token toggle all get 44x44px minimum tap targets on mobile
+- **Profile dropdown** — Converts to bottom-sheet drawer on mobile (≤600px) with slide-up animation, full width, 70vh max height; JS positioning skipped in favor of CSS
+- **Picker grid** — Single column on mobile
+- **Local upload row** — Stacks vertically on mobile
+
+**Decisions:**
+- Used 768px for tablet, 600px for mobile, 400px for very narrow — consistent with existing breakpoints
+- Profile delete/edit buttons always visible on mobile (no hover-to-reveal) for touch accessibility
+
+---
+
 ### 2026-03-10 — Code quality: SVG icon reuse, event delegation, CSS organization (#92)
 **Issue:** #92
 
