@@ -864,6 +864,46 @@ def repeater_table(
     doc.add_paragraph("")
 
 
+def format_time(value: str) -> str:
+    """
+    Convert a 24-hour time string to 12-hour format with AM/PM.
+
+    Accepts "HH:MM" (from <input type="time">) or an ISO datetime string
+    containing "T" (from <input type="datetime-local">). Returns the
+    original string unchanged if parsing fails.
+
+    Examples:
+        "09:00"  → "9:00 AM"
+        "14:30"  → "2:30 PM"
+        "00:00"  → "12:00 AM"
+        "2026-06-15T14:30" → "2026-06-15 at 2:30 PM"
+    """
+    if not value or not value.strip():
+        return value
+    value = value.strip()
+    try:
+        if "T" in value:
+            date_part, time_part = value.split("T", 1)
+            formatted = _convert_time(time_part)
+            return f"{date_part} at {formatted}"
+        return _convert_time(value)
+    except (ValueError, IndexError):
+        return value
+
+
+def _convert_time(time_str: str) -> str:
+    """Convert 'HH:MM' to 'H:MM AM/PM'."""
+    parts = time_str.split(":")
+    hour = int(parts[0])
+    minute = parts[1] if len(parts) > 1 else "00"
+    period = "AM" if hour < 12 else "PM"
+    if hour == 0:
+        hour = 12
+    elif hour > 12:
+        hour -= 12
+    return f"{hour}:{minute} {period}"
+
+
 def finalize(doc: Document) -> bytes:
     """
     Serialize a Document to bytes.

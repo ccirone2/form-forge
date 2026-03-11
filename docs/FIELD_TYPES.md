@@ -410,10 +410,8 @@ Native browser time picker. Value is always in `HH:MM` format (24-hour).
 To reformat in your template:
 
 ```python
-raw = data.get('start_time', '')
-if raw:
-    h, m = raw.split(':')
-    formatted = f"{int(h) % 12 or 12}:{m} {'AM' if int(h) < 12 else 'PM'}"
+formatted = stencils.format_time(data.get('start_time', ''))
+# "09:30" → "9:30 AM", "14:30" → "2:30 PM"
 ```
 
 ## url
@@ -456,12 +454,8 @@ Combined date and time picker. Renders as `<input type="datetime-local">`. Value
 To reformat in your template:
 
 ```python
-from datetime import datetime
-raw = data.get('deadline', '')
-if raw:
-    dt = datetime.fromisoformat(raw)
-    formatted = dt.strftime('%B %d, %Y at %I:%M %p')
-    # "June 15, 2026 at 02:30 PM"
+formatted = stencils.format_time(data.get('deadline', ''))
+# "2026-06-15T14:30" → "2026-06-15 at 2:30 PM"
 ```
 
 ## multi_select

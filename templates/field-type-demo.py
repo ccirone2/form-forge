@@ -58,7 +58,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
             ("Email", email),
             ("Phone", data.get("phone", "")),
             ("Preferred Date", event_date),
-            ("Preferred Time", data.get("event_time", "")),
+            ("Preferred Time", stencils.format_time(data.get("event_time", ""))),
             ("Website", data.get("website", "")),
             ("Form Version", form_ver),
         ],
@@ -104,14 +104,8 @@ def generate_docx(data: dict[str, str]) -> bytes:
     # checkbox (conditional — in-person dietary restrictions)
     dietary = data.get("dietary_restrictions", "")
     if dietary and dietary.strip():
-        doc.add_heading("Dietary Restrictions", level=2)
-        for item in dietary.split(","):
-            item = item.strip()
-            if item:
-                p = doc.add_paragraph(style="List Bullet")
-                r = p.add_run(item)
-                r.font.size = Pt(10)
-        doc.add_paragraph("")
+        dietary_nl = "\n".join(d.strip() for d in dietary.split(",") if d.strip())
+        stencils.bullet_list(doc, "Dietary Restrictions", dietary_nl)
 
     # text (conditional — virtual platform)
     virtual_platform = data.get("virtual_platform", "")
@@ -125,14 +119,8 @@ def generate_docx(data: dict[str, str]) -> bytes:
     # multi_select — session topics
     topics = data.get("session_topics", "")
     if topics and topics.strip():
-        doc.add_heading("Session Topics", level=2)
-        for topic in topics.split(","):
-            topic = topic.strip()
-            if topic:
-                p = doc.add_paragraph(style="List Bullet")
-                r = p.add_run(topic)
-                r.font.size = Pt(10)
-        doc.add_paragraph("")
+        topics_nl = "\n".join(t.strip() for t in topics.split(",") if t.strip())
+        stencils.bullet_list(doc, "Session Topics", topics_nl)
 
     # ── Step 3: Budget & Items ────────────────────────────
     budget = data.get("budget_amount", "0")
@@ -176,8 +164,8 @@ def generate_docx(data: dict[str, str]) -> bytes:
     # datetime — submission deadline
     deadline = data.get("submission_deadline", "")
     if deadline and deadline.strip():
-        # Format datetime-local value (e.g. "2026-05-01T17:00")
-        deadline_display = deadline.replace("T", " at ")
+        # Format datetime-local value (e.g. "2026-05-01T17:00" → "2026-05-01 at 5:00 PM")
+        deadline_display = stencils.format_time(deadline)
         stencils.table_section(
             doc,
             "Deadline",

@@ -157,6 +157,17 @@ stencils.repeater_table(
 - `field_keys` — dict keys corresponding to each column, in order
 - `currency_keys` — optional list of field keys to format as currency (`$X,XXX.XX`)
 
+### `stencils.format_time(value)`
+
+Converts 24-hour time strings (from `<input type="time">` and `<input type="datetime-local">`) to 12-hour format with AM/PM. Returns the original string unchanged if parsing fails.
+
+```python
+stencils.format_time("09:00")               # → "9:00 AM"
+stencils.format_time("14:30")               # → "2:30 PM"
+stencils.format_time("2026-06-15T14:30")    # → "2026-06-15 at 2:30 PM"
+stencils.format_time("")                     # → ""
+```
+
 ### `stencils.finalize(doc)`
 
 Serializes the `Document` to bytes and returns them. Always call this as the last line of `generate_docx`.
@@ -164,6 +175,29 @@ Serializes the `Document` to bytes and returns them. Always call this as the las
 ```python
 return stencils.finalize(doc)
 ```
+
+### Field type → stencil mapping
+
+Use this table to pick the right stencil helper for each field type. Types not listed here need no special helper — just pass them as values in `table_section()` rows or handle inline.
+
+| Field Type | Recommended Stencil | Notes |
+|---|---|---|
+| `text`, `email`, `tel`, `date`, `select`, `radio`, `number`, `hidden` | `table_section()` | Pass as `(label, value)` tuples in a key/value table |
+| `currency` | `table_section()` | Format first: `f"${float(val):,.2f}"` |
+| `time` | `table_section()` + `format_time()` | `("Start", stencils.format_time(data.get("start_time", "")))` |
+| `datetime` | `table_section()` + `format_time()` | `("Deadline", stencils.format_time(data.get("deadline", "")))` |
+| `url` | `table_section()` | Plain string, no conversion needed |
+| `toggle` | `table_section()` | Convert first: `"Yes" if val == "true" else "No"` |
+| `textarea` | `table_section()` or inline | Short text fits in a table row; longer text use `doc.add_paragraph()` |
+| `longtext` | `longtext()` | Splits on `\n` into paragraphs automatically |
+| `list` | `bullet_list()` | Values are already newline-separated |
+| `checkbox` | `bullet_list()` | Convert first: `"\n".join(t.strip() for t in val.split(",") if t.strip())` |
+| `multi_select` | `bullet_list()` | Same comma→newline conversion as `checkbox` |
+| `address` | `address()` | Pass the raw JSON string directly |
+| `file` | `image()` | Pass the base64 data URI string |
+| `signature` | `signature()` | Pass the base64 data URI string + a label |
+| `repeater` | `repeater_table()` | Parse JSON first with `json.loads()` |
+| `heading` | *(not in data)* | Skipped during data collection |
 
 ### Document themes
 
@@ -392,20 +426,15 @@ agreed = data.get("agree_terms", "false") == "true"
 ### `time` → formatted time
 
 ```python
-raw = data.get("start_time", "")
-if raw:
-    h, m = raw.split(":")
-    formatted = f"{int(h) % 12 or 12}:{m} {'AM' if int(h) < 12 else 'PM'}"
+formatted = stencils.format_time(data.get("start_time", ""))
+# "09:00" → "9:00 AM", "14:30" → "2:30 PM"
 ```
 
 ### `datetime` → formatted date and time
 
 ```python
-from datetime import datetime
-raw = data.get("deadline", "")
-if raw:
-    dt = datetime.fromisoformat(raw)
-    formatted = dt.strftime("%B %d, %Y at %I:%M %p")
+formatted = stencils.format_time(data.get("deadline", ""))
+# "2026-06-15T14:30" → "2026-06-15 at 2:30 PM"
 ```
 
 ### `longtext` → paragraphs
