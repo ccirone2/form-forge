@@ -14,6 +14,25 @@
 
 ## Log
 
+### 2026-03-10 — Field matching engine and autofill prompt (#75)
+**Issues:** #75 (parent: #73)
+
+Added the field matching engine and autofill prompt banner that completes the user profile autofill feature.
+
+**Changes (all in `index.html`):**
+- **CSS (~20 lines):** `.profile-prompt` banner styled like `.autosave-prompt` but with accent (indigo) border-left instead of warning, responsive stacking on mobile
+- **JS (~110 lines):** `PROFILE_MATCHERS` config (type+label regex for 7 profile keys), `matchProfileToFields()` to walk schema and return matched `{fieldId: value}` map, `checkProfileAutofill()` that filters to empty-only fields and shows banner, `showProfilePrompt()` / `applyProfileData()` for banner UI and field population
+- **Integration:** `postLaunchHook()` calls `checkProfileAutofill()` after autosave restore; `resetForm()` removes `.profile-prompt` banner
+- **Refactored** `fillProfileFromForm()` to reuse shared `PROFILE_MATCHERS` instead of duplicate `REVERSE_MATCHERS`
+
+**Matching rules:**
+- Fields must match both type AND label regex (e.g., `email` type + label containing "email")
+- Select fields only match when the profile value exists in the field's options
+- Address fields match any `address`-type field (no label check needed)
+- Only empty fields are offered for autofill — manually filled or autosave-restored values are never overwritten
+
+---
+
 ### 2026-03-10 — Profile modal UI and localStorage CRUD (#74)
 **Issues:** #74 (parent: #73)
 

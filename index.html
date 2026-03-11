@@ -472,8 +472,35 @@
   }
   .profile-save-from-form:hover { color: var(--accent-hover); }
 
+  .profile-prompt {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 12px 20px; margin-bottom: 24px;
+    background: var(--surface-2); border-left: 3px solid var(--accent);
+    border-radius: var(--radius); animation: fadeInPrompt 0.3s ease-out;
+  }
+  .profile-prompt .profile-prompt-msg {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--text-muted); flex: 1;
+  }
+  .profile-prompt .profile-prompt-msg svg { color: var(--accent); flex-shrink: 0; }
+  .profile-prompt .profile-prompt-msg strong { color: var(--text); }
+  .profile-prompt .profile-prompt-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .profile-prompt .btn-fill {
+    padding: 6px 16px; background: var(--accent); color: #fff; border: none;
+    border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+    font-weight: 600; cursor: pointer; transition: background 0.2s;
+  }
+  .profile-prompt .btn-fill:hover { background: var(--accent-hover); }
+  .profile-prompt .btn-skip {
+    padding: 6px 16px; background: transparent; color: var(--text-muted); border: 1px solid var(--border);
+    border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+    font-weight: 500; cursor: pointer; transition: all 0.2s;
+  }
+  .profile-prompt .btn-skip:hover { border-color: var(--text-muted); color: var(--text); }
+
   @media (max-width: 600px) {
     .autosave-prompt { flex-direction: column; align-items: flex-start; }
+    .profile-prompt { flex-direction: column; align-items: flex-start; }
     .submit-area { flex-wrap: wrap; }
     .profile-modal { margin: 16px; padding: 20px; }
     .profile-address-grid { grid-template-columns: 1fr; }
@@ -3124,19 +3151,125 @@ function clearProfile() {
   log('User profile cleared', 'info');
 }
 
+// Shared matchers: profile key -> { types, pattern }
+const PROFILE_MATCHERS = {
+  first_name: { types: ['text'], pattern: /\bfirst\s*name\b/i },
+  last_name:  { types: ['text'], pattern: /\blast\s*name\b/i },
+  name:       { types: ['text'], pattern: /^(full\s+)?name$|^employee\s+name$/i },
+  email:      { types: ['email'], pattern: /email|e-?mail/i },
+  phone:      { types: ['tel'], pattern: /phone|telephone|mobile|cell/i },
+  department: { types: ['select', 'text'], pattern: /^department$/i },
+};
+
+function matchProfileToFields(schema, profile) {
+  const matched = {};
+  for (const section of schema.sections) {
+    for (const field of section.fields) {
+      if (field.type === 'heading' || field.type === 'hidden') continue;
+      // Address: match any address field
+      if (field.type === 'address' && profile.address) {
+        matched[field.id] = { type: 'address', value: profile.address };
+        continue;
+      }
+      // Other types: match via PROFILE_MATCHERS
+      for (const [profileKey, matcher] of Object.entries(PROFILE_MATCHERS)) {
+        if (!profile[profileKey]) continue;
+        if (!matcher.types.includes(field.type)) continue;
+        if (!matcher.pattern.test(field.label)) continue;
+        // For select fields, check that the profile value is in the options
+        if (field.type === 'select' && field.options && !field.options.includes(profile[profileKey])) continue;
+        matched[field.id] = { type: field.type, value: profile[profileKey] };
+        break;
+      }
+    }
+  }
+  return matched;
+}
+
+function checkProfileAutofill() {
+  const profile = getProfile();
+  if (!profile || !currentSchema) return;
+  const matched = matchProfileToFields(currentSchema, profile);
+  // Filter to only empty fields
+  const emptyMatched = {};
+  for (const [fieldId, info] of Object.entries(matched)) {
+    if (info.type === 'address') {
+      const street = document.getElementById(`${fieldId}_street`);
+      if (street && !street.value.trim()) emptyMatched[fieldId] = info;
+    } else {
+      const el = document.getElementById(fieldId);
+      if (el && !el.value.trim()) emptyMatched[fieldId] = info;
+    }
+  }
+  if (Object.keys(emptyMatched).length > 0) {
+    showProfilePrompt(emptyMatched);
+  }
+}
+
+function showProfilePrompt(matchedData) {
+  const existing = document.querySelector('.profile-prompt');
+  if (existing) existing.remove();
+
+  const count = Object.keys(matchedData).length;
+  const prompt = document.createElement('div');
+  prompt.className = 'profile-prompt';
+  prompt.innerHTML = `
+    <span class="profile-prompt-msg">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <strong>${count} field${count === 1 ? '' : 's'}</strong> can be filled from your profile
+    </span>
+    <div class="profile-prompt-actions">
+      <button class="btn-fill" type="button">Fill</button>
+      <button class="btn-skip" type="button">Skip</button>
+    </div>
+  `;
+
+  prompt.querySelector('.btn-fill').addEventListener('click', () => {
+    applyProfileData(matchedData);
+    prompt.remove();
+  });
+
+  prompt.querySelector('.btn-skip').addEventListener('click', () => {
+    prompt.remove();
+    log('Profile autofill skipped', 'info');
+  });
+
+  const form = document.getElementById('dynamicForm');
+  if (form) {
+    form.parentNode.insertBefore(prompt, form);
+  }
+}
+
+function applyProfileData(matchedData) {
+  let filled = 0;
+  for (const [fieldId, info] of Object.entries(matchedData)) {
+    if (info.type === 'address') {
+      const addr = info.value;
+      for (const sub of ['street', 'city', 'state', 'zip']) {
+        const el = document.getElementById(`${fieldId}_${sub}`);
+        if (el && !el.value.trim() && addr[sub]) {
+          el.value = addr[sub];
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }
+      filled++;
+    } else {
+      const el = document.getElementById(fieldId);
+      if (el && !el.value.trim()) {
+        el.value = info.value;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        filled++;
+      }
+    }
+  }
+  showToast(`${filled} field${filled === 1 ? '' : 's'} filled from profile`);
+  log(`Profile autofill applied: ${filled} field(s)`, 'success');
+}
+
 function fillProfileFromForm() {
   if (!currentSchema) return;
-  const REVERSE_MATCHERS = {
-    first_name: { types: ['text'], pattern: /\bfirst\s*name\b/i },
-    last_name:  { types: ['text'], pattern: /\blast\s*name\b/i },
-    name:       { types: ['text'], pattern: /^(full\s+)?name$|^employee\s+name$/i },
-    email:      { types: ['email'], pattern: /email|e-?mail/i },
-    phone:      { types: ['tel'], pattern: /phone|telephone|mobile|cell/i },
-    department: { types: ['select', 'text'], pattern: /^department$/i },
-  };
   for (const section of currentSchema.sections) {
     for (const field of section.fields) {
-      // Address fields
       if (field.type === 'address') {
         const street = document.getElementById(`${field.id}_street`)?.value || '';
         if (street) {
@@ -3147,12 +3280,9 @@ function fillProfileFromForm() {
         }
         continue;
       }
-      // Other fields
-      for (const [profileKey, matcher] of Object.entries(REVERSE_MATCHERS)) {
+      for (const [profileKey, matcher] of Object.entries(PROFILE_MATCHERS)) {
         if (matcher.types.includes(field.type) && matcher.pattern.test(field.label)) {
-          const val = field.type === 'select'
-            ? document.getElementById(field.id)?.value
-            : document.getElementById(field.id)?.value;
+          const val = document.getElementById(field.id)?.value;
           if (val) {
             const el = document.getElementById(`profile_${profileKey}`);
             if (el) el.value = val;
@@ -3217,6 +3347,7 @@ function postLaunchHook() {
   } else {
     checkAutosaveRestore();
   }
+  checkProfileAutofill();
 }
 
 // ============================================================
@@ -3269,6 +3400,9 @@ function resetForm() {
   // Remove autosave prompt if visible
   const prompt = document.querySelector('.autosave-prompt');
   if (prompt) prompt.remove();
+  // Remove profile prompt if visible
+  const profilePrompt = document.querySelector('.profile-prompt');
+  if (profilePrompt) profilePrompt.remove();
   log('Form reset', 'info');
 }
 
