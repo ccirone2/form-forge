@@ -143,8 +143,13 @@
     z-index: 100;
     backdrop-filter: blur(12px);
   }
-  .app-header h1 { font-size: var(--text-xl); font-weight: 600; letter-spacing: -0.02em; cursor: pointer; }
+  .app-header h1 { font-size: var(--text-xl); font-weight: 600; letter-spacing: -0.02em; }
   .app-header h1 span { color: var(--accent); }
+  .h1-home-btn {
+    all: unset; cursor: pointer; font: inherit; letter-spacing: inherit;
+    display: inline; color: inherit;
+  }
+  .h1-home-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-xs); }
   .header-right { display: flex; align-items: center; gap: 12px; }
   .status-badge {
     display: inline-flex; align-items: center; gap: 8px;
@@ -284,6 +289,7 @@
   textarea { resize: vertical; min-height: 80px; }
   select {
     appearance: none; cursor: pointer; padding-right: 36px;
+    /* Chevron color must match --text-muted (#8b8da0) — update both if token changes */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b8da0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 12px center;
   }
@@ -364,7 +370,7 @@
   .longtext-wrapper textarea { min-height: 160px; line-height: 1.7; }
   .longtext-counter {
     text-align: right; font-size: var(--text-xs); font-family: var(--font-mono);
-    color: var(--text-muted); margin-top: 4px; opacity: 0.7;
+    color: var(--text-muted); margin-top: 4px;
   }
 
   /* ===== 13. LIST ENTRY ===== */
@@ -390,7 +396,7 @@
   .list-item-count { font-size: var(--text-xs); font-family: var(--font-mono); color: var(--text-muted); opacity: 0.7; }
   .list-or-divider {
     display: flex; align-items: center; gap: 10px; color: var(--text-muted);
-    font-size: var(--text-xs); font-family: var(--font-mono); opacity: 0.5;
+    font-size: var(--text-xs); font-family: var(--font-mono); opacity: 0.75;
   }
   .list-or-divider::before, .list-or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
   .list-bulk-textarea { min-height: 80px; font-size: var(--text-sm-md); line-height: 1.6; }
@@ -741,6 +747,7 @@
     background: var(--surface-2); color: var(--text-muted);
   }
   .profile-editor-actions .pe-cancel:hover { background: var(--surface); }
+  .profile-zip-input { max-width: 120px; }
   .profile-dropdown-empty {
     padding: 14px; text-align: center; font-size: var(--text-sm); color: var(--text-muted);
   }
@@ -774,6 +781,7 @@
     .main-container { padding: 24px 16px 60px; }
     .setup-hero h2 { font-size: 26px; }
     .address-row { grid-template-columns: 1fr 1fr; }
+    .branch-input-wrapper { max-width: none; }
     .config-card { padding: 20px; }
     .form-section { padding: 20px; }
   }
@@ -1223,10 +1231,10 @@
 
 <!-- Header -->
 <header class="app-header">
-  <h1 onclick="showView('setup')" tabindex="0" role="button" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showView('setup')}"><span>&#9632;</span> FormForge</h1>
+  <h1><button type="button" class="h1-home-btn" onclick="showView('setup')"><span>&#9632;</span> FormForge</button></h1>
   <div class="header-right">
     <div class="status-badge" id="statusBadge">
-      <div class="status-dot"></div>
+      <div class="status-dot" aria-hidden="true"></div>
       <span id="statusText">not connected</span>
     </div>
   </div>
@@ -2373,6 +2381,10 @@ function buildForm(schema) {
   document.getElementById('formDescription').textContent = schema.description || '';
 
   const form = document.getElementById('dynamicForm');
+  // Cleanup multi-select outside-click listeners before rebuilding
+  form.querySelectorAll('.multi-select-wrapper').forEach(w => {
+    if (w._cleanupOutsideClick) w._cleanupOutsideClick();
+  });
   form.innerHTML = '';
 
   if (!schema.sections) { log('Schema has no sections array', 'error'); return; }
@@ -2405,7 +2417,18 @@ function buildForm(schema) {
       step.setAttribute('aria-controls', `wizard-panel-${i}`);
       step.setAttribute('aria-label', `Step ${section.step || (i + 1)}: ${section.title}`);
       step.onclick = () => wizardStepClick(i);
-      step.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); wizardStepClick(i); } };
+      step.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); wizardStepClick(i); }
+        else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          const next = i < schema.sections.length - 1 ? i + 1 : 0;
+          document.getElementById(`wizard-tab-${next}`)?.focus();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          const prev = i > 0 ? i - 1 : schema.sections.length - 1;
+          document.getElementById(`wizard-tab-${prev}`)?.focus();
+        }
+      };
       const circle = document.createElement('div');
       circle.className = 'wizard-step-circle';
       circle.textContent = section.step || (i + 1);
@@ -3024,7 +3047,7 @@ function createListField(field, group) {
   wrapper.appendChild(divider);
   wrapper.appendChild(bulkTa);
   group.appendChild(wrapper);
-  setTimeout(() => addListItem(field.id, field.placeholder || '', itemsContainer, countEl), 0);
+  requestAnimationFrame(() => addListItem(field.id, field.placeholder || '', itemsContainer, countEl));
 }
 
 function createNumberField(field, group) {
@@ -3044,6 +3067,7 @@ function createCurrencyField(field, group) {
   const prefix = document.createElement('span');
   prefix.className = 'currency-prefix';
   prefix.textContent = field.currency_symbol || '$';
+  prefix.setAttribute('aria-hidden', 'true');
   const input = document.createElement('input');
   input.type = 'number'; input.id = field.id; input.name = field.id;
   input.step = '0.01'; input.min = '0';
@@ -3079,12 +3103,13 @@ function createAddressField(field, group) {
   const wrapper = document.createElement('div');
   wrapper.className = 'address-group';
 
+  const autocompleteTokens = { Street: 'address-line1', City: 'address-level2', State: 'address-level1', ZIP: 'postal-code' };
   function makeSubField(id, label, placeholder) {
     const container = document.createElement('div');
     const input = document.createElement('input');
     input.type = 'text'; input.id = id; input.name = id;
     input.placeholder = placeholder;
-    input.setAttribute('autocomplete', label.toLowerCase());
+    input.setAttribute('autocomplete', autocompleteTokens[label] || 'off');
     const lbl = document.createElement('label');
     lbl.className = 'address-sub-label'; lbl.setAttribute('for', id); lbl.textContent = label;
     container.appendChild(input);
@@ -3146,22 +3171,29 @@ function createSignatureField(field, group) {
   const canvas = document.createElement('canvas');
   canvas.className = 'signature-canvas'; canvas.id = `${field.id}_canvas`;
   canvas.setAttribute('aria-label', 'Signature pad \u2014 draw your signature with mouse or touch');
-  // Size canvas after it's in the DOM to match CSS width
-  requestAnimationFrame(() => {
-    const dpr = window.devicePixelRatio || 1;
+  const hiddenInput = document.createElement('input');
+  hiddenInput.type = 'hidden'; hiddenInput.id = field.id;
+  let drawing = false;
+  let hasDrawn = false;
+  let canvasInitialized = false;
+  // Initialize canvas dimensions to match CSS width. Deferred because the canvas
+  // may be in a wizard-hidden section (display:none → zero dimensions).
+  function initCanvas() {
+    if (canvasInitialized) return;
     const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0) return; // still hidden, defer to first interaction
+    canvasInitialized = true;
+    const dpr = window.devicePixelRatio || 1;
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
     const c = canvas.getContext('2d');
     c.scale(dpr, dpr);
     c.lineWidth = 2; c.lineCap = 'round'; c.lineJoin = 'round'; c.strokeStyle = '#000';
-  });
-  const hiddenInput = document.createElement('input');
-  hiddenInput.type = 'hidden'; hiddenInput.id = field.id;
-  let drawing = false;
-  let hasDrawn = false;
+  }
+  requestAnimationFrame(initCanvas);
   function getPos(e) {
     const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0) return { x: 0, y: 0 };
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     if (e.touches) {
@@ -3169,9 +3201,9 @@ function createSignatureField(field, group) {
     }
     return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
   }
-  function getCtx() { return canvas.getContext('2d'); }
-  function startDraw(e) { e.preventDefault(); drawing = true; hasDrawn = true; const p = getPos(e); const ctx = getCtx(); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
-  function moveDraw(e) { if (!drawing) return; e.preventDefault(); const p = getPos(e); const ctx = getCtx(); ctx.lineTo(p.x, p.y); ctx.stroke(); }
+  const ctx = canvas.getContext('2d');
+  function startDraw(e) { e.preventDefault(); initCanvas(); drawing = true; hasDrawn = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+  function moveDraw(e) { if (!drawing) return; e.preventDefault(); const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }
   function endDraw() { if (!drawing) return; drawing = false; hiddenInput.value = hasDrawn ? canvas.toDataURL('image/png') : ''; }
   canvas.addEventListener('mousedown', startDraw);
   canvas.addEventListener('mousemove', moveDraw);
@@ -3185,7 +3217,6 @@ function createSignatureField(field, group) {
   const clearBtn = document.createElement('button');
   clearBtn.type = 'button'; clearBtn.className = 'btn-clear-sig'; clearBtn.textContent = 'Clear';
   clearBtn.addEventListener('click', () => {
-    const ctx = getCtx();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     hiddenInput.value = '';
     hasDrawn = false;
@@ -3314,7 +3345,7 @@ function createRepeaterField(field, group) {
   wrapper.dataset.subFields = JSON.stringify(subFields);
   wrapper.dataset.fieldId = field.id;
 
-  setTimeout(() => { for (let i = 0; i < minRows; i++) addRepeaterRow(); }, 0);
+  requestAnimationFrame(() => { for (let i = 0; i < minRows; i++) addRepeaterRow(); });
 }
 
 function createTimeField(field, group) {
@@ -3419,6 +3450,7 @@ function createMultiSelectField(field, group) {
       item.textContent = opt; item.dataset.value = opt;
       item.setAttribute('role', 'option');
       item.setAttribute('aria-selected', selected.has(opt) ? 'true' : 'false');
+      item.id = `${field.id}_opt_${dropdown.children.length}`;
       dropdown.appendChild(item);
     }
   }
@@ -3429,9 +3461,10 @@ function createMultiSelectField(field, group) {
       highlightedIdx = idx;
       items[idx].classList.add('highlighted');
       items[idx].scrollIntoView({ block: 'nearest' });
-      searchInput.setAttribute('aria-activedescendant', '');
+      searchInput.setAttribute('aria-activedescendant', items[idx].id);
     } else {
       highlightedIdx = -1;
+      searchInput.removeAttribute('aria-activedescendant');
     }
   }
 
@@ -3476,7 +3509,10 @@ function createMultiSelectField(field, group) {
     if (!option) return;
     toggleOption(option.dataset.value); searchInput.focus();
   });
-  document.addEventListener('click', (e) => { if (!wrapper.contains(e.target)) closeDropdown(); });
+  // Close on outside click — use wrapper flag to prevent listener accumulation on form rebuild
+  const closeOnOutsideClick = (e) => { if (!wrapper.contains(e.target)) closeDropdown(); };
+  document.addEventListener('click', closeOnOutsideClick);
+  wrapper._cleanupOutsideClick = () => document.removeEventListener('click', closeOnOutsideClick);
 
   display.appendChild(searchInput);
   wrapper.appendChild(hidden); wrapper.appendChild(display); wrapper.appendChild(dropdown);
@@ -4392,8 +4428,7 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
         }
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        hideProfileDropdown();
-        if (anchorEl) anchorEl.focus();
+        hideProfileDropdown(); // focus restoration handled inside hideProfileDropdown
       } else if (e.key === 'Tab') {
         // Trap focus within dropdown
         e.preventDefault();
@@ -4459,7 +4494,7 @@ function showProfileEditor(index, anchorEl) {
     </div>
   </div>
   <div class="profile-editor-field">
-    <input type="text" data-addr="zip" value="${(addr.zip || '').replace(/"/g, '&quot;')}" placeholder="ZIP" style="max-width:120px" />
+    <input type="text" data-addr="zip" value="${(addr.zip || '').replace(/"/g, '&quot;')}" placeholder="ZIP" class="profile-zip-input" />
   </div>`;
 
   dd.innerHTML = `<div class="profile-editor">
