@@ -3055,9 +3055,10 @@ function createListField(field, group) {
     }
     row.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
     row.style.opacity = '0'; row.style.transform = 'translateX(-8px)';
-    row.addEventListener('transitionend', () => {
-      row.remove(); renumberListItems(itemsContainer); updateListCount(itemsContainer, countEl);
-    }, { once: true });
+    let cleaned = false;
+    const cleanup = () => { if (cleaned) return; cleaned = true; row.remove(); renumberListItems(itemsContainer); updateListCount(itemsContainer, countEl); };
+    row.addEventListener('transitionend', cleanup, { once: true });
+    setTimeout(cleanup, 200); // safety fallback if transitionend doesn't fire
   });
 
   const addBtn = document.createElement('button');
