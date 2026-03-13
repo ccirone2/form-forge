@@ -211,7 +211,8 @@
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
     padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
   }
-  .picker-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .picker-card:hover, .picker-card:focus-visible { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .picker-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .picker-card.selected { border-color: var(--accent); background: var(--accent-glow); }
   .picker-card .card-icon { font-size: var(--text-2xl); margin-bottom: 10px; }
   .picker-card h4 { font-size: var(--text-base); font-weight: 600; margin-bottom: 4px; }
@@ -476,9 +477,11 @@
     display: flex; align-items: center; gap: 0; cursor: pointer;
     padding: 6px 0; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
   }
-  .wizard-step:hover .wizard-step-circle {
+  .wizard-step:hover .wizard-step-circle,
+  .wizard-step:focus-visible .wizard-step-circle {
     transform: scale(1.1); border-color: var(--accent);
   }
+  .wizard-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-md); }
   .wizard-step.active:hover .wizard-step-circle { transform: none; }
   .wizard-step-circle {
     width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
@@ -536,6 +539,9 @@
     color: var(--error);
     font-size: var(--text-sm);
     margin-top: 4px;
+  }
+  .field-error-msg::before {
+    content: '\26A0 ';
   }
 
   /* ===== 21. BUTTONS ===== */
@@ -767,6 +773,7 @@
     .app-header { padding: 12px 20px; }
     .main-container { padding: 24px 16px 60px; }
     .setup-hero h2 { font-size: 26px; }
+    .address-row { grid-template-columns: 1fr 1fr; }
     .config-card { padding: 20px; }
     .form-section { padding: 20px; }
   }
@@ -1023,7 +1030,8 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 16px 20px; cursor: pointer; user-select: none; transition: background 0.15s;
   }
-  .docs-card-header:hover { background: var(--surface-2); }
+  .docs-card-header:hover, .docs-card-header:focus-visible { background: var(--surface-2); }
+  .docs-card-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .docs-card-header h3 { font-size: var(--text-base); font-weight: 600; }
   .docs-toggle {
     font-size: var(--text-sm); color: var(--text-muted); transition: transform 0.2s;
@@ -1191,7 +1199,7 @@
 </svg>
 
 <!-- Loading overlay -->
-<div class="loading-overlay hidden" id="loadingOverlay">
+<div class="loading-overlay hidden" id="loadingOverlay" role="status" aria-live="polite" aria-label="Loading">
   <div class="spinner" id="overlaySpinner"></div>
   <div class="loading-text" id="loadingText">Loading...</div>
   <div class="progress-steps hidden" id="progressSteps">
@@ -1225,7 +1233,7 @@
 </header>
 
 <!-- ==================== SETUP VIEW ==================== -->
-<div class="view active" id="view-setup">
+<main class="view active" id="view-setup">
   <div class="main-container">
     <div class="setup-hero">
       <h2>Load Your Forms</h2>
@@ -1413,10 +1421,10 @@
       </div>
     </div>
   </div>
-</div>
+</main>
 
 <!-- ==================== FORM VIEW ==================== -->
-<div class="view" id="view-form">
+<main class="view" id="view-form">
   <div class="main-container">
     <div class="form-nav">
       <button class="btn-back" onclick="showView('setup')">
@@ -1476,7 +1484,7 @@
       <div class="console-body collapsed" id="consoleBody"></div>
     </div>
   </div>
-</div>
+</main>
 
 <!-- Toast -->
 <div class="toast" id="toast" role="alert" aria-live="polite"></div>
@@ -1578,9 +1586,11 @@ function showOverlay(msg) {
   document.getElementById('loadingOverlay').classList.remove('hidden');
   document.getElementById('overlaySpinner').classList.remove('hidden');
   document.getElementById('overlayRetryContainer').innerHTML = '';
+  document.body.setAttribute('aria-busy', 'true');
 }
 function hideOverlay() {
   document.getElementById('loadingOverlay').classList.add('hidden');
+  document.body.removeAttribute('aria-busy');
   document.getElementById('progressSteps').classList.add('hidden');
   // Reset progress steps
   for (let i = 1; i <= 3; i++) {
@@ -2374,19 +2384,25 @@ function buildForm(schema) {
     const indicator = document.createElement('div');
     indicator.className = 'wizard-indicator';
     indicator.id = 'wizardIndicator';
+    indicator.setAttribute('role', 'tablist');
+    indicator.setAttribute('aria-label', 'Form steps');
     schema.sections.forEach((section, i) => {
       if (i > 0) {
         const connector = document.createElement('div');
         connector.className = 'wizard-step-connector';
         connector.dataset.connectorIndex = i - 1;
+        connector.setAttribute('aria-hidden', 'true');
         indicator.appendChild(connector);
       }
       const step = document.createElement('div');
       step.className = 'wizard-step' + (i === 0 ? ' active' : '');
       step.dataset.stepIndex = i;
       step.dataset.stepNumber = section.step || (i + 1);
-      step.setAttribute('role', 'button');
-      step.setAttribute('tabindex', '0');
+      step.setAttribute('role', 'tab');
+      step.setAttribute('tabindex', i === 0 ? '0' : '-1');
+      step.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
+      step.id = `wizard-tab-${i}`;
+      step.setAttribute('aria-controls', `wizard-panel-${i}`);
       step.setAttribute('aria-label', `Step ${section.step || (i + 1)}: ${section.title}`);
       step.onclick = () => wizardStepClick(i);
       step.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); wizardStepClick(i); } };
@@ -2407,7 +2423,12 @@ function buildForm(schema) {
     const sectionDiv = document.createElement('div');
     sectionDiv.className = 'form-section';
     sectionDiv.dataset.sectionIndex = sectionIdx;
-    if (isWizard && sectionIdx > 0) sectionDiv.classList.add('wizard-hidden');
+    if (isWizard) {
+      sectionDiv.id = `wizard-panel-${sectionIdx}`;
+      sectionDiv.setAttribute('role', 'tabpanel');
+      sectionDiv.setAttribute('aria-labelledby', `wizard-tab-${sectionIdx}`);
+      if (sectionIdx > 0) sectionDiv.classList.add('wizard-hidden');
+    }
 
     const sectionTitle = document.createElement('h3');
     sectionTitle.className = 'section-title';
@@ -2817,11 +2838,17 @@ function wizardGoTo(stepIndex) {
     if (idx === stepIndex) {
       el.classList.add('active');
       circle.innerHTML = el.dataset.stepNumber;
+      el.setAttribute('aria-selected', 'true');
+      el.setAttribute('tabindex', '0');
     } else if (idx < stepIndex) {
       el.classList.add('completed');
       circle.innerHTML = '<svg width="14" height="14"><use href="#icon-check"/></svg>';
+      el.setAttribute('aria-selected', 'false');
+      el.setAttribute('tabindex', '-1');
     } else {
       circle.innerHTML = el.dataset.stepNumber;
+      el.setAttribute('aria-selected', 'false');
+      el.setAttribute('tabindex', '-1');
     }
   });
   form.querySelectorAll('.wizard-step-connector').forEach(el => {
@@ -3185,9 +3212,19 @@ function createRepeaterField(field, group) {
     const removeBtn = e.target.closest('.btn-remove-row');
     if (!removeBtn) return;
     if (rowsContainer.children.length <= minRows) return;
-    removeBtn.closest('.repeater-row').remove();
+    const row = removeBtn.closest('.repeater-row');
+    const nextRow = row.nextElementSibling || row.previousElementSibling;
+    row.remove();
     updateRepeaterNumbers();
     updateAddBtn();
+    // Restore focus to the next/previous row's first input or the add button
+    if (nextRow) {
+      const input = nextRow.querySelector('input, select, textarea');
+      if (input) input.focus();
+    } else {
+      const addBtn = wrapper.querySelector('.btn-add-item');
+      if (addBtn) addBtn.focus();
+    }
   });
 
   function addRepeaterRow() {
@@ -4005,6 +4042,8 @@ function showAutosavePrompt(savedAt) {
 
   const prompt = document.createElement('div');
   prompt.className = 'autosave-prompt';
+  prompt.setAttribute('role', 'alert');
+  prompt.setAttribute('aria-live', 'polite');
   prompt.innerHTML = `
     <span class="autosave-msg">
       Unsaved data from <strong>${formatTimeAgo(savedAt)}</strong>
@@ -4267,15 +4306,19 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
     dd.style.top = '';
     dd.style.left = '';
   } else {
+    // Batch reads, then writes to avoid layout thrashing
     const rect = anchorEl.getBoundingClientRect();
+    const vpWidth = window.innerWidth;
     dd.style.position = 'fixed';
     dd.style.top = (rect.bottom + 4) + 'px';
     dd.style.left = rect.left + 'px';
-    // Keep within viewport
-    const ddRect = dd.getBoundingClientRect();
-    if (ddRect.right > window.innerWidth - 8) {
-      dd.style.left = Math.max(8, window.innerWidth - ddRect.width - 8) + 'px';
-    }
+    // Check overflow after initial position — single additional read
+    requestAnimationFrame(() => {
+      const ddRect = dd.getBoundingClientRect();
+      if (ddRect.right > vpWidth - 8) {
+        dd.style.left = Math.max(8, vpWidth - ddRect.width - 8) + 'px';
+      }
+    });
   }
 
   _activeDropdownField = anchorEl;
