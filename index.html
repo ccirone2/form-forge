@@ -1209,21 +1209,21 @@
 <!-- Loading overlay -->
 <div class="loading-overlay hidden" id="loadingOverlay" role="status" aria-live="polite" aria-label="Loading">
   <div class="spinner" id="overlaySpinner"></div>
-  <div class="loading-text" id="loadingText">Loading...</div>
+  <div class="loading-text" id="loadingText">Loading export engine...</div>
   <div class="progress-steps hidden" id="progressSteps">
     <div class="progress-step" id="progressStep1">
       <div class="step-icon">1</div>
-      <span>Pyodide runtime</span>
+      <span>Download engine</span>
     </div>
     <div class="progress-connector" id="progressConn1"></div>
     <div class="progress-step" id="progressStep2">
       <div class="step-icon">2</div>
-      <span>Python runtime</span>
+      <span>Start Python</span>
     </div>
     <div class="progress-connector" id="progressConn2"></div>
     <div class="progress-step" id="progressStep3">
       <div class="step-icon">3</div>
-      <span>python-docx</span>
+      <span>Install packages</span>
     </div>
   </div>
   <div id="overlayRetryContainer"></div>
@@ -1771,6 +1771,18 @@ function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+// Map raw error messages to user-friendly language
+function friendlyError(err) {
+  const msg = (err && err.message) ? err.message : String(err);
+  if (/404|not found/i.test(msg)) return 'Repository not found. Check the owner/repo format.';
+  if (/401|403|unauthorized|forbidden|credentials/i.test(msg)) return 'Access denied. Your token may be invalid or expired.';
+  if (/rate limit/i.test(msg)) return 'GitHub rate limit reached. Add a personal access token or try again in a few minutes.';
+  if (/network|fetch|CORS|ERR_/i.test(msg)) return 'Network error. Check your connection and try again.';
+  if (/timeout/i.test(msg)) return 'Request timed out. Try again.';
+  if (/JSON/i.test(msg)) return 'Invalid JSON — check file syntax.';
+  return msg;
+}
+
 function buildFallbackSchemaGuide() {
   const schema = JSON.stringify(DEMO_SCHEMA, null, 2);
   return `<p>Below is the embedded demo schema. Use it as a starting point for your own <code>.json</code> files.</p>
@@ -1972,7 +1984,7 @@ async function launchLocal() {
     postLaunchHook();
   } catch (err) {
     log(`Local launch failed: ${err.message}`, 'error');
-    showToast(`Failed: ${err.message}`, 'error');
+    showToast(friendlyError(err), 'error');
   } finally {
     hideOverlay();
   }
@@ -2008,7 +2020,7 @@ async function launchDemo() {
     postLaunchHook();
   } catch (err) {
     log(`Demo launch failed: ${err.message}`, 'error');
-    showToast(`Failed: ${err.message}`, 'error');
+    showToast(friendlyError(err), 'error');
   } finally {
     hideOverlay();
   }
@@ -2134,7 +2146,7 @@ async function connectRepo() {
     await loadDocs();
   } catch (err) {
     statusEl.className = 'repo-status error';
-    statusEl.innerHTML = `Error: ${escapeHtml(err.message)} <button class="btn-retry" onclick="connectRepo()" style="margin-left: 12px; padding: 4px 12px; font-size: var(--text-sm);">Retry</button>`;
+    statusEl.innerHTML = `${escapeHtml(friendlyError(err))} <button class="btn-retry" onclick="connectRepo()" style="margin-left: 12px; padding: 4px 12px; font-size: var(--text-sm);">Retry</button>`;
     log(`Connect failed: ${err.message}`, 'error');
   } finally {
     document.getElementById('connectBtn').disabled = false;
@@ -2238,7 +2250,7 @@ async function launchForm() {
     postLaunchHook();
   } catch (err) {
     log(`Launch failed: ${err.message}`, 'error');
-    showToast(`Failed: ${err.message}`, 'error');
+    showToast(friendlyError(err), 'error');
   } finally {
     hideOverlay();
   }
@@ -2251,7 +2263,7 @@ async function initPyodide(opts = {}) {
   const silent = opts.silent || false;  // silent = background preload (no overlay)
 
   if (!silent) {
-    showOverlay('Initializing export engine...');
+    showOverlay('Loading export engine — this may take 30\u201360 seconds on first load...');
     document.getElementById('progressSteps').classList.remove('hidden');
     updateProgressStep(1, 'active');
   }
@@ -2815,7 +2827,7 @@ function wizardStepClick(targetStep) {
   if (targetStep > wizardCurrentStep && currentSchema) {
     const missing = validateSectionWithErrors(currentSchema.sections[wizardCurrentStep]);
     if (missing.length > 0) {
-      showToast(`Missing: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? '...' : ''}`, 'error');
+      showToast(`Missing ${missing.length} required field${missing.length !== 1 ? 's' : ''}: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ` and ${missing.length - 3} more` : ''}.`, 'error');
       scrollToFirstError();
       return;
     }
@@ -2827,7 +2839,7 @@ function wizardNext(fromStep) {
   if (currentSchema) {
     const missing = validateSectionWithErrors(currentSchema.sections[fromStep]);
     if (missing.length > 0) {
-      showToast(`Missing: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? '...' : ''}`, 'error');
+      showToast(`Missing ${missing.length} required field${missing.length !== 1 ? 's' : ''}: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ` and ${missing.length - 3} more` : ''}.`, 'error');
       scrollToFirstError();
       return;
     }
@@ -3901,7 +3913,7 @@ function saveFormData() {
   URL.revokeObjectURL(url);
 
   formDirty = false;
-  showToast('Form data saved successfully.', 'success');
+  showToast('Form data saved!', 'success');
   log(`saveFormData: downloaded ${filename}`, 'info');
 }
 
@@ -3920,14 +3932,14 @@ function handleLoadDataFile(event) {
     try {
       parsed = JSON.parse(e.target.result);
     } catch (err) {
-      showToast('Invalid JSON file — could not parse', 'error');
+      showToast('Invalid JSON file — check syntax.', 'error');
       log(`Load data: JSON parse error — ${err.message}`, 'error');
       event.target.value = '';
       return;
     }
 
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      showToast('Invalid data file — expected a JSON object', 'error');
+      showToast('Invalid data file — expected a JSON object.', 'error');
       log('Load data: root value is not a JSON object', 'error');
       event.target.value = '';
       return;
@@ -3950,14 +3962,14 @@ function handleLoadDataFile(event) {
     const data = parsed;
     setTimeout(() => populateForm(data), 0);
 
-    showToast('Form data loaded successfully');
+    showToast('Form data loaded!');
     log(`Load data: populated form from "${file.name}"`);
 
     event.target.value = '';
   };
 
   reader.onerror = function () {
-    showToast('Failed to read file', 'error');
+    showToast('Failed to read file.', 'error');
     log(`Load data: FileReader error reading "${file.name}"`, 'error');
     event.target.value = '';
   };
@@ -3980,7 +3992,7 @@ async function loadSampleData() {
       const raw = await ghFetchRaw(fixturePath);
       const data = JSON.parse(raw);
       setTimeout(() => populateForm(data, { skipFileFields: true }), 0);
-      showToast('Sample data loaded');
+      showToast('Sample data loaded!');
       log(`Sample data loaded from ${fixturePath}`, 'success');
       return;
     } catch (e) {
@@ -3991,12 +4003,12 @@ async function loadSampleData() {
   // Fallback: check for inline sampleData in the schema
   if (currentSchema.sampleData && typeof currentSchema.sampleData === 'object') {
     setTimeout(() => populateForm(currentSchema.sampleData, { skipFileFields: true }), 0);
-    showToast('Sample data loaded from schema');
+    showToast('Sample data loaded!');
     log('Sample data loaded from inline sampleData property', 'success');
     return;
   }
 
-  showToast('No sample data found for this form', 'error');
+  showToast('No sample data available for this form.', 'error');
   log('No sample data available — no fixture file or sampleData property', 'info');
 }
 
@@ -4098,10 +4110,10 @@ function showAutosavePrompt(savedAt) {
       delete data._formforge;
       setTimeout(() => populateForm(data), 0);
       prompt.remove();
-      showToast('Form data restored', 'success');
+      showToast('Form data restored!');
     } catch (err) {
       log(`Autosave restore failed: ${err.message}`, 'error');
-      showToast('Could not restore saved data', 'error');
+      showToast('Could not restore saved data — it may be corrupted.', 'error');
     }
   });
 
@@ -4376,7 +4388,7 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
         e.stopPropagation();
         deleteProfile(parseInt(deleteBtn.dataset.delete));
         showProfileDropdown(anchorEl, profileKey, fieldDef, showAll);
-        showToast('Profile deleted');
+        showToast('Profile deleted!');
         return;
       }
       // Profile item click -> apply profile
@@ -4394,7 +4406,7 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
         if (!currentSchema) return;
         const data = collectProfileFromForm(currentSchema);
         if (Object.keys(data).length === 0) {
-          showToast('Fill in some fields first', 'error');
+          showToast('Fill in some fields first.', 'error');
           return;
         }
         addProfile(data);
@@ -4537,7 +4549,7 @@ function showProfileEditor(index, anchorEl) {
     });
     if (hasAddr) updated.address = addrData;
     if (Object.keys(updated).length === 0) {
-      showToast('Fill in at least one field', 'error');
+      showToast('Fill in at least one field.', 'error');
       return;
     }
     if (index < profiles.length) {
@@ -4678,7 +4690,7 @@ async function loadPendingDataUrl() {
   try {
     response = await fetch(url);
   } catch (err) {
-    showToast('Failed to load form data from URL', 'error');
+    showToast('Failed to load form data from URL.', 'error');
     log('Fetch error loading data URL: ' + err, 'error');
     return;
   }
@@ -4687,13 +4699,13 @@ async function loadPendingDataUrl() {
   try {
     data = await response.json();
   } catch (err) {
-    showToast('Failed to load form data from URL', 'error');
+    showToast('Failed to load form data from URL.', 'error');
     log('JSON parse error loading data URL: ' + err, 'error');
     return;
   }
 
   if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-    showToast('Failed to load form data from URL', 'error');
+    showToast('Failed to load form data from URL.', 'error');
     log('Data URL did not return a JSON object', 'error');
     return;
   }
@@ -4701,7 +4713,7 @@ async function loadPendingDataUrl() {
   delete data._formforge;
 
   setTimeout(() => populateForm(data), 0);
-  showToast('Form data loaded from URL', 'success');
+  showToast('Form data loaded from URL!');
 }
 
 // ============================================================
@@ -4795,11 +4807,11 @@ function resetForm() {
 //  EXPORT
 // ============================================================
 async function handleExport() {
-  if (!pyodideReady) { showToast('Pyodide not ready', 'error'); return; }
+  if (!pyodideReady) { showToast('Export engine still loading — try again in a moment.', 'error'); return; }
 
   const missing = validateFormWithErrors();
   if (missing.length > 0) {
-    showToast(`Missing: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? '...' : ''}`, 'error');
+    showToast(`Missing ${missing.length} required field${missing.length !== 1 ? 's' : ''}: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ` and ${missing.length - 3} more` : ''}.`, 'error');
     log('Validation failed: ' + missing.join(', '), 'error');
     scrollToFirstError();
     return;
@@ -4848,7 +4860,7 @@ docx_bytes = generate_docx(form_data)
   } catch (err) {
     console.error(err);
     log('Export error: ' + err.message, 'error');
-    showToast('Export failed — check console', 'error');
+    showToast('Export failed — see console output below for details.', 'error');
   } finally {
     hideOverlay();
   }
