@@ -76,6 +76,9 @@
     --error-glow: rgba(239, 68, 68, 0.1);
     --error-subtle: rgba(239, 68, 68, 0.08);
 
+    /* Colors — state */
+    --disabled-opacity: 0.45;
+
     /* Typography — families */
     --font-sans: 'DM Sans', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
@@ -198,7 +201,7 @@
     font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap;
   }
   .btn-connect:hover { background: var(--accent-hover); }
-  .btn-connect:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-connect:disabled { opacity: var(--disabled-opacity); cursor: not-allowed; }
 
   .repo-status {
     margin-top: 12px; font-size: var(--text-sm); font-family: var(--font-mono); color: var(--text-muted);
@@ -261,7 +264,7 @@
   .schema-info {
     background: var(--accent-glow); border: 1px solid var(--accent-border);
     border-radius: var(--radius); padding: 16px 20px; margin-bottom: 32px;
-    font-size: var(--text-sm-md); font-family: var(--font-mono); color: var(--accent-hover);
+    font-size: var(--text-sm-md); font-family: var(--font-mono); color: var(--text-muted);
     display: flex; align-items: center; gap: 10px;
   }
   .schema-info svg { flex-shrink: 0; }
@@ -589,7 +592,7 @@
   }
   .btn-primary:hover { background: var(--accent-hover); }
   .btn-primary:active { transform: scale(0.97); }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-primary:disabled { opacity: var(--disabled-opacity); cursor: not-allowed; transform: none; }
   .btn-secondary {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 12px 28px; background: transparent; color: var(--text-muted);
@@ -1063,7 +1066,7 @@
   .docs-card-body.collapsed { display: none; }
   .docs-card-body p { margin-bottom: 12px; }
   .docs-card-body h4 {
-    font-size: var(--text-sm-md); font-weight: 600; color: var(--text); margin: 20px 0 8px;
+    font-size: var(--text-base); font-weight: 600; color: var(--text); margin: 20px 0 8px;
     padding-top: 12px; border-top: 1px solid var(--border);
   }
   .docs-card-body h4:first-of-type { margin-top: 12px; border-top: none; padding-top: 0; }
@@ -1490,7 +1493,7 @@
         <input type="file" accept=".json" id="loadDataInput" class="hidden-input" onchange="handleLoadDataFile(event)">
         <button class="btn-secondary" onclick="loadSampleData()">
           <svg width="14" height="14"><use href="#icon-file-text"/></svg>
-          Sample Data
+          Load Sample
         </button>
         <button class="btn-reset" onclick="resetForm()">
           <svg width="14" height="14"><use href="#icon-reset"/></svg>
@@ -3050,7 +3053,11 @@ function createListField(field, group) {
       updateListCount(itemsContainer, countEl);
       return;
     }
-    row.remove(); renumberListItems(itemsContainer); updateListCount(itemsContainer, countEl);
+    row.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+    row.style.opacity = '0'; row.style.transform = 'translateX(-8px)';
+    row.addEventListener('transitionend', () => {
+      row.remove(); renumberListItems(itemsContainer); updateListCount(itemsContainer, countEl);
+    }, { once: true });
   });
 
   const addBtn = document.createElement('button');
