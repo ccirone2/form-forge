@@ -96,3 +96,48 @@ ruff format templates/ tests/
 ## GitHub Issues
 
 Each issue includes a journaling task to update `docs/DEVLOG.md`.
+
+## Design Context
+
+### Users
+Small business operations staff who need to fill out forms and generate professional documents (onboarding packets, expense reports, etc.) without IT overhead. They are non-technical, task-focused, and want to get in and out quickly. FormForge is a tool they reach for when they have a specific job to do — not something they explore for fun.
+
+### Brand Personality
+**Clean, precise, confident.** Professional tool feel — minimal decoration, everything intentional. The UI should communicate competence and reliability without being cold or intimidating.
+
+### Emotional Goals
+- **Confidence & trust** — Users should feel assured the tool works correctly and their data stays local
+- **Ease & calm** — Forms feel effortless, no friction or confusion
+- **Speed & efficiency** — Get in, fill the form, get the document
+
+### Aesthetic Direction
+- **Dark-mode only** with indigo accent (`#6366f1`) as the primary interactive color
+- **Typography:** DM Sans (UI text) + JetBrains Mono (technical labels, badges, status indicators)
+- **Spacing:** Consistent 10px radius, generous card padding (28px), 12-16px component gaps
+- **Surfaces:** Layered dark backgrounds (`#0f1117` → `#181a22` → `#1f2230`) with subtle 1px borders
+- **Interactions:** Smooth 0.2s transitions, subtle hover lifts on cards, indigo focus glow rings
+- **Anti-references:** Avoid playful/whimsical aesthetics, excessive color, or busy layouts. This is not a consumer app — it's a focused productivity tool.
+
+### Design Tokens (`:root` in `index.html`)
+All design values are centralized as CSS custom properties. When adding or modifying styles, always use tokens rather than hard-coded values.
+
+| Category | Tokens | Notes |
+|----------|--------|-------|
+| **Colors** | `--bg`, `--surface`, `--surface-2`, `--border`, `--border-focus`, `--text`, `--text-muted`, `--text-on-accent`, `--accent`, `--accent-hover`, `--accent-glow`, `--accent-subtle`, `--accent-border`, `--accent-border-strong`, `--accent-overlay`, `--accent-hover-border`, `--success`, `--success-subtle`, `--warning`, `--error`, `--error-hover`, `--error-glow`, `--error-subtle` | Three-tier surface hierarchy: bg → surface → surface-2. Use `--text-on-accent` for white text on accent/semantic backgrounds. |
+| **Fonts** | `--font-sans` (DM Sans), `--font-mono` (JetBrains Mono) | Use `--font-mono` for labels, badges, status, counters. Use `--font-sans` for everything else. |
+| **Type scale** | `--text-2xs` (10), `--text-xs` (11), `--text-sm` (12), `--text-sm-md` (13), `--text-base` (14), `--text-md` (15), `--text-lg` (16), `--text-lg-xl` (18), `--text-xl` (20), `--text-2xl` (28), `--text-3xl` (32) | Base is 14px. Mono-label pattern: `var(--text-sm)` + `var(--font-mono)` + `var(--text-muted)` |
+| **Radii** | `--radius-xs` (4), `--radius-sm` (6), `--radius-md` (8), `--radius` / `--radius-lg` (10), `--radius-pill` (20) | `--radius-md` (8px) is the default for inputs and buttons. `--radius` (10px) for cards/sections. |
+| **Shadows** | `--shadow-sm`, `--shadow-md`, `--shadow-lg`, `--shadow-xl` | Used sparingly — only on hover-lifts, dropdowns, toasts, and overlays. |
+| **Transitions** | `--transition-fast` (0.15s), `--transition-base` (0.2s), `--transition-slow` (0.3s) | Default to `--transition-base`. Use `--transition-fast` for micro-interactions. |
+
+### Reusable Patterns
+- **`.mono-label`** — Utility class for the mono-label pattern (12px JetBrains Mono, muted). Apply via class or replicate the three properties.
+- **Card surface** — `background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px` (used by `.config-card`, `.picker-card`, `.form-section`)
+- **Button base** — All buttons share: `display: inline-flex; align-items: center; gap: 8px; border-radius: var(--radius-md); font-family: var(--font-sans); cursor: pointer; transition: all var(--transition-base)`
+
+### Design Principles
+1. **Clarity over decoration** — Every element should serve a purpose. No ornamental flourishes.
+2. **Progressive disclosure** — Show only what's needed at each step. Wizard mode and conditional visibility reflect this at the feature level; design should reinforce it visually.
+3. **Quiet confidence** — The UI should feel solid and trustworthy. Subtle transitions, consistent spacing, and restrained color use build that feeling.
+4. **Keyboard-friendly, readable** — Ensure all interactive elements are keyboard-navigable. Maintain strong contrast for text readability. No formal WCAG target, but respect the basics.
+5. **Zero-friction flow** — Minimize clicks, reduce cognitive load, keep the user moving toward their document.
