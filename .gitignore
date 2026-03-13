@@ -41,3 +41,11 @@ Desktop.ini
 # Environment files
 .env
 .env.local
+
+# Playwright
+test-screenshot.png
+test-results/
+playwright-report/
+
+# Claude Code local config
+.claude/settings.local.json

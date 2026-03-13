@@ -1,0 +1,75 @@
+{
+  "name": "FormForge Dev",
+
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+
+  "features": {
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ecmel.vscode-html-css",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "redhat.vscode-json",
+        "eamodio.gitlens",
+        "mhutchie.git-graph"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests/", "-v"],
+        "python.envFile": "",
+        "ruff.path": ["/usr/local/bin/ruff"],
+        "editor.formatOnSave": true,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        },
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+
+  "mounts": [
+    "source=${localEnv:HOME}/.claude,target=/home/dev/.claude,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/claude,target=/home/dev/.config/claude,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/gh,target=/home/dev/.config/gh,type=bind,consistency=cached"
+  ],
+
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/dev/.claude",
+    "PYTHONPATH": "/workspace",
+    "PLAYWRIGHT_BROWSERS_PATH": "/home/dev/.cache/ms-playwright"
+  },
+
+  "remoteUser": "dev",
+
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "workspaceFolder": "/workspace",
+
+  "forwardPorts": [8000, 8080],
+  "portsAttributes": {
+    "8000": {
+      "label": "FormForge Dev Server",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "Alt Dev Server",
+      "onAutoForward": "silent"
+    }
+  },
+
+  "initializeCommand": "mkdir -p ${localEnv:HOME}/.claude ${localEnv:HOME}/.config/claude ${localEnv:HOME}/.config/gh",
+
+  "postStartCommand": "echo '✓ Python:' $(python --version) && echo '✓ Node:' $(node --version) && echo '✓ Playwright:' $(npx playwright --version 2>/dev/null || echo 'not found') && echo '✓ Claude:' $(claude --version 2>/dev/null || echo 'run: claude') && echo '✓ gh:' $(gh --version 2>/dev/null | head -1 || echo 'run: gh auth login') && echo '' && echo 'Ready. Run: claude --dangerously-skip-permissions'"
+}
