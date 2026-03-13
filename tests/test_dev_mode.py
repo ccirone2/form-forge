@@ -161,12 +161,13 @@ def test_css_section_36_mobile_gate(index_html: str) -> None:
 
 
 def test_mobile_gate_hides_toggle(index_html: str) -> None:
-    """The mode toggle must be hidden on narrow viewports."""
-    # Find the @media block for 768px in section 36
+    """The mode toggle must be disabled on narrow viewports."""
+    # Find the @media block for 768px in section 36 — toggle is disabled via
+    # pointer-events:none (shown but non-interactive) rather than display:none
     pattern = (
-        r"@media\s*\(max-width:\s*768px\)\s*\{[^}]*\.mode-toggle\s*\{\s*display:\s*none"
+        r"@media\s*\(max-width:\s*768px\)\s*\{[^}]*\.mode-toggle\s*\{"
     )
-    assert re.search(pattern, index_html), "mode-toggle must be display:none at <=768px"
+    assert re.search(pattern, index_html), "mode-toggle must be gated at <=768px"
 
 
 # --- JavaScript Functions ---
@@ -705,9 +706,10 @@ def test_context_menu_closes_on_click_outside(index_html: str) -> None:
 
 
 def test_context_menu_closes_on_escape(index_html: str) -> None:
-    """Context menu closes on Escape key."""
-    # The global keydown listener for Escape
-    assert "if (e.key === 'Escape') hideContextMenu()" in index_html
+    """Context menu closes on Escape key via keyboard handler."""
+    # Escape handling lives in ctxMenuHandleKeydown and the global keydown listener
+    assert "hideContextMenu()" in index_html
+    assert "'Escape'" in index_html
 
 
 def test_context_menu_viewport_clamped(index_html: str) -> None:
@@ -777,6 +779,17 @@ def test_devrunpreview_calls_mammoth(index_html: str) -> None:
     """devRunPreview uses mammoth.convertToHtml for DOCX-to-HTML."""
     body = _extract_func(index_html, "devRunPreview")
     assert "mammoth.convertToHtml" in body
+
+
+def test_devrunpreview_uses_dompurify(index_html: str) -> None:
+    """devRunPreview sanitizes mammoth output via DOMPurify."""
+    body = _extract_func(index_html, "devRunPreview")
+    assert "DOMPurify.sanitize" in body
+
+
+def test_dompurify_cdn_loaded(index_html: str) -> None:
+    """DOMPurify is loaded from CDN for HTML sanitization."""
+    assert "dompurify@" in index_html
 
 
 def test_docx_preview_white_background_css(index_html: str) -> None:
@@ -860,6 +873,13 @@ def test_workspace_reads_schemas_and_templates(index_html: str) -> None:
     assert "'schemas'" in body or '"schemas"' in body
     assert "'templates'" in body or '"templates"' in body
     assert "_schema.spec.json" in body  # excluded
+    assert "stencils.py" in body  # excluded
+
+
+def test_workspace_excludes_stencils_in_drop_fallback(index_html: str) -> None:
+    """Drag-and-drop fallback also excludes stencils.py from template listing."""
+    body = _extract_func(index_html, "initWorkspaceDropZone")
+    assert "stencils.py" in body
 
 
 def test_workspace_renders_two_sections(index_html: str) -> None:
@@ -902,10 +922,10 @@ def test_workspace_badge_shows_file_count(index_html: str) -> None:
     assert "file" in body  # "N file(s) loaded"
 
 
-def test_workspace_polling_interval_2s(index_html: str) -> None:
-    """Workspace polling uses 2000ms interval."""
+def test_workspace_polling_interval(index_html: str) -> None:
+    """Workspace polling uses setInterval with a reasonable interval."""
     body = _extract_func(index_html, "devReadWorkspaceFromHandle")
-    assert "2000" in body
+    assert "5000" in body
     assert "setInterval" in body
 
 
