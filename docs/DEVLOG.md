@@ -14,6 +14,49 @@
 
 ## Log
 
+### 2026-03-13 — UI Audit: Design Tokens, Accessibility, and Polish (#103, #104, #105)
+**Issues:** #103, #104, #105
+
+Comprehensive UI audit and remediation across accessibility, theming, responsive design, and performance.
+
+**Design Token Extraction (#103):**
+- Expanded `:root` from 14 to 35+ CSS custom properties
+- Added font families (`--font-sans`, `--font-mono`), type scale (`--text-2xs` through `--text-3xl`), radii (`--radius-xs` through `--radius-pill`), shadows, transitions
+- Migrated all 47 font-family, ~110 font-size, ~45 border-radius, 4 box-shadow declarations to tokens
+- Added `--text-on-accent`, 6 accent opacity variants, `--error-hover`, `--error-subtle`, `--success-subtle`
+- Eliminated all hard-coded `rgba()` color values outside `:root`
+
+**High-Impact Accessibility (#103):**
+- Multi-select: ARIA combobox/listbox/option roles, keyboard nav (arrow keys, Enter, Escape)
+- Form errors: `aria-invalid` + `aria-describedby` on inputs
+- Address fields: proper `<label>` elements for all sub-inputs
+- Profile dropdown: focus trap, `role="menu"`, Escape key, focus restoration
+- Signature canvas: responsive CSS width + DPI-aware JS sizing
+- Replaced `getImageData()` blank check with `hasDrawn` boolean flag
+
+**Medium-Impact Accessibility (#104):**
+- Views wrapped in `<main>` landmarks
+- Loading overlay: `role="status"`, `aria-live`, `aria-busy`
+- Autosave prompt: `role="alert"` + `aria-live="polite"`
+- Wizard: full tablist/tab/tabpanel ARIA pattern
+- Field errors: warning icon (⚠) via `::before` — not color-only
+- Focus-visible rings on picker cards, wizard steps, docs headers
+- Focus restoration after repeater row removal
+- Address grid: 768px breakpoint for tablets
+
+**Low-Impact Polish (#105):**
+- Removed contrast-reducing opacity on longtext counter and list divider
+- Added `aria-hidden` to decorative elements (status-dot, currency prefix)
+- Refactored `<h1 role="button">` to semantic `<h1><button>`
+- Branch input responsive fix for tablets
+- `setTimeout(0)` → `requestAnimationFrame` for initial row creation
+
+**Decisions:**
+- SVG select chevron kept as data URI with sync comment (CSS-only approach too invasive)
+- Responsive breakpoint sizes (26px, 22px, 17px) intentionally left as raw values (one-off overrides)
+
+---
+
 ### 2026-03-11 — Add new field types: time, url, toggle, datetime, multi_select (#101)
 **Issue:** #101
 
