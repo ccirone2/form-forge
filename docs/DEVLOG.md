@@ -14,6 +14,35 @@
 
 ## Log
 
+### 2026-03-13 — Design Critique: UX, Microcopy, and Visual Polish (#109, #110, #111)
+**Issues:** #109, #110, #111
+
+Design critique and remediation focused on user experience, error messaging, feature discoverability, and visual consistency.
+
+**Error Messages & Loading (#109):**
+- Added `friendlyError()` helper mapping GitHub API errors (404, 401, rate limits) to human language
+- Replaced all raw `err.message` toasts with contextual, actionable messages
+- Replaced "Pyodide not ready" with "Export engine still loading — try again in a moment"
+- Loading overlay now shows "may take 30–60 seconds on first load"
+- Progress step labels renamed to user-friendly names
+- Standardized toast punctuation (! for success, . for errors)
+- Validation toast now shows count: "Missing 5 required fields: A, B, C and 2 more"
+
+**Feature Discoverability (#110):**
+- Profiles button tooltip explains autofill capability
+- "Auto-saving" indicator with save icon added to form nav bar
+- "Step X of Y" label added to wizard navigation
+- Conditional fields now fade in with animation when revealed
+
+**Visual Polish (#111):**
+- Schema info banner text changed from accent to muted (reduced accent-on-accent noise)
+- Added `--disabled-opacity` token replacing hard-coded opacity on disabled buttons
+- Docs card h4 increased from 13px to 14px for better hierarchy
+- List item removal now has exit animation (fade + slide)
+- "Sample Data" button renamed to "Load Sample" for clarity
+
+---
+
 ### 2026-03-13 — UI Audit: Design Tokens, Accessibility, and Polish (#103, #104, #105)
 **Issues:** #103, #104, #105
 
