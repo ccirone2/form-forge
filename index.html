@@ -172,7 +172,7 @@
     padding: 6px 14px; border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: 500;
     font-family: var(--font-mono);
     background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
-    transition: all 0.3s ease;
+    transition: all var(--transition-slow) ease;
   }
   .status-badge.ready { border-color: var(--success); color: var(--success); }
   .status-badge.loading { border-color: var(--warning); color: var(--warning); }
@@ -203,7 +203,7 @@
     width: 100%; padding: 10px 14px; background: var(--surface-2);
     border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text);
     font-family: var(--font-mono); font-size: var(--text-sm-md); outline: none;
-    transition: border-color 0.2s;
+    transition: border-color var(--transition-base);
   }
   .config-row input:focus { border-color: var(--border-focus); }
 
@@ -211,9 +211,10 @@
     display: inline-flex; align-items: center; gap: 8px;
     padding: 10px 20px; background: var(--accent); color: var(--text-on-accent); border: none;
     border-radius: var(--radius-md); font-family: var(--font-sans); font-size: var(--text-base);
-    font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap;
+    font-weight: 600; cursor: pointer; transition: background var(--transition-base); white-space: nowrap;
   }
   .btn-connect:hover { background: var(--accent-hover); }
+  .btn-connect:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .btn-connect:disabled { opacity: var(--disabled-opacity); cursor: not-allowed; }
 
   .repo-status {
@@ -230,7 +231,7 @@
   }
   .picker-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 20px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
+    padding: 20px; cursor: pointer; transition: all var(--transition-base); position: relative; overflow: hidden;
   }
   .picker-card:hover, .picker-card:focus-visible { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow-md); }
   .picker-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -260,9 +261,10 @@
     display: inline-flex; align-items: center; gap: 6px;
     padding: 8px 14px; background: var(--surface-2); border: 1px solid var(--border);
     border-radius: var(--radius-md); color: var(--text-muted); font-family: var(--font-sans);
-    font-size: var(--text-sm-md); cursor: pointer; transition: all 0.15s;
+    font-size: var(--text-sm-md); cursor: pointer; transition: all var(--transition-fast);
   }
   .btn-back:hover { border-color: var(--text-muted); color: var(--text); }
+  .btn-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .form-nav-info { font-size: var(--text-sm); font-family: var(--font-mono); color: var(--text-muted); }
   .autosave-indicator {
     display: inline-flex; align-items: center; gap: 4px;
@@ -285,7 +287,7 @@
   /* ===== 8. FORM SECTIONS & FIELDS ===== */
   .form-section {
     margin-bottom: 32px; padding: 28px; background: var(--surface);
-    border: 1px solid var(--border); border-radius: var(--radius); transition: border-color 0.2s;
+    border: 1px solid var(--border); border-radius: var(--radius); transition: border-color var(--transition-base);
   }
   .form-section:hover { border-color: var(--accent-hover-border); }
   .section-title {
@@ -305,7 +307,7 @@
     width: 100%; padding: 10px 14px; background: var(--surface-2);
     border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text);
     font-family: var(--font-sans); font-size: var(--text-base);
-    transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base); outline: none;
   }
   input:focus, textarea:focus, select:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
   textarea { resize: vertical; min-height: 80px; }
@@ -321,7 +323,7 @@
   .checkbox-group, .radio-group { display: flex; flex-direction: column; gap: 10px; }
   .checkbox-item, .radio-item {
     display: flex; align-items: center; gap: 10px; cursor: pointer;
-    padding: 8px 12px; border-radius: var(--radius-md); transition: background 0.15s;
+    padding: 8px 12px; border-radius: var(--radius-md); transition: background var(--transition-fast);
   }
   .checkbox-item:hover, .radio-item:hover { background: var(--surface-2); }
   .checkbox-item input[type="checkbox"], .radio-item input[type="radio"] {
@@ -336,12 +338,12 @@
   .toggle-slider {
     position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
     background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: 13px; transition: 0.2s;
+    border-radius: 13px; transition: var(--transition-base);
   }
   .toggle-slider:before {
     position: absolute; content: ""; height: 20px; width: 20px;
     left: 2px; bottom: 2px; background: var(--text-muted);
-    border-radius: 50%; transition: 0.2s;
+    border-radius: 50%; transition: var(--transition-base);
   }
   .toggle-switch input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
   .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); background: var(--text-on-accent); }
@@ -354,7 +356,7 @@
     display: flex; flex-wrap: wrap; gap: 6px; min-height: 42px;
     padding: 8px 12px; background: var(--surface-2);
     border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer;
-    transition: border-color 0.2s, box-shadow 0.2s; align-items: center;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base); align-items: center;
   }
   .multi-select-display:focus-within { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
   .multi-select-tag {
@@ -415,6 +417,7 @@
     font-size: var(--text-sm-md); cursor: pointer; transition: all 0.15s; align-self: flex-start;
   }
   .btn-add-item:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+  .btn-add-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .list-item-count { font-size: var(--text-xs); font-family: var(--font-mono); color: var(--text-muted); opacity: 0.7; }
   .list-or-divider {
     display: flex; align-items: center; gap: 10px; color: var(--text-muted);
@@ -463,6 +466,7 @@
   .signature-pad-wrapper { display: flex; flex-direction: column; gap: 8px; }
   .signature-canvas {
     border: 2px dashed var(--border); border-radius: var(--radius-md); cursor: crosshair;
+    /* White background intentional — simulates paper for signature */
     background: #fff; touch-action: none; width: 100%; height: 150px;
   }
   .signature-actions { display: flex; gap: 8px; }
@@ -472,6 +476,7 @@
     font-size: var(--text-sm); cursor: pointer; transition: all 0.15s;
   }
   .btn-clear-sig:hover { border-color: var(--error); color: var(--error); }
+  .btn-clear-sig:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   /* ===== 19. REPEATER ===== */
   .repeater-wrapper { display: flex; flex-direction: column; gap: 10px; }
@@ -579,7 +584,7 @@
 
   /* ===== 21. BUTTONS ===== */
   .submit-area { margin-top: 40px; display: flex; flex-direction: column; gap: 16px; }
-  .submit-area-primary { display: flex; }
+  .submit-area-primary { display: flex; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
   .submit-area-primary .btn-primary {
     padding: 14px 36px; font-size: var(--text-md);
   }
@@ -597,13 +602,15 @@
     margin-left: auto; opacity: 0.7;
   }
   .btn-reset:hover { border-color: var(--error); color: var(--error); opacity: 1; }
+  .btn-reset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; opacity: 1; }
   .btn-primary {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 12px 28px; background: var(--accent); color: var(--text-on-accent); border: none;
     border-radius: var(--radius-md); font-family: var(--font-sans); font-size: var(--text-base);
-    font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.1s;
+    font-weight: 600; cursor: pointer; transition: background var(--transition-base), transform 0.1s;
   }
   .btn-primary:hover { background: var(--accent-hover); }
+  .btn-primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .btn-primary:active { transform: scale(0.97); }
   .btn-primary:disabled { opacity: var(--disabled-opacity); cursor: not-allowed; transform: none; }
   .btn-secondary {
@@ -613,6 +620,7 @@
     font-size: var(--text-base); font-weight: 500; cursor: pointer; transition: all 0.2s;
   }
   .btn-secondary:hover { border-color: var(--text-muted); color: var(--text); }
+  .btn-secondary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .btn-secondary svg { opacity: 0.7; }
   .btn-secondary:hover svg { opacity: 1; }
 
@@ -646,7 +654,7 @@
   }
   /* ===== INLINE-STYLE REPLACEMENT CLASSES ===== */
   .demo-btn-wrapper { margin-top: 20px; }
-  .btn-demo { border-color: var(--accent); color: var(--accent-hover); }
+  .btn-demo-primary { padding: 12px 28px; font-size: var(--text-md); }
   .section-label-muted {
     font-size: var(--text-xs); font-weight: 400; color: var(--text-muted); margin-left: 6px;
   }
@@ -675,6 +683,14 @@
     vertical-align: -2px; margin-right: 6px;
   }
   .hidden-input { display: none; }
+  .skip-link {
+    position: absolute; top: -40px; left: 0; z-index: 200;
+    padding: 8px 16px; background: var(--accent); color: var(--text-on-accent);
+    font-family: var(--font-sans); font-size: var(--text-sm); font-weight: 600;
+    border-radius: 0 0 var(--radius-md) 0; text-decoration: none;
+    transition: top var(--transition-fast);
+  }
+  .skip-link:focus { top: 0; }
 
   /* ===== USER PROFILE ===== */
   .profile-btn {
@@ -685,6 +701,7 @@
     position: relative;
   }
   .profile-btn:hover { border-color: var(--text-muted); color: var(--text); }
+  .profile-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .profile-btn svg { flex-shrink: 0; }
   .profile-btn .profile-badge {
     background: var(--accent); color: var(--text-on-accent); font-size: var(--text-2xs); font-weight: 700;
@@ -958,6 +975,7 @@
     font-weight: 600; cursor: pointer; transition: background 0.2s;
   }
   .btn-retry:hover { background: var(--error-hover); }
+  .btn-retry:focus-visible { outline: 2px solid var(--error); outline-offset: 2px; }
 
   /* ===== 24. TOAST ===== */
   .toast {
@@ -977,9 +995,11 @@
     transition: opacity 0.15s; flex-shrink: 0;
   }
   .toast-dismiss:hover { opacity: 1; }
+  .toast-dismiss:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: var(--radius-xs); }
 
   /* ===== 25. CONSOLE PANEL ===== */
-  .console-panel { margin-top: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .console-panel { margin-top: 32px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; opacity: 0.5; transition: opacity var(--transition-base); }
+  .console-panel:hover, .console-panel:focus-within { opacity: 1; }
   .console-header {
     display: flex; align-items: center; justify-content: space-between; padding: 10px 16px;
     background: var(--surface-2); border-bottom: 1px solid var(--border);
@@ -1148,13 +1168,14 @@
     transition: all var(--transition-base);
   }
   .mode-toggle:hover { border-color: var(--accent-border); color: var(--text); }
+  .mode-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .mode-toggle.active {
     background: var(--accent-subtle); border-color: var(--accent-border-strong);
     color: var(--accent-hover);
   }
 
   .dev-nav {
-    display: flex; align-items: center; gap: 2px;
+    display: flex; align-items: center; justify-content: center; gap: 2px;
     padding: 4px 24px; background: var(--bg);
     border-bottom: 1px solid var(--border);
   }
@@ -1337,6 +1358,52 @@
   .dev-preview-form .form-section {
     margin-bottom: 16px;
   }
+
+  /* ===== Preview drag-and-drop ===== */
+  .dev-preview-form .drag-handle {
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: grab; color: var(--text-muted); opacity: 0;
+    transition: opacity var(--transition-fast);
+    flex-shrink: 0; padding: 2px; border-radius: var(--radius-xs);
+  }
+  .dev-preview-form .drag-handle:hover { opacity: 1; background: var(--surface-2); }
+  .dev-preview-form .drag-handle:active { cursor: grabbing; }
+  .dev-preview-form .form-section:hover > .section-title > .drag-handle,
+  .dev-preview-form .field-group:hover > .drag-handle { opacity: 0.5; }
+  .dev-preview-form .section-title { display: flex; align-items: center; gap: 6px; }
+  .dev-preview-form .section-title .drag-handle { margin-left: -4px; }
+  .dev-preview-form .field-group { position: relative; }
+  .dev-preview-form .field-group > .drag-handle {
+    position: absolute; right: 0; top: 0; z-index: 2;
+  }
+  .dev-preview-form .form-section.dragging,
+  .dev-preview-form .field-group.dragging { opacity: 0.3; }
+  .dev-preview-form .form-section.drag-over-top { border-top: 2px solid var(--accent); margin-top: -2px; }
+  .dev-preview-form .form-section.drag-over-bottom { border-bottom: 2px solid var(--accent); margin-bottom: -2px; }
+  .dev-preview-form .field-group.drag-over-top { box-shadow: 0 -2px 0 0 var(--accent); }
+  .dev-preview-form .field-group.drag-over-bottom { box-shadow: 0 2px 0 0 var(--accent); }
+
+  /* ===== Add-section divider buttons ===== */
+  .dev-section-add {
+    display: flex; align-items: center; justify-content: center;
+    margin: -4px 0; padding: 4px 0; cursor: pointer;
+    opacity: 0; transition: opacity var(--transition-base);
+  }
+  .dev-preview-form:hover .dev-section-add { opacity: 0.4; }
+  .dev-section-add:hover { opacity: 1 !important; }
+  .dev-section-add-line { display: none; }
+  .dev-section-add-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--surface-2); border: 1px solid var(--accent-border);
+    color: var(--accent); font-size: 16px; line-height: 1;
+    flex-shrink: 0; transition: all var(--transition-fast);
+  }
+  .dev-section-add:hover .dev-section-add-btn {
+    background: var(--accent); color: var(--text-on-accent);
+    border-color: var(--accent);
+  }
+
   .dev-preview-empty {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 8px; padding: 60px 20px; color: var(--text-muted);
@@ -1364,7 +1431,7 @@
     position: relative; white-space: nowrap;
   }
   .ctx-menu-item:hover,
-  .ctx-menu-item:focus { background: var(--accent-subtle); color: var(--accent-hover); outline: none; }
+  .ctx-menu-item:focus-visible { background: var(--accent-subtle); color: var(--accent-hover); outline: none; box-shadow: inset 2px 0 0 var(--accent); }
   .ctx-menu-separator {
     height: 1px; background: var(--border); margin: 4px 0;
   }
@@ -1603,6 +1670,8 @@
 </head>
 <body>
 
+<a href="#view-setup" class="skip-link">Skip to content</a>
+
 <!-- ===== SVG SPRITE SHEET (hidden) ===== -->
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
   <!-- Arrow right: used in Open Form, Open Selected Form, wizard Next -->
@@ -1746,7 +1815,7 @@
 <header class="app-header">
   <h1><button type="button" class="h1-home-btn" onclick="showView('setup')"><span>&#9632;</span> FormForge</button></h1>
   <div class="header-right">
-    <button class="mode-toggle" id="modeToggle" onclick="toggleDevMode()" title="Toggle Dev Mode">
+    <button type="button" class="mode-toggle" id="modeToggle" onclick="toggleDevMode()" title="Toggle Dev Mode">
       <svg width="14" height="14"><use href="#icon-wrench"/></svg>
       <span class="mode-toggle-label" id="modeToggleLabel">Dev</span>
     </button>
@@ -1759,15 +1828,15 @@
 
 <!-- Dev Mode Navigation -->
 <nav class="dev-nav" id="devNav" role="tablist" aria-label="Dev Mode navigation" style="display:none">
-  <button class="dev-nav-tab active" id="tab-dev-schema" data-dev-tab="dev-schema" role="tab" aria-selected="true" aria-controls="view-dev-schema" onclick="showDevTab('dev-schema')">
+  <button type="button" class="dev-nav-tab active" id="tab-dev-schema" data-dev-tab="dev-schema" role="tab" aria-selected="true" aria-controls="view-dev-schema" onclick="showDevTab('dev-schema')">
     <svg width="14" height="14" aria-hidden="true"><use href="#icon-file-upload"/></svg>
     Schema Builder
   </button>
-  <button class="dev-nav-tab" id="tab-dev-template" data-dev-tab="dev-template" role="tab" aria-selected="false" aria-controls="view-dev-template" onclick="showDevTab('dev-template')">
+  <button type="button" class="dev-nav-tab" id="tab-dev-template" data-dev-tab="dev-template" role="tab" aria-selected="false" aria-controls="view-dev-template" onclick="showDevTab('dev-template')">
     <svg width="14" height="14" aria-hidden="true"><use href="#icon-code"/></svg>
     Template Builder
   </button>
-  <button class="dev-nav-tab" id="tab-dev-workspace" data-dev-tab="dev-workspace" role="tab" aria-selected="false" aria-controls="view-dev-workspace" onclick="showDevTab('dev-workspace')">
+  <button type="button" class="dev-nav-tab" id="tab-dev-workspace" data-dev-tab="dev-workspace" role="tab" aria-selected="false" aria-controls="view-dev-workspace" onclick="showDevTab('dev-workspace')">
     <svg width="14" height="14" aria-hidden="true"><use href="#icon-folder"/></svg>
     Workspace
   </button>
@@ -1777,10 +1846,10 @@
 <main class="view active" id="view-setup">
   <div class="main-container">
     <div class="setup-hero">
-      <h2>Load Your Forms</h2>
-      <p>Connect a GitHub repo for shared org-wide forms, or load schema and template files directly from your machine for fully private, offline use. No data ever leaves your browser.</p>
+      <h2>Forms that build documents</h2>
+      <p>Fill out a form, get a formatted DOCX — all in your browser. No servers, no accounts.</p>
       <div class="demo-btn-wrapper">
-        <button class="btn-secondary btn-demo" onclick="launchDemo()">
+        <button type="button" class="btn-primary btn-demo-primary" onclick="launchDemo()">
           <svg width="15" height="15"><use href="#icon-play"/></svg>
           Try the demo form
         </button>
@@ -1822,7 +1891,7 @@
       </div>
 
       <div class="local-launch-row">
-        <button class="btn-connect" id="localLaunchBtn" disabled onclick="launchLocal()">
+        <button type="button" class="btn-connect" id="localLaunchBtn" disabled onclick="launchLocal()">
           <svg width="16" height="16"><use href="#icon-arrow-right"/></svg>
           Open Form
         </button>
@@ -1832,7 +1901,7 @@
 
     <!-- Divider -->
     <div class="source-divider">
-      <span>or load from a shared repository</span>
+      <span>or connect a shared repository</span>
     </div>
 
     <!-- ===== GITHUB ===== -->
@@ -1844,13 +1913,13 @@
       <div class="config-row">
         <div class="field-grow">
           <label>owner / repo</label>
-          <input type="text" id="repoInput" placeholder="myorg/form-templates" value="ccirone2/form-forge" spellcheck="false">
+          <input type="text" id="repoInput" placeholder="myorg/form-templates" value="ccirone2/form-forge" spellcheck="false" autocomplete="off">
         </div>
         <div class="field-grow branch-input-wrapper">
           <label>branch (optional)</label>
           <input type="text" id="branchInput" placeholder="main" spellcheck="false">
         </div>
-        <button class="btn-connect" id="connectBtn" onclick="connectRepo()">
+        <button type="button" class="btn-connect" id="connectBtn" onclick="connectRepo()">
           <svg width="16" height="16"><use href="#icon-github"/></svg>
           Connect
         </button>
@@ -1955,7 +2024,7 @@
       <h3>Available Forms</h3>
       <div class="picker-grid" id="pickerGrid"></div>
       <div class="launch-area">
-        <button class="btn-primary" id="launchBtn" disabled onclick="launchForm()">
+        <button type="button" class="btn-primary" id="launchBtn" disabled onclick="launchForm()">
           <svg width="16" height="16"><use href="#icon-arrow-right"/></svg>
           Open Selected Form
         </button>
@@ -1968,7 +2037,7 @@
 <main class="view" id="view-form">
   <div class="main-container">
     <div class="form-nav">
-      <button class="btn-back" onclick="showView('setup')">
+      <button type="button" class="btn-back" onclick="showView('setup')">
         <svg width="14" height="14"><use href="#icon-arrow-left"/></svg>
         Back to picker
       </button>
@@ -1977,7 +2046,7 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         Auto-saving
       </span>
-      <button class="profile-btn" id="profileNavBtn" onclick="toggleProfileNav()" title="Saved profiles — autofill common fields like name, email, and address">
+      <button type="button" class="profile-btn" id="profileNavBtn" onclick="toggleProfileNav()" title="Saved profiles — autofill common fields like name, email, and address">
         <svg width="14" height="14"><use href="#icon-person"/></svg>
         Profiles <span class="profile-badge" id="profileBadge" style="display:none">0</span>
       </button>
@@ -1995,26 +2064,26 @@
 
     <div class="submit-area">
       <div class="submit-area-primary">
-        <button class="btn-primary" id="exportBtn" disabled onclick="handleExport()">
+        <button type="button" class="btn-primary" id="exportBtn" disabled onclick="handleExport()">
           <svg width="16" height="16"><use href="#icon-export"/></svg>
           Export to DOCX
         </button>
       </div>
       <div class="submit-area-secondary">
-        <button class="btn-secondary" onclick="saveFormData()">
+        <button type="button" class="btn-secondary" onclick="saveFormData()">
           <svg width="14" height="14"><use href="#icon-save"/></svg>
           Save Data
         </button>
-        <button class="btn-secondary" onclick="document.getElementById('loadDataInput').click()">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('loadDataInput').click()">
           <svg width="14" height="14"><use href="#icon-upload"/></svg>
           Load Data
         </button>
         <input type="file" accept=".json" id="loadDataInput" class="hidden-input" onchange="handleLoadDataFile(event)">
-        <button class="btn-secondary" onclick="loadSampleData()">
+        <button type="button" class="btn-secondary" onclick="loadSampleData()">
           <svg width="14" height="14"><use href="#icon-file-text"/></svg>
           Load Sample
         </button>
-        <button class="btn-reset" onclick="resetForm()">
+        <button type="button" class="btn-reset" onclick="resetForm()">
           <svg width="14" height="14"><use href="#icon-reset"/></svg>
           Reset
         </button>
@@ -2042,11 +2111,11 @@
         </span>
       </div>
       <div class="dev-toolbar-right">
-        <button class="btn-secondary btn-sm" onclick="devNewSchema()">New</button>
-        <button class="btn-secondary btn-sm" onclick="document.getElementById('devSchemaFileInput').click()">Load</button>
+        <button type="button" class="btn-secondary btn-sm" onclick="devNewSchema()">New</button>
+        <button type="button" class="btn-secondary btn-sm" onclick="document.getElementById('devSchemaFileInput').click()">Load</button>
         <input type="file" accept=".json" id="devSchemaFileInput" class="hidden-input" onchange="devLoadSchemaFile(event)">
-        <button class="btn-secondary btn-sm" onclick="devFormatSchema()">Format</button>
-        <button class="btn-secondary btn-sm" onclick="devSaveSchema()" title="Save (Ctrl+S)">
+        <button type="button" class="btn-secondary btn-sm" onclick="devFormatSchema()">Format</button>
+        <button type="button" class="btn-secondary btn-sm" onclick="devSaveSchema()" title="Save (Ctrl+S)">
           <svg width="12" height="12"><use href="#icon-save"/></svg>
           Save
         </button>
@@ -2088,14 +2157,14 @@
         </span>
       </div>
       <div class="dev-toolbar-right">
-        <button class="btn-secondary btn-sm" onclick="devNewTemplate()">New</button>
-        <button class="btn-secondary btn-sm" onclick="document.getElementById('devTemplateFileInput').click()">Load</button>
+        <button type="button" class="btn-secondary btn-sm" onclick="devNewTemplate()">New</button>
+        <button type="button" class="btn-secondary btn-sm" onclick="document.getElementById('devTemplateFileInput').click()">Load</button>
         <input type="file" accept=".py" id="devTemplateFileInput" class="hidden-input" onchange="devLoadTemplateFile(event)">
-        <button class="btn-secondary btn-sm" onclick="devSaveTemplate()" title="Save (Ctrl+S)">
+        <button type="button" class="btn-secondary btn-sm" onclick="devSaveTemplate()" title="Save (Ctrl+S)">
           <svg width="12" height="12"><use href="#icon-save"/></svg>
           Save
         </button>
-        <button class="btn-primary btn-sm" onclick="devRunPreview()" title="Preview DOCX (Ctrl+Enter)">
+        <button type="button" class="btn-primary btn-sm" onclick="devRunPreview()" title="Preview DOCX (Shift+Enter / Ctrl+Enter)">
           <svg width="12" height="12"><use href="#icon-play"/></svg>
           Preview DOCX
         </button>
@@ -2108,11 +2177,11 @@
           <div class="dev-editor" id="templateEditor" aria-label="Python template editor"></div>
         </div>
         <div class="dev-sample-data" id="sampleDataPanel">
-          <button class="dev-sample-toggle" onclick="devToggleSampleData()">
+          <button type="button" class="dev-sample-toggle" onclick="devToggleSampleData()">
             <span class="dev-sample-arrow" id="sampleDataArrow">&#9654;</span>
             <span class="mono-label">SAMPLE DATA (JSON)</span>
           </button>
-          <button class="btn-secondary btn-sm" onclick="devAutoFillSampleData()" title="Generate from schema" style="position:absolute;right:8px;top:4px;font-size:var(--text-2xs);padding:2px 8px;">Auto-fill</button>
+          <button type="button" class="btn-secondary btn-sm" onclick="devAutoFillSampleData()" title="Generate from schema" style="position:absolute;right:8px;top:4px;font-size:var(--text-2xs);padding:2px 8px;">Auto-fill</button>
           <div class="dev-sample-body collapsed" id="sampleDataBody">
             <div class="dev-editor-wrap dev-editor-wrap-sm">
               <div class="dev-line-numbers" id="sampleLineNumbers"></div>
@@ -2152,29 +2221,29 @@
       <div class="dev-toolbar-right">
         <div class="gh-workspace-bar" id="ghWorkspaceBar" style="display:none">
           <select class="gh-branch-select" id="ghBranchSelect" aria-label="Branch" onchange="devGhSwitchBranch(this.value)"></select>
-          <button class="btn-secondary btn-sm" id="btnGhNewBranch" onclick="devGhShowNewBranch()" title="Create new branch">
+          <button type="button" class="btn-secondary btn-sm" id="btnGhNewBranch" onclick="devGhShowNewBranch()" title="Create new branch" aria-label="Create new branch">
             <svg width="12" height="12"><use href="#icon-git-branch"/></svg>
           </button>
-          <button class="btn-secondary btn-sm" id="btnGhCommit" onclick="devGhShowCommitPanel()" style="display:none">
+          <button type="button" class="btn-secondary btn-sm" id="btnGhCommit" onclick="devGhShowCommitPanel()" style="display:none">
             <svg width="12" height="12"><use href="#icon-git-commit"/></svg>
             Commit
           </button>
-          <button class="btn-secondary btn-sm" onclick="devGhRefreshFiles()">
+          <button type="button" class="btn-secondary btn-sm" onclick="devGhRefreshFiles()" aria-label="Refresh files">
             <svg width="12" height="12"><use href="#icon-refresh"/></svg>
           </button>
-          <button class="btn-secondary btn-sm" onclick="devGhDisconnect()" title="Disconnect repo">
+          <button type="button" class="btn-secondary btn-sm" onclick="devGhDisconnect()" title="Disconnect repo" aria-label="Disconnect repo">
             <svg width="12" height="12"><use href="#icon-unlink"/></svg>
           </button>
         </div>
-        <button class="btn-secondary btn-sm" id="btnConnectRepo" onclick="devGhShowConnectModal()">
+        <button type="button" class="btn-secondary btn-sm" id="btnConnectRepo" onclick="devGhShowConnectModal()">
           <svg width="12" height="12"><use href="#icon-github"/></svg>
           Connect Repo
         </button>
-        <button class="btn-secondary btn-sm" id="btnOpenFolder" onclick="devOpenWorkspace()">
+        <button type="button" class="btn-secondary btn-sm" id="btnOpenFolder" onclick="devOpenWorkspace()">
           <svg width="12" height="12"><use href="#icon-folder-open"/></svg>
           Open Folder
         </button>
-        <button class="btn-secondary btn-sm" onclick="devRefreshWorkspace()" id="btnRefreshWorkspace" style="display:none">
+        <button type="button" class="btn-secondary btn-sm" onclick="devRefreshWorkspace()" id="btnRefreshWorkspace" style="display:none">
           <svg width="12" height="12"><use href="#icon-refresh"/></svg>
           Refresh
         </button>
@@ -2191,8 +2260,8 @@
       <div class="gh-commit-file-list" id="ghCommitFileList"></div>
       <textarea class="gh-commit-msg" id="ghCommitMsg" placeholder="Describe your changes..." aria-label="Commit message"></textarea>
       <div class="gh-commit-actions">
-        <button class="btn-secondary btn-sm" onclick="devGhHideCommitPanel()">Cancel</button>
-        <button class="btn-primary btn-sm" id="btnGhCommitPush" onclick="devGhCommitAndPush()">
+        <button type="button" class="btn-secondary btn-sm" onclick="devGhHideCommitPanel()">Cancel</button>
+        <button type="button" class="btn-primary btn-sm" id="btnGhCommitPush" onclick="devGhCommitAndPush()">
           <svg width="12" height="12"><use href="#icon-git-commit"/></svg>
           Commit &amp; Push
         </button>
@@ -2200,8 +2269,8 @@
     </div>
     <div class="gh-new-branch-row" id="ghNewBranchRow" style="display:none">
       <input type="text" id="ghNewBranchName" placeholder="new-branch-name" aria-label="New branch name" pattern="[a-zA-Z0-9._/-]+">
-      <button class="btn-primary btn-sm" onclick="devGhCreateBranch()">Create</button>
-      <button class="btn-secondary btn-sm" onclick="document.getElementById('ghNewBranchRow').style.display='none'">Cancel</button>
+      <button type="button" class="btn-primary btn-sm" onclick="devGhCreateBranch()">Create</button>
+      <button type="button" class="btn-secondary btn-sm" onclick="document.getElementById('ghNewBranchRow').style.display='none'">Cancel</button>
     </div>
   </div>
 </main>
@@ -2230,10 +2299,10 @@
       <input type="text" id="ghConnectBranch" placeholder="defaults to repo default branch" autocomplete="off" spellcheck="false">
     </div>
     <div class="gh-connect-actions">
-      <button class="btn-secondary btn-sm" id="btnGhClearToken" onclick="devGhClearToken()" style="display:none">Clear saved token</button>
+      <button type="button" class="btn-secondary btn-sm" id="btnGhClearToken" onclick="devGhClearToken()" style="display:none">Clear saved token</button>
       <span style="flex:1"></span>
-      <button class="btn-secondary btn-sm" onclick="devGhCloseConnectModal()">Cancel</button>
-      <button class="btn-primary btn-sm" id="btnGhConnect" onclick="devGhConnect()">
+      <button type="button" class="btn-secondary btn-sm" onclick="devGhCloseConnectModal()">Cancel</button>
+      <button type="button" class="btn-primary btn-sm" id="btnGhConnect" onclick="devGhConnect()">
         <svg width="12" height="12"><use href="#icon-github"/></svg>
         Connect
       </button>
@@ -2945,7 +3014,7 @@ async function connectRepo() {
     await loadDocs();
   } catch (err) {
     statusEl.className = 'repo-status error';
-    statusEl.innerHTML = `${escapeHtml(friendlyError(err))} <button class="btn-retry" onclick="connectRepo()" style="margin-left: 12px; padding: 4px 12px; font-size: var(--text-sm);">Retry</button>`;
+    statusEl.innerHTML = `${escapeHtml(friendlyError(err))} <button type="button" class="btn-retry" onclick="connectRepo()" style="margin-left: 12px; padding: 4px 12px; font-size: var(--text-sm);">Retry</button>`;
     log(`Connect failed: ${err.message}`, 'error');
   } finally {
     document.getElementById('connectBtn').disabled = false;
@@ -4096,7 +4165,7 @@ function createRepeaterField(field, group) {
     const rowLabel = document.createElement('span');
     rowLabel.textContent = `#${rowIdx + 1}`;
     const removeBtn = document.createElement('button');
-    removeBtn.type = 'button'; removeBtn.className = 'btn-remove-row'; removeBtn.innerHTML = '&times;';
+    removeBtn.type = 'button'; removeBtn.className = 'btn-remove-row'; removeBtn.innerHTML = '&times;'; removeBtn.setAttribute('aria-label', 'Remove row');
     // No individual click handler — handled via delegation on rowsContainer
     header.appendChild(rowLabel); header.appendChild(removeBtn);
     const fieldsDiv = document.createElement('div');
@@ -4418,7 +4487,7 @@ function addListItem(fieldId, placeholder, container, countEl, value = '') {
 
   const removeBtn = document.createElement('button');
   removeBtn.type = 'button'; removeBtn.className = 'btn-remove-item';
-  removeBtn.innerHTML = '&times;'; removeBtn.title = 'Remove item';
+  removeBtn.innerHTML = '&times;'; removeBtn.title = 'Remove item'; removeBtn.setAttribute('aria-label', 'Remove item');
 
   row.appendChild(num); row.appendChild(input); row.appendChild(removeBtn);
   container.appendChild(row);
@@ -5146,8 +5215,8 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
           ${preview ? `<div class="profile-dropdown-item-preview">${preview}</div>` : ''}
         </div>
         <div class="profile-dropdown-item-actions">
-          ${showAll ? `<button class="profile-edit-btn" data-edit="${i}" title="Edit profile">✎</button>` : ''}
-          <button class="profile-delete-btn" data-delete="${i}" title="Delete profile">&times;</button>
+          ${showAll ? `<button type="button" class="profile-edit-btn" data-edit="${i}" title="Edit profile" aria-label="Edit profile">✎</button>` : ''}
+          <button type="button" class="profile-delete-btn" data-delete="${i}" title="Delete profile" aria-label="Delete profile">&times;</button>
         </div>
       </div>`;
     });
@@ -5332,8 +5401,8 @@ function showProfileEditor(index, anchorEl) {
     ${fields}
     ${addrFields}
     <div class="profile-editor-actions">
-      <button class="pe-save" id="peEditorSave">Save</button>
-      <button class="pe-cancel" id="peEditorCancel">Cancel</button>
+      <button type="button" class="pe-save" id="peEditorSave">Save</button>
+      <button type="button" class="pe-cancel" id="peEditorCancel">Cancel</button>
     </div>
   </div>`;
 
@@ -5967,6 +6036,13 @@ function devEditorKeydownHandler(e, jarInstance, language) {
   const mod = e.metaKey || e.ctrlKey;
   const el = e.currentTarget;
 
+  // Preview DOCX: Shift + Enter (template/sample editors only)
+  if (e.shiftKey && e.key === 'Enter' && !mod && language === 'python') {
+    e.preventDefault();
+    devRunPreview();
+    return;
+  }
+
   // Comment toggle: Ctrl/Cmd + /
   if (mod && e.key === '/') {
     e.preventDefault();
@@ -6043,6 +6119,11 @@ function devEditorKeydownHandler(e, jarInstance, language) {
     if (up && firstLine === 0) return;
     if (!up && lastLine === lines.length - 1) return;
 
+    // Compute cursor-in-line offset BEFORE modifying the array
+    let origLineStart = 0;
+    for (let i = 0; i < firstLine; i++) origLineStart += lines[i].length + 1;
+    const cursorInLine = actualStart - origLineStart;
+
     // Extract the block and the adjacent line to swap with
     const block = lines.splice(firstLine, lastLine - firstLine + 1);
     const targetIdx = up ? firstLine - 1 : firstLine + 1; // after splice, array shifted
@@ -6067,9 +6148,60 @@ function devEditorKeydownHandler(e, jarInstance, language) {
       const endNode = devFindTextPosition(el, newSelEnd);
       if (endNode) sel2.extend(endNode.node, endNode.offset);
     } else {
-      const cursorInLine = actualStart - (function() { let p=0; for(let i=0;i<firstLine;i++) p+=lines[i].length+1; return p; })();
       devSetCursorOffset(el, newSelStart + Math.min(cursorInLine, lines[newFirstLine].length));
     }
+    return;
+  }
+
+  // Delete line(s): Shift + Delete
+  if (e.shiftKey && e.key === 'Delete') {
+    e.preventDefault();
+    const text = jarInstance.toString();
+    const lines = text.split('\n');
+
+    const sel = window.getSelection();
+    const startOff = devGetCursorOffset(el);
+    let endOff = startOff;
+    let actualStart = startOff;
+    if (sel.rangeCount && !sel.isCollapsed) {
+      const range = sel.getRangeAt(0);
+      const preStart = document.createRange();
+      preStart.setStart(el, 0);
+      preStart.setEnd(range.startContainer, range.startOffset);
+      const preEnd = document.createRange();
+      preEnd.setStart(el, 0);
+      preEnd.setEnd(range.endContainer, range.endOffset);
+      const selStart = preStart.toString().length;
+      const selEnd = preEnd.toString().length;
+      endOff = Math.max(selStart, selEnd);
+      actualStart = Math.min(selStart, selEnd);
+    }
+
+    // Map offsets to line indices
+    let firstLine = 0, lastLine = 0, pos = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const lineEnd = pos + lines[i].length;
+      if (pos <= actualStart && actualStart <= lineEnd) firstLine = i;
+      if (pos <= endOff && endOff <= lineEnd) { lastLine = i; break; }
+      pos += lines[i].length + 1;
+    }
+    if (endOff > actualStart) {
+      let p = 0;
+      for (let i = 0; i <= lastLine; i++) p += lines[i].length + 1;
+      if (endOff === p - lines[lastLine].length - 1 && lastLine > firstLine) lastLine--;
+    }
+
+    lines.splice(firstLine, lastLine - firstLine + 1);
+    if (lines.length === 0) lines.push('');
+    const newText = lines.join('\n');
+
+    // Place cursor at start of the line that took the deleted line's place
+    let newOffset = 0;
+    const cursorLine = Math.min(firstLine, lines.length - 1);
+    for (let i = 0; i < cursorLine; i++) newOffset += lines[i].length + 1;
+
+    jarInstance.updateCode(newText);
+    devSetCursorOffset(el, newOffset);
     return;
   }
 }
@@ -6382,6 +6514,7 @@ function devUpdateSchemaPreview() {
   try {
     previewEmpty.style.display = 'none';
     buildForm(schema, previewForm);
+    devEnablePreviewDragDrop();
   } catch (e) {
     const errWrap = document.createElement('div');
     errWrap.className = 'dev-preview-empty';
@@ -6391,6 +6524,242 @@ function devUpdateSchemaPreview() {
     previewForm.innerHTML = '';
     previewForm.appendChild(errWrap);
   }
+}
+
+// ============================================================
+//  SCHEMA PREVIEW DRAG-AND-DROP REORDERING
+// ============================================================
+
+let devDragHandleActive = false;
+document.addEventListener('mousedown', (e) => {
+  devDragHandleActive = !!e.target.closest('.dev-preview-form .drag-handle');
+});
+document.addEventListener('mouseup', () => { devDragHandleActive = false; });
+
+function devCreateDragHandle() {
+  const handle = document.createElement('span');
+  handle.className = 'drag-handle';
+  handle.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">' +
+    '<circle cx="3.5" cy="2" r="1.2"/><circle cx="8.5" cy="2" r="1.2"/>' +
+    '<circle cx="3.5" cy="6" r="1.2"/><circle cx="8.5" cy="6" r="1.2"/>' +
+    '<circle cx="3.5" cy="10" r="1.2"/><circle cx="8.5" cy="10" r="1.2"/></svg>';
+  handle.setAttribute('aria-label', 'Drag to reorder');
+  return handle;
+}
+
+function devClearDropIndicators(container) {
+  container.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
+    el.classList.remove('drag-over-top', 'drag-over-bottom');
+  });
+}
+
+function devSyncSchemaFromPreview() {
+  devSchemaText = JSON.stringify(devParsedSchema, null, 2);
+  if (schemaJar) schemaJar.updateCode(devSchemaText);
+  devSaveEditorState();
+  devUpdateSchemaPreview();
+}
+
+function devPreviewContextItems(sectionIdx) {
+  const insertField = (type) => () => devInsertSnippet('schema', FIELD_SNIPPETS[type], sectionIdx);
+  return [
+    { groupLabel: 'Add field to this section' },
+    { label: 'Input Fields', children: [
+      { label: 'Text',     action: insertField('text') },
+      { label: 'Email',    action: insertField('email') },
+      { label: 'Phone',    action: insertField('tel') },
+      { label: 'Number',   action: insertField('number') },
+      { label: 'Currency', action: insertField('currency') },
+      { label: 'URL',      action: insertField('url') },
+      { label: 'Date',     action: insertField('date') },
+      { label: 'Time',     action: insertField('time') },
+      { label: 'DateTime', action: insertField('datetime') },
+      { label: 'Textarea', action: insertField('textarea') },
+      { label: 'Long Text',action: insertField('longtext') },
+    ]},
+    { label: 'Choice Fields', children: [
+      { label: 'Select',       action: insertField('select') },
+      { label: 'Multi Select', action: insertField('multi_select') },
+      { label: 'Radio',        action: insertField('radio') },
+      { label: 'Checkbox',     action: insertField('checkbox') },
+      { label: 'Toggle',       action: insertField('toggle') },
+    ]},
+    { label: 'Complex Fields', children: [
+      { label: 'Address',   action: insertField('address') },
+      { label: 'Repeater',  action: insertField('repeater') },
+      { label: 'File',      action: insertField('file') },
+      { label: 'Signature', action: insertField('signature') },
+      { label: 'List',      action: insertField('list') },
+    ]},
+    { label: 'Layout', children: [
+      { label: 'Heading', action: insertField('heading') },
+      { label: 'Hidden',  action: insertField('hidden') },
+    ]},
+  ];
+}
+
+function devCreateSectionAddButton(atIndex) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'dev-section-add';
+  wrapper.title = 'Add section here';
+  wrapper.innerHTML = '<div class="dev-section-add-line"></div>' +
+    '<span class="dev-section-add-btn">+</span>' +
+    '<div class="dev-section-add-line"></div>';
+  wrapper.addEventListener('click', () => devInsertSection(atIndex));
+  return wrapper;
+}
+
+function devEnablePreviewDragDrop() {
+  const container = document.getElementById('schemaPreviewForm');
+  if (!container || !devParsedSchema) return;
+
+  let dragState = null;
+
+  // Unwrap .fields-row wrappers so each field is a direct child (simplifies drag targets)
+  container.querySelectorAll('.fields-row').forEach(row => {
+    while (row.firstChild) row.parentNode.insertBefore(row.firstChild, row);
+    row.remove();
+  });
+
+  // Clear indicators when drag leaves the container entirely
+  container.addEventListener('dragleave', (e) => {
+    if (!container.contains(e.relatedTarget)) devClearDropIndicators(container);
+  });
+
+  const sections = Array.from(container.querySelectorAll('.form-section'));
+
+  // --- Add-section divider buttons between and after sections ---
+  sections.forEach((sectionEl, sIdx) => {
+    // Insert add-button before each section (between previous and this)
+    container.insertBefore(devCreateSectionAddButton(sIdx), sectionEl);
+  });
+  // Add-button after the last section
+  container.appendChild(devCreateSectionAddButton(sections.length));
+
+  sections.forEach((sectionEl, sIdx) => {
+    // --- Section drag handle in title ---
+    const sectionTitle = sectionEl.querySelector('.section-title');
+    if (sectionTitle) {
+      const handle = devCreateDragHandle();
+      sectionTitle.prepend(handle);
+
+      sectionEl.draggable = true;
+      sectionEl.addEventListener('dragstart', (e) => {
+        if (!devDragHandleActive) { e.preventDefault(); return; }
+        // If a field drag already claimed this event, skip
+        if (dragState && dragState.type === 'field') { e.preventDefault(); return; }
+        dragState = { type: 'section', el: sectionEl, sectionIdx: sIdx };
+        sectionEl.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+      });
+
+      sectionEl.addEventListener('dragend', () => {
+        sectionEl.classList.remove('dragging');
+        devClearDropIndicators(container);
+        dragState = null;
+      });
+    }
+
+    // --- Section dragover/drop ---
+    sectionEl.addEventListener('dragover', (e) => {
+      if (!dragState || dragState.type !== 'section') return;
+      if (dragState.el === sectionEl) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      devClearDropIndicators(container);
+      const rect = sectionEl.getBoundingClientRect();
+      if (e.clientY < rect.top + rect.height / 2) {
+        sectionEl.classList.add('drag-over-top');
+      } else {
+        sectionEl.classList.add('drag-over-bottom');
+      }
+    });
+
+    sectionEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (!dragState || dragState.type !== 'section') return;
+      const fromIdx = dragState.sectionIdx;
+      const rect = sectionEl.getBoundingClientRect();
+      let toIdx = sIdx;
+      if (e.clientY >= rect.top + rect.height / 2) toIdx++;
+      if (fromIdx < toIdx) toIdx--;
+      if (fromIdx !== toIdx) {
+        const moved = devParsedSchema.sections.splice(fromIdx, 1)[0];
+        devParsedSchema.sections.splice(toIdx, 0, moved);
+        devSyncSchemaFromPreview();
+      }
+      devClearDropIndicators(container);
+      dragState = null;
+    });
+
+    // --- Field drag handles ---
+    const fieldGroups = Array.from(sectionEl.querySelectorAll(':scope > .field-group'));
+    fieldGroups.forEach((fg, fIdx) => {
+      fg.dataset.fieldIndex = fIdx;
+      const handle = devCreateDragHandle();
+      fg.prepend(handle);
+
+      fg.draggable = true;
+      fg.addEventListener('dragstart', (e) => {
+        if (!devDragHandleActive) { e.preventDefault(); return; }
+        e.stopPropagation();
+        dragState = { type: 'field', el: fg, sectionIdx: sIdx, fieldIdx: fIdx };
+        fg.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+      });
+
+      fg.addEventListener('dragend', () => {
+        fg.classList.remove('dragging');
+        devClearDropIndicators(container);
+        dragState = null;
+      });
+
+      fg.addEventListener('dragover', (e) => {
+        if (!dragState || dragState.type !== 'field') return;
+        if (dragState.sectionIdx !== sIdx) return;
+        if (dragState.el === fg) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'move';
+        devClearDropIndicators(container);
+        const rect = fg.getBoundingClientRect();
+        if (e.clientY < rect.top + rect.height / 2) {
+          fg.classList.add('drag-over-top');
+        } else {
+          fg.classList.add('drag-over-bottom');
+        }
+      });
+
+      fg.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!dragState || dragState.type !== 'field') return;
+        if (dragState.sectionIdx !== sIdx) return;
+        const fromIdx = dragState.fieldIdx;
+        const rect = fg.getBoundingClientRect();
+        let toIdx = fIdx;
+        if (e.clientY >= rect.top + rect.height / 2) toIdx++;
+        if (fromIdx < toIdx) toIdx--;
+        if (fromIdx !== toIdx) {
+          const fields = devParsedSchema.sections[sIdx].fields;
+          const moved = fields.splice(fromIdx, 1)[0];
+          fields.splice(toIdx, 0, moved);
+          devSyncSchemaFromPreview();
+        }
+        devClearDropIndicators(container);
+        dragState = null;
+      });
+    });
+
+    // --- Right-click context menu to add fields to this section ---
+    sectionEl.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showContextMenu(e.clientX, e.clientY, devPreviewContextItems(sIdx));
+    });
+  });
 }
 
 function devNewSchema() {
@@ -6428,6 +6797,10 @@ function devFormatSchema() {
 function devSaveSchema() {
   if (workspaceHandle && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
     devSaveToWorkspace('schema');
+    return;
+  }
+  if (workspaceHandle) {
+    devCreateWorkspaceFile('schema');
     return;
   }
   const blob = new Blob([devSchemaText], { type: 'application/json' });
@@ -6695,13 +7068,13 @@ function devSchemaContextItems() {
   ];
 }
 
-function devInsertSnippet(editorType, snippet) {
+function devInsertSnippet(editorType, snippet, sectionIndex) {
   if (editorType === 'schema') {
     try {
       const schema = JSON.parse(devSchemaText);
-      // Add field to the last section
       if (schema.sections && schema.sections.length > 0) {
-        const lastSection = schema.sections[schema.sections.length - 1];
+        const targetIdx = (sectionIndex != null && sectionIndex < schema.sections.length) ? sectionIndex : schema.sections.length - 1;
+        const section = schema.sections[targetIdx];
         // Make field ID unique
         const snip = JSON.parse(JSON.stringify(snippet));
         const allIds = new Set();
@@ -6711,7 +7084,7 @@ function devInsertSnippet(editorType, snippet) {
           while (allIds.has(snip.id + '_' + i)) i++;
           snip.id = snip.id + '_' + i;
         }
-        lastSection.fields.push(snip);
+        section.fields.push(snip);
         devSchemaText = JSON.stringify(schema, null, 2);
         if (schemaJar) schemaJar.updateCode(devSchemaText);
         devUpdateSchemaPreview();
@@ -6726,7 +7099,7 @@ function devInsertSnippet(editorType, snippet) {
   }
 }
 
-function devInsertSection() {
+function devInsertSection(atIndex) {
   try {
     const schema = JSON.parse(devSchemaText);
     if (!schema.sections) schema.sections = [];
@@ -6743,7 +7116,11 @@ function devInsertSection() {
       }
       allIds.add(f.id);
     });
-    schema.sections.push(snip);
+    if (atIndex != null && atIndex <= schema.sections.length) {
+      schema.sections.splice(atIndex, 0, snip);
+    } else {
+      schema.sections.push(snip);
+    }
     devSchemaText = JSON.stringify(schema, null, 2);
     if (schemaJar) schemaJar.updateCode(devSchemaText);
     devUpdateSchemaPreview();
@@ -6775,6 +7152,28 @@ function devWrapInWizard() {
 
 const DEV_STARTER_TEMPLATE = `import stencils
 
+# Choose a built-in theme: THEME_MODERN (default), THEME_CLASSIC, THEME_MINIMAL
+stencils.set_theme(stencils.THEME_MODERN)
+
+# Or create a custom theme:
+# from docx.shared import RGBColor
+# stencils.set_theme(stencils.DocTheme(
+#     color_title=RGBColor(0x1B, 0x5E, 0x6E),
+#     color_subtitle=RGBColor(0x3A, 0x7A, 0x8C),
+#     color_muted=RGBColor(0x5A, 0x7A, 0x85),
+#     color_footer=RGBColor(0x4D, 0x6E, 0x78),
+#     color_accent=RGBColor(0x0D, 0x3D, 0x4A),
+#     font_body="Segoe UI",
+#     font_heading="Segoe UI Semibold",
+#     font_caption="Segoe UI Semilight",
+#     size_body=11, size_title=26,
+#     size_heading1=16, size_heading2=13, size_heading3=12,
+#     size_heading4=11, size_heading5=11, size_heading6=11,
+#     size_subtitle=12, size_table=10, size_caption=9, size_footer=8,
+#     margin_top=1.0, margin_bottom=0.75, margin_left=1.0, margin_right=1.0,
+# ))
+
+
 def generate_docx(data):
     doc = stencils.new_doc(data.get("title", "Document"))
     stencils.table_section(doc, "Form Data", [(k, v) for k, v in data.items()])
@@ -6785,6 +7184,8 @@ def generate_docx(data):
 const TEMPLATE_SNIPPETS = [
   { label: 'Import stencils', text: 'import stencils\n' },
   { label: 'generate_docx scaffold', text: `def generate_docx(data):\n    doc = stencils.new_doc(data.get("title", "Document"))\n    # Build document here\n    return stencils.finalize(doc)\n` },
+  { label: 'set_theme (built-in)', text: `# THEME_MODERN (default) | THEME_CLASSIC | THEME_MINIMAL\nstencils.set_theme(stencils.THEME_CLASSIC)\n` },
+  { label: 'set_theme (custom)', text: `from docx.shared import RGBColor\nstencils.set_theme(stencils.DocTheme(\n    color_title=RGBColor(0x1B, 0x5E, 0x6E),\n    color_subtitle=RGBColor(0x3A, 0x7A, 0x8C),\n    color_muted=RGBColor(0x5A, 0x7A, 0x85),\n    color_footer=RGBColor(0x4D, 0x6E, 0x78),\n    color_accent=RGBColor(0x0D, 0x3D, 0x4A),\n    font_body="Segoe UI",\n    font_heading="Segoe UI Semibold",\n    font_caption="Segoe UI Semilight",\n    size_body=11, size_title=26,\n    size_heading1=16, size_heading2=13, size_heading3=12,\n    size_heading4=11, size_heading5=11, size_heading6=11,\n    size_subtitle=12, size_table=10, size_caption=9, size_footer=8,\n    margin_top=1.0, margin_bottom=0.75, margin_left=1.0, margin_right=1.0,\n))\n` },
   { label: 'table_section', text: `    stencils.table_section(doc, "Section Title", [\n        ("Label", data.get("field_id", "")),\n    ])\n` },
   { label: 'longtext', text: `    stencils.longtext(doc, "Section Title", data.get("field_id", ""))\n` },
   { label: 'bullet_list', text: `    stencils.bullet_list(doc, "List Title", items)\n` },
@@ -7080,6 +7481,10 @@ function devLoadTemplateFile(event) {
 function devSaveTemplate() {
   if (workspaceHandle && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
     devSaveToWorkspace('template');
+    return;
+  }
+  if (workspaceHandle) {
+    devCreateWorkspaceFile('template');
     return;
   }
   const blob = new Blob([devTemplateText], { type: 'text/x-python' });
@@ -7387,6 +7792,63 @@ async function devSaveToWorkspace(type) {
     }
   } catch (e) {
     showToast('Failed to save: ' + e.message, 'error');
+  }
+}
+
+async function devCreateWorkspaceFile(type) {
+  try {
+    let dirHandle;
+    let filename;
+    const content = type === 'schema' ? devSchemaText : devTemplateText;
+
+    if (type === 'schema') {
+      // Get or create schemas/ subdirectory
+      dirHandle = await workspaceHandle.getDirectoryHandle('schemas', { create: true });
+      filename = 'schema.json';
+      try {
+        const obj = JSON.parse(devSchemaText);
+        if (obj.title) filename = obj.title.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.json';
+      } catch (e) { /* use default */ }
+    } else {
+      // Get or create templates/ subdirectory
+      dirHandle = await workspaceHandle.getDirectoryHandle('templates', { create: true });
+      filename = 'template.py';
+      // Try to derive name from generate_docx or a comment header
+      const match = devTemplateText.match(/^#\s*(\S+\.py)/m);
+      if (match) filename = match[1];
+    }
+
+    // Prompt user for filename
+    const userFilename = prompt(`Save to workspace as:`, filename);
+    if (!userFilename) return; // cancelled
+
+    // Ensure correct extension
+    let finalName = userFilename.trim();
+    if (type === 'schema' && !finalName.endsWith('.json')) finalName += '.json';
+    if (type === 'template' && !finalName.endsWith('.py')) finalName += '.py';
+
+    // Create the file in the workspace directory
+    const fileHandle = await dirHandle.getFileHandle(finalName, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(content);
+    await writable.close();
+
+    // Register in workspaceFiles and set as current
+    const entry = { name: finalName, text: content, handle: fileHandle, dirHandle };
+    if (type === 'schema') {
+      workspaceFiles.schemas.push(entry);
+      currentWorkspaceFile = { type: 'schema', index: workspaceFiles.schemas.length - 1 };
+    } else {
+      workspaceFiles.templates.push(entry);
+      currentWorkspaceFile = { type: 'template', index: workspaceFiles.templates.length - 1 };
+    }
+
+    devRenderWorkspaceFiles();
+    showToast(`Saved ${finalName} to workspace`);
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      showToast('Failed to save: ' + e.message, 'error');
+    }
   }
 }
 

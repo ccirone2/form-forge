@@ -14,6 +14,25 @@
 
 ## Log
 
+### 2026-03-14 — UX: Navigation & Organization Critique (#137)
+**Issues:** #137
+
+Design critique of the app's navigation and information architecture. Created issue #137 with five minor improvements:
+
+1. Collapse documentation section behind a single accordion (separate form-filler vs form-creator content)
+2. Auto-scroll to form picker after successful GitHub connection
+3. Rename "Back to picker" → "Back" for consistency across all launch paths
+4. Add double-click to launch on picker cards (zero-friction flow)
+5. Add empty-state hint to profile dropdown
+
+Also applied minor CSS cleanup: replaced remaining hardcoded transition values with design tokens (`--transition-base`, `--transition-slow`, `--transition-fast`) and added `focus-visible` outline to the Connect button.
+
+**Decisions:**
+- Documentation stays on the setup page but collapsed by default — avoids a separate view for a small amount of content
+- "How It Works" card remains visible outside the accordion since it's useful context for all users
+
+---
+
 ### 2026-03-14 — Dev Mode: Editor Enhancements (#130-#135)
 **Issues:** #130, #131, #132, #133, #134, #135
 
