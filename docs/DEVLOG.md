@@ -14,6 +14,53 @@
 
 ## Log
 
+### 2026-03-13 — Dev Mode: Schema Builder, Template Builder & Local Workspace (#115)
+**Issues:** #115 (#116, #117, #118, #119, #120, #121, #122)
+
+Added a full Dev Mode with three tools for in-app form development:
+
+**Schema Builder:**
+- Split-pane editor with CodeJar + Prism.js JSON syntax highlighting
+- Live form preview updates on 300ms debounce as schema is edited
+- Real-time validation badge (valid/invalid/parse error) with error panel
+- Right-click context menu with grouped field type snippets (Input/Choice/Complex/Layout)
+- Insert section, wrap in wizard mode via context menu
+- New/Load/Save/Format toolbar buttons
+
+**Template Builder:**
+- CodeJar + Prism.js Python syntax highlighting
+- Collapsible sample data JSON editor
+- "Preview DOCX" button runs template through Pyodide → mammoth.js HTML preview
+- Right-click context menu with stencils helper snippets
+- New/Load/Save toolbar buttons
+
+**Local Workspace:**
+- File System Access API for native folder picker with live 5s polling for external changes
+- Drag-and-drop folder fallback via webkitGetAsEntry for cross-browser support
+- Auto-discovers schemas/*.json and templates/*.py (excludes _schema.spec.json and stencils.py)
+- Click-to-edit opens files in the appropriate builder tab
+
+**Infrastructure:**
+- Mode toggle button in header, persisted in localStorage
+- Three-tab dev navigation (Schema Builder / Template Builder / Workspace)
+- Draggable split-pane resizer with localStorage-persisted ratio
+- Modified buildForm() to accept optional targetForm parameter for preview rendering
+- Mobile gate: dev mode hidden on <768px, auto-exits on resize with toast
+
+**CDN Dependencies:**
+- Prism.js 1.29.0 (syntax highlighting, ~15KB)
+- CodeJar 4.2.0 (lightweight code editor, ~5KB)
+- mammoth.js 1.6.0 (DOCX to HTML conversion, ~70KB)
+- DOMPurify 3.2.4 (HTML sanitization for mammoth output, ~7KB)
+
+**Decisions:**
+- All changes in index.html — no build step, no file splits
+- CodeJar chosen over Monaco/CodeMirror for minimal footprint
+- Prism theme overrides use existing design tokens for visual consistency
+- Context menu inserts at schema level (appends to last section) rather than cursor position for reliability
+
+---
+
 ### 2026-03-13 — Design Critique: UX, Microcopy, and Visual Polish (#109, #110, #111)
 **Issues:** #109, #110, #111
 

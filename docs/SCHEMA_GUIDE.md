@@ -2,6 +2,8 @@
 
 A schema is a JSON file that defines the structure of a form. It controls what fields appear, how they're grouped, validation rules, and which template generates the final document.
 
+> **Tip:** You can also create and edit schemas visually using **Dev Mode's Schema Builder** — toggle Dev Mode from the header, then use the JSON editor with live form preview, real-time validation, and right-click context menu to insert field snippets.
+
 ## File Location
 
 Place schema files in the `schemas/` directory of your repo:
