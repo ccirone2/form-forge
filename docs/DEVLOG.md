@@ -14,6 +14,18 @@
 
 ## Log
 
+### 2026-03-14 — Dev Mode: Context menu end-to-end browser tests (#124)
+**Issue:** #124
+
+Added 24 Playwright-based end-to-end browser tests covering the right-click context menu in both the Schema Builder and Template Builder editors. These tests exercise runtime behavior that the existing static HTML tests in `test_dev_mode.py` cannot cover:
+
+- **Schema Builder context menu:** menu appearance on right-click, 4 grouped submenus (Input/Choice/Complex/Layout), separator and action items (Add Section, Wrap in Wizard), field snippet insertion, unique ID generation on duplicate inserts, invalid JSON error toast, close on Escape and click-outside, live preview and validation badge updates.
+- **Template Builder context menu:** menu appearance, stencils helper snippet items, snippet insertion into editor, close on Escape and click-outside.
+
+Tests use a local HTTP server with OS-assigned port and a shared browser instance for efficiency. CodeJar loads as an ES module via dynamic `import()` in the app.
+
+---
+
 ### 2026-03-13 — Dev Mode: Schema Builder, Template Builder & Local Workspace (#115)
 **Issues:** #115 (#116, #117, #118, #119, #120, #121, #122)
 

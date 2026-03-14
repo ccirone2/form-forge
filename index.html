@@ -5559,22 +5559,21 @@ let devDepsPromise = null;
 
 function loadDevModeDeps() {
   if (devDepsPromise) return devDepsPromise;
-  devDepsPromise = new Promise(async (resolve) => {
-    if (devDepsLoaded) { resolve(); return; }
-    const scripts = [
-      'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js',
-      'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js',
-      'https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js',
-      'https://cdn.jsdelivr.net/npm/codejar@4.2.0/dist/codejar.min.js',
-      'https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js',
-      'https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js',
-    ];
-    // Load Prism first (others depend on it), then the rest in parallel
-    await loadScript(scripts[0]);
-    await Promise.all(scripts.slice(1).map(loadScript));
+  devDepsPromise = (async () => {
+    if (devDepsLoaded) return;
+    // Load Prism first (language components depend on it)
+    await loadScript('https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js');
+    // Load remaining UMD scripts + CodeJar (ESM) in parallel
+    await Promise.all([
+      loadScript('https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js'),
+      loadScript('https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js'),
+      import('https://cdn.jsdelivr.net/npm/codejar@4.2.0/dist/codejar.min.js')
+        .then(m => { window.CodeJar = m.CodeJar; }),
+      loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js'),
+      loadScript('https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js'),
+    ]);
     devDepsLoaded = true;
-    resolve();
-  });
+  })();
   return devDepsPromise;
 }
 
