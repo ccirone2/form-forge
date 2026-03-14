@@ -6048,7 +6048,7 @@ function devEditorKeydownHandler(e, jarInstance, language) {
 
     // Extract the block and the adjacent line to swap with
     const block = lines.splice(firstLine, lastLine - firstLine + 1);
-    const targetIdx = up ? firstLine - 1 : firstLine; // after splice, insertion point shifts
+    const targetIdx = up ? firstLine - 1 : firstLine + 1; // after splice, array shifted
     lines.splice(targetIdx, 0, ...block);
 
     const newText = lines.join('\n');
