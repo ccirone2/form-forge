@@ -6030,15 +6030,20 @@ async function toggleDevMode() {
     tooltip.className = 'dev-confirm-tooltip';
     tooltip.innerHTML = '<p><strong>Dev Mode</strong> is for building and editing forms and templates. If you\'re looking to fill out a form, stay on this page.</p>'
       + '<div class="dev-confirm-actions">'
-      + '<button type="button" class="btn-secondary btn-sm" onclick="this.closest(\'.dev-confirm-tooltip\').remove()">Cancel</button>'
-      + '<button type="button" class="btn-primary btn-sm" onclick="localStorage.setItem(\'formforge-dev-confirmed\',\'1\');this.closest(\'.dev-confirm-tooltip\').remove();toggleDevMode()">Enter Dev Mode</button>'
+      + '<button type="button" class="btn-secondary btn-sm" id="devConfirmCancel">Cancel</button>'
+      + '<button type="button" class="btn-primary btn-sm" id="devConfirmEnter">Enter Dev Mode</button>'
       + '</div>';
     document.querySelector('.header-right').appendChild(tooltip);
-    // Close on outside click
-    setTimeout(() => {
-      function dismiss(e) { if (!tooltip.contains(e.target) && e.target !== document.getElementById('modeToggle')) { tooltip.remove(); document.removeEventListener('mousedown', dismiss); } }
-      document.addEventListener('mousedown', dismiss);
-    }, 0);
+    // Shared cleanup to remove tooltip and listener
+    function dismissTooltip() { tooltip.remove(); document.removeEventListener('mousedown', outsideDismiss); }
+    function outsideDismiss(e) { if (!tooltip.contains(e.target) && e.target !== document.getElementById('modeToggle')) dismissTooltip(); }
+    tooltip.querySelector('#devConfirmCancel').addEventListener('click', dismissTooltip);
+    tooltip.querySelector('#devConfirmEnter').addEventListener('click', () => {
+      localStorage.setItem('formforge-dev-confirmed', '1');
+      dismissTooltip();
+      toggleDevMode();
+    });
+    setTimeout(() => document.addEventListener('mousedown', outsideDismiss), 0);
     return;
   }
 
