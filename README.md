@@ -37,7 +37,7 @@ form-forge/
 │   ├── test_stencils.py        ← unit tests for stencils.py utilities (50 tests)
 │   ├── test_templates.py       ← integration tests for templates (10 tests)
 │   ├── test_schemas.py         ← schema validation tests (44 tests)
-│   └── test_dev_mode.py        ← dev mode acceptance criteria tests (332 tests)
+│   └── test_dev_mode.py        ← UI structure and feature tests (320 tests)
 ├── docs/
 │   ├── DEVLOG.md               ← development journal
 │   ├── PLAN.md                 ← structured implementation plans
@@ -127,16 +127,20 @@ See `docs/TEMPLATE_GUIDE.md` for the full `stencils` API.
 
 See `docs/FIELD_TYPES.md` for full details on each type, including schema properties and template handling.
 
-## Dev Mode
+## Built-in Tools
 
-FormForge includes a built-in development environment for creating and editing forms without external editors. Toggle Dev Mode from the header button (desktop only, ≥768px).
+FormForge includes always-available tabs for creating and editing forms alongside the form-filling experience. No mode toggle — all tools are accessible from the tab navigation bar.
 
-- **Schema Builder** — JSON editor with syntax highlighting, live form preview, real-time validation, and right-click context menu with field type snippets
-- **Template Builder** — Python editor with DOCX preview powered by Pyodide + mammoth.js, and stencils helper snippets
-- **Local Workspace** — Open a local project folder (via File System Access API or drag-and-drop) to edit schemas and templates with auto-reload on external changes. Includes GitHub integration for connecting repos, committing, pushing, and branch management.
+```
+[FormForge]  [Forms] [Schema] [Template] [Docs]     [source badge]
+```
+
+- **Forms** — Connect a content source (GitHub repo or local folder), browse available forms, fill them, and export DOCX
+- **Schema** — JSON editor with syntax highlighting, live form preview, real-time validation, and right-click context menu with field type snippets
+- **Template** — Python editor with DOCX preview powered by Pyodide + mammoth.js, and stencils helper snippets
 - **Docs** — Embedded documentation for Schema Guide, Template Guide, Field Types, and example schema/template
 
-Dev Mode dependencies (Prism.js, CodeJar, mammoth.js, DOMPurify) are lazy-loaded from CDN on first activation.
+Picker cards include "Edit Schema" and "Edit Template" actions for seamless navigation between filling and editing. Editor dependencies (Prism.js, CodeJar, mammoth.js, DOMPurify) are lazy-loaded from CDN on first Schema/Template tab click.
 
 ## Schema Features
 
