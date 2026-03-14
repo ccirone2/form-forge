@@ -34,7 +34,10 @@ Desktop.ini
 
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/settings.json
+!.vscode/extensions.json
 *.sublime-project
 *.sublime-workspace
 

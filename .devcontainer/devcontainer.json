@@ -19,24 +19,30 @@
         "ms-python.vscode-pylance",
         "charliermarsh.ruff",
         "ecmel.vscode-html-css",
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
         "redhat.vscode-json",
         "eamodio.gitlens",
         "mhutchie.git-graph",
-        "ms-playwright.playwright"
+        "ms-playwright.playwright",
+        "ritwickdey.LiveServer"
       ],
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python",
         "python.testing.pytestEnabled": true,
         "python.testing.pytestArgs": ["tests/", "-v"],
+        "python.testing.cwd": "${workspaceFolder}",
         "python.envFile": "",
         "ruff.path": ["/usr/local/bin/ruff"],
         "editor.formatOnSave": true,
         "[python]": {
           "editor.defaultFormatter": "charliermarsh.ruff"
         },
-        "terminal.integrated.defaultProfile.linux": "bash"
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.env.linux": {
+          "PYTHONPATH": "${workspaceFolder}"
+        },
+        "liveServer.settings.port": 5500,
+        "liveServer.settings.root": "/",
+        "liveServer.settings.NoBrowser": true
       }
     }
   },
@@ -58,19 +64,19 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
   "workspaceFolder": "/workspace",
 
-  "forwardPorts": [8000, 8080],
+  "forwardPorts": [5500, 8000],
   "portsAttributes": {
-    "8000": {
-      "label": "FormForge Dev Server",
-      "onAutoForward": "notify"
-    },
-    "8080": {
-      "label": "Alt Dev Server",
+    "5500": {
+      "label": "Live Server",
       "onAutoForward": "silent"
+    },
+    "8000": {
+      "label": "Python Dev Server",
+      "onAutoForward": "notify"
     }
   },
 
   "initializeCommand": "mkdir -p ${localEnv:HOME}/.claude ${localEnv:HOME}/.config/claude ${localEnv:HOME}/.config/gh",
 
-  "postStartCommand": "nohup http-server /workspace -p 8000 -c-1 --cors --silent > /tmp/devserver.log 2>&1 & echo '✓ Dev server started on :8000' && echo '✓ Python:' $(python --version) && echo '✓ Node:' $(node --version) && echo '✓ Chrome:' $(chrome --version 2>/dev/null || echo 'not found') && echo '✓ Playwright:' $(npx playwright --version 2>/dev/null || echo 'not found') && echo '✓ Claude:' $(claude --version 2>/dev/null || echo 'run: claude') && echo '✓ gh:' $(gh --version 2>/dev/null | head -1 || echo 'run: gh auth login') && echo '' && echo 'Ready. Run: claude --dangerously-skip-permissions'"
+  "postStartCommand": "echo '--- FormForge Dev Environment ---' && python --version && node --version && echo \"Playwright: $(npx playwright --version 2>/dev/null)\" && echo 'Ready. Open index.html → Go Live, or run: python -m http.server 8000'"
 }

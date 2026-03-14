@@ -1,18 +1,10 @@
 FROM python:3.12-bookworm
 
 # ---------------------------------------------------------------------------
-# System packages + Node.js
+# System packages + Node.js 20
 # ---------------------------------------------------------------------------
-# Node is installed HERE (not by the devcontainer feature) so that npm is
-# available during the Docker build for installing Playwright browsers.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git curl wget jq ripgrep unzip \
-    # Chromium + runtime deps
-    chromium \
-    fonts-liberation fonts-noto-color-emoji fonts-freefont-ttf \
-    libappindicator3-1 libasound2 libatk-bridge2.0-0 \
-    libnspr4 libnss3 libx11-xcb1 libxcomposite1 libxdamage1 \
-    libxrandr2 xdg-utils \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
@@ -25,42 +17,20 @@ RUN pip install --break-system-packages -r /tmp/requirements-dev.txt \
     && rm /tmp/requirements-dev.txt
 
 # ---------------------------------------------------------------------------
-# Playwright + frontend tools
+# Playwright — installs Chromium + all required system deps via --with-deps
 # ---------------------------------------------------------------------------
-RUN npm install -g @playwright/test http-server live-server \
+RUN npm install -g @playwright/test \
     && npx playwright install --with-deps chromium
 
 # ---------------------------------------------------------------------------
-# Chrome symlink — Playwright MCP and other tools look for "chrome" at
-# /opt/google/chrome/chrome or on PATH.  Symlink system Chromium so every
-# tool finds it without extra config.
-# ---------------------------------------------------------------------------
-RUN mkdir -p /opt/google/chrome \
-    && ln -sf /usr/bin/chromium /opt/google/chrome/chrome \
-    && ln -sf /usr/bin/chromium /usr/local/bin/chrome \
-    && ln -sf /usr/bin/chromium /usr/local/bin/google-chrome
-
-# ---------------------------------------------------------------------------
-# Browser env vars
-# ---------------------------------------------------------------------------
-ENV CHROME_BIN=/usr/bin/chromium
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-
-# ---------------------------------------------------------------------------
-# Create non-root user + copy Playwright browsers to their cache
+# Non-root user
 # ---------------------------------------------------------------------------
 RUN useradd -m -s /bin/bash dev \
-    && mkdir -p /home/dev/.claude \
-    && mkdir -p /home/dev/.config/claude \
-    && mkdir -p /home/dev/.config/gh \
-    && mkdir -p /home/dev/.cache \
-    && if [ -d /root/.cache/ms-playwright ]; then cp -r /root/.cache/ms-playwright /home/dev/.cache/ms-playwright; fi \
-    && chown -R dev:dev /home/dev \
-    && npm_prefix="$(npm config get prefix)" \
-    && npm_root="$(npm root -g)" \
-    && if [ -d "$npm_root" ]; then chown -R dev:dev "$npm_root"; fi \
-    && if [ -d "$npm_prefix/bin" ]; then chown -R dev:dev "$npm_prefix/bin"; fi
+    && mkdir -p /home/dev/.claude /home/dev/.config/claude /home/dev/.config/gh /home/dev/.cache \
+    && if [ -d /root/.cache/ms-playwright ]; then \
+         cp -r /root/.cache/ms-playwright /home/dev/.cache/ms-playwright; \
+       fi \
+    && chown -R dev:dev /home/dev
 
 ENV PLAYWRIGHT_BROWSERS_PATH=/home/dev/.cache/ms-playwright
 
