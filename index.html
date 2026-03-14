@@ -1894,7 +1894,7 @@
 
 <!-- Header -->
 <header class="app-header">
-  <h1><button type="button" class="h1-home-btn" onclick="showView('setup')"><span>&#9632;</span> FormForge</button></h1>
+  <h1><button type="button" class="h1-home-btn" onclick="if(devMode){toggleDevMode()}showView('setup')"><span>&#9632;</span> FormForge</button></h1>
   <div class="header-right">
     <button type="button" class="mode-toggle" id="modeToggle" onclick="toggleDevMode()" title="Dev Mode — for building and editing forms">
       <svg width="14" height="14"><use href="#icon-wrench"/></svg>
