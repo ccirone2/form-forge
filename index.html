@@ -1439,6 +1439,123 @@
   }
   .workspace-file-item:hover .workspace-file-action { opacity: 1; }
 
+  /* GitHub workspace file modification indicator */
+  .workspace-file-name.modified::before {
+    background: var(--warning);
+    opacity: 1;
+  }
+
+  /* Connect Repo modal */
+  .gh-connect-modal {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 2000; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  }
+  .gh-connect-modal.open { display: flex; }
+  .gh-connect-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px; width: 100%; max-width: 440px;
+    box-shadow: var(--shadow-xl);
+  }
+  .gh-connect-panel h3 {
+    margin: 0 0 4px; font-size: var(--text-lg); font-weight: 600; color: var(--text);
+  }
+  .gh-connect-panel .gh-connect-subtitle {
+    margin: 0 0 20px; font-size: var(--text-sm); color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+  .gh-connect-field { margin-bottom: 14px; }
+  .gh-connect-field label {
+    display: block; font-family: var(--font-mono); font-size: var(--text-xs);
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .gh-connect-field input, .gh-connect-field select {
+    width: 100%; padding: 8px 12px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    color: var(--text); font-family: var(--font-mono); font-size: var(--text-sm);
+    outline: none; transition: border-color var(--transition-base);
+    box-sizing: border-box;
+  }
+  .gh-connect-field input:focus, .gh-connect-field select:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+  .gh-connect-field .gh-field-hint {
+    font-size: var(--text-2xs); color: var(--text-muted); margin-top: 4px;
+    font-family: var(--font-mono);
+  }
+  .gh-connect-actions {
+    display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end;
+  }
+  .gh-connect-warning {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    background: var(--accent-subtle); border: 1px solid var(--accent-border);
+    font-size: var(--text-2xs); color: var(--text-muted); margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .gh-connect-warning svg { flex-shrink: 0; margin-top: 1px; color: var(--accent); }
+
+  /* Workspace GitHub toolbar elements */
+  .gh-workspace-bar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .gh-branch-select {
+    padding: 4px 8px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text); font-family: var(--font-mono);
+    font-size: var(--text-2xs); outline: none; cursor: pointer;
+    transition: border-color var(--transition-fast);
+  }
+  .gh-branch-select:focus { border-color: var(--accent); }
+
+  /* Commit panel */
+  .gh-commit-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-top: 16px;
+  }
+  .gh-commit-panel h4 {
+    margin: 0 0 12px; font-size: var(--text-base); font-weight: 600; color: var(--text);
+  }
+  .gh-commit-file-list {
+    margin-bottom: 12px; padding: 8px 12px; background: var(--bg);
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+  }
+  .gh-commit-file-entry {
+    display: flex; align-items: center; gap: 6px; padding: 3px 0;
+    font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text);
+  }
+  .gh-commit-file-entry::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--warning); flex-shrink: 0;
+  }
+  .gh-commit-msg {
+    width: 100%; padding: 8px 12px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    color: var(--text); font-family: var(--font-sans); font-size: var(--text-sm);
+    outline: none; resize: vertical; min-height: 60px;
+    transition: border-color var(--transition-base); box-sizing: border-box;
+  }
+  .gh-commit-msg:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+  .gh-commit-actions {
+    display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end;
+  }
+
+  /* New branch modal */
+  .gh-new-branch-row {
+    display: flex; gap: 8px; align-items: center; margin-top: 8px;
+  }
+  .gh-new-branch-row input {
+    flex: 1; padding: 4px 8px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: var(--font-mono); font-size: var(--text-xs);
+    outline: none;
+  }
+  .gh-new-branch-row input:focus {
+    border-color: var(--accent);
+  }
+
   /* ===== 36. DEV MODE MOBILE GATE ===== */
   @media (max-width: 768px) {
     .mode-toggle { opacity: var(--disabled-opacity); pointer-events: none; }
@@ -1550,6 +1667,18 @@
   <!-- Refresh: used in workspace refresh -->
   <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
     <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+  </symbol>
+  <!-- Git branch: used in workspace branch selector -->
+  <symbol id="icon-git-branch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 01-9 9"/>
+  </symbol>
+  <!-- Git commit: used in workspace commit button -->
+  <symbol id="icon-git-commit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="12" cy="12" r="4"/><line x1="1.05" y1="12" x2="7" y2="12"/><line x1="17.01" y1="12" x2="22.96" y2="12"/>
+  </symbol>
+  <!-- Unlink / disconnect: used in workspace disconnect -->
+  <symbol id="icon-unlink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M18.84 12.25l1.72-1.71h-.02a5.004 5.004 0 00-.12-7.07 5.006 5.006 0 00-6.95 0l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5.004 5.004 0 00.12 7.07 5.006 5.006 0 006.95 0l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/>
   </symbol>
   <!-- Folder open: used in workspace -->
   <symbol id="icon-folder-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1977,6 +2106,26 @@
         </span>
       </div>
       <div class="dev-toolbar-right">
+        <div class="gh-workspace-bar" id="ghWorkspaceBar" style="display:none">
+          <select class="gh-branch-select" id="ghBranchSelect" aria-label="Branch" onchange="devGhSwitchBranch(this.value)"></select>
+          <button class="btn-secondary btn-sm" id="btnGhNewBranch" onclick="devGhShowNewBranch()" title="Create new branch">
+            <svg width="12" height="12"><use href="#icon-git-branch"/></svg>
+          </button>
+          <button class="btn-secondary btn-sm" id="btnGhCommit" onclick="devGhShowCommitPanel()" style="display:none">
+            <svg width="12" height="12"><use href="#icon-git-commit"/></svg>
+            Commit
+          </button>
+          <button class="btn-secondary btn-sm" onclick="devGhRefreshFiles()">
+            <svg width="12" height="12"><use href="#icon-refresh"/></svg>
+          </button>
+          <button class="btn-secondary btn-sm" onclick="devGhDisconnect()" title="Disconnect repo">
+            <svg width="12" height="12"><use href="#icon-unlink"/></svg>
+          </button>
+        </div>
+        <button class="btn-secondary btn-sm" id="btnConnectRepo" onclick="devGhShowConnectModal()">
+          <svg width="12" height="12"><use href="#icon-github"/></svg>
+          Connect Repo
+        </button>
         <button class="btn-secondary btn-sm" id="btnOpenFolder" onclick="devOpenWorkspace()">
           <svg width="12" height="12"><use href="#icon-folder-open"/></svg>
           Open Folder
@@ -1993,8 +2142,60 @@
       <p class="empty-hint" style="font-family:var(--font-mono);font-size:var(--text-2xs);color:var(--text-muted);opacity:0.6">expects schemas/ and templates/ subdirectories</p>
     </div>
     <div class="workspace-file-list hidden" id="workspaceFileList"></div>
+    <div class="gh-commit-panel" id="ghCommitPanel" style="display:none">
+      <h4>Commit Changes</h4>
+      <div class="gh-commit-file-list" id="ghCommitFileList"></div>
+      <textarea class="gh-commit-msg" id="ghCommitMsg" placeholder="Describe your changes..." aria-label="Commit message"></textarea>
+      <div class="gh-commit-actions">
+        <button class="btn-secondary btn-sm" onclick="devGhHideCommitPanel()">Cancel</button>
+        <button class="btn-primary btn-sm" id="btnGhCommitPush" onclick="devGhCommitAndPush()">
+          <svg width="12" height="12"><use href="#icon-git-commit"/></svg>
+          Commit &amp; Push
+        </button>
+      </div>
+    </div>
+    <div class="gh-new-branch-row" id="ghNewBranchRow" style="display:none">
+      <input type="text" id="ghNewBranchName" placeholder="new-branch-name" aria-label="New branch name" pattern="[a-zA-Z0-9._/-]+">
+      <button class="btn-primary btn-sm" onclick="devGhCreateBranch()">Create</button>
+      <button class="btn-secondary btn-sm" onclick="document.getElementById('ghNewBranchRow').style.display='none'">Cancel</button>
+    </div>
   </div>
 </main>
+
+<!-- GitHub Connect Repo Modal -->
+<div class="gh-connect-modal" id="ghConnectModal" role="dialog" aria-labelledby="ghConnectTitle" aria-modal="true">
+  <div class="gh-connect-panel">
+    <h3 id="ghConnectTitle">Connect GitHub Repository</h3>
+    <p class="gh-connect-subtitle">Browse and edit schemas &amp; templates from a GitHub repo</p>
+    <div class="gh-connect-warning">
+      <svg width="14" height="14"><use href="#icon-lock"/></svg>
+      <span>Your token grants write access to the repo. Use a fine-grained personal access token scoped to the target repository. The token is stored in localStorage and never logged.</span>
+    </div>
+    <div class="gh-connect-field">
+      <label for="ghConnectRepo">Repository</label>
+      <input type="text" id="ghConnectRepo" placeholder="owner/repo or https://github.com/owner/repo" autocomplete="off" spellcheck="false">
+      <div class="gh-field-hint">e.g. myorg/form-templates</div>
+    </div>
+    <div class="gh-connect-field">
+      <label for="ghConnectToken">Personal Access Token</label>
+      <input type="password" id="ghConnectToken" placeholder="ghp_xxxxxxxxxxxx or github_pat_xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+      <div class="gh-field-hint">Requires Contents: Read and write permission</div>
+    </div>
+    <div class="gh-connect-field">
+      <label for="ghConnectBranch">Branch (optional)</label>
+      <input type="text" id="ghConnectBranch" placeholder="defaults to repo default branch" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="gh-connect-actions">
+      <button class="btn-secondary btn-sm" id="btnGhClearToken" onclick="devGhClearToken()" style="display:none">Clear saved token</button>
+      <span style="flex:1"></span>
+      <button class="btn-secondary btn-sm" onclick="devGhCloseConnectModal()">Cancel</button>
+      <button class="btn-primary btn-sm" id="btnGhConnect" onclick="devGhConnect()">
+        <svg width="12" height="12"><use href="#icon-github"/></svg>
+        Connect
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- Context Menu (shared, positioned dynamically) -->
 <div class="ctx-menu" id="ctxMenu" role="menu" aria-label="Context menu" style="display:none"></div>
@@ -2057,6 +2258,16 @@ let workspaceHandle = null;      // FileSystemDirectoryHandle (FSAA)
 let workspaceFiles = { schemas: [], templates: [] };
 let devWorkspacePoller = null;   // setInterval ID for FSAA change polling
 let currentWorkspaceFile = null;
+
+// GitHub workspace state (Dev Mode)
+let devGhConnected = false;           // Whether a GitHub repo is connected in workspace
+let devGhOwner = '';                  // Connected repo owner
+let devGhRepoName = '';               // Connected repo name
+let devGhBranch = '';                 // Current branch
+let devGhPat = '';                    // Personal access token
+let devGhBranches = [];               // Available branches
+let devGhOriginalContents = {};       // { path: { content, sha } } — original fetched content for diff
+let devGhModifiedFiles = new Set();   // Set of paths that have been modified
 
 // GitHub config
 let ghOwner = '';
@@ -5686,6 +5897,9 @@ function initSchemaEditor() {
     clearTimeout(devPreviewDebounce);
     devPreviewDebounce = setTimeout(devUpdateSchemaPreview, 300);
     devSaveEditorState();
+    if (devGhConnected && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
+      devGhTrackModification('schema', currentWorkspaceFile.index);
+    }
   });
 
   // Right-click context menu
@@ -6215,6 +6429,9 @@ function initTemplateEditor() {
   templateJar.onUpdate(code => {
     devTemplateText = code;
     devSaveEditorState();
+    if (devGhConnected && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
+      devGhTrackModification('template', currentWorkspaceFile.index);
+    }
   });
 
   // Right-click context menu
@@ -6552,6 +6769,10 @@ function devRenderWorkspaceFiles() {
       const nameSpan = document.createElement('span');
       nameSpan.className = 'workspace-file-name';
       nameSpan.textContent = f.name;
+      if (f.ghPath) {
+        nameSpan.setAttribute('data-gh-path', f.ghPath);
+        if (devGhModifiedFiles.has(f.ghPath)) nameSpan.classList.add('modified');
+      }
       const actionSpan = document.createElement('span');
       actionSpan.className = 'workspace-file-action';
       actionSpan.textContent = 'Edit in Schema Builder';
@@ -6577,6 +6798,10 @@ function devRenderWorkspaceFiles() {
       const nameSpan = document.createElement('span');
       nameSpan.className = 'workspace-file-name';
       nameSpan.textContent = f.name;
+      if (f.ghPath) {
+        nameSpan.setAttribute('data-gh-path', f.ghPath);
+        if (devGhModifiedFiles.has(f.ghPath)) nameSpan.classList.add('modified');
+      }
       const actionSpan = document.createElement('span');
       actionSpan.className = 'workspace-file-action';
       actionSpan.textContent = 'Edit in Template Builder';
@@ -6680,6 +6905,546 @@ async function devRefreshWorkspace() {
     await devReadWorkspaceFromHandle();
     showToast('Workspace refreshed');
   }
+}
+
+// ============================================================
+//  DEV MODE: GITHUB WORKSPACE INTEGRATION
+// ============================================================
+
+function devGhHeaders() {
+  const h = { 'Accept': 'application/vnd.github.v3+json' };
+  if (devGhPat) h['Authorization'] = `token ${devGhPat}`;
+  return h;
+}
+
+async function devGhApiFetch(url, options = {}) {
+  const resp = await fetch(url, { headers: devGhHeaders(), ...options });
+  if (!resp.ok) {
+    const body = await resp.text().catch(() => '');
+    throw new Error(`GitHub API ${resp.status}: ${resp.statusText}${body ? ' — ' + body.slice(0, 200) : ''}`);
+  }
+  return resp;
+}
+
+function devGhShowConnectModal() {
+  const modal = document.getElementById('ghConnectModal');
+  const savedToken = localStorage.getItem('formforge-dev-github-token');
+  const savedRepo = localStorage.getItem('formforge-dev-github-repo');
+  const clearBtn = document.getElementById('btnGhClearToken');
+
+  if (savedToken) {
+    document.getElementById('ghConnectToken').value = savedToken;
+    clearBtn.style.display = 'inline-flex';
+  } else {
+    clearBtn.style.display = 'none';
+  }
+  if (savedRepo) {
+    try {
+      const info = JSON.parse(savedRepo);
+      document.getElementById('ghConnectRepo').value = info.owner + '/' + info.repo;
+      if (info.branch) document.getElementById('ghConnectBranch').value = info.branch;
+    } catch (e) { /* ignore */ }
+  }
+  modal.classList.add('open');
+}
+
+function devGhCloseConnectModal() {
+  document.getElementById('ghConnectModal').classList.remove('open');
+}
+
+function devGhClearToken() {
+  localStorage.removeItem('formforge-dev-github-token');
+  document.getElementById('ghConnectToken').value = '';
+  document.getElementById('btnGhClearToken').style.display = 'none';
+  showToast('Saved token cleared');
+}
+
+function devGhParseRepoInput(input) {
+  // Accept owner/repo or full GitHub URL
+  input = input.trim();
+  const urlMatch = input.match(/github\.com\/([^/]+)\/([^/\s#?]+)/);
+  if (urlMatch) return { owner: urlMatch[1], repo: urlMatch[2].replace(/\.git$/, '') };
+  const parts = input.split('/');
+  if (parts.length === 2 && parts[0] && parts[1]) return { owner: parts[0], repo: parts[1] };
+  return null;
+}
+
+async function devGhConnect() {
+  const repoInput = document.getElementById('ghConnectRepo').value;
+  const token = document.getElementById('ghConnectToken').value.trim();
+  const branchInput = document.getElementById('ghConnectBranch').value.trim();
+
+  const parsed = devGhParseRepoInput(repoInput);
+  if (!parsed) {
+    showToast('Enter a valid owner/repo or GitHub URL', 'error');
+    return;
+  }
+
+  devGhOwner = parsed.owner;
+  devGhRepoName = parsed.repo;
+  devGhPat = token;
+
+  // Store token and repo info
+  if (token) localStorage.setItem('formforge-dev-github-token', token);
+  localStorage.setItem('formforge-dev-github-repo', JSON.stringify({
+    owner: devGhOwner, repo: devGhRepoName, branch: branchInput
+  }));
+
+  const connectBtn = document.getElementById('btnGhConnect');
+  connectBtn.disabled = true;
+  connectBtn.textContent = 'Connecting...';
+
+  try {
+    // Get repo info to find default branch
+    const repoResp = await devGhApiFetch(`https://api.github.com/repos/${devGhOwner}/${devGhRepoName}`);
+    const repoData = await repoResp.json();
+    devGhBranch = branchInput || repoData.default_branch || 'main';
+
+    // Fetch branches
+    await devGhFetchBranches();
+
+    // Fetch files
+    await devGhFetchFiles();
+
+    devGhConnected = true;
+    devGhCloseConnectModal();
+
+    // Update UI
+    devGhUpdateToolbar();
+
+    showToast(`Connected to ${devGhOwner}/${devGhRepoName} @ ${devGhBranch}`);
+  } catch (e) {
+    showToast('Failed to connect: ' + e.message, 'error');
+  } finally {
+    connectBtn.disabled = false;
+    connectBtn.textContent = '';
+    connectBtn.innerHTML = '<svg width="12" height="12"><use href="#icon-github"/></svg> Connect';
+  }
+}
+
+async function devGhFetchBranches() {
+  try {
+    const resp = await devGhApiFetch(
+      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/branches?per_page=100`
+    );
+    devGhBranches = (await resp.json()).map(b => b.name);
+  } catch (e) {
+    devGhBranches = [devGhBranch];
+  }
+
+  // Populate branch selector
+  const select = document.getElementById('ghBranchSelect');
+  select.innerHTML = '';
+  devGhBranches.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    if (name === devGhBranch) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+async function devGhFetchFiles() {
+  workspaceFiles = { schemas: [], templates: [] };
+  devGhOriginalContents = {};
+  devGhModifiedFiles = new Set();
+
+  // Fetch schemas directory
+  try {
+    const schemaResp = await devGhApiFetch(
+      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/contents/schemas?ref=${devGhBranch}`
+    );
+    const schemaEntries = await schemaResp.json();
+    for (const entry of schemaEntries) {
+      if (entry.name.endsWith('.json') && entry.name !== '_schema.spec.json' && entry.type === 'file') {
+        const contentResp = await devGhApiFetch(
+          `https://raw.githubusercontent.com/${devGhOwner}/${devGhRepoName}/${devGhBranch}/schemas/${entry.name}?t=${Date.now()}`
+        );
+        const text = await contentResp.text();
+        workspaceFiles.schemas.push({ name: entry.name, text, handle: null, ghPath: `schemas/${entry.name}`, ghSha: entry.sha });
+        devGhOriginalContents[`schemas/${entry.name}`] = { content: text, sha: entry.sha };
+      }
+    }
+  } catch (e) {
+    if (!e.message.includes('404')) throw e;
+    // schemas dir may not exist — that's OK
+  }
+
+  // Fetch templates directory
+  try {
+    const tmplResp = await devGhApiFetch(
+      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/contents/templates?ref=${devGhBranch}`
+    );
+    const tmplEntries = await tmplResp.json();
+    for (const entry of tmplEntries) {
+      if (entry.name.endsWith('.py') && entry.name !== 'stencils.py' && entry.type === 'file') {
+        const contentResp = await devGhApiFetch(
+          `https://raw.githubusercontent.com/${devGhOwner}/${devGhRepoName}/${devGhBranch}/templates/${entry.name}?t=${Date.now()}`
+        );
+        const text = await contentResp.text();
+        workspaceFiles.templates.push({ name: entry.name, text, handle: null, ghPath: `templates/${entry.name}`, ghSha: entry.sha });
+        devGhOriginalContents[`templates/${entry.name}`] = { content: text, sha: entry.sha };
+      }
+    }
+  } catch (e) {
+    if (!e.message.includes('404')) throw e;
+  }
+
+  devRenderWorkspaceFiles();
+
+  // Update badge
+  const badge = document.getElementById('workspaceBadge');
+  const badgeText = document.getElementById('workspaceBadgeText');
+  const total = workspaceFiles.schemas.length + workspaceFiles.templates.length;
+  badge.className = 'dev-validation-badge valid';
+  badgeText.textContent = `${devGhOwner}/${devGhRepoName} @ ${devGhBranch} · ${total} file${total !== 1 ? 's' : ''}`;
+
+  // Show refresh button
+  document.getElementById('btnRefreshWorkspace').style.display = 'none'; // Hide local refresh for GH mode
+}
+
+function devGhUpdateToolbar() {
+  const ghBar = document.getElementById('ghWorkspaceBar');
+  const connectBtn = document.getElementById('btnConnectRepo');
+  const openFolderBtn = document.getElementById('btnOpenFolder');
+
+  if (devGhConnected) {
+    ghBar.style.display = 'flex';
+    connectBtn.style.display = 'none';
+    openFolderBtn.style.display = 'none';
+    devGhUpdateCommitButton();
+  } else {
+    ghBar.style.display = 'none';
+    connectBtn.style.display = 'inline-flex';
+    if (window.showDirectoryPicker) openFolderBtn.style.display = 'inline-flex';
+  }
+}
+
+function devGhTrackModification(type, index) {
+  // Called when a file is edited in the builder — compare current content with original
+  let path, currentContent;
+  if (type === 'schema') {
+    const f = workspaceFiles.schemas[index];
+    if (!f || !f.ghPath) return;
+    path = f.ghPath;
+    currentContent = devSchemaText;
+  } else {
+    const f = workspaceFiles.templates[index];
+    if (!f || !f.ghPath) return;
+    path = f.ghPath;
+    currentContent = devTemplateText;
+  }
+
+  const original = devGhOriginalContents[path];
+  if (!original) return;
+
+  if (currentContent !== original.content) {
+    devGhModifiedFiles.add(path);
+  } else {
+    devGhModifiedFiles.delete(path);
+  }
+
+  devGhUpdateCommitButton();
+  devGhUpdateFileModificationIndicators();
+}
+
+function devGhUpdateCommitButton() {
+  const btn = document.getElementById('btnGhCommit');
+  if (!btn) return;
+  btn.style.display = devGhModifiedFiles.size > 0 ? 'inline-flex' : 'none';
+}
+
+function devGhUpdateFileModificationIndicators() {
+  const items = document.querySelectorAll('.workspace-file-name[data-gh-path]');
+  items.forEach(item => {
+    const path = item.getAttribute('data-gh-path');
+    if (devGhModifiedFiles.has(path)) {
+      item.classList.add('modified');
+    } else {
+      item.classList.remove('modified');
+    }
+  });
+}
+
+async function devGhSwitchBranch(branchName) {
+  if (branchName === devGhBranch) return;
+  devGhBranch = branchName;
+
+  // Save branch preference
+  localStorage.setItem('formforge-dev-github-repo', JSON.stringify({
+    owner: devGhOwner, repo: devGhRepoName, branch: devGhBranch
+  }));
+
+  try {
+    await devGhFetchFiles();
+    showToast(`Switched to branch: ${devGhBranch}`);
+  } catch (e) {
+    showToast('Failed to switch branch: ' + e.message, 'error');
+  }
+}
+
+function devGhShowNewBranch() {
+  document.getElementById('ghNewBranchRow').style.display = 'flex';
+  document.getElementById('ghNewBranchName').value = '';
+  document.getElementById('ghNewBranchName').focus();
+}
+
+async function devGhCreateBranch() {
+  const name = document.getElementById('ghNewBranchName').value.trim();
+  if (!name) {
+    showToast('Enter a branch name', 'error');
+    return;
+  }
+  // Validate branch name
+  if (!/^[a-zA-Z0-9._\/-]+$/.test(name)) {
+    showToast('Invalid branch name — use alphanumeric, dots, dashes, slashes', 'error');
+    return;
+  }
+
+  try {
+    // Get current branch ref SHA
+    const refResp = await devGhApiFetch(
+      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/refs/heads/${devGhBranch}`
+    );
+    const refData = await refResp.json();
+    const sha = refData.object.sha;
+
+    // Create new ref
+    await devGhApiFetch(
+      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/refs`,
+      {
+        method: 'POST',
+        headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref: `refs/heads/${name}`, sha })
+      }
+    );
+
+    // Switch to new branch
+    devGhBranch = name;
+    await devGhFetchBranches();
+    await devGhFetchFiles();
+    document.getElementById('ghNewBranchRow').style.display = 'none';
+    showToast(`Created and switched to branch: ${name}`);
+  } catch (e) {
+    showToast('Failed to create branch: ' + e.message, 'error');
+  }
+}
+
+function devGhShowCommitPanel() {
+  if (devGhModifiedFiles.size === 0) {
+    showToast('No files modified', 'info');
+    return;
+  }
+
+  const fileList = document.getElementById('ghCommitFileList');
+  fileList.innerHTML = '';
+  devGhModifiedFiles.forEach(path => {
+    const entry = document.createElement('div');
+    entry.className = 'gh-commit-file-entry';
+    entry.textContent = path;
+    fileList.appendChild(entry);
+  });
+
+  document.getElementById('ghCommitMsg').value = '';
+  document.getElementById('ghCommitPanel').style.display = 'block';
+  document.getElementById('ghCommitMsg').focus();
+}
+
+function devGhHideCommitPanel() {
+  document.getElementById('ghCommitPanel').style.display = 'none';
+}
+
+function devGhGetCurrentContent(path) {
+  // Get the current content for a modified file from workspaceFiles or active editor
+  for (const f of workspaceFiles.schemas) {
+    if (f.ghPath === path) {
+      // If this file is currently being edited, use the editor content
+      if (currentWorkspaceFile && currentWorkspaceFile.type === 'schema' &&
+          workspaceFiles.schemas[currentWorkspaceFile.index] === f) {
+        return devSchemaText;
+      }
+      return f.text;
+    }
+  }
+  for (const f of workspaceFiles.templates) {
+    if (f.ghPath === path) {
+      if (currentWorkspaceFile && currentWorkspaceFile.type === 'template' &&
+          workspaceFiles.templates[currentWorkspaceFile.index] === f) {
+        return devTemplateText;
+      }
+      return f.text;
+    }
+  }
+  return null;
+}
+
+async function devGhCommitAndPush() {
+  const message = document.getElementById('ghCommitMsg').value.trim();
+  if (!message) {
+    showToast('Commit message is required', 'error');
+    return;
+  }
+
+  const modifiedPaths = Array.from(devGhModifiedFiles);
+  if (modifiedPaths.length === 0) return;
+
+  const commitBtn = document.getElementById('btnGhCommitPush');
+  commitBtn.disabled = true;
+  commitBtn.textContent = 'Committing...';
+
+  try {
+    if (modifiedPaths.length === 1) {
+      // Single file: use Contents API (PUT)
+      const path = modifiedPaths[0];
+      const content = devGhGetCurrentContent(path);
+      if (content === null) throw new Error('Could not read file content for ' + path);
+      const original = devGhOriginalContents[path];
+
+      const resp = await devGhApiFetch(
+        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/contents/${path}`,
+        {
+          method: 'PUT',
+          headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            content: btoa(unescape(encodeURIComponent(content))),
+            sha: original.sha,
+            branch: devGhBranch
+          })
+        }
+      );
+      const result = await resp.json();
+      const commitSha = result.commit.sha.slice(0, 7);
+      showToast(`Committed ${commitSha} to ${devGhBranch}`);
+    } else {
+      // Multi-file: use Git Trees + Commits API for atomic commit
+      // 1. Get current commit SHA for the branch
+      const refResp = await devGhApiFetch(
+        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/refs/heads/${devGhBranch}`
+      );
+      const refData = await refResp.json();
+      const baseCommitSha = refData.object.sha;
+
+      // 2. Get the base tree
+      const commitResp = await devGhApiFetch(
+        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/commits/${baseCommitSha}`
+      );
+      const commitData = await commitResp.json();
+      const baseTreeSha = commitData.tree.sha;
+
+      // 3. Create blobs for each modified file
+      const treeItems = [];
+      for (const path of modifiedPaths) {
+        const content = devGhGetCurrentContent(path);
+        if (content === null) throw new Error('Could not read file content for ' + path);
+
+        const blobResp = await devGhApiFetch(
+          `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/blobs`,
+          {
+            method: 'POST',
+            headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, encoding: 'utf-8' })
+          }
+        );
+        const blobData = await blobResp.json();
+        treeItems.push({ path, mode: '100644', type: 'blob', sha: blobData.sha });
+      }
+
+      // 4. Create a new tree
+      const treeResp = await devGhApiFetch(
+        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/trees`,
+        {
+          method: 'POST',
+          headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base_tree: baseTreeSha, tree: treeItems })
+        }
+      );
+      const treeData = await treeResp.json();
+
+      // 5. Create a new commit
+      const newCommitResp = await devGhApiFetch(
+        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/commits`,
+        {
+          method: 'POST',
+          headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, tree: treeData.sha, parents: [baseCommitSha] })
+        }
+      );
+      const newCommitData = await newCommitResp.json();
+
+      // 6. Update the branch ref
+      await devGhApiFetch(
+        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/refs/heads/${devGhBranch}`,
+        {
+          method: 'PATCH',
+          headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sha: newCommitData.sha })
+        }
+      );
+
+      const commitSha = newCommitData.sha.slice(0, 7);
+      showToast(`Committed ${commitSha} to ${devGhBranch} (${modifiedPaths.length} files)`);
+    }
+
+    // Refresh files to get new SHAs
+    devGhHideCommitPanel();
+    await devGhFetchFiles();
+  } catch (e) {
+    if (e.message.includes('409')) {
+      showToast('Conflict: file changed on remote. Refresh and try again.', 'error');
+    } else {
+      showToast('Commit failed: ' + e.message, 'error');
+    }
+  } finally {
+    commitBtn.disabled = false;
+    commitBtn.innerHTML = '<svg width="12" height="12"><use href="#icon-git-commit"/></svg> Commit &amp; Push';
+  }
+}
+
+async function devGhRefreshFiles() {
+  if (!devGhConnected) return;
+  try {
+    await devGhFetchFiles();
+    showToast('Files refreshed from GitHub');
+  } catch (e) {
+    showToast('Failed to refresh: ' + e.message, 'error');
+  }
+}
+
+function devGhDisconnect() {
+  devGhConnected = false;
+  devGhOwner = '';
+  devGhRepoName = '';
+  devGhBranch = '';
+  devGhPat = '';
+  devGhBranches = [];
+  devGhOriginalContents = {};
+  devGhModifiedFiles = new Set();
+  workspaceFiles = { schemas: [], templates: [] };
+  currentWorkspaceFile = null;
+
+  // Clear stored repo info (keep token — user can clear manually)
+  localStorage.removeItem('formforge-dev-github-repo');
+
+  // Reset UI
+  devGhUpdateToolbar();
+  devGhHideCommitPanel();
+  document.getElementById('ghNewBranchRow').style.display = 'none';
+
+  // Re-show drop zone
+  const container = document.getElementById('workspaceFileList');
+  const dropZone = document.getElementById('workspaceDropZone');
+  container.classList.add('hidden');
+  container.innerHTML = '';
+  dropZone.style.display = 'flex';
+
+  // Reset badge
+  const badge = document.getElementById('workspaceBadge');
+  const badgeText = document.getElementById('workspaceBadgeText');
+  badge.className = 'dev-validation-badge';
+  badgeText.textContent = 'no folder loaded';
+
+  showToast('Disconnected from GitHub repo');
 }
 
 // Drag-drop fallback for workspace
@@ -6905,6 +7670,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Workspace drop zone
   initWorkspaceDropZone();
+
+  // GitHub connect modal — close on click outside or Escape
+  const ghModal = document.getElementById('ghConnectModal');
+  if (ghModal) {
+    ghModal.addEventListener('click', (e) => {
+      if (e.target === ghModal) devGhCloseConnectModal();
+    });
+    ghModal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') devGhCloseConnectModal();
+    });
+  }
 
   // Dev mode resize listener
   window.addEventListener('resize', handleDevModeResize);

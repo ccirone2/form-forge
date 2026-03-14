@@ -164,9 +164,7 @@ def test_mobile_gate_hides_toggle(index_html: str) -> None:
     """The mode toggle must be disabled on narrow viewports."""
     # Find the @media block for 768px in section 36 — toggle is disabled via
     # pointer-events:none (shown but non-interactive) rather than display:none
-    pattern = (
-        r"@media\s*\(max-width:\s*768px\)\s*\{[^}]*\.mode-toggle\s*\{"
-    )
+    pattern = r"@media\s*\(max-width:\s*768px\)\s*\{[^}]*\.mode-toggle\s*\{"
     assert re.search(pattern, index_html), "mode-toggle must be gated at <=768px"
 
 
@@ -1081,3 +1079,306 @@ def test_existing_test_count(index_html: str) -> None:
     assert "test_stencils.py" in test_files
     assert "test_templates.py" in test_files
     assert "test_dev_mode.py" in test_files
+
+
+# ============================================================
+# GitHub Workspace Integration (#125)
+# ============================================================
+
+
+class TestGitHubWorkspaceHTML:
+    """HTML structure tests for GitHub workspace integration."""
+
+    def test_connect_repo_button_exists(self, index_html: str) -> None:
+        """Connect Repo button exists in workspace toolbar."""
+        assert 'id="btnConnectRepo"' in index_html
+
+    def test_connect_repo_button_uses_github_icon(self, index_html: str) -> None:
+        """Connect Repo button uses the GitHub icon."""
+        match = re.search(r'id="btnConnectRepo"[^>]*>.*?</button>', index_html, re.S)
+        assert match
+        assert "#icon-github" in match.group(0)
+
+    def test_connect_modal_exists(self, index_html: str) -> None:
+        """GitHub connect modal dialog exists."""
+        assert 'id="ghConnectModal"' in index_html
+        assert 'role="dialog"' in index_html
+
+    def test_connect_modal_repo_input(self, index_html: str) -> None:
+        """Modal has repository input field."""
+        assert 'id="ghConnectRepo"' in index_html
+
+    def test_connect_modal_token_input(self, index_html: str) -> None:
+        """Modal has password-type token input for security."""
+        assert 'id="ghConnectToken"' in index_html
+        assert 'type="password"' in index_html
+
+    def test_connect_modal_branch_input(self, index_html: str) -> None:
+        """Modal has optional branch input."""
+        assert 'id="ghConnectBranch"' in index_html
+
+    def test_connect_button_in_modal(self, index_html: str) -> None:
+        """Connect button exists in the modal."""
+        assert 'id="btnGhConnect"' in index_html
+
+    def test_clear_token_button_exists(self, index_html: str) -> None:
+        """Clear token button exists for security."""
+        assert 'id="btnGhClearToken"' in index_html
+
+    def test_branch_selector_exists(self, index_html: str) -> None:
+        """Branch selector dropdown exists in workspace toolbar."""
+        assert 'id="ghBranchSelect"' in index_html
+
+    def test_new_branch_button_exists(self, index_html: str) -> None:
+        """New branch button exists."""
+        assert 'id="btnGhNewBranch"' in index_html
+
+    def test_new_branch_input_exists(self, index_html: str) -> None:
+        """New branch name input exists."""
+        assert 'id="ghNewBranchName"' in index_html
+
+    def test_commit_button_exists(self, index_html: str) -> None:
+        """Commit button exists in workspace toolbar."""
+        assert 'id="btnGhCommit"' in index_html
+
+    def test_commit_panel_exists(self, index_html: str) -> None:
+        """Commit panel with file list and message textarea exists."""
+        assert 'id="ghCommitPanel"' in index_html
+        assert 'id="ghCommitFileList"' in index_html
+        assert 'id="ghCommitMsg"' in index_html
+
+    def test_commit_push_button_exists(self, index_html: str) -> None:
+        """Commit & Push button exists."""
+        assert 'id="btnGhCommitPush"' in index_html
+
+    def test_disconnect_button_calls_disconnect(self, index_html: str) -> None:
+        """Disconnect button calls devGhDisconnect."""
+        assert "devGhDisconnect()" in index_html
+
+    def test_security_warning_in_modal(self, index_html: str) -> None:
+        """Security warning about token scope is shown in connect modal."""
+        assert "gh-connect-warning" in index_html
+        assert "fine-grained personal access token" in index_html
+
+    def test_workspace_bar_hidden_by_default(self, index_html: str) -> None:
+        """GitHub workspace bar is hidden by default."""
+        match = re.search(r'id="ghWorkspaceBar"[^>]*>', index_html)
+        assert match
+        assert "display:none" in match.group(0)
+
+
+class TestGitHubWorkspaceSVGIcons:
+    """SVG icon tests for GitHub workspace."""
+
+    def test_git_branch_icon_exists(self, index_html: str) -> None:
+        assert 'id="icon-git-branch"' in index_html
+
+    def test_git_commit_icon_exists(self, index_html: str) -> None:
+        assert 'id="icon-git-commit"' in index_html
+
+    def test_unlink_icon_exists(self, index_html: str) -> None:
+        assert 'id="icon-unlink"' in index_html
+
+
+class TestGitHubWorkspaceCSS:
+    """CSS class tests for GitHub workspace."""
+
+    @pytest.mark.parametrize(
+        "css_class",
+        [
+            "gh-connect-modal",
+            "gh-connect-panel",
+            "gh-connect-field",
+            "gh-connect-actions",
+            "gh-connect-warning",
+            "gh-workspace-bar",
+            "gh-branch-select",
+            "gh-commit-panel",
+            "gh-commit-file-list",
+            "gh-commit-file-entry",
+            "gh-commit-msg",
+            "gh-commit-actions",
+            "gh-new-branch-row",
+            "workspace-file-name.modified",
+        ],
+    )
+    def test_css_class_defined(self, index_html: str, css_class: str) -> None:
+        """All GitHub workspace CSS classes are defined in the stylesheet."""
+        assert f".{css_class}" in index_html
+
+
+class TestGitHubWorkspaceJavaScript:
+    """JavaScript function and pattern tests for GitHub workspace."""
+
+    def test_state_variables_exist(self, index_html: str) -> None:
+        """GitHub workspace state variables are declared."""
+        assert "devGhConnected" in index_html
+        assert "devGhOwner" in index_html
+        assert "devGhRepoName" in index_html
+        assert "devGhBranch" in index_html
+        assert "devGhPat" in index_html
+        assert "devGhBranches" in index_html
+        assert "devGhOriginalContents" in index_html
+        assert "devGhModifiedFiles" in index_html
+
+    def test_token_localstorage_key(self, index_html: str) -> None:
+        """Token uses the correct localStorage key."""
+        assert "formforge-dev-github-token" in index_html
+
+    def test_repo_localstorage_key(self, index_html: str) -> None:
+        """Repo info uses the correct localStorage key."""
+        assert "formforge-dev-github-repo" in index_html
+
+    def test_token_stored_in_localstorage(self, index_html: str) -> None:
+        """Token is stored to localStorage on connect."""
+        assert "localStorage.setItem('formforge-dev-github-token'" in index_html
+
+    def test_token_removed_on_clear(self, index_html: str) -> None:
+        """Token is removed from localStorage on clear."""
+        assert "localStorage.removeItem('formforge-dev-github-token')" in index_html
+
+    def test_github_api_repo_url_pattern(self, index_html: str) -> None:
+        """GitHub API URL pattern for repo info is present."""
+        assert "api.github.com/repos/" in index_html
+
+    def test_github_api_contents_url_pattern(self, index_html: str) -> None:
+        """GitHub Contents API URL pattern is present (for fetching files)."""
+        assert "/contents/schemas" in index_html
+        assert "/contents/templates" in index_html
+
+    def test_github_api_branches_url_pattern(self, index_html: str) -> None:
+        """GitHub API branches endpoint is used."""
+        assert "/branches" in index_html
+
+    def test_contents_api_put_pattern(self, index_html: str) -> None:
+        """Contents API PUT is used for single-file commits."""
+        match = re.search(r"method:\s*['\"]PUT['\"]", index_html)
+        assert match, "PUT method for Contents API not found"
+
+    def test_git_trees_api_pattern(self, index_html: str) -> None:
+        """Git Trees API is used for atomic multi-file commits."""
+        assert "/git/trees" in index_html
+
+    def test_git_commits_api_pattern(self, index_html: str) -> None:
+        """Git Commits API is used for atomic multi-file commits."""
+        assert "/git/commits/" in index_html
+
+    def test_git_refs_api_pattern(self, index_html: str) -> None:
+        """Git Refs API is used for branch operations."""
+        assert "/git/refs/heads/" in index_html
+        assert "/git/refs" in index_html
+
+    def test_git_blobs_api_pattern(self, index_html: str) -> None:
+        """Git Blobs API is used for creating file blobs."""
+        assert "/git/blobs" in index_html
+
+    def test_create_branch_uses_post(self, index_html: str) -> None:
+        """Branch creation uses POST to git/refs."""
+        # Find devGhCreateBranch function body
+        match = re.search(
+            r"async function devGhCreateBranch\(\)([\s\S]*?)^(?:async )?function ",
+            index_html,
+            re.M,
+        )
+        assert match
+        body = match.group(1)
+        assert "refs/heads/" in body
+        assert "'POST'" in body or '"POST"' in body
+
+    def test_file_modification_tracking(self, index_html: str) -> None:
+        """devGhTrackModification compares current vs original content."""
+        match = re.search(
+            r"function devGhTrackModification\(type, index\)([\s\S]*?)^(?:async )?function ",
+            index_html,
+            re.M,
+        )
+        assert match
+        body = match.group(1)
+        assert "devGhOriginalContents" in body
+        assert "devGhModifiedFiles" in body
+
+    def test_conflict_409_handling(self, index_html: str) -> None:
+        """409 conflict error is handled in commit function."""
+        match = re.search(
+            r"async function devGhCommitAndPush\(\)([\s\S]*?)^(?:async )?function ",
+            index_html,
+            re.M,
+        )
+        assert match
+        body = match.group(1)
+        assert "'409'" in body or '"409"' in body
+
+    def test_disconnect_clears_state(self, index_html: str) -> None:
+        """devGhDisconnect resets all GitHub workspace state."""
+        match = re.search(
+            r"function devGhDisconnect\(\)([\s\S]*?)^(?:async )?function ",
+            index_html,
+            re.M,
+        )
+        assert match
+        body = match.group(1)
+        assert "devGhConnected = false" in body
+        assert "devGhOwner = ''" in body
+        assert "devGhModifiedFiles" in body
+
+    def test_schema_editor_tracks_modifications(self, index_html: str) -> None:
+        """Schema editor onUpdate hook calls modification tracker."""
+        assert "devGhTrackModification('schema'" in index_html
+
+    def test_template_editor_tracks_modifications(self, index_html: str) -> None:
+        """Template editor onUpdate hook calls modification tracker."""
+        assert "devGhTrackModification('template'" in index_html
+
+    def test_repo_url_parser_handles_full_urls(self, index_html: str) -> None:
+        """devGhParseRepoInput handles GitHub URLs."""
+        assert "github.com" in index_html
+        match = re.search(
+            r"function devGhParseRepoInput\(input\)([\s\S]*?)^(?:async )?function ",
+            index_html,
+            re.M,
+        )
+        assert match
+        body = match.group(1)
+        # The function uses a regex with escaped dot: github\\.com
+        assert "github" in body
+        assert "urlMatch" in body
+
+    def test_token_authorization_header(self, index_html: str) -> None:
+        """Token is sent via Authorization header, not URL params."""
+        match = re.search(
+            r"function devGhHeaders\(\)([\s\S]*?)^(?:async )?function ",
+            index_html,
+            re.M,
+        )
+        assert match
+        body = match.group(1)
+        assert "Authorization" in body
+        assert "token " in body
+
+    def test_modal_close_on_escape(self, index_html: str) -> None:
+        """Connect modal has Escape key handler."""
+        assert "devGhCloseConnectModal" in index_html
+
+    def test_excludes_spec_and_stencils(self, index_html: str) -> None:
+        """File fetching excludes _schema.spec.json and stencils.py."""
+        match = re.search(
+            r"async function devGhFetchFiles\(\)([\s\S]*?)^(?:async )?function ",
+            index_html,
+            re.M,
+        )
+        assert match
+        body = match.group(1)
+        assert "_schema.spec.json" in body
+        assert "stencils.py" in body
+
+    def test_branch_name_validation(self, index_html: str) -> None:
+        """Branch name input has validation pattern."""
+        match = re.search(
+            r"async function devGhCreateBranch\(\)([\s\S]*?)^(?:async )?function ",
+            index_html,
+            re.M,
+        )
+        assert match
+        body = match.group(1)
+        # Check for regex validation of branch name
+        assert "test(name)" in body or "test(" in body
