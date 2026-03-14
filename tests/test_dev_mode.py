@@ -807,10 +807,9 @@ def test_dompurify_cdn_loaded(index_html: str) -> None:
 def test_docx_preview_white_background_css(index_html: str) -> None:
     """DOCX preview container has white background and Calibri font."""
     assert "dev-docx-preview" in index_html
-    # Check the CSS rule
-    match = re.search(r"\.dev-docx-preview\s*\{([^}]+)\}", index_html)
-    assert match
-    css = match.group(1)
+    # Find the CSS rule containing the background (not the scrollbar override)
+    matches = re.findall(r"\.dev-docx-preview\s*\{([^}]+)\}", index_html)
+    css = " ".join(matches)
     assert "#ffffff" in css
     assert "Calibri" in css
 
@@ -1685,3 +1684,31 @@ def test_save_template_checks_workspace(index_html: str) -> None:
     body = _extract_func(index_html, "devSaveTemplate")
     assert "workspaceHandle" in body
     assert "currentWorkspaceFile" in body
+
+
+# --- Custom Scrollbars (#139) ---
+
+
+def test_webkit_scrollbar_styles(index_html: str) -> None:
+    """Custom WebKit scrollbar pseudo-elements should be defined."""
+    assert "::-webkit-scrollbar " in index_html or "::-webkit-scrollbar{" in index_html
+    assert "::-webkit-scrollbar-thumb" in index_html
+    assert "::-webkit-scrollbar-track" in index_html
+
+
+def test_firefox_scrollbar_styles(index_html: str) -> None:
+    """Firefox scrollbar properties should be set."""
+    assert "scrollbar-width: thin" in index_html
+    assert "scrollbar-color:" in index_html
+
+
+def test_docx_preview_scrollbar_override(index_html: str) -> None:
+    """DOCX preview should have light scrollbar colors for its white background."""
+    assert ".dev-docx-preview::-webkit-scrollbar-thumb" in index_html
+    assert ".dev-docx-preview::-webkit-scrollbar-track" in index_html
+
+
+def test_dev_pane_scrollbar_fade(index_html: str) -> None:
+    """Dev Mode panes should fade scrollbar when not hovering."""
+    assert ".dev-pane:hover::-webkit-scrollbar-thumb" in index_html
+    assert ".dev-editor:hover::-webkit-scrollbar-thumb" in index_html

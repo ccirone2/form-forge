@@ -14,6 +14,24 @@
 
 ## Log
 
+### 2026-03-14 — UX: Custom Scrollbar Styling (#139)
+**Issues:** #139
+
+Added custom scrollbar styles to replace default browser scrollbars across all scrollable areas:
+
+1. **Global dark scrollbars** — 6px thin scrollbars with `var(--border)` thumb, `var(--text-muted)` on hover, transparent track. Both WebKit (`::-webkit-scrollbar`) and Firefox (`scrollbar-width: thin`, `scrollbar-color`) supported.
+2. **Dev Mode auto-fade** — Editor panes, preview panels, and error containers fade their scrollbar thumbs to transparent when not hovered, saving horizontal space in the split-pane layout.
+3. **DOCX preview light scrollbar** — White-background preview uses light-gray scrollbar (`#ccc` / `#f5f5f5`) instead of dark theme colors.
+
+Added 4 tests. Updated 1 existing test (`test_docx_preview_white_background_css`) to handle multiple CSS rule blocks.
+
+**Decisions:**
+- Used `var(--border)` for thumb (not accent) to keep scrollbars subtle and non-distracting
+- 6px width balances visibility with minimal space usage
+- Auto-fade only in Dev Mode panes where horizontal space is premium; other areas keep visible scrollbars
+
+---
+
 ### 2026-03-14 — UX: Navigation & Organization Critique (#137)
 **Issues:** #137
 

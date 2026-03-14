@@ -130,6 +130,49 @@
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  /* ===== 1b. SCROLLBARS ===== */
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  /* WebKit (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: var(--radius-xs);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  ::-webkit-scrollbar-corner { background: transparent; }
+
+  /* Dev Mode panes: fade scrollbar when not hovering */
+  .dev-pane::-webkit-scrollbar-thumb,
+  .dev-editor::-webkit-scrollbar-thumb,
+  .dev-preview-form::-webkit-scrollbar-thumb,
+  .dev-errors::-webkit-scrollbar-thumb {
+    background: transparent;
+    transition: background 0.2s;
+  }
+  .dev-pane:hover::-webkit-scrollbar-thumb,
+  .dev-editor:hover::-webkit-scrollbar-thumb,
+  .dev-preview-form:hover::-webkit-scrollbar-thumb,
+  .dev-errors:hover::-webkit-scrollbar-thumb {
+    background: var(--border);
+  }
+  .dev-pane:hover::-webkit-scrollbar-thumb:hover,
+  .dev-editor:hover::-webkit-scrollbar-thumb:hover,
+  .dev-preview-form:hover::-webkit-scrollbar-thumb:hover,
+  .dev-errors:hover::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+
+  /* DOCX preview: light scrollbar for white background */
+  .dev-docx-preview { scrollbar-color: #ccc #f5f5f5; }
+  .dev-docx-preview::-webkit-scrollbar-track { background: #f5f5f5; }
+  .dev-docx-preview::-webkit-scrollbar-thumb { background: #ccc; }
+  .dev-docx-preview::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
   /* ===== 2. UTILITY CLASSES ===== */
   .mono-label {
     font-size: var(--text-sm);
