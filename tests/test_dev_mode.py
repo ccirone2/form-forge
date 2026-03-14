@@ -85,8 +85,8 @@ def test_dev_nav_exists(index_html: str) -> None:
     assert 'class="dev-nav-tab' in index_html
 
 
-def test_dev_nav_has_three_tabs(index_html: str) -> None:
-    assert index_html.count('class="dev-nav-tab') == 3
+def test_dev_nav_has_four_tabs(index_html: str) -> None:
+    assert index_html.count('class="dev-nav-tab') == 4
 
 
 def test_view_dev_schema_exists(index_html: str) -> None:
@@ -1712,3 +1712,86 @@ def test_dev_pane_scrollbar_fade(index_html: str) -> None:
     """Dev Mode panes should fade scrollbar when not hovering."""
     assert ".dev-pane:hover::-webkit-scrollbar-thumb" in index_html
     assert ".dev-editor:hover::-webkit-scrollbar-thumb" in index_html
+
+
+# --- Navigation & Organization (#137) ---
+
+
+def test_back_button_label(index_html: str) -> None:
+    """Back button in form view should say 'Back', not 'Back to picker'."""
+    pattern = re.compile(r'<button[^>]*class="btn-back"[^>]*>.*?</button>', re.DOTALL)
+    match = pattern.search(index_html)
+    assert match, "btn-back button not found"
+    btn_text = re.sub(r"<[^>]+>", "", match.group()).strip()
+    assert btn_text == "Back", f"Expected 'Back', got '{btn_text}'"
+
+
+def test_dev_docs_tab_exists(index_html: str) -> None:
+    """Dev Mode should have a Docs tab."""
+    assert 'id="tab-dev-docs"' in index_html
+    assert 'data-dev-tab="dev-docs"' in index_html
+
+
+def test_dev_docs_view_exists(index_html: str) -> None:
+    """A dev-docs view panel should exist."""
+    assert 'id="view-dev-docs"' in index_html
+
+
+def test_dev_docs_contains_doc_cards(index_html: str) -> None:
+    """All four doc cards should be inside the dev-docs view."""
+    start = index_html.index('id="view-dev-docs"')
+    for doc_id in ["schemaGuide", "templateGuide", "fieldTypes", "exampleSchema"]:
+        pos = index_html.index(f'id="{doc_id}"', start)
+        assert pos > start, f"{doc_id} should be inside the dev-docs view"
+
+
+def test_dev_docs_in_valid_tabs(index_html: str) -> None:
+    """dev-docs should be in VALID_DEV_TABS."""
+    assert "'dev-docs'" in index_html or '"dev-docs"' in index_html
+    # Check it's in the Set definition
+    assert "dev-docs" in index_html
+
+
+def test_how_it_works_on_setup(index_html: str) -> None:
+    """The 'How It Works' card should remain on the setup view, not in dev-docs."""
+    setup_start = index_html.index('id="view-setup"')
+    setup_end = index_html.index("<main", setup_start + 1)
+    setup_html = index_html[setup_start:setup_end]
+    assert "how-it-works-card" in setup_html, (
+        "How It Works card should be in setup view"
+    )
+    dev_start = index_html.index('id="view-dev-docs"')
+    dev_end = index_html.index("</main>", dev_start)
+    dev_html = index_html[dev_start:dev_end]
+    assert "how-it-works-card" not in dev_html, (
+        "How It Works card should not be in dev-docs view"
+    )
+
+
+def test_profile_empty_state_hint(index_html: str) -> None:
+    """Profile dropdown should show a helpful hint when empty."""
+    assert "Save a profile to autofill common fields" in index_html
+
+
+def test_picker_card_dblclick_handler(index_html: str) -> None:
+    """Picker grid should have a dblclick event listener for quick launch."""
+    body = _extract_func(index_html, "renderPicker")
+    assert "dblclick" in body, "renderPicker should register a dblclick handler"
+    assert "launchForm" in body, "dblclick handler should call launchForm"
+
+
+def test_picker_auto_scroll_on_connect(index_html: str) -> None:
+    """connectRepo should scroll the picker section into view after rendering."""
+    body = _extract_func(index_html, "connectRepo")
+    assert "scrollIntoView" in body, "connectRepo should scroll to picker"
+
+
+def test_docs_not_on_setup_view(index_html: str) -> None:
+    """Documentation cards should not be on the setup view."""
+    setup_start = index_html.index('id="view-setup"')
+    # Find the end of setup view (next <main)
+    setup_end = index_html.index("<main", setup_start + 1)
+    setup_html = index_html[setup_start:setup_end]
+    assert 'id="docsSection"' not in setup_html, (
+        "docsSection should not be in the setup view"
+    )

@@ -718,7 +718,6 @@
     margin-top: 16px; display: flex; align-items: center; gap: 12px;
   }
   .branch-input-wrapper { max-width: 200px; }
-  .docs-source-divider { margin-top: 32px; }
   .how-it-works-card { background: var(--surface-2); border-style: dashed; }
   .how-it-works-description {
     font-size: var(--text-sm-md); color: var(--text-muted); line-height: 1.7; margin-bottom: 12px;
@@ -1895,6 +1894,10 @@
     <svg width="14" height="14" aria-hidden="true"><use href="#icon-folder"/></svg>
     Workspace
   </button>
+  <button type="button" class="dev-nav-tab" id="tab-dev-docs" data-dev-tab="dev-docs" role="tab" aria-selected="false" aria-controls="view-dev-docs" onclick="showDevTab('dev-docs')">
+    <svg width="14" height="14" aria-hidden="true"><use href="#icon-book"/></svg>
+    Docs
+  </button>
 </nav>
 
 <!-- ==================== SETUP VIEW ==================== -->
@@ -1994,10 +1997,6 @@
     </div>
 
     <!-- ===== DOCUMENTATION ===== -->
-    <div class="source-divider docs-source-divider">
-      <span>documentation — creating custom forms</span>
-    </div>
-
     <div class="config-card how-it-works-card">
       <h3>
         <svg width="16" height="16" class="icon-inline"><use href="#icon-book"/></svg>
@@ -2013,66 +2012,6 @@
     └── my-form.py                 ← Python script with generate_docx(data)</pre>
     </div>
 
-    <div class="docs-section" id="docsSection">
-
-      <!-- Dynamic doc slots — populated by JS -->
-      <div class="docs-card">
-        <div class="docs-card-header" onclick="toggleDocs('schemaGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="schemaGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('schemaGuide')}">
-          <h3>
-            <svg width="15" height="15" class="icon-inline"><use href="#icon-file"/></svg>
-            <span id="schemaGuideTitle">Schema Guide</span>
-          </h3>
-          <span class="docs-toggle" id="schemaGuideToggle">&#9654;</span>
-        </div>
-        <div class="docs-card-body collapsed" id="schemaGuide">
-          <div class="docs-source-badge" id="schemaGuideSource"></div>
-          <div id="schemaGuideContent"><p>Loading...</p></div>
-        </div>
-      </div>
-
-      <div class="docs-card">
-        <div class="docs-card-header" onclick="toggleDocs('templateGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="templateGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('templateGuide')}">
-          <h3>
-            <svg width="15" height="15" class="icon-inline"><use href="#icon-code"/></svg>
-            <span id="templateGuideTitle">Template Guide</span>
-          </h3>
-          <span class="docs-toggle" id="templateGuideToggle">&#9654;</span>
-        </div>
-        <div class="docs-card-body collapsed" id="templateGuide">
-          <div class="docs-source-badge" id="templateGuideSource"></div>
-          <div id="templateGuideContent"><p>Loading...</p></div>
-        </div>
-      </div>
-
-      <div class="docs-card">
-        <div class="docs-card-header" onclick="toggleDocs('fieldTypes')" tabindex="0" role="button" aria-expanded="false" aria-controls="fieldTypes" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('fieldTypes')}">
-          <h3>
-            <svg width="15" height="15" class="icon-inline"><use href="#icon-grid"/></svg>
-            <span id="fieldTypesTitle">Field Types Reference</span>
-          </h3>
-          <span class="docs-toggle" id="fieldTypesToggle">&#9654;</span>
-        </div>
-        <div class="docs-card-body collapsed" id="fieldTypes">
-          <div class="docs-source-badge" id="fieldTypesSource"></div>
-          <div id="fieldTypesContent"><p>Loading...</p></div>
-        </div>
-      </div>
-
-      <div class="docs-card">
-        <div class="docs-card-header" onclick="toggleDocs('exampleSchema')" tabindex="0" role="button" aria-expanded="false" aria-controls="exampleSchema" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('exampleSchema')}">
-          <h3>
-            <svg width="15" height="15" class="icon-inline"><use href="#icon-bolt"/></svg>
-            <span id="exampleSchemaTitle">Example Schema &amp; Template</span>
-          </h3>
-          <span class="docs-toggle" id="exampleSchemaToggle">&#9654;</span>
-        </div>
-        <div class="docs-card-body collapsed" id="exampleSchema">
-          <div class="docs-source-badge" id="exampleSchemaSource"></div>
-          <div id="exampleSchemaContent"><p>Loading...</p></div>
-        </div>
-      </div>
-
-    </div>
 
     <!-- Picker appears after connect -->
     <div class="picker-section" id="pickerSection" style="display:none;">
@@ -2094,7 +2033,7 @@
     <div class="form-nav">
       <button type="button" class="btn-back" onclick="showView('setup')">
         <svg width="14" height="14"><use href="#icon-arrow-left"/></svg>
-        Back to picker
+        Back
       </button>
       <span class="form-nav-info" id="formNavInfo"></span>
       <span class="autosave-indicator" id="autosaveIndicator" title="Changes are automatically saved to your browser">
@@ -2326,6 +2265,71 @@
       <input type="text" id="ghNewBranchName" placeholder="new-branch-name" aria-label="New branch name" pattern="[a-zA-Z0-9._/-]+">
       <button type="button" class="btn-primary btn-sm" onclick="devGhCreateBranch()">Create</button>
       <button type="button" class="btn-secondary btn-sm" onclick="document.getElementById('ghNewBranchRow').style.display='none'">Cancel</button>
+    </div>
+  </div>
+</main>
+
+<!-- ==================== DEV: DOCS VIEW ==================== -->
+<main class="view" id="view-dev-docs" role="tabpanel" aria-labelledby="tab-dev-docs">
+  <div class="main-container">
+    <div class="docs-section" id="docsSection">
+
+      <div class="docs-card">
+        <div class="docs-card-header" onclick="toggleDocs('schemaGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="schemaGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('schemaGuide')}">
+          <h3>
+            <svg width="15" height="15" class="icon-inline"><use href="#icon-file"/></svg>
+            <span id="schemaGuideTitle">Schema Guide</span>
+          </h3>
+          <span class="docs-toggle" id="schemaGuideToggle">&#9654;</span>
+        </div>
+        <div class="docs-card-body collapsed" id="schemaGuide">
+          <div class="docs-source-badge" id="schemaGuideSource"></div>
+          <div id="schemaGuideContent"><p>Loading...</p></div>
+        </div>
+      </div>
+
+      <div class="docs-card">
+        <div class="docs-card-header" onclick="toggleDocs('templateGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="templateGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('templateGuide')}">
+          <h3>
+            <svg width="15" height="15" class="icon-inline"><use href="#icon-code"/></svg>
+            <span id="templateGuideTitle">Template Guide</span>
+          </h3>
+          <span class="docs-toggle" id="templateGuideToggle">&#9654;</span>
+        </div>
+        <div class="docs-card-body collapsed" id="templateGuide">
+          <div class="docs-source-badge" id="templateGuideSource"></div>
+          <div id="templateGuideContent"><p>Loading...</p></div>
+        </div>
+      </div>
+
+      <div class="docs-card">
+        <div class="docs-card-header" onclick="toggleDocs('fieldTypes')" tabindex="0" role="button" aria-expanded="false" aria-controls="fieldTypes" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('fieldTypes')}">
+          <h3>
+            <svg width="15" height="15" class="icon-inline"><use href="#icon-grid"/></svg>
+            <span id="fieldTypesTitle">Field Types Reference</span>
+          </h3>
+          <span class="docs-toggle" id="fieldTypesToggle">&#9654;</span>
+        </div>
+        <div class="docs-card-body collapsed" id="fieldTypes">
+          <div class="docs-source-badge" id="fieldTypesSource"></div>
+          <div id="fieldTypesContent"><p>Loading...</p></div>
+        </div>
+      </div>
+
+      <div class="docs-card">
+        <div class="docs-card-header" onclick="toggleDocs('exampleSchema')" tabindex="0" role="button" aria-expanded="false" aria-controls="exampleSchema" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('exampleSchema')}">
+          <h3>
+            <svg width="15" height="15" class="icon-inline"><use href="#icon-bolt"/></svg>
+            <span id="exampleSchemaTitle">Example Schema &amp; Template</span>
+          </h3>
+          <span class="docs-toggle" id="exampleSchemaToggle">&#9654;</span>
+        </div>
+        <div class="docs-card-body collapsed" id="exampleSchema">
+          <div class="docs-source-badge" id="exampleSchemaSource"></div>
+          <div id="exampleSchemaContent"><p>Loading...</p></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </main>
@@ -3063,6 +3067,7 @@ async function connectRepo() {
     document.getElementById('statusText').textContent = `${ghOwner}/${ghRepo}`;
 
     renderPicker();
+    document.getElementById('pickerSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     // Reload docs from connected repo
     log('Refreshing docs from GitHub...', 'info');
@@ -3108,10 +3113,17 @@ function renderPicker() {
     grid.appendChild(card);
   });
 
-  // Event delegation: handle clicks and keyboard on picker cards via the grid
+  // Event delegation: handle clicks, double-clicks, and keyboard on picker cards via the grid
   grid.addEventListener('click', (e) => {
     const card = e.target.closest('.picker-card');
     if (card && card.dataset.idx !== undefined) selectSchema(parseInt(card.dataset.idx));
+  });
+  grid.addEventListener('dblclick', (e) => {
+    const card = e.target.closest('.picker-card');
+    if (card && card.dataset.idx !== undefined) {
+      selectSchema(parseInt(card.dataset.idx));
+      launchForm();
+    }
   });
   grid.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -5258,7 +5270,7 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
 
   let html = '';
   if (profiles.length === 0) {
-    html = '<div class="profile-dropdown-empty">No saved profiles</div>';
+    html = '<div class="profile-dropdown-empty">No saved profiles<br><span style="font-size:var(--text-xs);opacity:0.7">Save a profile to autofill common fields</span></div>';
   } else {
     profiles.forEach((p, i) => {
       const name = getProfileDisplayName(p);
@@ -6003,7 +6015,7 @@ async function toggleDevMode() {
   }
 }
 
-const VALID_DEV_TABS = new Set(['dev-schema', 'dev-template', 'dev-workspace']);
+const VALID_DEV_TABS = new Set(['dev-schema', 'dev-template', 'dev-workspace', 'dev-docs']);
 
 function showDevTab(viewName) {
   if (!VALID_DEV_TABS.has(viewName)) viewName = 'dev-schema';
