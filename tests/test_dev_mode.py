@@ -1,6 +1,6 @@
-"""Tests for Dev Mode feature additions in index.html.
+"""Tests for developer tooling in index.html.
 
-Since Dev Mode is client-side JavaScript, these tests validate:
+Since the developer tools are client-side JavaScript, these tests validate:
 1. HTML structure: required elements, CDN dependencies, SVG symbols
 2. Schema Builder: starter schema validates against spec
 3. Field snippets: all snippet types are valid against the spec
@@ -75,13 +75,8 @@ def test_icon_folder_open_exists(index_html: str) -> None:
 # --- HTML Structure ---
 
 
-def test_mode_toggle_button_exists(index_html: str) -> None:
-    assert 'id="modeToggle"' in index_html
-    assert "toggleDevMode()" in index_html
-
-
 def test_dev_nav_exists(index_html: str) -> None:
-    assert 'id="devNav"' in index_html
+    assert 'id="mainNav"' in index_html
     assert 'class="dev-nav-tab' in index_html
 
 
@@ -133,6 +128,49 @@ def test_workspace_file_list_exists(index_html: str) -> None:
     assert 'id="workspaceFileList"' in index_html
 
 
+def test_forms_tab_exists(index_html: str) -> None:
+    """Nav should have a Forms tab with data-tab attribute."""
+    assert 'data-tab="forms"' in index_html
+
+
+def test_no_dev_mode_toggle(index_html: str) -> None:
+    """toggleDevMode function should not exist in the refactored app."""
+    assert "function toggleDevMode" not in index_html
+
+
+def test_no_dev_mode_variable(index_html: str) -> None:
+    """let devMode variable should not exist in the refactored app."""
+    assert "let devMode" not in index_html
+
+
+def test_source_grid_exists(index_html: str) -> None:
+    """Source grid CSS class should be defined."""
+    assert ".source-grid" in index_html
+
+
+def test_connect_local_folder_exists(index_html: str) -> None:
+    """connectLocalFolder function should exist."""
+    assert "function connectLocalFolder" in index_html
+
+
+def test_edit_schema_btn_exists(index_html: str) -> None:
+    """Edit schema button should exist in form nav."""
+    assert 'id="editSchemaBtn"' in index_html
+
+
+def test_fill_form_from_editor_exists(index_html: str) -> None:
+    """fillFormFromEditor function should exist."""
+    assert "function fillFormFromEditor" in index_html
+
+
+def test_no_default_repo_value(index_html: str) -> None:
+    """repoInput should not have a default value attribute with a repo path."""
+    match = re.search(r'id="repoInput"[^>]*>', index_html)
+    assert match
+    tag = match.group(0)
+    assert 'value="ccirone2/form-forge"' not in tag
+
+
 # --- CSS Sections ---
 
 
@@ -172,9 +210,7 @@ def test_mobile_gate_hides_toggle(index_html: str) -> None:
 
 
 _REQUIRED_FUNCTIONS = [
-    "toggleDevMode",
-    "showDevTab",
-    "handleDevModeResize",
+    "showTab",
     "initSchemaEditor",
     "devValidateSchema",
     "devUpdateSchemaPreview",
@@ -228,7 +264,6 @@ def test_js_function_exists(index_html: str, func_name: str) -> None:
 
 
 _REQUIRED_STATE_VARS = [
-    "devMode",
     "devSchemaText",
     "devTemplateText",
     "devSampleDataText",
@@ -364,29 +399,20 @@ def test_devrunpreview_no_string_interpolation_in_python(index_html: str) -> Non
 # --- Boot sequence ---
 
 
-def test_boot_restores_dev_mode(index_html: str) -> None:
-    assert "formforge-dev-mode" in index_html
-    assert "localStorage.getItem('formforge-dev-mode')" in index_html
-
-
 def test_boot_inits_workspace_drop_zone(index_html: str) -> None:
     assert "initWorkspaceDropZone()" in index_html
 
 
-def test_boot_adds_resize_listener(index_html: str) -> None:
-    assert "handleDevModeResize" in index_html
-    assert "addEventListener('resize'" in index_html
-
-
-# --- Dev tab whitelist ---
+# --- Tab whitelist ---
 
 
 def test_valid_dev_tabs_whitelist(index_html: str) -> None:
-    """VALID_DEV_TABS must contain all three dev tab names."""
-    assert "VALID_DEV_TABS" in index_html
+    """VALID_TABS must contain all tab names."""
+    assert "VALID_TABS" in index_html
+    assert "'forms'" in index_html
     assert "'dev-schema'" in index_html
     assert "'dev-template'" in index_html
-    assert "'dev-workspace'" in index_html
+    assert "'dev-docs'" in index_html
 
 
 # --- buildForm backward compatibility ---
@@ -414,16 +440,6 @@ def test_buildform_conditionally_updates_title(index_html: str) -> None:
 # --- Polling lifecycle ---
 
 
-def test_polling_stopped_on_dev_mode_exit(index_html: str) -> None:
-    """toggleDevMode must clear the workspace poller when exiting."""
-    match = re.search(
-        r"function toggleDevMode\(\)([\s\S]*?)^function ", index_html, re.M
-    )
-    assert match
-    body = match.group(1)
-    assert "clearInterval(devWorkspacePoller)" in body
-
-
 def test_polling_stops_after_repeated_errors(index_html: str) -> None:
     """devPollWorkspace must stop after 5 consecutive errors."""
     match = re.search(
@@ -436,7 +452,7 @@ def test_polling_stops_after_repeated_errors(index_html: str) -> None:
 
 
 # ============================================================
-#  ISSUE #116 — Mode switch toggle
+#  Tab navigation
 # ============================================================
 
 
@@ -447,62 +463,17 @@ def _extract_func(html: str, name: str) -> str:
     return match.group(1)
 
 
-def test_toggle_writes_localstorage(index_html: str) -> None:
-    """toggleDevMode must write formforge-dev-mode to localStorage."""
-    body = _extract_func(index_html, "toggleDevMode")
-    assert "localStorage.setItem('formforge-dev-mode'" in body
-
-
-def test_toggle_deactivation_returns_to_setup(index_html: str) -> None:
-    """Toggling off must call showView('setup')."""
-    body = _extract_func(index_html, "toggleDevMode")
-    assert "showView('setup')" in body
-
-
-def test_toggle_label_changes(index_html: str) -> None:
-    """Toggle button label changes between 'Dev On' and 'Dev'."""
-    body = _extract_func(index_html, "toggleDevMode")
-    assert "'Dev On'" in body
-    assert "'Dev'" in body
-
-
-def test_toggle_active_class(index_html: str) -> None:
-    """Toggle button adds/removes .active class."""
-    body = _extract_func(index_html, "toggleDevMode")
-    assert "classList.toggle('active'" in body
-
-
-def test_toggle_shows_hides_dev_nav(index_html: str) -> None:
-    """toggleDevMode shows/hides devNav."""
-    body = _extract_func(index_html, "toggleDevMode")
-    assert "devNav" in body
-    assert "'flex'" in body
-    assert "'none'" in body
-
-
-def test_toggle_width_guard(index_html: str) -> None:
-    """toggleDevMode checks innerWidth >= 768 before entering."""
-    body = _extract_func(index_html, "toggleDevMode")
-    assert "innerWidth < 768" in body
-
-
-def test_toggle_narrow_viewport_toast(index_html: str) -> None:
-    """toggleDevMode shows specific toast when viewport too narrow."""
-    body = _extract_func(index_html, "toggleDevMode")
-    assert "Dev Mode requires a wider viewport" in body
-
-
-def test_showdevtab_persists_tab(index_html: str) -> None:
-    """showDevTab writes active tab to localStorage."""
-    body = _extract_func(index_html, "showDevTab")
-    assert "localStorage.setItem('formforge-dev-tab'" in body
+def test_showtab_persists_tab(index_html: str) -> None:
+    """showTab writes active tab to localStorage."""
+    body = _extract_func(index_html, "showTab")
+    assert "localStorage.setItem('formforge-active-tab'" in body
 
 
 def test_boot_restores_active_tab(index_html: str) -> None:
-    """Boot sequence restores last active dev tab."""
-    assert "formforge-dev-tab" in index_html
+    """Boot sequence restores last active tab."""
+    assert "formforge-active-tab" in index_html
     # The boot block should read the tab from localStorage
-    assert "localStorage.getItem('formforge-dev-tab')" in index_html
+    assert "localStorage.getItem('formforge-active-tab')" in index_html
 
 
 # ============================================================
@@ -931,13 +902,13 @@ def test_workspace_renders_two_sections(index_html: str) -> None:
 def test_workspace_load_schema_switches_tab(index_html: str) -> None:
     """devLoadWorkspaceFile routes schema to dev-schema tab."""
     body = _extract_func(index_html, "devLoadWorkspaceFile")
-    assert "showDevTab('dev-schema')" in body
+    assert "showTab('dev-schema')" in body
 
 
 def test_workspace_load_template_switches_tab(index_html: str) -> None:
     """devLoadWorkspaceFile routes template to dev-template tab."""
     body = _extract_func(index_html, "devLoadWorkspaceFile")
-    assert "showDevTab('dev-template')" in body
+    assert "showTab('dev-template')" in body
 
 
 def test_workspace_hover_action_text(index_html: str) -> None:
@@ -1028,42 +999,6 @@ def test_mobile_gate_hides_dev_nav(index_html: str) -> None:
     assert re.search(pattern, index_html), (
         "dev-nav must be display:none!important at <=768px"
     )
-
-
-def test_resize_handler_auto_exits(index_html: str) -> None:
-    """handleDevModeResize exits dev mode when width drops below 768px."""
-    body = _extract_func(index_html, "handleDevModeResize")
-    assert "devMode = false" in body
-    assert "innerWidth < 768" in body
-
-
-def test_resize_handler_toast_message(index_html: str) -> None:
-    """handleDevModeResize shows specific toast on auto-exit."""
-    body = _extract_func(index_html, "handleDevModeResize")
-    assert "Dev Mode disabled" in body
-    assert "viewport too narrow" in body
-
-
-def test_resize_handler_writes_localstorage(index_html: str) -> None:
-    """handleDevModeResize sets localStorage to '0'."""
-    body = _extract_func(index_html, "handleDevModeResize")
-    assert "localStorage.setItem('formforge-dev-mode', '0')" in body
-
-
-def test_resize_handler_returns_to_setup(index_html: str) -> None:
-    """handleDevModeResize calls showView('setup')."""
-    body = _extract_func(index_html, "handleDevModeResize")
-    assert "showView('setup')" in body
-
-
-def test_boot_width_guard(index_html: str) -> None:
-    """Boot sequence only restores dev mode on viewports >= 768px."""
-    # Find the DOMContentLoaded block
-    match = re.search(r"DOMContentLoaded.*?\{([\s\S]*?)\}\);", index_html)
-    assert match
-    boot = match.group(1)
-    assert "innerWidth >= 768" in boot
-    assert "formforge-dev-mode" in boot
 
 
 # ============================================================
@@ -1252,14 +1187,14 @@ class TestGitHubWorkspaceJavaScript:
 
     def test_state_variables_exist(self, index_html: str) -> None:
         """GitHub workspace state variables are declared."""
-        assert "devGhConnected" in index_html
-        assert "devGhOwner" in index_html
-        assert "devGhRepoName" in index_html
-        assert "devGhBranch" in index_html
-        assert "devGhPat" in index_html
-        assert "devGhBranches" in index_html
-        assert "devGhOriginalContents" in index_html
-        assert "devGhModifiedFiles" in index_html
+        assert "contentSourceType" in index_html
+        assert "ghOwner" in index_html
+        assert "ghRepo" in index_html
+        assert "ghBranch" in index_html
+        assert "ghToken" in index_html
+        assert "ghBranches" in index_html
+        assert "ghOriginalContents" in index_html
+        assert "ghModifiedFiles" in index_html
 
     def test_token_localstorage_key(self, index_html: str) -> None:
         """Token uses the correct localStorage key."""
@@ -1270,8 +1205,8 @@ class TestGitHubWorkspaceJavaScript:
         assert "formforge-dev-github-repo" in index_html
 
     def test_token_stored_in_localstorage(self, index_html: str) -> None:
-        """Token is stored to localStorage on connect."""
-        assert "localStorage.setItem('formforge-dev-github-token'" in index_html
+        """Token localStorage key is referenced (migration or retrieval)."""
+        assert "localStorage.getItem('formforge-dev-github-token')" in index_html
 
     def test_token_removed_on_clear(self, index_html: str) -> None:
         """Token is removed from localStorage on clear."""
@@ -1334,8 +1269,8 @@ class TestGitHubWorkspaceJavaScript:
         )
         assert match
         body = match.group(1)
-        assert "devGhOriginalContents" in body
-        assert "devGhModifiedFiles" in body
+        assert "ghOriginalContents" in body
+        assert "ghModifiedFiles" in body
 
     def test_conflict_409_handling(self, index_html: str) -> None:
         """409 conflict error is handled in commit function."""
@@ -1357,9 +1292,9 @@ class TestGitHubWorkspaceJavaScript:
         )
         assert match
         body = match.group(1)
-        assert "devGhConnected = false" in body
-        assert "devGhOwner = ''" in body
-        assert "devGhModifiedFiles" in body
+        assert "contentSourceType = null" in body
+        assert "ghOwner = ''" in body
+        assert "ghModifiedFiles" in body
 
     def test_schema_editor_tracks_modifications(self, index_html: str) -> None:
         """Schema editor onUpdate hook calls modification tracker."""
@@ -1386,7 +1321,7 @@ class TestGitHubWorkspaceJavaScript:
     def test_token_authorization_header(self, index_html: str) -> None:
         """Token is sent via Authorization header, not URL params."""
         match = re.search(
-            r"function devGhHeaders\(\)([\s\S]*?)^(?:async )?function ",
+            r"function ghHeaders\(\)([\s\S]*?)^(?:async )?function ",
             index_html,
             re.M,
         )
@@ -1727,9 +1662,9 @@ def test_back_button_label(index_html: str) -> None:
 
 
 def test_dev_docs_tab_exists(index_html: str) -> None:
-    """Dev Mode should have a Docs tab."""
+    """Nav should have a Docs tab."""
     assert 'id="tab-dev-docs"' in index_html
-    assert 'data-dev-tab="dev-docs"' in index_html
+    assert 'data-tab="dev-docs"' in index_html
 
 
 def test_dev_docs_view_exists(index_html: str) -> None:
@@ -1746,7 +1681,7 @@ def test_dev_docs_contains_doc_cards(index_html: str) -> None:
 
 
 def test_dev_docs_in_valid_tabs(index_html: str) -> None:
-    """dev-docs should be in VALID_DEV_TABS."""
+    """dev-docs should be in VALID_TABS."""
     assert "'dev-docs'" in index_html or '"dev-docs"' in index_html
     # Check it's in the Set definition
     assert "dev-docs" in index_html
@@ -1767,14 +1702,14 @@ def test_profile_empty_state_hint(index_html: str) -> None:
     assert "Save a profile to autofill common fields" in index_html
 
 
-def test_picker_before_local_files(index_html: str) -> None:
-    """Picker section should appear before the Local Files card in setup view."""
+def test_picker_after_source_grid(index_html: str) -> None:
+    """Picker section should appear after the source grid in setup view."""
     setup_start = index_html.index('id="view-setup"')
     setup_end = index_html.index("<main", setup_start + 1)
     setup_html = index_html[setup_start:setup_end]
+    grid_pos = setup_html.index("source-grid")
     picker_pos = setup_html.index('id="pickerSection"')
-    local_pos = setup_html.index('id="localCard"')
-    assert picker_pos < local_pos, "Picker section should appear above Local Files card"
+    assert picker_pos > grid_pos, "Picker section should appear after source grid"
 
 
 def test_local_files_collapsed_by_default(index_html: str) -> None:
@@ -1809,17 +1744,6 @@ def test_console_panel_hidden_by_default(index_html: str) -> None:
     tag_end = index_html.index(">", start)
     tag = index_html[tag_start : tag_end + 1]
     assert "display:none" in tag, "Console panel should be hidden by default"
-
-
-def test_dev_mode_confirmation_gate(index_html: str) -> None:
-    """Dev Mode toggle should show a confirmation tooltip on first activation."""
-    body = _extract_func(index_html, "toggleDevMode")
-    assert "formforge-dev-confirmed" in body, (
-        "toggleDevMode should check for first-time confirmation"
-    )
-    assert "dev-confirm-tooltip" in body, (
-        "toggleDevMode should create a confirmation tooltip"
-    )
 
 
 def test_picker_card_dblclick_handler(index_html: str) -> None:
