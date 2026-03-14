@@ -3090,10 +3090,10 @@ function preloadPyodide() {
     });
 }
 
-async function loadBaseModule() {
+async function loadBaseModule({ silent = false } = {}) {
   if (baseModuleLoaded) return;
 
-  showOverlay('Loading shared template stencils...');
+  if (!silent) showOverlay('Loading shared template stencils...');
   log('Loading stencils.py module...', 'info');
 
   try {
@@ -3136,6 +3136,8 @@ async function loadBaseModule() {
     }
   } catch (err) {
     log('Warning: could not load stencils module: ' + err.message, 'error');
+  } finally {
+    if (!silent) hideOverlay();
   }
 }
 
@@ -6479,7 +6481,8 @@ async function devRunPreview() {
       if (pyodidePreloadPromise) await pyodidePreloadPromise;
       if (!pyodideReady) await initPyodide();
     }
-    await loadBaseModule();
+    badgeText.textContent = 'loading stencils...';
+    await loadBaseModule({ silent: true });
 
     // Load template into Pyodide
     badgeText.textContent = 'loading template...';

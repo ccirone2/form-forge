@@ -822,6 +822,33 @@ def test_devrunpreview_uses_pyodide_topy(index_html: str) -> None:
     assert "pyodide.globals.delete(" in body
 
 
+def test_devrunpreview_calls_loadbasemodule_silent(index_html: str) -> None:
+    """devRunPreview calls loadBaseModule with silent: true to skip overlay."""
+    body = _extract_func(index_html, "devRunPreview")
+    assert "silent: true" in body or "silent:true" in body
+
+
+def test_devrunpreview_shows_stencils_badge(index_html: str) -> None:
+    """devRunPreview updates status badge to 'loading stencils...' during load."""
+    body = _extract_func(index_html, "devRunPreview")
+    assert "loading stencils" in body
+
+
+def test_loadbasemodule_has_silent_param(index_html: str) -> None:
+    """loadBaseModule accepts a silent option to suppress the loading overlay."""
+    body = _extract_func(index_html, "loadBaseModule")
+    assert "silent" in body
+    assert "showOverlay" in body
+    assert "hideOverlay" in body
+
+
+def test_loadbasemodule_hides_overlay_in_finally(index_html: str) -> None:
+    """loadBaseModule calls hideOverlay in a finally block for non-silent mode."""
+    body = _extract_func(index_html, "loadBaseModule")
+    assert "finally" in body
+    assert "hideOverlay" in body
+
+
 def test_dev_new_template_resets_to_starter(index_html: str) -> None:
     """devNewTemplate resets content to DEV_STARTER_TEMPLATE."""
     body = _extract_func(index_html, "devNewTemplate")
