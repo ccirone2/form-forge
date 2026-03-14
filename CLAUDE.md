@@ -86,7 +86,7 @@ No build system or package manager. Pyodide and python-docx load from CDN at run
 # Run locally — open index.html directly or use HTTP server for CORS
 python -m http.server 8000
 
-# Run all tests (409 tests)
+# Run all tests (417 tests)
 PYTHONPATH=. python -m pytest tests/ -v
 
 # Run a single test file
@@ -105,7 +105,7 @@ ruff format templates/ tests/
 - `tests/test_stencils.py` — Unit tests for all `stencils.py` utilities (50 tests)
 - `tests/test_templates.py` — Integration tests that load each template with sample data and verify valid DOCX output (10 tests)
 - `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas, wizard, and visible_when (44 tests)
-- `tests/test_dev_mode.py` — UI structure and feature tests: HTML structure, CDN deps, starter schema/template validation, field snippets, CSS classes, context menu, tab navigation, source grid, bidirectional flow (305 tests)
+- `tests/test_dev_mode.py` — UI structure and feature tests: HTML structure, CDN deps, starter schema/template validation, field snippets, CSS classes, context menu, tab navigation, source grid, bidirectional flow (313 tests)
 - `tests/fixtures/*.json` — Sample form data matching each schema's field IDs
 - Templates are loaded via `importlib.util.spec_from_file_location()` with `sys.path` including `templates/` so `import stencils` resolves
 

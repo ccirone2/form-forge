@@ -14,6 +14,23 @@
 
 ## Log
 
+### 2026-03-14 — Git Controls in Editor Tabs (#157)
+**Issues:** #157
+
+Restored git operations that became unreachable when the workspace view was removed in PR #151:
+
+1. **Git toolbar** — Added a compact toolbar below the nav bar, visible when `contentSourceType === 'github'`. Contains branch selector dropdown, new branch button, refresh button, and disconnect button. Managed by `updateGitToolbar()`.
+2. **Template source toolbar** — Added `templateSourceToolbar` with commit and save-to-disk buttons (matching the existing schema source toolbar). `updateSourceToolbar()` now handles both editors.
+3. **Branch switching** — `devGhSwitchBranch()` now rebuilds `repoSchemas` and re-renders the picker after switching branches.
+4. **Source toolbar on file load** — `loadSchemaIntoEditor()`, `loadTemplateIntoEditor()`, and `devLoadWorkspaceFile()` now call `updateSourceToolbar()`.
+5. **Tests** — Added 8 new tests for git toolbar, template source toolbar, and toolbar update functions. 417 tests pass.
+
+**Decisions:**
+- Git controls in nav-level toolbar (not per-editor) since branch/disconnect are repo-level operations
+- `connectRepo()` now calls `devGhFetchBranches()` to populate the branch selector on connect
+
+---
+
 ### 2026-03-14 — A11y & Cleanup (#88, #152–#155)
 **Issues:** #88, #152, #153, #154, #155
 
