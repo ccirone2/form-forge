@@ -1258,7 +1258,7 @@
     user-select: none;
   }
   .dev-fold-toggle:hover { opacity: 1; color: var(--accent); }
-  .dev-folded-line { display: none; }
+  .dev-line-numbers div.dev-folded-line { display: none; }
   .dev-fold-placeholder {
     color: var(--text-muted); opacity: 0.5;
     background: var(--surface); border: 1px solid var(--border);
@@ -6049,6 +6049,7 @@ function devFindFoldRegions(text, language) {
 }
 
 let devFoldState = new Map(); // gutterKey -> Set of folded start lines
+let devFoldUpdating = false;  // Guard: true during programmatic updateCode from fold toggle
 
 function devGetFoldHiddenLines(text, lang, gutterKey) {
   const regions = devFindFoldRegions(text, lang);
@@ -6085,7 +6086,11 @@ function devToggleFold(editorEl, gutterEl, lineIndex) {
     sampleDataEditor: sampleJar
   };
   const jar = jarMap[editorEl.id];
-  if (jar) jar.updateCode(textMap[editorEl.id]);
+  if (jar) {
+    devFoldUpdating = true;
+    jar.updateCode(textMap[editorEl.id]);
+    devFoldUpdating = false;
+  }
   devUpdateLineNumbers(editorEl, gutterEl);
 }
 
@@ -6183,7 +6188,8 @@ function initSchemaEditor() {
   }, { tab: '  ' });
 
   schemaJar.onUpdate(code => {
-    // Clear folds on edit to prevent folded content loss
+    if (devFoldUpdating) return; // Skip during programmatic fold updates
+    // Clear folds on user edit to prevent folded content loss
     const folds = devFoldState.get('schemaLineNumbers');
     if (folds && folds.size > 0) folds.clear();
     devSchemaText = code;
@@ -6787,6 +6793,7 @@ function initTemplateEditor() {
   }, { tab: '    ' });
 
   templateJar.onUpdate(code => {
+    if (devFoldUpdating) return;
     const folds = devFoldState.get('templateLineNumbers');
     if (folds && folds.size > 0) folds.clear();
     devTemplateText = code;
@@ -6815,6 +6822,7 @@ function initTemplateEditor() {
       devHighlightWithFolding(editor, Prism.languages.json, 'json', 'sampleLineNumbers');
     }, { tab: '  ' });
     sampleJar.onUpdate(code => {
+      if (devFoldUpdating) return;
       const folds = devFoldState.get('sampleLineNumbers');
       if (folds && folds.size > 0) folds.clear();
       devSampleDataText = code;
