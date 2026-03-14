@@ -36,13 +36,14 @@ form-forge/
 │   ├── fixtures/               ← sample data for template tests
 │   ├── test_stencils.py        ← unit tests for stencils.py utilities (50 tests)
 │   ├── test_templates.py       ← integration tests for templates (10 tests)
-│   └── test_schemas.py         ← schema validation tests (35 tests)
+│   ├── test_schemas.py         ← schema validation tests (35 tests)
+│   └── test_dev_mode.py        ← dev mode acceptance criteria tests (193 tests)
 ├── docs/
 │   ├── DEVLOG.md               ← development journal
 │   ├── PLAN.md                 ← structured implementation plans
 │   ├── SCHEMA_GUIDE.md         ← guide for writing new schemas
 │   ├── TEMPLATE_GUIDE.md       ← guide for writing new templates
-│   └── FIELD_TYPES.md          ← reference for all 18 field types
+│   └── FIELD_TYPES.md          ← reference for all 23 field types
 └── .github/workflows/
     └── validate.yml            ← CI: schema validation + pytest
 ```
@@ -121,6 +122,16 @@ See `docs/TEMPLATE_GUIDE.md` for the full `stencils` API.
 
 See `docs/FIELD_TYPES.md` for full details on each type, including schema properties and template handling.
 
+## Dev Mode
+
+FormForge includes a built-in development environment for creating and editing forms without external editors. Toggle Dev Mode from the header button (desktop only, ≥768px).
+
+- **Schema Builder** — JSON editor with syntax highlighting, live form preview, real-time validation, and right-click context menu with field type snippets
+- **Template Builder** — Python editor with DOCX preview powered by Pyodide + mammoth.js, and stencils helper snippets
+- **Local Workspace** — Open a local project folder (via File System Access API or drag-and-drop) to edit schemas and templates with auto-reload on external changes
+
+Dev Mode dependencies (Prism.js, CodeJar, mammoth.js, DOMPurify) are lazy-loaded from CDN on first activation.
+
 ## Schema Features
 
 ### Wizard Mode (multi-step forms)
@@ -158,7 +169,7 @@ Hidden fields are excluded from validation but are always included in `data` pas
 GitHub Actions runs on every push and pull request to `develop` and `main`:
 
 - **Schema validation** — validates all `schemas/*.json` against `schemas/_schema.spec.json`
-- **Tests** — runs `PYTHONPATH=. pytest tests/ -v` (95 tests)
+- **Tests** — runs `PYTHONPATH=. pytest tests/ -v` (297 tests)
 
 See `.github/workflows/validate.yml`.
 
@@ -168,7 +179,7 @@ See `.github/workflows/validate.yml`.
 # Run locally
 python -m http.server 8000
 
-# Run all tests (95 tests)
+# Run all tests (297 tests)
 PYTHONPATH=. python -m pytest tests/ -v
 
 # Lint

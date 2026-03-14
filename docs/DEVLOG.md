@@ -14,6 +14,146 @@
 
 ## Log
 
+### 2026-03-14 — Dev Mode: Editor Enhancements (#130-#135)
+**Issues:** #130, #131, #132, #133, #134, #135
+
+Six enhancements to Dev Mode editors, improving the schema-to-template development workflow:
+
+**Line Numbers & Code Folding (#130):**
+- Added synchronized line-number gutters to all three editors (schema, template, sample data)
+- Line numbers update on edit, scroll-synced with editor content
+- Code folding for JSON `{}`/`[]` blocks and Python indented blocks (def, class, if, for, etc.)
+- Fold indicators (▶/▼) in gutter, click to collapse/expand regions
+
+**Keyboard Shortcuts (#131):**
+- `Ctrl/Cmd+/` toggles `# ` comment prefix in Python editor (toast in JSON editors)
+- `Alt+Up/Down` moves current line up or down
+- `Ctrl+S` saves schema/template (workspace-aware, see #134)
+- `Ctrl+Enter` runs DOCX preview in template builder
+- Toolbar buttons show shortcut hints in title attributes
+
+**Auto-Generated Sample Data (#132):**
+- `SAMPLE_DATA_GENERATORS` maps all 23 field types to realistic placeholder values
+- "Auto-fill" button in sample data panel generates JSON from current schema
+- Auto-syncs on first use: when sample data is still `{}`, auto-fills on valid schema parse
+- Repeater fields generate 2 sample rows recursively
+
+**Schema-Template Cross-Awareness (#133):**
+- Shared `devParsedSchema` state variable kept in sync with schema validation
+- Template editor right-click menu gains "Schema Fields" submenu listing all fields with type-appropriate Python accessors (`data.get()`, `json.loads()`)
+- Schema preview header shows coverage badge: "N/M fields used in template"
+
+**Smart Save (#134):**
+- `devSaveSchema()` and `devSaveTemplate()` check for active workspace before downloading
+- If workspace connected and active file matches, saves to workspace via File System Access API
+- Falls back to browser download otherwise
+
+**Tests (#135):**
+- 39 new tests covering all features (302 total in test_dev_mode.py, 430 total)
+
+---
+
+### 2026-03-14 — Dev Mode: GitHub Repo Integration in Workspace (#125)
+**Issue:** #125
+
+Added GitHub repository integration to the Dev Mode Workspace tab, completing the development loop: edit in Dev Mode, commit, push, forms are live.
+
+**Connect Repo:**
+- "Connect Repo" button in workspace toolbar alongside "Open Folder"
+- Modal dialog with owner/repo input (accepts full GitHub URLs), PAT input (masked), and optional branch field
+- Token stored in localStorage (`formforge-dev-github-token`) with clear button
+- Security warning about token scope displayed in modal
+- Fetches `schemas/*.json` and `templates/*.py` from connected repo via GitHub API
+- Excludes `_schema.spec.json` and `stencils.py` as with local workspace
+- Badge shows `owner/repo @ branch` with file count
+
+**Commit & Push:**
+- Commit button appears when files are modified in the builders
+- Commit panel shows changed files summary and commit message textarea
+- Single-file commits use GitHub Contents API (`PUT /repos/{owner}/{repo}/contents/{path}`)
+- Multi-file commits use Git Trees + Commits API for atomic operations (blobs, tree, commit, ref update)
+- 409 conflict detection with user-friendly error message
+- Success toast with abbreviated commit SHA
+
+**Branch Support:**
+- Branch selector dropdown populated from GitHub API after connecting
+- "New Branch" button creates a branch from current via `POST /repos/{owner}/{repo}/git/refs`
+- Branch name validation (alphanumeric, dots, dashes, slashes)
+- Switching branches re-fetches all files
+
+**File Modification Tracking:**
+- Original content stored on fetch for diff comparison
+- Modified files tracked in `devGhModifiedFiles` Set
+- Visual indicator (warning-colored dot) on modified files in file list
+- Schema and template editor `onUpdate` hooks trigger modification tracking
+
+**Other:**
+- Disconnect button clears all GitHub workspace state and returns to empty workspace
+- 3 new SVG icons: git-branch, git-commit, unlink
+- All new CSS uses design tokens (no hard-coded values)
+- 56 new tests covering HTML structure, CSS classes, SVG icons, JS functions, API patterns, and security
+
+---
+
+### 2026-03-14 — Dev Mode: Context menu end-to-end browser tests (#124)
+**Issue:** #124
+
+Added 24 Playwright-based end-to-end browser tests covering the right-click context menu in both the Schema Builder and Template Builder editors. These tests exercise runtime behavior that the existing static HTML tests in `test_dev_mode.py` cannot cover:
+
+- **Schema Builder context menu:** menu appearance on right-click, 4 grouped submenus (Input/Choice/Complex/Layout), separator and action items (Add Section, Wrap in Wizard), field snippet insertion, unique ID generation on duplicate inserts, invalid JSON error toast, close on Escape and click-outside, live preview and validation badge updates.
+- **Template Builder context menu:** menu appearance, stencils helper snippet items, snippet insertion into editor, close on Escape and click-outside.
+
+Tests use a local HTTP server with OS-assigned port and a shared browser instance for efficiency. CodeJar loads as an ES module via dynamic `import()` in the app.
+
+---
+
+### 2026-03-13 — Dev Mode: Schema Builder, Template Builder & Local Workspace (#115)
+**Issues:** #115 (#116, #117, #118, #119, #120, #121, #122)
+
+Added a full Dev Mode with three tools for in-app form development:
+
+**Schema Builder:**
+- Split-pane editor with CodeJar + Prism.js JSON syntax highlighting
+- Live form preview updates on 300ms debounce as schema is edited
+- Real-time validation badge (valid/invalid/parse error) with error panel
+- Right-click context menu with grouped field type snippets (Input/Choice/Complex/Layout)
+- Insert section, wrap in wizard mode via context menu
+- New/Load/Save/Format toolbar buttons
+
+**Template Builder:**
+- CodeJar + Prism.js Python syntax highlighting
+- Collapsible sample data JSON editor
+- "Preview DOCX" button runs template through Pyodide → mammoth.js HTML preview
+- Right-click context menu with stencils helper snippets
+- New/Load/Save toolbar buttons
+
+**Local Workspace:**
+- File System Access API for native folder picker with live 5s polling for external changes
+- Drag-and-drop folder fallback via webkitGetAsEntry for cross-browser support
+- Auto-discovers schemas/*.json and templates/*.py (excludes _schema.spec.json and stencils.py)
+- Click-to-edit opens files in the appropriate builder tab
+
+**Infrastructure:**
+- Mode toggle button in header, persisted in localStorage
+- Three-tab dev navigation (Schema Builder / Template Builder / Workspace)
+- Draggable split-pane resizer with localStorage-persisted ratio
+- Modified buildForm() to accept optional targetForm parameter for preview rendering
+- Mobile gate: dev mode hidden on <768px, auto-exits on resize with toast
+
+**CDN Dependencies:**
+- Prism.js 1.29.0 (syntax highlighting, ~15KB)
+- CodeJar 4.2.0 (lightweight code editor, ~5KB)
+- mammoth.js 1.6.0 (DOCX to HTML conversion, ~70KB)
+- DOMPurify 3.2.4 (HTML sanitization for mammoth output, ~7KB)
+
+**Decisions:**
+- All changes in index.html — no build step, no file splits
+- CodeJar chosen over Monaco/CodeMirror for minimal footprint
+- Prism theme overrides use existing design tokens for visual consistency
+- Context menu inserts at schema level (appends to last section) rather than cursor position for reliability
+
+---
+
 ### 2026-03-13 — Design Critique: UX, Microcopy, and Visual Polish (#109, #110, #111)
 **Issues:** #109, #110, #111
 

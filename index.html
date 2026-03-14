@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FormForge — GitHub-Driven Form Builder</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Dev Mode: CSS for syntax highlighting (preloaded, lightweight) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
 <style>
   /*
    * CSS TABLE OF CONTENTS
@@ -39,6 +41,12 @@
    * 28. Drop Zones
    * 29. Docs Section
    * 30. Responsive / Media Queries
+   * 31. Dev Mode Core
+   * 32. Dev Split Pane & Editor
+   * 33. Context Menu
+   * 34. Template Builder
+   * 35. Workspace
+   * 36. Dev Mode Mobile Gate
    */
 
   /* ===== 1. VARIABLES & RESETS ===== */
@@ -75,6 +83,11 @@
     --error-hover: #dc2626;
     --error-glow: rgba(239, 68, 68, 0.1);
     --error-subtle: rgba(239, 68, 68, 0.08);
+
+    /* Colors — syntax highlighting */
+    --syntax-number: #f59e0b;
+    --syntax-keyword: #c084fc;
+    --syntax-function: #60a5fa;
 
     /* Colors — state */
     --disabled-opacity: 0.45;
@@ -1124,6 +1137,468 @@
   .docs-rendered-md hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   .docs-rendered-md blockquote { border-left: 3px solid var(--accent); padding-left: 14px; margin: 8px 0; color: var(--text-muted); font-style: italic; }
   .docs-rendered-md-link { color: var(--accent-hover); }
+
+  /* ===== 31. DEV MODE CORE ===== */
+  .mode-toggle {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: var(--radius-md);
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-muted); font-family: var(--font-mono);
+    font-size: var(--text-xs); cursor: pointer;
+    transition: all var(--transition-base);
+  }
+  .mode-toggle:hover { border-color: var(--accent-border); color: var(--text); }
+  .mode-toggle.active {
+    background: var(--accent-subtle); border-color: var(--accent-border-strong);
+    color: var(--accent-hover);
+  }
+
+  .dev-nav {
+    display: flex; align-items: center; gap: 2px;
+    padding: 4px 24px; background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .dev-nav-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: var(--radius-md) var(--radius-md) 0 0;
+    background: transparent; border: 1px solid transparent;
+    border-bottom: none;
+    color: var(--text-muted); font-family: var(--font-sans);
+    font-size: var(--text-sm); cursor: pointer;
+    transition: all var(--transition-base);
+    position: relative; bottom: -1px;
+  }
+  .dev-nav-tab:hover { color: var(--text); background: var(--surface-2); }
+  .dev-nav-tab.active {
+    color: var(--text); background: var(--surface);
+    border-color: var(--border);
+  }
+
+  .dev-container {
+    max-width: 1600px; margin: 0 auto;
+    padding: 12px 24px;
+  }
+
+  /* ===== 32. DEV SPLIT PANE & EDITOR ===== */
+  .dev-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; gap: 12px;
+  }
+  .dev-toolbar-left {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dev-toolbar-right {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .dev-toolbar-right .btn-primary {
+    margin-left: 8px;
+  }
+  .btn-sm {
+    padding: 5px 10px; font-size: var(--text-xs);
+    border-radius: var(--radius-sm);
+  }
+
+  .dev-split {
+    display: flex; height: calc(100vh - 160px);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; background: var(--surface);
+  }
+  .dev-pane {
+    flex: 1; min-width: 0; overflow: auto;
+    display: flex; flex-direction: column;
+  }
+  .dev-pane-resizer {
+    width: 6px; cursor: col-resize;
+    background: var(--border); flex-shrink: 0;
+    transition: background var(--transition-fast);
+    position: relative;
+  }
+  .dev-pane-resizer::after {
+    content: ''; position: absolute;
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 2px; height: 24px; border-radius: 1px;
+    background: var(--text-muted); opacity: 0.3;
+    transition: opacity var(--transition-fast);
+  }
+  .dev-pane-resizer:hover,
+  .dev-pane-resizer:focus-visible,
+  .dev-pane-resizer.dragging { background: var(--accent); }
+  .dev-pane-resizer:hover::after,
+  .dev-pane-resizer:focus-visible::after,
+  .dev-pane-resizer.dragging::after { opacity: 0; }
+  .dev-pane-resizer:focus { outline: none; }
+
+  .dev-pane-editor { position: relative; }
+  .dev-pane-editor::before {
+    content: 'EDITOR';
+    position: absolute; top: 8px; right: 12px; z-index: 1;
+    font-family: var(--font-mono); font-size: var(--text-2xs);
+    color: var(--text-muted); opacity: 0.25;
+    letter-spacing: 0.08em; pointer-events: none;
+  }
+  .dev-editor-wrap {
+    display: flex; flex: 1; overflow: hidden;
+    background: var(--bg); min-height: 200px;
+  }
+  .dev-line-numbers {
+    padding: 16px 12px 16px 12px;
+    text-align: right; user-select: none; pointer-events: none;
+    font-family: var(--font-mono); font-size: var(--text-sm);
+    line-height: 1.6; color: var(--text-muted); opacity: 0.4;
+    background: var(--bg); border-right: 1px solid var(--border);
+    overflow: hidden; flex-shrink: 0; min-width: 36px;
+  }
+  .dev-line-numbers div { display: block; position: relative; }
+  .dev-fold-toggle {
+    position: absolute; left: -2px; top: 0;
+    cursor: pointer; pointer-events: auto;
+    color: var(--text-muted); opacity: 0.6;
+    font-size: 9px; line-height: 1.6;
+    transition: opacity var(--transition-fast);
+    user-select: none;
+  }
+  .dev-fold-toggle:hover { opacity: 1; color: var(--accent); }
+  .dev-line-numbers div.dev-folded-line { display: none; }
+  .dev-fold-placeholder {
+    color: var(--text-muted); opacity: 0.5;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-xs); padding: 0 6px;
+    font-style: italic; pointer-events: none;
+    margin-left: 4px; font-size: var(--text-xs);
+  }
+  .dev-editor {
+    flex: 1; min-height: 200px; padding: 16px 16px 16px 12px;
+    font-family: var(--font-mono); font-size: var(--text-sm);
+    line-height: 1.6; color: var(--text);
+    background: var(--bg); overflow: auto;
+    outline: none; white-space: pre; tab-size: 2;
+    border: none;
+  }
+  .dev-editor:focus { box-shadow: inset 0 0 0 2px var(--accent-glow); }
+  .dev-editor-wrap-sm { min-height: 100px; max-height: 200px; }
+  .dev-editor-wrap-sm .dev-editor { min-height: 100px; }
+  .dev-editor-sm { min-height: 100px; max-height: 200px; }
+
+  /* Override Prism theme to match design tokens */
+  .dev-editor .token.property { color: var(--accent-hover); }
+  .dev-editor .token.string { color: var(--success); }
+  .dev-editor .token.number { color: var(--syntax-number); }
+  .dev-editor .token.boolean { color: var(--syntax-number); }
+  .dev-editor .token.null { color: var(--text-muted); }
+  .dev-editor .token.keyword { color: var(--syntax-keyword); }
+  .dev-editor .token.function { color: var(--syntax-function); }
+  .dev-editor .token.builtin { color: var(--syntax-function); }
+  .dev-editor .token.comment { color: var(--text-muted); font-style: italic; }
+  .dev-editor .token.operator { color: var(--text-muted); }
+  .dev-editor .token.punctuation { color: var(--text-muted); }
+  .dev-editor .token.decorator { color: var(--syntax-number); }
+  .dev-editor .token.triple-quoted-string { color: var(--success); }
+
+  .dev-errors {
+    padding: 8px 16px; background: var(--error-subtle);
+    border-top: 2px solid var(--error);
+    font-family: var(--font-mono); font-size: var(--text-xs);
+    color: var(--error); max-height: 120px; overflow-y: auto;
+    line-height: 1.8;
+  }
+
+  .dev-validation-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px; border-radius: var(--radius-pill);
+    font-family: var(--font-mono); font-size: var(--text-2xs);
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-muted);
+    transition: all var(--transition-fast);
+  }
+  .dev-badge-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text-muted);
+  }
+  .dev-validation-badge.valid { border-color: var(--success); color: var(--success); background: var(--success-subtle); }
+  .dev-validation-badge.valid .dev-badge-dot { background: var(--success); }
+  .dev-validation-badge.invalid { border-color: var(--error); color: var(--error); background: var(--error-subtle); }
+  .dev-validation-badge.invalid .dev-badge-dot { background: var(--error); }
+
+  .dev-preview-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 16px; border-bottom: 1px solid var(--border);
+    background: var(--surface); flex-shrink: 0;
+  }
+  .dev-preview-header .mono-label {
+    font-size: var(--text-xs); letter-spacing: 0.06em;
+  }
+  .dev-preview-warn {
+    font-family: var(--font-mono); font-size: var(--text-2xs);
+    color: var(--warning); opacity: 0.8;
+  }
+  .dev-preview-form {
+    padding: 20px; overflow-y: auto; flex: 1;
+  }
+  .dev-preview-form .form-section {
+    margin-bottom: 16px;
+  }
+  .dev-preview-empty {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; padding: 60px 20px; color: var(--text-muted);
+    font-size: var(--text-sm); text-align: center;
+  }
+  .dev-preview-empty p { margin: 0; }
+  .dev-preview-empty .empty-hint {
+    font-size: var(--text-2xs); font-family: var(--font-mono);
+    color: var(--text-muted); opacity: 0.6; margin-top: 4px;
+  }
+
+  /* ===== 33. CONTEXT MENU ===== */
+  .ctx-menu {
+    position: fixed; z-index: 500;
+    min-width: 180px; max-width: 280px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 4px 0;
+    box-shadow: var(--shadow-lg);
+    font-family: var(--font-sans); font-size: var(--text-sm);
+  }
+  .ctx-menu-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 14px; cursor: pointer; color: var(--text);
+    transition: background var(--transition-fast);
+    position: relative; white-space: nowrap;
+  }
+  .ctx-menu-item:hover,
+  .ctx-menu-item:focus { background: var(--accent-subtle); color: var(--accent-hover); outline: none; }
+  .ctx-menu-separator {
+    height: 1px; background: var(--border); margin: 4px 0;
+  }
+  .ctx-menu-group-label {
+    padding: 6px 14px 3px; font-family: var(--font-mono);
+    font-size: var(--text-2xs); color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .ctx-menu-item.has-sub::after {
+    content: '▸'; margin-left: auto; padding-left: 12px;
+    font-size: 10px; color: var(--text-muted);
+  }
+  .ctx-menu-sub {
+    display: none; position: absolute;
+    left: 100%; top: -4px;
+    min-width: 160px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: 4px 0; box-shadow: var(--shadow-lg);
+  }
+  .ctx-menu-item.has-sub:hover > .ctx-menu-sub { display: block; }
+
+  /* ===== 34. TEMPLATE BUILDER ===== */
+  .dev-sample-data {
+    border-top: 1px solid var(--border);
+    position: relative;
+  }
+  .dev-sample-toggle {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 16px; width: 100%; background: var(--surface);
+    border: none; cursor: pointer; color: var(--text-muted);
+    transition: background var(--transition-fast);
+  }
+  .dev-sample-toggle:hover { background: var(--surface-2); color: var(--text); }
+  .dev-sample-arrow {
+    font-size: 10px; transition: transform var(--transition-fast);
+    display: inline-block;
+  }
+  .dev-sample-arrow.expanded { transform: rotate(90deg); }
+  .dev-sample-body { overflow: hidden; }
+  .dev-sample-body.collapsed { display: none; }
+
+  .dev-docx-preview {
+    flex: 1; overflow-y: auto; padding: 24px;
+    background: #ffffff; color: #000000;
+    font-family: Calibri, 'Segoe UI', sans-serif; font-size: 11pt;
+    line-height: 1.5;
+  }
+  .dev-docx-preview table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+  .dev-docx-preview td, .dev-docx-preview th { border: 1px solid #ccc; padding: 4px 8px; }
+  .dev-docx-preview h1 { font-size: 18pt; margin: 12px 0 6px; }
+  .dev-docx-preview h2 { font-size: 14pt; margin: 10px 0 4px; }
+  .dev-docx-preview p { margin: 4px 0; }
+
+  /* ===== 35. WORKSPACE ===== */
+  .workspace-drop-zone {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 12px; padding: 48px 20px;
+    border: 2px dashed var(--border); border-radius: var(--radius);
+    background: var(--surface); text-align: center;
+    color: var(--text-muted); font-size: var(--text-sm);
+    transition: border-color var(--transition-base), background var(--transition-base);
+    min-height: 200px;
+  }
+  .workspace-drop-zone.drag-over {
+    border-color: var(--accent); background: var(--accent-subtle);
+  }
+  .workspace-drop-zone p { margin: 0; }
+
+  .workspace-file-list {
+    margin-top: 16px;
+  }
+  .workspace-section {
+    margin-bottom: 16px;
+  }
+  .workspace-section-title {
+    font-family: var(--font-mono); font-size: var(--text-xs);
+    color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 8px 0; margin-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .workspace-file-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; border-radius: var(--radius-sm);
+    cursor: pointer; color: var(--text);
+    transition: background var(--transition-fast);
+    border: 1px solid transparent;
+  }
+  .workspace-file-item:hover {
+    background: var(--surface-2);
+    border-color: var(--border);
+  }
+  .workspace-file-name {
+    font-family: var(--font-mono); font-size: var(--text-sm);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .workspace-file-name::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text-muted); opacity: 0.3; flex-shrink: 0;
+  }
+  .workspace-file-action {
+    font-size: var(--text-2xs); color: var(--accent);
+    font-family: var(--font-mono);
+    opacity: 0; transition: opacity var(--transition-fast);
+  }
+  .workspace-file-item:hover .workspace-file-action { opacity: 1; }
+
+  /* GitHub workspace file modification indicator */
+  .workspace-file-name.modified::before {
+    background: var(--warning);
+    opacity: 1;
+  }
+
+  /* Connect Repo modal */
+  .gh-connect-modal {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 2000; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  }
+  .gh-connect-modal.open { display: flex; }
+  .gh-connect-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px; width: 100%; max-width: 440px;
+    box-shadow: var(--shadow-xl);
+  }
+  .gh-connect-panel h3 {
+    margin: 0 0 4px; font-size: var(--text-lg); font-weight: 600; color: var(--text);
+  }
+  .gh-connect-panel .gh-connect-subtitle {
+    margin: 0 0 20px; font-size: var(--text-sm); color: var(--text-muted);
+    font-family: var(--font-mono);
+  }
+  .gh-connect-field { margin-bottom: 14px; }
+  .gh-connect-field label {
+    display: block; font-family: var(--font-mono); font-size: var(--text-xs);
+    color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .gh-connect-field input, .gh-connect-field select {
+    width: 100%; padding: 8px 12px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    color: var(--text); font-family: var(--font-mono); font-size: var(--text-sm);
+    outline: none; transition: border-color var(--transition-base);
+    box-sizing: border-box;
+  }
+  .gh-connect-field input:focus, .gh-connect-field select:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+  .gh-connect-field .gh-field-hint {
+    font-size: var(--text-2xs); color: var(--text-muted); margin-top: 4px;
+    font-family: var(--font-mono);
+  }
+  .gh-connect-actions {
+    display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end;
+  }
+  .gh-connect-warning {
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    background: var(--accent-subtle); border: 1px solid var(--accent-border);
+    font-size: var(--text-2xs); color: var(--text-muted); margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .gh-connect-warning svg { flex-shrink: 0; margin-top: 1px; color: var(--accent); }
+
+  /* Workspace GitHub toolbar elements */
+  .gh-workspace-bar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .gh-branch-select {
+    padding: 4px 8px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text); font-family: var(--font-mono);
+    font-size: var(--text-2xs); outline: none; cursor: pointer;
+    transition: border-color var(--transition-fast);
+  }
+  .gh-branch-select:focus { border-color: var(--accent); }
+
+  /* Commit panel */
+  .gh-commit-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-top: 16px;
+  }
+  .gh-commit-panel h4 {
+    margin: 0 0 12px; font-size: var(--text-base); font-weight: 600; color: var(--text);
+  }
+  .gh-commit-file-list {
+    margin-bottom: 12px; padding: 8px 12px; background: var(--bg);
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+  }
+  .gh-commit-file-entry {
+    display: flex; align-items: center; gap: 6px; padding: 3px 0;
+    font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text);
+  }
+  .gh-commit-file-entry::before {
+    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--warning); flex-shrink: 0;
+  }
+  .gh-commit-msg {
+    width: 100%; padding: 8px 12px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    color: var(--text); font-family: var(--font-sans); font-size: var(--text-sm);
+    outline: none; resize: vertical; min-height: 60px;
+    transition: border-color var(--transition-base); box-sizing: border-box;
+  }
+  .gh-commit-msg:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+  .gh-commit-actions {
+    display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end;
+  }
+
+  /* New branch modal */
+  .gh-new-branch-row {
+    display: flex; gap: 8px; align-items: center; margin-top: 8px;
+  }
+  .gh-new-branch-row input {
+    flex: 1; padding: 4px 8px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: var(--font-mono); font-size: var(--text-xs);
+    outline: none;
+  }
+  .gh-new-branch-row input:focus {
+    border-color: var(--accent);
+  }
+
+  /* ===== 36. DEV MODE MOBILE GATE ===== */
+  @media (max-width: 768px) {
+    .mode-toggle { opacity: var(--disabled-opacity); pointer-events: none; }
+    .mode-toggle::after {
+      content: '(desktop only)';
+      font-size: var(--text-2xs); color: var(--text-muted);
+      margin-left: 4px;
+    }
+    .dev-nav { display: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -1218,6 +1693,30 @@
   <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
   </symbol>
+  <!-- Wrench: used in Dev Mode toggle -->
+  <symbol id="icon-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+  </symbol>
+  <!-- Refresh: used in workspace refresh -->
+  <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+  </symbol>
+  <!-- Git branch: used in workspace branch selector -->
+  <symbol id="icon-git-branch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 01-9 9"/>
+  </symbol>
+  <!-- Git commit: used in workspace commit button -->
+  <symbol id="icon-git-commit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="12" cy="12" r="4"/><line x1="1.05" y1="12" x2="7" y2="12"/><line x1="17.01" y1="12" x2="22.96" y2="12"/>
+  </symbol>
+  <!-- Unlink / disconnect: used in workspace disconnect -->
+  <symbol id="icon-unlink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M18.84 12.25l1.72-1.71h-.02a5.004 5.004 0 00-.12-7.07 5.006 5.006 0 00-6.95 0l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5.004 5.004 0 00.12 7.07 5.006 5.006 0 006.95 0l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/>
+  </symbol>
+  <!-- Folder open: used in workspace -->
+  <symbol id="icon-folder-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><path d="M2 10h20"/>
+  </symbol>
 </svg>
 
 <!-- Loading overlay -->
@@ -1247,12 +1746,32 @@
 <header class="app-header">
   <h1><button type="button" class="h1-home-btn" onclick="showView('setup')"><span>&#9632;</span> FormForge</button></h1>
   <div class="header-right">
+    <button class="mode-toggle" id="modeToggle" onclick="toggleDevMode()" title="Toggle Dev Mode">
+      <svg width="14" height="14"><use href="#icon-wrench"/></svg>
+      <span class="mode-toggle-label" id="modeToggleLabel">Dev</span>
+    </button>
     <div class="status-badge" id="statusBadge">
       <div class="status-dot" aria-hidden="true"></div>
       <span id="statusText">not connected</span>
     </div>
   </div>
 </header>
+
+<!-- Dev Mode Navigation -->
+<nav class="dev-nav" id="devNav" role="tablist" aria-label="Dev Mode navigation" style="display:none">
+  <button class="dev-nav-tab active" id="tab-dev-schema" data-dev-tab="dev-schema" role="tab" aria-selected="true" aria-controls="view-dev-schema" onclick="showDevTab('dev-schema')">
+    <svg width="14" height="14" aria-hidden="true"><use href="#icon-file-upload"/></svg>
+    Schema Builder
+  </button>
+  <button class="dev-nav-tab" id="tab-dev-template" data-dev-tab="dev-template" role="tab" aria-selected="false" aria-controls="view-dev-template" onclick="showDevTab('dev-template')">
+    <svg width="14" height="14" aria-hidden="true"><use href="#icon-code"/></svg>
+    Template Builder
+  </button>
+  <button class="dev-nav-tab" id="tab-dev-workspace" data-dev-tab="dev-workspace" role="tab" aria-selected="false" aria-controls="view-dev-workspace" onclick="showDevTab('dev-workspace')">
+    <svg width="14" height="14" aria-hidden="true"><use href="#icon-folder"/></svg>
+    Workspace
+  </button>
+</nav>
 
 <!-- ==================== SETUP VIEW ==================== -->
 <main class="view active" id="view-setup">
@@ -1512,6 +2031,219 @@
   </div>
 </main>
 
+<!-- ==================== DEV: SCHEMA BUILDER VIEW ==================== -->
+<main class="view" id="view-dev-schema" role="tabpanel" aria-labelledby="tab-dev-schema">
+  <div class="dev-container">
+    <div class="dev-toolbar">
+      <div class="dev-toolbar-left">
+        <span class="dev-validation-badge" id="schemaValidBadge">
+          <span class="dev-badge-dot"></span>
+          <span id="schemaValidText">not validated</span>
+        </span>
+      </div>
+      <div class="dev-toolbar-right">
+        <button class="btn-secondary btn-sm" onclick="devNewSchema()">New</button>
+        <button class="btn-secondary btn-sm" onclick="document.getElementById('devSchemaFileInput').click()">Load</button>
+        <input type="file" accept=".json" id="devSchemaFileInput" class="hidden-input" onchange="devLoadSchemaFile(event)">
+        <button class="btn-secondary btn-sm" onclick="devFormatSchema()">Format</button>
+        <button class="btn-secondary btn-sm" onclick="devSaveSchema()" title="Save (Ctrl+S)">
+          <svg width="12" height="12"><use href="#icon-save"/></svg>
+          Save
+        </button>
+      </div>
+    </div>
+    <div class="dev-split" id="schemaSplit">
+      <div class="dev-pane dev-pane-editor" id="schemaEditorPane">
+        <div class="dev-editor-wrap">
+          <div class="dev-line-numbers" id="schemaLineNumbers"></div>
+          <div class="dev-editor" id="schemaEditor" aria-label="Schema JSON editor"></div>
+        </div>
+        <div class="dev-errors hidden" id="schemaErrors"></div>
+      </div>
+      <div class="dev-pane-resizer" id="schemaResizer" role="separator" aria-orientation="vertical" aria-label="Resize editor and preview panes" tabindex="0" aria-valuenow="50"></div>
+      <div class="dev-pane dev-pane-preview" id="schemaPreviewPane">
+        <div class="dev-preview-header">
+          <span class="mono-label">LIVE PREVIEW</span>
+          <span class="mono-label" id="schemaCoverageBadge" style="color:var(--accent);"></span>
+        </div>
+        <div class="dev-preview-form" id="schemaPreviewForm"></div>
+        <div class="dev-preview-empty" id="schemaPreviewEmpty">
+          <svg width="28" height="28" style="color:var(--text-muted);opacity:0.3"><use href="#icon-file"/></svg>
+          <p>Live form preview</p>
+          <p class="empty-hint">Edit the JSON or right-click to insert fields</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ==================== DEV: TEMPLATE BUILDER VIEW ==================== -->
+<main class="view" id="view-dev-template" role="tabpanel" aria-labelledby="tab-dev-template">
+  <div class="dev-container">
+    <div class="dev-toolbar">
+      <div class="dev-toolbar-left">
+        <span class="dev-validation-badge" id="templateStatusBadge">
+          <span class="dev-badge-dot"></span>
+          <span id="templateStatusText">ready</span>
+        </span>
+      </div>
+      <div class="dev-toolbar-right">
+        <button class="btn-secondary btn-sm" onclick="devNewTemplate()">New</button>
+        <button class="btn-secondary btn-sm" onclick="document.getElementById('devTemplateFileInput').click()">Load</button>
+        <input type="file" accept=".py" id="devTemplateFileInput" class="hidden-input" onchange="devLoadTemplateFile(event)">
+        <button class="btn-secondary btn-sm" onclick="devSaveTemplate()" title="Save (Ctrl+S)">
+          <svg width="12" height="12"><use href="#icon-save"/></svg>
+          Save
+        </button>
+        <button class="btn-primary btn-sm" onclick="devRunPreview()" title="Preview DOCX (Ctrl+Enter)">
+          <svg width="12" height="12"><use href="#icon-play"/></svg>
+          Preview DOCX
+        </button>
+      </div>
+    </div>
+    <div class="dev-split" id="templateSplit">
+      <div class="dev-pane dev-pane-editor" id="templateEditorPane">
+        <div class="dev-editor-wrap">
+          <div class="dev-line-numbers" id="templateLineNumbers"></div>
+          <div class="dev-editor" id="templateEditor" aria-label="Python template editor"></div>
+        </div>
+        <div class="dev-sample-data" id="sampleDataPanel">
+          <button class="dev-sample-toggle" onclick="devToggleSampleData()">
+            <span class="dev-sample-arrow" id="sampleDataArrow">&#9654;</span>
+            <span class="mono-label">SAMPLE DATA (JSON)</span>
+          </button>
+          <button class="btn-secondary btn-sm" onclick="devAutoFillSampleData()" title="Generate from schema" style="position:absolute;right:8px;top:4px;font-size:var(--text-2xs);padding:2px 8px;">Auto-fill</button>
+          <div class="dev-sample-body collapsed" id="sampleDataBody">
+            <div class="dev-editor-wrap dev-editor-wrap-sm">
+              <div class="dev-line-numbers" id="sampleLineNumbers"></div>
+              <div class="dev-editor dev-editor-sm" id="sampleDataEditor" aria-label="Sample data JSON editor"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dev-pane-resizer" id="templateResizer" role="separator" aria-orientation="vertical" aria-label="Resize editor and preview panes" tabindex="0" aria-valuenow="50"></div>
+      <div class="dev-pane dev-pane-preview" id="templatePreviewPane">
+        <div class="dev-preview-header">
+          <span class="mono-label">DOCX PREVIEW</span>
+          <span class="dev-preview-warn">approximate rendering</span>
+        </div>
+        <div class="dev-docx-preview" id="docxPreviewContainer">
+          <div class="dev-preview-empty" id="templatePreviewEmpty">
+            <svg width="28" height="28" style="color:var(--text-muted);opacity:0.3"><use href="#icon-export"/></svg>
+            <p>Document preview</p>
+            <p class="empty-hint">Run your template to see the DOCX output here</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ==================== DEV: WORKSPACE VIEW ==================== -->
+<main class="view" id="view-dev-workspace" role="tabpanel" aria-labelledby="tab-dev-workspace">
+  <div class="dev-container">
+    <div class="dev-toolbar">
+      <div class="dev-toolbar-left">
+        <span class="dev-validation-badge" id="workspaceBadge">
+          <span class="dev-badge-dot"></span>
+          <span id="workspaceBadgeText">no folder loaded</span>
+        </span>
+      </div>
+      <div class="dev-toolbar-right">
+        <div class="gh-workspace-bar" id="ghWorkspaceBar" style="display:none">
+          <select class="gh-branch-select" id="ghBranchSelect" aria-label="Branch" onchange="devGhSwitchBranch(this.value)"></select>
+          <button class="btn-secondary btn-sm" id="btnGhNewBranch" onclick="devGhShowNewBranch()" title="Create new branch">
+            <svg width="12" height="12"><use href="#icon-git-branch"/></svg>
+          </button>
+          <button class="btn-secondary btn-sm" id="btnGhCommit" onclick="devGhShowCommitPanel()" style="display:none">
+            <svg width="12" height="12"><use href="#icon-git-commit"/></svg>
+            Commit
+          </button>
+          <button class="btn-secondary btn-sm" onclick="devGhRefreshFiles()">
+            <svg width="12" height="12"><use href="#icon-refresh"/></svg>
+          </button>
+          <button class="btn-secondary btn-sm" onclick="devGhDisconnect()" title="Disconnect repo">
+            <svg width="12" height="12"><use href="#icon-unlink"/></svg>
+          </button>
+        </div>
+        <button class="btn-secondary btn-sm" id="btnConnectRepo" onclick="devGhShowConnectModal()">
+          <svg width="12" height="12"><use href="#icon-github"/></svg>
+          Connect Repo
+        </button>
+        <button class="btn-secondary btn-sm" id="btnOpenFolder" onclick="devOpenWorkspace()">
+          <svg width="12" height="12"><use href="#icon-folder-open"/></svg>
+          Open Folder
+        </button>
+        <button class="btn-secondary btn-sm" onclick="devRefreshWorkspace()" id="btnRefreshWorkspace" style="display:none">
+          <svg width="12" height="12"><use href="#icon-refresh"/></svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+    <div class="workspace-drop-zone" id="workspaceDropZone">
+      <svg width="36" height="36" style="color:var(--text-muted);opacity:0.3"><use href="#icon-folder"/></svg>
+      <p>Drop a project folder here</p>
+      <p class="empty-hint" style="font-family:var(--font-mono);font-size:var(--text-2xs);color:var(--text-muted);opacity:0.6">expects schemas/ and templates/ subdirectories</p>
+    </div>
+    <div class="workspace-file-list hidden" id="workspaceFileList"></div>
+    <div class="gh-commit-panel" id="ghCommitPanel" style="display:none">
+      <h4>Commit Changes</h4>
+      <div class="gh-commit-file-list" id="ghCommitFileList"></div>
+      <textarea class="gh-commit-msg" id="ghCommitMsg" placeholder="Describe your changes..." aria-label="Commit message"></textarea>
+      <div class="gh-commit-actions">
+        <button class="btn-secondary btn-sm" onclick="devGhHideCommitPanel()">Cancel</button>
+        <button class="btn-primary btn-sm" id="btnGhCommitPush" onclick="devGhCommitAndPush()">
+          <svg width="12" height="12"><use href="#icon-git-commit"/></svg>
+          Commit &amp; Push
+        </button>
+      </div>
+    </div>
+    <div class="gh-new-branch-row" id="ghNewBranchRow" style="display:none">
+      <input type="text" id="ghNewBranchName" placeholder="new-branch-name" aria-label="New branch name" pattern="[a-zA-Z0-9._/-]+">
+      <button class="btn-primary btn-sm" onclick="devGhCreateBranch()">Create</button>
+      <button class="btn-secondary btn-sm" onclick="document.getElementById('ghNewBranchRow').style.display='none'">Cancel</button>
+    </div>
+  </div>
+</main>
+
+<!-- GitHub Connect Repo Modal -->
+<div class="gh-connect-modal" id="ghConnectModal" role="dialog" aria-labelledby="ghConnectTitle" aria-modal="true">
+  <div class="gh-connect-panel">
+    <h3 id="ghConnectTitle">Connect GitHub Repository</h3>
+    <p class="gh-connect-subtitle">Browse and edit schemas &amp; templates from a GitHub repo</p>
+    <div class="gh-connect-warning">
+      <svg width="14" height="14"><use href="#icon-lock"/></svg>
+      <span>Your token grants write access to the repo. Use a fine-grained personal access token scoped to the target repository. The token is stored in localStorage and never logged.</span>
+    </div>
+    <div class="gh-connect-field">
+      <label for="ghConnectRepo">Repository</label>
+      <input type="text" id="ghConnectRepo" placeholder="owner/repo or https://github.com/owner/repo" autocomplete="off" spellcheck="false">
+      <div class="gh-field-hint">e.g. myorg/form-templates</div>
+    </div>
+    <div class="gh-connect-field">
+      <label for="ghConnectToken">Personal Access Token</label>
+      <input type="password" id="ghConnectToken" placeholder="ghp_xxxxxxxxxxxx or github_pat_xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
+      <div class="gh-field-hint">Requires Contents: Read and write permission</div>
+    </div>
+    <div class="gh-connect-field">
+      <label for="ghConnectBranch">Branch (optional)</label>
+      <input type="text" id="ghConnectBranch" placeholder="defaults to repo default branch" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="gh-connect-actions">
+      <button class="btn-secondary btn-sm" id="btnGhClearToken" onclick="devGhClearToken()" style="display:none">Clear saved token</button>
+      <span style="flex:1"></span>
+      <button class="btn-secondary btn-sm" onclick="devGhCloseConnectModal()">Cancel</button>
+      <button class="btn-primary btn-sm" id="btnGhConnect" onclick="devGhConnect()">
+        <svg width="12" height="12"><use href="#icon-github"/></svg>
+        Connect
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Context Menu (shared, positioned dynamically) -->
+<div class="ctx-menu" id="ctxMenu" role="menu" aria-label="Context menu" style="display:none"></div>
+
 <!-- Toast -->
 <div class="toast" id="toast" role="alert" aria-live="polite"></div>
 
@@ -1544,6 +2276,44 @@ let autosaveTimer = null;    // Debounce timer for autosave
 let formDirty = false;       // Whether the form has unsaved changes
 let pyodidePreloadPromise = null;  // Background preload promise for Pyodide
 
+// Dev Mode state
+let devMode = false;
+let devSchemaText = localStorage.getItem('formforge-dev-schema') || '';
+let devTemplateText = localStorage.getItem('formforge-dev-template') || '';
+let devSampleDataText = localStorage.getItem('formforge-dev-sampledata') || '{}';
+let devPreviewDebounce = null;
+let devSchemaValid = false;
+let devParsedSchema = null; // Parsed schema shared between builders
+let schemaJar = null;   // CodeJar instance for schema editor
+let templateJar = null; // CodeJar instance for template editor
+let sampleJar = null;   // CodeJar instance for sample data editor
+let devEditorSaveTimer = null; // Debounce timer for localStorage persistence
+
+function devSaveEditorState() {
+  clearTimeout(devEditorSaveTimer);
+  devEditorSaveTimer = setTimeout(() => {
+    localStorage.setItem('formforge-dev-schema', devSchemaText);
+    localStorage.setItem('formforge-dev-template', devTemplateText);
+    localStorage.setItem('formforge-dev-sampledata', devSampleDataText);
+  }, 1000);
+}
+
+// Workspace state
+let workspaceHandle = null;      // FileSystemDirectoryHandle (FSAA)
+let workspaceFiles = { schemas: [], templates: [] };
+let devWorkspacePoller = null;   // setInterval ID for FSAA change polling
+let currentWorkspaceFile = null;
+
+// GitHub workspace state (Dev Mode)
+let devGhConnected = false;           // Whether a GitHub repo is connected in workspace
+let devGhOwner = '';                  // Connected repo owner
+let devGhRepoName = '';               // Connected repo name
+let devGhBranch = '';                 // Current branch
+let devGhPat = '';                    // Personal access token
+let devGhBranches = [];               // Available branches
+let devGhOriginalContents = {};       // { path: { content, sha } } — original fetched content for diff
+let devGhModifiedFiles = new Set();   // Set of paths that have been modified
+
 // GitHub config
 let ghOwner = '';
 let ghRepo = '';
@@ -1557,13 +2327,24 @@ const FORMFORGE_FALLBACK = { owner: 'ccirone2', repo: 'form-forge', branch: 'dev
 //  VIEW MANAGEMENT
 // ============================================================
 function showView(name) {
-  // Guard: warn if leaving form with unsaved changes
+  // Guard: warn if leaving form with unsaved changes (only when leaving form view)
   const formView = document.getElementById('view-form');
-  if (formView.classList.contains('active') && name === 'setup' && formDirty) {
+  if (formView.classList.contains('active') && name !== 'form' && formDirty) {
     if (!confirm('You have unsaved changes. Leave anyway?')) return;
   }
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById(`view-${name}`).classList.add('active');
+  document.querySelectorAll('.view').forEach(v => {
+    v.classList.remove('active');
+    v.setAttribute('aria-hidden', 'true');
+  });
+  const target = document.getElementById(`view-${name}`);
+  if (target) {
+    target.classList.add('active');
+    target.removeAttribute('aria-hidden');
+  }
+
+  // Lazy-init dev editors when first shown
+  if (name === 'dev-schema') initSchemaEditor();
+  if (name === 'dev-template') initTemplateEditor();
 }
 
 // ============================================================
@@ -2354,10 +3135,10 @@ function preloadPyodide() {
     });
 }
 
-async function loadBaseModule() {
+async function loadBaseModule({ silent = false } = {}) {
   if (baseModuleLoaded) return;
 
-  showOverlay('Loading shared template stencils...');
+  if (!silent) showOverlay('Loading shared template stencils...');
   log('Loading stencils.py module...', 'info');
 
   try {
@@ -2400,17 +3181,21 @@ async function loadBaseModule() {
     }
   } catch (err) {
     log('Warning: could not load stencils module: ' + err.message, 'error');
+  } finally {
+    if (!silent) hideOverlay();
   }
 }
 
 // ============================================================
 //  FORM BUILDER
 // ============================================================
-function buildForm(schema) {
-  document.getElementById('formTitle').textContent = schema.title || 'Untitled Form';
-  document.getElementById('formDescription').textContent = schema.description || '';
+function buildForm(schema, targetForm) {
+  if (!targetForm) {
+    document.getElementById('formTitle').textContent = schema.title || 'Untitled Form';
+    document.getElementById('formDescription').textContent = schema.description || '';
+  }
 
-  const form = document.getElementById('dynamicForm');
+  const form = targetForm || document.getElementById('dynamicForm');
   // Cleanup multi-select outside-click listeners before rebuilding
   form.querySelectorAll('.multi-select-wrapper').forEach(w => {
     if (w._cleanupOutsideClick) w._cleanupOutsideClick();
@@ -5024,26 +5809,2318 @@ def generate_docx(data):
 `;
 
 // ============================================================
+//  DEV MODE
+// ============================================================
+
+let devDepsLoaded = false;
+let devDepsPromise = null;
+
+function loadDevModeDeps() {
+  if (devDepsPromise) return devDepsPromise;
+  devDepsPromise = (async () => {
+    if (devDepsLoaded) return;
+    // Load Prism first (language components depend on it)
+    await loadScript('https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js');
+    // Load remaining UMD scripts + CodeJar (ESM) in parallel
+    await Promise.all([
+      loadScript('https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-json.min.js'),
+      loadScript('https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-python.min.js'),
+      import('https://cdn.jsdelivr.net/npm/codejar@4.2.0/dist/codejar.min.js')
+        .then(m => { window.CodeJar = m.CodeJar; }),
+      loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js'),
+      loadScript('https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js'),
+    ]);
+    devDepsLoaded = true;
+  })();
+  return devDepsPromise;
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load: ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+async function toggleDevMode() {
+  if (!devMode && window.innerWidth < 768) {
+    showToast('Dev Mode requires a wider viewport (≥768px)', 'error');
+    return;
+  }
+  devMode = !devMode;
+  localStorage.setItem('formforge-dev-mode', devMode ? '1' : '0');
+  document.getElementById('modeToggle').classList.toggle('active', devMode);
+  document.getElementById('modeToggleLabel').textContent = devMode ? 'Dev On' : 'Dev';
+  document.getElementById('devNav').style.display = devMode ? 'flex' : 'none';
+
+  if (devMode) {
+    // Lazy-load dev mode dependencies on first activation
+    try {
+      await loadDevModeDeps();
+    } catch (e) {
+      showToast('Failed to load Dev Mode scripts — check your connection', 'error');
+      devMode = false;
+      document.getElementById('modeToggle').classList.remove('active');
+      document.getElementById('modeToggleLabel').textContent = 'Dev';
+      document.getElementById('devNav').style.display = 'none';
+      return;
+    }
+    const lastTab = localStorage.getItem('formforge-dev-tab') || 'dev-schema';
+    showDevTab(lastTab);
+  } else {
+    // Stop workspace polling when exiting dev mode
+    if (devWorkspacePoller) { clearInterval(devWorkspacePoller); devWorkspacePoller = null; }
+    showView('setup');
+  }
+}
+
+const VALID_DEV_TABS = new Set(['dev-schema', 'dev-template', 'dev-workspace']);
+
+function showDevTab(viewName) {
+  if (!VALID_DEV_TABS.has(viewName)) viewName = 'dev-schema';
+  document.querySelectorAll('.dev-nav-tab').forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+  });
+  const tab = document.querySelector(`.dev-nav-tab[data-dev-tab="${viewName}"]`);
+  if (tab) {
+    tab.classList.add('active');
+    tab.setAttribute('aria-selected', 'true');
+  }
+  localStorage.setItem('formforge-dev-tab', viewName);
+  showView(viewName);
+}
+
+function handleDevModeResize() {
+  if (devMode && window.innerWidth < 768) {
+    devMode = false;
+    localStorage.setItem('formforge-dev-mode', '0');
+    document.getElementById('modeToggle').classList.remove('active');
+    document.getElementById('devNav').style.display = 'none';
+    showView('setup');
+    showToast('Dev Mode disabled — viewport too narrow', 'info');
+  }
+}
+
+// ============================================================
+//  DEV MODE: SCHEMA BUILDER
+// ============================================================
+
+const DEV_STARTER_SCHEMA = {
+  title: "New Form",
+  description: "Form description",
+  icon: "📋",
+  template: "templates/my_template.py",
+  sections: [{
+    title: "Section 1",
+    fields: [{
+      id: "field_1",
+      label: "Field 1",
+      type: "text",
+      required: true
+    }]
+  }]
+};
+
+function devFindTextPosition(el, offset) {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let remaining = offset;
+  let node;
+  while ((node = walker.nextNode())) {
+    if (remaining <= node.textContent.length) {
+      return { node, offset: remaining };
+    }
+    remaining -= node.textContent.length;
+  }
+  return null;
+}
+
+function devSetCursorOffset(el, offset) {
+  const sel = window.getSelection();
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let remaining = offset;
+  let node;
+  while ((node = walker.nextNode())) {
+    if (remaining <= node.textContent.length) {
+      sel.collapse(node, remaining);
+      return;
+    }
+    remaining -= node.textContent.length;
+  }
+  // Fallback: end of content
+  sel.collapse(el, el.childNodes.length);
+}
+
+function devGetCursorOffset(el) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount || !el.contains(sel.anchorNode)) return 0;
+  const range = document.createRange();
+  range.setStart(el, 0);
+  range.setEnd(sel.anchorNode, sel.anchorOffset);
+  return range.toString().length;
+}
+
+function devEditorKeydownHandler(e, jarInstance, language) {
+  const mod = e.metaKey || e.ctrlKey;
+  const el = e.currentTarget;
+
+  // Comment toggle: Ctrl/Cmd + /
+  if (mod && e.key === '/') {
+    e.preventDefault();
+    if (language === 'json') {
+      showToast('JSON does not support comments', 'info');
+      return;
+    }
+    const text = jarInstance.toString();
+    const offset = devGetCursorOffset(el);
+    const lines = text.split('\n');
+    let pos = 0, lineIdx = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (pos + lines[i].length >= offset) { lineIdx = i; break; }
+      pos += lines[i].length + 1;
+    }
+    const line = lines[lineIdx];
+    const stripped = line.replace(/^(\s*)/, '');
+    const indent = line.substring(0, line.length - stripped.length);
+    if (stripped.startsWith('# ')) {
+      lines[lineIdx] = indent + stripped.substring(2);
+    } else if (stripped.startsWith('#')) {
+      lines[lineIdx] = indent + stripped.substring(1);
+    } else {
+      lines[lineIdx] = indent + '# ' + stripped;
+    }
+    const newText = lines.join('\n');
+    const newOffset = Math.min(offset, newText.length);
+    jarInstance.updateCode(newText);
+    devSetCursorOffset(el, newOffset);
+    return;
+  }
+
+  // Move line(s): Alt + ArrowUp / ArrowDown — supports multi-line selection
+  if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    e.preventDefault();
+    const text = jarInstance.toString();
+    const lines = text.split('\n');
+
+    // Find selection range (anchor + focus) to determine selected line span
+    const sel = window.getSelection();
+    const startOff = devGetCursorOffset(el);
+    let endOff = startOff;
+    let actualStart = startOff;
+    if (sel.rangeCount && !sel.isCollapsed) {
+      const range = sel.getRangeAt(0);
+      const preStart = document.createRange();
+      preStart.setStart(el, 0);
+      preStart.setEnd(range.startContainer, range.startOffset);
+      const preEnd = document.createRange();
+      preEnd.setStart(el, 0);
+      preEnd.setEnd(range.endContainer, range.endOffset);
+      const selStart = preStart.toString().length;
+      const selEnd = preEnd.toString().length;
+      endOff = Math.max(selStart, selEnd);
+      actualStart = Math.min(selStart, selEnd);
+    }
+
+    // Map offsets to line indices
+    let firstLine = 0, lastLine = 0, pos = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const lineEnd = pos + lines[i].length;
+      if (pos <= actualStart && actualStart <= lineEnd) firstLine = i;
+      if (pos <= endOff && endOff <= lineEnd) { lastLine = i; break; }
+      pos += lines[i].length + 1;
+    }
+    // If endOff is at the very start of a line (after a newline), don't include that line
+    if (endOff > actualStart) {
+      let p = 0;
+      for (let i = 0; i <= lastLine; i++) p += lines[i].length + 1;
+      if (endOff === p - lines[lastLine].length - 1 && lastLine > firstLine) lastLine--;
+    }
+
+    const up = e.key === 'ArrowUp';
+    if (up && firstLine === 0) return;
+    if (!up && lastLine === lines.length - 1) return;
+
+    // Extract the block and the adjacent line to swap with
+    const block = lines.splice(firstLine, lastLine - firstLine + 1);
+    const targetIdx = up ? firstLine - 1 : firstLine + 1; // after splice, array shifted
+    lines.splice(targetIdx, 0, ...block);
+
+    const newText = lines.join('\n');
+    const newFirstLine = up ? firstLine - 1 : firstLine + 1;
+    const newLastLine = newFirstLine + block.length - 1;
+
+    // Compute new selection offsets
+    let newSelStart = 0;
+    for (let i = 0; i < newFirstLine; i++) newSelStart += lines[i].length + 1;
+    let newSelEnd = newSelStart;
+    for (let i = newFirstLine; i <= newLastLine; i++) newSelEnd += lines[i].length + (i < newLastLine ? 1 : 0);
+
+    jarInstance.updateCode(newText);
+
+    // Restore selection across the moved block
+    if (block.length > 1) {
+      devSetCursorOffset(el, newSelStart);
+      const sel2 = window.getSelection();
+      const endNode = devFindTextPosition(el, newSelEnd);
+      if (endNode) sel2.extend(endNode.node, endNode.offset);
+    } else {
+      const cursorInLine = actualStart - (function() { let p=0; for(let i=0;i<firstLine;i++) p+=lines[i].length+1; return p; })();
+      devSetCursorOffset(el, newSelStart + Math.min(cursorInLine, lines[newFirstLine].length));
+    }
+    return;
+  }
+}
+
+function devFindFoldRegions(text, language) {
+  const lines = text.split('\n');
+  const regions = []; // [{start, end}]
+  if (language === 'json') {
+    const stack = [];
+    let inString = false;
+    for (let i = 0; i < lines.length; i++) {
+      const trimmed = lines[i].trimEnd();
+      for (let c = 0; c < trimmed.length; c++) {
+        const ch = trimmed[c];
+        if (ch === '\\' && inString) { c++; continue; } // skip escaped char
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
+        if (ch === '{' || ch === '[') stack.push({ char: ch, line: i });
+        else if ((ch === '}' || ch === ']') && stack.length > 0) {
+          const open = stack.pop();
+          if (open.line < i) regions.push({ start: open.line, end: i });
+        }
+      }
+    }
+  } else if (language === 'python') {
+    const blockRe = /^(\s*)(?:async\s+)?(def |class |if |elif |else:|for |while |with |try:|except |finally:)/;
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(blockRe);
+      if (!m) continue;
+      const baseIndent = m[1].length;
+      let end = i;
+      for (let j = i + 1; j < lines.length; j++) {
+        const lt = lines[j];
+        if (lt.trim() === '') continue;
+        const indent = lt.match(/^(\s*)/)[1].length;
+        if (indent > baseIndent) end = j;
+        else break;
+      }
+      if (end > i) regions.push({ start: i, end: end });
+    }
+  }
+  return regions;
+}
+
+let devFoldState = new Map(); // gutterKey -> Set of folded start lines
+let devFoldUpdating = false;  // Guard: true during programmatic updateCode from fold toggle
+
+function devGetFoldHiddenLines(text, lang, gutterKey) {
+  const regions = devFindFoldRegions(text, lang);
+  const foldStarts = new Map();
+  regions.forEach(r => { if (!foldStarts.has(r.start)) foldStarts.set(r.start, r); });
+  const folded = devFoldState.get(gutterKey) || new Set();
+  // Prune stale fold entries
+  folded.forEach(idx => { if (!foldStarts.has(idx)) folded.delete(idx); });
+  const hiddenLines = new Set();
+  folded.forEach(start => {
+    const region = foldStarts.get(start);
+    if (region) {
+      for (let i = region.start + 1; i <= region.end; i++) hiddenLines.add(i);
+    }
+  });
+  return { hiddenLines, foldStarts, folded };
+}
+
+function devToggleFold(editorEl, gutterEl, lineIndex) {
+  const key = gutterEl.id || 'default';
+  if (!devFoldState.has(key)) devFoldState.set(key, new Set());
+  const folded = devFoldState.get(key);
+  if (folded.has(lineIndex)) folded.delete(lineIndex);
+  else folded.add(lineIndex);
+  // Re-highlight to apply fold to editor content — use the canonical text
+  const textMap = {
+    schemaEditor: devSchemaText,
+    templateEditor: devTemplateText,
+    sampleDataEditor: devSampleDataText
+  };
+  const jarMap = {
+    schemaEditor: schemaJar,
+    templateEditor: templateJar,
+    sampleDataEditor: sampleJar
+  };
+  const jar = jarMap[editorEl.id];
+  if (jar) {
+    devFoldUpdating = true;
+    jar.updateCode(textMap[editorEl.id]);
+    devFoldUpdating = false;
+  }
+  devUpdateLineNumbers(editorEl, gutterEl);
+}
+
+function devHighlightWithFolding(editor, prismLang, langName, gutterKey) {
+  const text = editor.textContent;
+  const lang = langName === 'python' ? 'python' : 'json';
+  const { hiddenLines, folded } = devGetFoldHiddenLines(text, lang, gutterKey);
+
+  // If nothing folded, use plain Prism output
+  if (folded.size === 0) {
+    editor.innerHTML = Prism.highlight(text, prismLang, langName);
+    return;
+  }
+
+  // Build a display version of text with folded lines removed,
+  // then highlight that. Keep fold-start lines but append " ..."
+  const lines = text.split('\n');
+  const displayLines = [];
+  const displayToSource = []; // maps display line index -> source line index
+  for (let i = 0; i < lines.length; i++) {
+    if (hiddenLines.has(i)) continue;
+    displayLines.push(lines[i]);
+    displayToSource.push(i);
+  }
+  const displayText = displayLines.join('\n');
+  let highlighted = Prism.highlight(displayText, prismLang, langName);
+
+  // Insert fold placeholders after fold-start lines in the highlighted output
+  const highlightedLines = highlighted.split('\n');
+  const result = [];
+  for (let di = 0; di < highlightedLines.length; di++) {
+    let line = highlightedLines[di];
+    const srcIdx = displayToSource[di];
+    if (folded.has(srcIdx)) {
+      line += '<span class="dev-fold-placeholder"> ...</span>';
+    }
+    result.push(line);
+  }
+  editor.innerHTML = result.join('\n');
+}
+
+function devUpdateLineNumbers(editorEl, gutterEl) {
+  // Use canonical text, not editor textContent (which may be folded/truncated)
+  const textMap = {
+    schemaEditor: devSchemaText,
+    templateEditor: devTemplateText,
+    sampleDataEditor: devSampleDataText
+  };
+  const text = textMap[editorEl.id] || editorEl.textContent || '';
+  const lang = editorEl.id === 'templateEditor' ? 'python' : 'json';
+  const key = gutterEl.id || 'default';
+
+  const { hiddenLines, foldStarts, folded } = devGetFoldHiddenLines(text, lang, key);
+  const lineCount = text.split('\n').length;
+
+  let html = '';
+  for (let i = 0; i < lineCount; i++) {
+    const isFoldable = foldStarts.has(i);
+    const isFolded = folded.has(i);
+    const isHidden = hiddenLines.has(i);
+    const cls = isHidden ? ' class="dev-folded-line"' : '';
+    const foldIcon = isFoldable
+      ? `<span class="dev-fold-toggle" data-fold-line="${i}">${isFolded ? '&#9654;' : '&#9660;'}</span>`
+      : '';
+    html += `<div${cls}>${foldIcon}${i + 1}</div>`;
+  }
+  gutterEl.innerHTML = html;
+
+  // Attach fold click handlers
+  gutterEl.querySelectorAll('.dev-fold-toggle').forEach(toggle => {
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const li = parseInt(toggle.dataset.foldLine, 10);
+      devToggleFold(editorEl, gutterEl, li);
+    });
+  });
+
+  gutterEl.scrollTop = editorEl.scrollTop;
+}
+
+function initSchemaEditor() {
+  if (schemaJar) return; // Already initialized
+  const el = document.getElementById('schemaEditor');
+  if (!el || typeof CodeJar === 'undefined') return;
+
+  if (!devSchemaText) {
+    devSchemaText = JSON.stringify(DEV_STARTER_SCHEMA, null, 2);
+  }
+  el.textContent = devSchemaText;
+
+  const gutterEl = document.getElementById('schemaLineNumbers');
+
+  schemaJar = CodeJar(el, (editor) => {
+    devHighlightWithFolding(editor, Prism.languages.json, 'json', 'schemaLineNumbers');
+  }, { tab: '  ' });
+
+  schemaJar.onUpdate(code => {
+    if (devFoldUpdating) return; // Skip during programmatic fold updates
+    // Clear folds on user edit to prevent folded content loss
+    const folds = devFoldState.get('schemaLineNumbers');
+    if (folds && folds.size > 0) folds.clear();
+    devSchemaText = code;
+    devUpdateLineNumbers(el, gutterEl);
+    clearTimeout(devPreviewDebounce);
+    devPreviewDebounce = setTimeout(devUpdateSchemaPreview, 300);
+    devSaveEditorState();
+    if (devGhConnected && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
+      devGhTrackModification('schema', currentWorkspaceFile.index);
+    }
+  });
+
+  el.addEventListener('scroll', () => { gutterEl.scrollTop = el.scrollTop; });
+  el.addEventListener('keydown', (e) => devEditorKeydownHandler(e, schemaJar, 'json'));
+
+  // Right-click context menu
+  el.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    showContextMenu(e.clientX, e.clientY, devSchemaContextItems());
+  });
+
+  devUpdateLineNumbers(el, gutterEl);
+  devUpdateSchemaPreview();
+  initDevResizer('schemaResizer', 'schemaEditorPane', 'schemaPreviewPane', 'schema');
+}
+
+function devValidateSchema(schema) {
+  const errors = [];
+  if (!schema.title) errors.push('Missing required "title"');
+  if (!schema.template) errors.push('Missing required "template"');
+  if (!Array.isArray(schema.sections)) {
+    errors.push('"sections" must be an array');
+    return errors;
+  }
+  const fieldIds = new Set();
+  const validTypes = Object.keys(fieldCreators);
+  schema.sections.forEach((section, si) => {
+    if (!section.title) errors.push(`Section ${si + 1}: missing "title"`);
+    if (!Array.isArray(section.fields)) {
+      errors.push(`Section ${si + 1}: "fields" must be an array`);
+      return;
+    }
+    section.fields.forEach((f, fi) => {
+      const loc = `Section ${si + 1}, field ${fi + 1}`;
+      if (!f.id) errors.push(`${loc}: missing "id"`);
+      else if (!/^[a-z][a-z0-9_]*$/.test(f.id)) errors.push(`${loc}: id "${f.id}" must match ^[a-z][a-z0-9_]*$`);
+      if (!f.label && f.type !== 'hidden' && f.type !== 'heading') errors.push(`${loc}: missing "label"`);
+      if (!f.type) errors.push(`${loc}: missing "type"`);
+      else if (!validTypes.includes(f.type)) errors.push(`${loc}: unknown type "${f.type}"`);
+      if (f.type === 'select' && !Array.isArray(f.options)) errors.push(`${loc}: select requires "options" array`);
+      if (f.type === 'multi_select' && !Array.isArray(f.options)) errors.push(`${loc}: multi_select requires "options" array`);
+      if (f.type === 'radio' && !Array.isArray(f.options)) errors.push(`${loc}: radio requires "options" array`);
+      if (f.type === 'repeater' && !Array.isArray(f.fields)) errors.push(`${loc}: repeater requires "fields" array`);
+      if (f.id && fieldIds.has(f.id)) errors.push(`${loc}: duplicate id "${f.id}"`);
+      if (f.id) fieldIds.add(f.id);
+    });
+  });
+  return errors;
+}
+
+function devUpdateSchemaPreview() {
+  const badge = document.getElementById('schemaValidBadge');
+  const badgeText = document.getElementById('schemaValidText');
+  const errPanel = document.getElementById('schemaErrors');
+  const previewForm = document.getElementById('schemaPreviewForm');
+  const previewEmpty = document.getElementById('schemaPreviewEmpty');
+
+  let schema;
+  try {
+    schema = JSON.parse(devSchemaText);
+  } catch (e) {
+    badge.className = 'dev-validation-badge invalid';
+    badgeText.textContent = 'parse error';
+    errPanel.textContent = e.message;
+    errPanel.classList.remove('hidden');
+    previewForm.innerHTML = '';
+    previewEmpty.style.display = 'flex';
+    devSchemaValid = false;
+    devParsedSchema = null;
+    return;
+  }
+
+  const errors = devValidateSchema(schema);
+  if (errors.length > 0) {
+    badge.className = 'dev-validation-badge invalid';
+    badgeText.textContent = `${errors.length} error${errors.length > 1 ? 's' : ''}`;
+    errPanel.textContent = '';
+    errors.forEach(msg => {
+      const line = document.createElement('div');
+      line.textContent = '\u2022 ' + msg;
+      errPanel.appendChild(line);
+    });
+    errPanel.classList.remove('hidden');
+    previewForm.innerHTML = '';
+    previewEmpty.style.display = 'flex';
+    devSchemaValid = false;
+    devParsedSchema = null;
+    return;
+  }
+
+  // Valid!
+  badge.className = 'dev-validation-badge valid';
+  badgeText.textContent = 'valid';
+  errPanel.classList.add('hidden');
+  devSchemaValid = true;
+  devParsedSchema = schema;
+
+  // Auto-fill sample data if still default empty
+  if (!devSampleDataText || devSampleDataText.trim() === '{}' || devSampleDataText.trim() === '') {
+    const autoData = devGenerateSampleData(schema);
+    devSampleDataText = JSON.stringify(autoData, null, 2);
+    if (sampleJar) sampleJar.updateCode(devSampleDataText);
+    devSaveEditorState();
+  }
+
+  // Update template coverage badge
+  const coverageBadge = document.getElementById('schemaCoverageBadge');
+  if (coverageBadge) {
+    const refs = devCountTemplateFieldRefs(schema, devTemplateText);
+    coverageBadge.textContent = refs.total > 0 ? `${refs.used}/${refs.total} fields used in template` : '';
+  }
+
+  // Render preview
+  try {
+    previewEmpty.style.display = 'none';
+    buildForm(schema, previewForm);
+  } catch (e) {
+    const errWrap = document.createElement('div');
+    errWrap.className = 'dev-preview-empty';
+    const errP = document.createElement('p');
+    errP.textContent = 'Preview error: ' + e.message;
+    errWrap.appendChild(errP);
+    previewForm.innerHTML = '';
+    previewForm.appendChild(errWrap);
+  }
+}
+
+function devNewSchema() {
+  devSchemaText = JSON.stringify(DEV_STARTER_SCHEMA, null, 2);
+  if (schemaJar) schemaJar.updateCode(devSchemaText);
+  devUpdateSchemaPreview();
+  showToast('New schema created');
+}
+
+function devLoadSchemaFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    devSchemaText = e.target.result;
+    if (schemaJar) schemaJar.updateCode(devSchemaText);
+    devUpdateSchemaPreview();
+    showToast(`Loaded ${file.name}`);
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function devFormatSchema() {
+  try {
+    const obj = JSON.parse(devSchemaText);
+    devSchemaText = JSON.stringify(obj, null, 2);
+    if (schemaJar) schemaJar.updateCode(devSchemaText);
+    showToast('Schema formatted');
+  } catch (e) {
+    showToast('Cannot format — invalid JSON', 'error');
+  }
+}
+
+function devSaveSchema() {
+  if (workspaceHandle && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
+    devSaveToWorkspace('schema');
+    return;
+  }
+  const blob = new Blob([devSchemaText], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  let filename = 'schema.json';
+  try {
+    const obj = JSON.parse(devSchemaText);
+    if (obj.title) filename = obj.title.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.json';
+  } catch (e) { /* use default */ }
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+  showToast(`Saved ${filename}`);
+}
+
+// ============================================================
+//  DEV MODE: CONTEXT MENU
+// ============================================================
+
+let ctxMenuReturnFocus = null; // Element to restore focus to when menu closes
+
+function showContextMenu(x, y, items) {
+  const menu = document.getElementById('ctxMenu');
+  menu.innerHTML = '';
+  menu.style.display = 'block';
+  ctxMenuReturnFocus = document.activeElement;
+
+  items.forEach(item => {
+    if (item.separator) {
+      const sep = document.createElement('div');
+      sep.className = 'ctx-menu-separator';
+      sep.setAttribute('role', 'separator');
+      menu.appendChild(sep);
+      return;
+    }
+    if (item.label && item.children) {
+      const parent = document.createElement('div');
+      parent.className = 'ctx-menu-item has-sub';
+      parent.setAttribute('role', 'menuitem');
+      parent.setAttribute('aria-haspopup', 'true');
+      parent.setAttribute('tabindex', '-1');
+      parent.textContent = item.label;
+      const sub = document.createElement('div');
+      sub.className = 'ctx-menu-sub';
+      sub.setAttribute('role', 'menu');
+      item.children.forEach(child => {
+        const childEl = document.createElement('div');
+        childEl.className = 'ctx-menu-item';
+        childEl.setAttribute('role', 'menuitem');
+        childEl.setAttribute('tabindex', '-1');
+        childEl.textContent = child.label;
+        childEl.addEventListener('click', () => { hideContextMenu(); child.action(); });
+        sub.appendChild(childEl);
+      });
+      parent.appendChild(sub);
+      menu.appendChild(parent);
+      return;
+    }
+    if (item.groupLabel) {
+      const gl = document.createElement('div');
+      gl.className = 'ctx-menu-group-label';
+      gl.setAttribute('role', 'presentation');
+      gl.textContent = item.groupLabel;
+      menu.appendChild(gl);
+      return;
+    }
+    const el = document.createElement('div');
+    el.className = 'ctx-menu-item';
+    el.setAttribute('role', 'menuitem');
+    el.setAttribute('tabindex', '-1');
+    el.textContent = item.label;
+    el.addEventListener('click', () => { hideContextMenu(); item.action(); });
+    menu.appendChild(el);
+  });
+
+  // Viewport clamping
+  const rect = menu.getBoundingClientRect();
+  if (x + rect.width > window.innerWidth) x = window.innerWidth - rect.width - 8;
+  if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 8;
+  menu.style.left = Math.max(0, x) + 'px';
+  menu.style.top = Math.max(0, y) + 'px';
+
+  // Focus first item
+  const firstItem = menu.querySelector('[role="menuitem"]');
+  if (firstItem) firstItem.focus();
+}
+
+function hideContextMenu() {
+  const menu = document.getElementById('ctxMenu');
+  menu.style.display = 'none';
+  if (ctxMenuReturnFocus) { ctxMenuReturnFocus.focus(); ctxMenuReturnFocus = null; }
+}
+
+function ctxMenuFocusableItems(container) {
+  return Array.from(container.querySelectorAll(':scope > [role="menuitem"]'));
+}
+
+function ctxMenuHandleKeydown(e) {
+  const menu = document.getElementById('ctxMenu');
+  if (menu.style.display === 'none') return;
+
+  const focused = document.activeElement;
+  if (!focused || !menu.contains(focused)) return;
+
+  // Determine which menu level we're in
+  const parentMenu = focused.closest('[role="menu"]') || menu;
+  const items = ctxMenuFocusableItems(parentMenu);
+  const idx = items.indexOf(focused);
+
+  switch (e.key) {
+    case 'ArrowDown': {
+      e.preventDefault();
+      const next = idx < items.length - 1 ? idx + 1 : 0;
+      items[next].focus();
+      break;
+    }
+    case 'ArrowUp': {
+      e.preventDefault();
+      const prev = idx > 0 ? idx - 1 : items.length - 1;
+      items[prev].focus();
+      break;
+    }
+    case 'ArrowRight': {
+      // Open submenu if this item has one
+      if (focused.classList.contains('has-sub')) {
+        e.preventDefault();
+        const sub = focused.querySelector('[role="menu"]');
+        if (sub) {
+          sub.style.display = 'block';
+          const firstChild = sub.querySelector('[role="menuitem"]');
+          if (firstChild) firstChild.focus();
+        }
+      }
+      break;
+    }
+    case 'ArrowLeft': {
+      // Close submenu, return to parent
+      const subMenu = focused.closest('.ctx-menu-sub');
+      if (subMenu) {
+        e.preventDefault();
+        subMenu.style.display = '';
+        const parentItem = subMenu.parentElement;
+        if (parentItem) parentItem.focus();
+      }
+      break;
+    }
+    case 'Home': {
+      e.preventDefault();
+      if (items.length) items[0].focus();
+      break;
+    }
+    case 'End': {
+      e.preventDefault();
+      if (items.length) items[items.length - 1].focus();
+      break;
+    }
+    case 'Enter':
+    case ' ': {
+      e.preventDefault();
+      if (focused.classList.contains('has-sub')) {
+        const sub = focused.querySelector('[role="menu"]');
+        if (sub) {
+          sub.style.display = 'block';
+          const firstChild = sub.querySelector('[role="menuitem"]');
+          if (firstChild) firstChild.focus();
+        }
+      } else {
+        focused.click();
+      }
+      break;
+    }
+    case 'Escape': {
+      e.preventDefault();
+      const subMenu = focused.closest('.ctx-menu-sub');
+      if (subMenu) {
+        subMenu.style.display = '';
+        const parentItem = subMenu.parentElement;
+        if (parentItem) parentItem.focus();
+      } else {
+        hideContextMenu();
+      }
+      break;
+    }
+  }
+}
+
+// Close context menu on click-outside or Escape
+document.addEventListener('mousedown', (e) => {
+  if (!e.target.closest('.ctx-menu')) hideContextMenu();
+});
+document.addEventListener('keydown', (e) => {
+  const menu = document.getElementById('ctxMenu');
+  if (menu.style.display !== 'none' && menu.contains(document.activeElement)) {
+    ctxMenuHandleKeydown(e);
+  } else if (e.key === 'Escape') {
+    hideContextMenu();
+  }
+});
+
+const FIELD_SNIPPETS = {
+  text:     { id: "text_field", label: "Text Field", type: "text", required: false },
+  email:    { id: "email_field", label: "Email", type: "email", required: false },
+  tel:      { id: "phone_field", label: "Phone", type: "tel", required: false },
+  number:   { id: "number_field", label: "Number", type: "number", required: false },
+  currency: { id: "amount", label: "Amount", type: "currency", required: false },
+  url:      { id: "website", label: "Website", type: "url", required: false },
+  date:     { id: "date_field", label: "Date", type: "date", required: false },
+  time:     { id: "time_field", label: "Time", type: "time", required: false },
+  datetime: { id: "datetime_field", label: "Date & Time", type: "datetime", required: false },
+  select:   { id: "select_field", label: "Select", type: "select", required: false, options: ["Option A", "Option B", "Option C"] },
+  multi_select: { id: "multi_field", label: "Multi Select", type: "multi_select", required: false, options: ["Option A", "Option B", "Option C"] },
+  radio:    { id: "radio_field", label: "Radio Choice", type: "radio", required: false, options: ["Option A", "Option B"] },
+  checkbox: { id: "checkbox_field", label: "Agree to terms", type: "checkbox", required: false },
+  toggle:   { id: "toggle_field", label: "Enable feature", type: "toggle", required: false },
+  address:  { id: "address_field", label: "Address", type: "address", required: false },
+  repeater: { id: "items", label: "Items", type: "repeater", fields: [{ id: "item_name", label: "Name", type: "text" }, { id: "item_qty", label: "Qty", type: "number" }] },
+  file:     { id: "file_field", label: "Attachment", type: "file", required: false },
+  signature:{ id: "signature_field", label: "Signature", type: "signature", required: false },
+  list:     { id: "list_field", label: "Items List", type: "list", required: false },
+  heading:  { id: "heading_1", label: "Section Heading", type: "heading" },
+  hidden:   { id: "hidden_field", label: "", type: "hidden", default: "value" },
+  textarea: { id: "notes", label: "Notes", type: "textarea", required: false },
+  longtext: { id: "description", label: "Description", type: "longtext", required: false }
+};
+
+const SECTION_SNIPPET = { title: "New Section", fields: [{ id: "new_field", label: "New Field", type: "text", required: false }] };
+
+function devSchemaContextItems() {
+  const insertField = (type) => () => devInsertSnippet('schema', FIELD_SNIPPETS[type]);
+  return [
+    { label: 'Input Fields', children: [
+      { label: 'Text',     action: insertField('text') },
+      { label: 'Email',    action: insertField('email') },
+      { label: 'Phone',    action: insertField('tel') },
+      { label: 'Number',   action: insertField('number') },
+      { label: 'Currency', action: insertField('currency') },
+      { label: 'URL',      action: insertField('url') },
+      { label: 'Date',     action: insertField('date') },
+      { label: 'Time',     action: insertField('time') },
+      { label: 'DateTime', action: insertField('datetime') },
+      { label: 'Textarea', action: insertField('textarea') },
+      { label: 'Long Text',action: insertField('longtext') },
+    ]},
+    { label: 'Choice Fields', children: [
+      { label: 'Select',       action: insertField('select') },
+      { label: 'Multi Select', action: insertField('multi_select') },
+      { label: 'Radio',        action: insertField('radio') },
+      { label: 'Checkbox',     action: insertField('checkbox') },
+      { label: 'Toggle',       action: insertField('toggle') },
+    ]},
+    { label: 'Complex Fields', children: [
+      { label: 'Address',   action: insertField('address') },
+      { label: 'Repeater',  action: insertField('repeater') },
+      { label: 'File',      action: insertField('file') },
+      { label: 'Signature', action: insertField('signature') },
+      { label: 'List',      action: insertField('list') },
+    ]},
+    { label: 'Layout', children: [
+      { label: 'Heading', action: insertField('heading') },
+      { label: 'Hidden',  action: insertField('hidden') },
+    ]},
+    { separator: true },
+    { label: 'Add Section', action: () => devInsertSection() },
+    { label: 'Wrap in Wizard', action: () => devWrapInWizard() },
+  ];
+}
+
+function devInsertSnippet(editorType, snippet) {
+  if (editorType === 'schema') {
+    try {
+      const schema = JSON.parse(devSchemaText);
+      // Add field to the last section
+      if (schema.sections && schema.sections.length > 0) {
+        const lastSection = schema.sections[schema.sections.length - 1];
+        // Make field ID unique
+        const snip = JSON.parse(JSON.stringify(snippet));
+        const allIds = new Set();
+        schema.sections.forEach(s => (s.fields || []).forEach(f => allIds.add(f.id)));
+        if (allIds.has(snip.id)) {
+          let i = 2;
+          while (allIds.has(snip.id + '_' + i)) i++;
+          snip.id = snip.id + '_' + i;
+        }
+        lastSection.fields.push(snip);
+        devSchemaText = JSON.stringify(schema, null, 2);
+        if (schemaJar) schemaJar.updateCode(devSchemaText);
+        devUpdateSchemaPreview();
+      }
+    } catch (e) {
+      showToast('Cannot insert — fix JSON errors first', 'error');
+    }
+  } else if (editorType === 'template') {
+    // Insert text at end for template
+    devTemplateText += '\n' + snippet;
+    if (templateJar) templateJar.updateCode(devTemplateText);
+  }
+}
+
+function devInsertSection() {
+  try {
+    const schema = JSON.parse(devSchemaText);
+    if (!schema.sections) schema.sections = [];
+    const snip = JSON.parse(JSON.stringify(SECTION_SNIPPET));
+    snip.title = 'Section ' + (schema.sections.length + 1);
+    // Make field IDs unique
+    const allIds = new Set();
+    schema.sections.forEach(s => (s.fields || []).forEach(f => allIds.add(f.id)));
+    snip.fields.forEach(f => {
+      if (allIds.has(f.id)) {
+        let i = 2;
+        while (allIds.has(f.id + '_' + i)) i++;
+        f.id = f.id + '_' + i;
+      }
+      allIds.add(f.id);
+    });
+    schema.sections.push(snip);
+    devSchemaText = JSON.stringify(schema, null, 2);
+    if (schemaJar) schemaJar.updateCode(devSchemaText);
+    devUpdateSchemaPreview();
+    showToast('Section added');
+  } catch (e) {
+    showToast('Cannot insert — fix JSON errors first', 'error');
+  }
+}
+
+function devWrapInWizard() {
+  try {
+    const schema = JSON.parse(devSchemaText);
+    schema.wizard = true;
+    if (schema.sections) {
+      schema.sections.forEach((s, i) => { s.step = i + 1; });
+    }
+    devSchemaText = JSON.stringify(schema, null, 2);
+    if (schemaJar) schemaJar.updateCode(devSchemaText);
+    devUpdateSchemaPreview();
+    showToast('Wizard mode enabled');
+  } catch (e) {
+    showToast('Cannot modify — fix JSON errors first', 'error');
+  }
+}
+
+// ============================================================
+//  DEV MODE: TEMPLATE BUILDER
+// ============================================================
+
+const DEV_STARTER_TEMPLATE = `import stencils
+
+def generate_docx(data):
+    doc = stencils.new_doc(data.get("title", "Document"))
+    stencils.table_section(doc, "Form Data", [(k, v) for k, v in data.items()])
+    stencils.footer(doc)
+    return stencils.finalize(doc)
+`;
+
+const TEMPLATE_SNIPPETS = [
+  { label: 'Import stencils', text: 'import stencils\n' },
+  { label: 'generate_docx scaffold', text: `def generate_docx(data):\n    doc = stencils.new_doc(data.get("title", "Document"))\n    # Build document here\n    return stencils.finalize(doc)\n` },
+  { label: 'table_section', text: `    stencils.table_section(doc, "Section Title", [\n        ("Label", data.get("field_id", "")),\n    ])\n` },
+  { label: 'longtext', text: `    stencils.longtext(doc, "Section Title", data.get("field_id", ""))\n` },
+  { label: 'bullet_list', text: `    stencils.bullet_list(doc, "List Title", items)\n` },
+  { label: 'signatures', text: `    stencils.signatures(doc, [("Name", "Title")])\n` },
+  { label: 'footer', text: `    stencils.footer(doc)\n` },
+  { label: 'address', text: `    stencils.address(doc, json.loads(data.get("address_field", "{}")))\n` },
+  { label: 'repeater_table', text: `    stencils.repeater_table(doc, "Items", json.loads(data.get("items", "[]")), ["col1", "col2"])\n` },
+  { label: 'image', text: `    stencils.image(doc, data.get("file_field", ""))\n` },
+  { label: 'signature', text: `    stencils.signature(doc, data.get("signature_field", ""))\n` },
+  { label: 'finalize', text: `    return stencils.finalize(doc)\n` },
+];
+
+function getFieldAccessor(field) {
+  if (field.type === 'address') return `json.loads(data.get("${field.id}", "{}"))`;
+  if (field.type === 'repeater') return `json.loads(data.get("${field.id}", "[]"))`;
+  return `data.get("${field.id}", "")`;
+}
+
+function devCountTemplateFieldRefs(schema, templateText) {
+  if (!schema || !schema.sections || !templateText) return { used: 0, total: 0 };
+  let used = 0, total = 0;
+  schema.sections.forEach(sec => {
+    (sec.fields || []).forEach(f => {
+      if (f.type === 'heading') return;
+      total++;
+      const patterns = [`data.get("${f.id}"`, `data["${f.id}"]`, `data['${f.id}']`];
+      if (patterns.some(p => templateText.includes(p))) used++;
+    });
+  });
+  return { used, total };
+}
+
+function devTemplateContextItems() {
+  const items = TEMPLATE_SNIPPETS.map(s => ({
+    label: s.label,
+    action: () => devInsertSnippet('template', s.text)
+  }));
+  if (devParsedSchema && devParsedSchema.sections) {
+    const fieldItems = [];
+    devParsedSchema.sections.forEach(sec => {
+      (sec.fields || []).forEach(f => {
+        if (f.type === 'heading') return;
+        const accessor = getFieldAccessor(f);
+        fieldItems.push({
+          label: `${f.id} (${f.type})`,
+          action: () => devInsertSnippet('template', accessor)
+        });
+      });
+    });
+    if (fieldItems.length > 0) {
+      items.push({ separator: true });
+      items.push({ label: 'Schema Fields', children: fieldItems });
+    }
+  }
+  return items;
+}
+
+function initTemplateEditor() {
+  if (templateJar) return;
+  const el = document.getElementById('templateEditor');
+  if (!el || typeof CodeJar === 'undefined') return;
+
+  if (!devTemplateText) {
+    devTemplateText = DEV_STARTER_TEMPLATE;
+  }
+  el.textContent = devTemplateText;
+
+  const tplGutter = document.getElementById('templateLineNumbers');
+
+  templateJar = CodeJar(el, (editor) => {
+    devHighlightWithFolding(editor, Prism.languages.python, 'python', 'templateLineNumbers');
+  }, { tab: '    ' });
+
+  templateJar.onUpdate(code => {
+    if (devFoldUpdating) return;
+    const folds = devFoldState.get('templateLineNumbers');
+    if (folds && folds.size > 0) folds.clear();
+    devTemplateText = code;
+    devUpdateLineNumbers(el, tplGutter);
+    devSaveEditorState();
+    if (devGhConnected && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
+      devGhTrackModification('template', currentWorkspaceFile.index);
+    }
+  });
+
+  el.addEventListener('scroll', () => { tplGutter.scrollTop = el.scrollTop; });
+  el.addEventListener('keydown', (e) => devEditorKeydownHandler(e, templateJar, 'python'));
+
+  // Right-click context menu
+  el.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    showContextMenu(e.clientX, e.clientY, devTemplateContextItems());
+  });
+
+  // Init sample data editor
+  const sdEl = document.getElementById('sampleDataEditor');
+  const sdGutter = document.getElementById('sampleLineNumbers');
+  if (sdEl) {
+    sdEl.textContent = devSampleDataText;
+    sampleJar = CodeJar(sdEl, (editor) => {
+      devHighlightWithFolding(editor, Prism.languages.json, 'json', 'sampleLineNumbers');
+    }, { tab: '  ' });
+    sampleJar.onUpdate(code => {
+      if (devFoldUpdating) return;
+      const folds = devFoldState.get('sampleLineNumbers');
+      if (folds && folds.size > 0) folds.clear();
+      devSampleDataText = code;
+      devUpdateLineNumbers(sdEl, sdGutter);
+      devSaveEditorState();
+    });
+    sdEl.addEventListener('scroll', () => { sdGutter.scrollTop = sdEl.scrollTop; });
+    devUpdateLineNumbers(sdEl, sdGutter);
+  }
+
+  devUpdateLineNumbers(el, tplGutter);
+  initDevResizer('templateResizer', 'templateEditorPane', 'templatePreviewPane', 'template');
+}
+
+function devToggleSampleData() {
+  const body = document.getElementById('sampleDataBody');
+  const arrow = document.getElementById('sampleDataArrow');
+  body.classList.toggle('collapsed');
+  arrow.classList.toggle('expanded', !body.classList.contains('collapsed'));
+}
+
+const SAMPLE_DATA_GENERATORS = {
+  text: () => 'Sample text',
+  email: () => 'user@example.com',
+  tel: () => '(555) 123-4567',
+  number: () => '42',
+  currency: () => '1250.00',
+  url: () => 'https://example.com',
+  date: () => '2025-01-15',
+  time: () => '09:30',
+  datetime: () => '2025-01-15T09:30',
+  select: (f) => (f.options && f.options.length > 0) ? f.options[0] : 'Option A',
+  radio: (f) => (f.options && f.options.length > 0) ? f.options[0] : 'Option A',
+  multi_select: (f) => {
+    if (f.options && f.options.length >= 2) return f.options.slice(0, 2).join(', ');
+    return 'Option A, Option B';
+  },
+  checkbox: () => 'true',
+  toggle: () => 'true',
+  textarea: () => 'Sample notes for this field.',
+  longtext: () => 'This is a longer text entry.\nIt demonstrates the longtext field type.',
+  list: () => 'Item 1\nItem 2\nItem 3',
+  address: () => JSON.stringify({ street: '123 Main St', city: 'Springfield', state: 'IL', zip: '62704' }),
+  repeater: (f) => {
+    if (!f.fields) return '[]';
+    const makeRow = () => {
+      const row = {};
+      f.fields.forEach(sf => {
+        const gen = SAMPLE_DATA_GENERATORS[sf.type];
+        if (gen) row[sf.id] = gen(sf);
+      });
+      return row;
+    };
+    return JSON.stringify([makeRow(), makeRow()]);
+  },
+  file: () => '',
+  signature: () => '',
+  hidden: (f) => f.default_value || f.default || 'hidden_value',
+  heading: () => null,
+};
+
+function devGenerateSampleData(schema) {
+  const data = {};
+  if (!schema || !schema.sections) return data;
+  schema.sections.forEach(section => {
+    (section.fields || []).forEach(field => {
+      const gen = SAMPLE_DATA_GENERATORS[field.type];
+      if (!gen) return;
+      const val = gen(field);
+      if (val !== null) data[field.id] = val;
+    });
+  });
+  return data;
+}
+
+function devAutoFillSampleData() {
+  let schema;
+  try {
+    schema = JSON.parse(devSchemaText);
+  } catch (e) {
+    showToast('Fix schema errors first', 'error');
+    return;
+  }
+  const data = devGenerateSampleData(schema);
+  devSampleDataText = JSON.stringify(data, null, 2);
+  if (sampleJar) sampleJar.updateCode(devSampleDataText);
+  devSaveEditorState();
+  // Auto-expand panel
+  const body = document.getElementById('sampleDataBody');
+  const arrow = document.getElementById('sampleDataArrow');
+  if (body && body.classList.contains('collapsed')) {
+    body.classList.remove('collapsed');
+    if (arrow) arrow.classList.add('expanded');
+  }
+  showToast('Sample data generated from schema');
+}
+
+async function devRunPreview() {
+  const badge = document.getElementById('templateStatusBadge');
+  const badgeText = document.getElementById('templateStatusText');
+  const container = document.getElementById('docxPreviewContainer');
+  const emptyEl = document.getElementById('templatePreviewEmpty');
+
+  badge.className = 'dev-validation-badge';
+  badgeText.textContent = 'running...';
+
+  try {
+    // Ensure Pyodide is ready
+    if (!pyodideReady) {
+      badgeText.textContent = 'loading Pyodide...';
+      if (pyodidePreloadPromise) await pyodidePreloadPromise;
+      if (!pyodideReady) await initPyodide();
+    }
+    badgeText.textContent = 'loading stencils...';
+    await loadBaseModule({ silent: true });
+
+    // Load template into Pyodide
+    badgeText.textContent = 'loading template...';
+    await pyodide.runPythonAsync(devTemplateText);
+
+    // Parse sample data
+    let sampleData;
+    try {
+      sampleData = JSON.parse(devSampleDataText);
+    } catch (e) {
+      throw new Error('Sample data is not valid JSON: ' + e.message);
+    }
+
+    // Run generate_docx — pass data safely via Pyodide globals (no string interpolation)
+    badgeText.textContent = 'generating DOCX...';
+    pyodide.globals.set('_dev_input', pyodide.toPy(sampleData));
+    try {
+      const result = await pyodide.runPythonAsync(`
+_data = dict(_dev_input)
+_result = generate_docx(_data)
+bytes(_result) if isinstance(_result, (bytes, bytearray)) else _result
+      `);
+
+      // Get bytes
+      const docxBytes = result.toJs ? result.toJs() : result;
+      const arrayBuf = (docxBytes instanceof Uint8Array) ? docxBytes.buffer : new Uint8Array(docxBytes).buffer;
+
+      // Convert to HTML via mammoth
+      badgeText.textContent = 'rendering preview...';
+      if (typeof mammoth === 'undefined') {
+        throw new Error('mammoth.js not loaded yet — please try again');
+      }
+      const mammothResult = await mammoth.convertToHtml({ arrayBuffer: arrayBuf });
+      if (emptyEl) emptyEl.style.display = 'none';
+      // Sanitize mammoth output via DOMPurify
+      container.innerHTML = DOMPurify.sanitize(mammothResult.value);
+
+      badge.className = 'dev-validation-badge valid';
+      badgeText.textContent = 'success';
+    } finally {
+      pyodide.globals.delete('_dev_input');
+    }
+  } catch (e) {
+    badge.className = 'dev-validation-badge invalid';
+    badgeText.textContent = 'error';
+    if (emptyEl) emptyEl.style.display = 'none';
+    const errDiv = document.createElement('div');
+    errDiv.style.cssText = 'padding:20px;color:var(--error);font-family:var(--font-mono);font-size:var(--text-sm);white-space:pre-wrap;';
+    errDiv.textContent = e.message || String(e);
+    container.innerHTML = '';
+    container.appendChild(errDiv);
+  }
+}
+
+function devNewTemplate() {
+  devTemplateText = DEV_STARTER_TEMPLATE;
+  if (templateJar) templateJar.updateCode(devTemplateText);
+  showToast('New template created');
+}
+
+function devLoadTemplateFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    devTemplateText = e.target.result;
+    if (templateJar) templateJar.updateCode(devTemplateText);
+    showToast(`Loaded ${file.name}`);
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function devSaveTemplate() {
+  if (workspaceHandle && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
+    devSaveToWorkspace('template');
+    return;
+  }
+  const blob = new Blob([devTemplateText], { type: 'text/x-python' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'template.py'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Saved template.py');
+}
+
+// ============================================================
+//  DEV MODE: RESIZER
+// ============================================================
+
+function initDevResizer(resizerId, leftPaneId, rightPaneId, storageKey) {
+  const resizer = document.getElementById(resizerId);
+  const leftPane = document.getElementById(leftPaneId);
+  const rightPane = document.getElementById(rightPaneId);
+  if (!resizer || !leftPane || !rightPane) return;
+
+  const MIN_PANE = 200;
+  const KEYBOARD_STEP = 20;
+
+  const savedRatio = localStorage.getItem(`formforge-dev-ratio-${storageKey}`);
+  if (savedRatio) {
+    const r = parseFloat(savedRatio);
+    if (!isNaN(r) && r > 0 && r < 1) {
+      leftPane.style.flex = r;
+      rightPane.style.flex = 1 - r;
+      resizer.setAttribute('aria-valuenow', Math.round(r * 100));
+    }
+  }
+
+  function getTotalW() {
+    return resizer.parentElement.getBoundingClientRect().width - resizer.getBoundingClientRect().width;
+  }
+
+  function applyRatio(ratio) {
+    leftPane.style.flex = ratio;
+    rightPane.style.flex = 1 - ratio;
+    resizer.setAttribute('aria-valuenow', Math.round(ratio * 100));
+  }
+
+  function saveRatio() {
+    const ratio = leftPane.getBoundingClientRect().width / getTotalW();
+    localStorage.setItem(`formforge-dev-ratio-${storageKey}`, ratio.toFixed(3));
+  }
+
+  // --- Mouse ---
+  let startX, startLeftW, totalW;
+
+  function onMouseDown(e) {
+    e.preventDefault();
+    startX = e.clientX;
+    totalW = getTotalW();
+    startLeftW = leftPane.getBoundingClientRect().width;
+    resizer.classList.add('dragging');
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }
+
+  function onMouseMove(e) {
+    const dx = e.clientX - startX;
+    const newLeftW = Math.max(MIN_PANE, Math.min(totalW - MIN_PANE, startLeftW + dx));
+    applyRatio(newLeftW / totalW);
+  }
+
+  function onMouseUp() {
+    resizer.classList.remove('dragging');
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+    saveRatio();
+  }
+
+  resizer.addEventListener('mousedown', onMouseDown);
+
+  // --- Touch ---
+  let touchStartX, touchStartLeftW, touchTotalW;
+
+  function onTouchStart(e) {
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    touchStartX = e.touches[0].clientX;
+    touchTotalW = getTotalW();
+    touchStartLeftW = leftPane.getBoundingClientRect().width;
+    resizer.classList.add('dragging');
+  }
+
+  function onTouchMove(e) {
+    if (e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - touchStartX;
+    const newLeftW = Math.max(MIN_PANE, Math.min(touchTotalW - MIN_PANE, touchStartLeftW + dx));
+    applyRatio(newLeftW / touchTotalW);
+  }
+
+  function onTouchEnd() {
+    resizer.classList.remove('dragging');
+    saveRatio();
+  }
+
+  resizer.addEventListener('touchstart', onTouchStart, { passive: false });
+  resizer.addEventListener('touchmove', onTouchMove, { passive: true });
+  resizer.addEventListener('touchend', onTouchEnd);
+
+  // --- Keyboard ---
+  resizer.addEventListener('keydown', (e) => {
+    const total = getTotalW();
+    const currentLeftW = leftPane.getBoundingClientRect().width;
+    let newLeftW = currentLeftW;
+
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      newLeftW = currentLeftW - KEYBOARD_STEP;
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      newLeftW = currentLeftW + KEYBOARD_STEP;
+    } else if (e.key === 'Home') {
+      newLeftW = MIN_PANE;
+    } else if (e.key === 'End') {
+      newLeftW = total - MIN_PANE;
+    } else {
+      return;
+    }
+
+    e.preventDefault();
+    newLeftW = Math.max(MIN_PANE, Math.min(total - MIN_PANE, newLeftW));
+    applyRatio(newLeftW / total);
+    saveRatio();
+  });
+}
+
+// ============================================================
+//  DEV MODE: WORKSPACE
+// ============================================================
+
+async function devOpenWorkspace() {
+  if (!window.showDirectoryPicker) {
+    showToast('Your browser does not support the File System Access API. Use drag-and-drop instead.', 'error');
+    return;
+  }
+  try {
+    workspaceHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    await devReadWorkspaceFromHandle();
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      showToast('Failed to open folder: ' + e.message, 'error');
+    }
+  }
+}
+
+async function devReadWorkspaceFromHandle() {
+  if (!workspaceHandle) return;
+  workspaceFiles = { schemas: [], templates: [] };
+
+  // Read schemas/ and templates/ subdirectories
+  for await (const [name, handle] of workspaceHandle.entries()) {
+    if (handle.kind === 'directory') {
+      if (name === 'schemas') {
+        for await (const [fname, fhandle] of handle.entries()) {
+          if (fname.endsWith('.json') && fname !== '_schema.spec.json' && fhandle.kind === 'file') {
+            const file = await fhandle.getFile();
+            const text = await file.text();
+            workspaceFiles.schemas.push({ name: fname, text, handle: fhandle, dirHandle: handle });
+          }
+        }
+      } else if (name === 'templates') {
+        for await (const [fname, fhandle] of handle.entries()) {
+          if (fname.endsWith('.py') && fname !== 'stencils.py' && fhandle.kind === 'file') {
+            const file = await fhandle.getFile();
+            const text = await file.text();
+            workspaceFiles.templates.push({ name: fname, text, handle: fhandle, dirHandle: handle });
+          }
+        }
+      }
+    }
+  }
+
+  devRenderWorkspaceFiles();
+
+  // Update badge
+  const badge = document.getElementById('workspaceBadge');
+  const badgeText = document.getElementById('workspaceBadgeText');
+  const total = workspaceFiles.schemas.length + workspaceFiles.templates.length;
+  badge.className = 'dev-validation-badge valid';
+  badgeText.textContent = `${total} file${total !== 1 ? 's' : ''} loaded`;
+
+  // Show refresh button
+  document.getElementById('btnRefreshWorkspace').style.display = 'inline-flex';
+
+  // Start polling for changes
+  if (devWorkspacePoller) clearInterval(devWorkspacePoller);
+  devWorkspacePoller = setInterval(devPollWorkspace, 5000);
+}
+
+function devRenderWorkspaceFiles() {
+  const container = document.getElementById('workspaceFileList');
+  const dropZone = document.getElementById('workspaceDropZone');
+  container.innerHTML = '';
+
+  if (workspaceFiles.schemas.length === 0 && workspaceFiles.templates.length === 0) {
+    container.classList.add('hidden');
+    dropZone.style.display = 'flex';
+    return;
+  }
+
+  container.classList.remove('hidden');
+  dropZone.style.display = 'none';
+
+  // Schemas section
+  if (workspaceFiles.schemas.length > 0) {
+    const section = document.createElement('div');
+    section.className = 'workspace-section';
+    const schemaTitle = document.createElement('div');
+    schemaTitle.className = 'workspace-section-title';
+    schemaTitle.textContent = `Schemas (${workspaceFiles.schemas.length})`;
+    section.appendChild(schemaTitle);
+    workspaceFiles.schemas.forEach((f, i) => {
+      const item = document.createElement('div');
+      item.className = 'workspace-file-item';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'workspace-file-name';
+      nameSpan.textContent = f.name;
+      if (f.ghPath) {
+        nameSpan.setAttribute('data-gh-path', f.ghPath);
+        if (devGhModifiedFiles.has(f.ghPath)) nameSpan.classList.add('modified');
+      }
+      const actionSpan = document.createElement('span');
+      actionSpan.className = 'workspace-file-action';
+      actionSpan.textContent = 'Edit in Schema Builder';
+      item.appendChild(nameSpan);
+      item.appendChild(actionSpan);
+      item.addEventListener('click', () => devLoadWorkspaceFile('schema', i));
+      section.appendChild(item);
+    });
+    container.appendChild(section);
+  }
+
+  // Templates section
+  if (workspaceFiles.templates.length > 0) {
+    const section = document.createElement('div');
+    section.className = 'workspace-section';
+    const tmplTitle = document.createElement('div');
+    tmplTitle.className = 'workspace-section-title';
+    tmplTitle.textContent = `Templates (${workspaceFiles.templates.length})`;
+    section.appendChild(tmplTitle);
+    workspaceFiles.templates.forEach((f, i) => {
+      const item = document.createElement('div');
+      item.className = 'workspace-file-item';
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'workspace-file-name';
+      nameSpan.textContent = f.name;
+      if (f.ghPath) {
+        nameSpan.setAttribute('data-gh-path', f.ghPath);
+        if (devGhModifiedFiles.has(f.ghPath)) nameSpan.classList.add('modified');
+      }
+      const actionSpan = document.createElement('span');
+      actionSpan.className = 'workspace-file-action';
+      actionSpan.textContent = 'Edit in Template Builder';
+      item.appendChild(nameSpan);
+      item.appendChild(actionSpan);
+      item.addEventListener('click', () => devLoadWorkspaceFile('template', i));
+      section.appendChild(item);
+    });
+    container.appendChild(section);
+  }
+}
+
+function devLoadWorkspaceFile(type, index) {
+  if (type === 'schema') {
+    const f = workspaceFiles.schemas[index];
+    devSchemaText = f.text;
+    currentWorkspaceFile = { type: 'schema', index };
+    if (schemaJar) schemaJar.updateCode(devSchemaText);
+    showDevTab('dev-schema');
+    devUpdateSchemaPreview();
+    showToast(`Editing ${f.name}`);
+  } else {
+    const f = workspaceFiles.templates[index];
+    devTemplateText = f.text;
+    currentWorkspaceFile = { type: 'template', index };
+    if (templateJar) templateJar.updateCode(devTemplateText);
+    showDevTab('dev-template');
+    showToast(`Editing ${f.name}`);
+  }
+}
+
+async function devSaveToWorkspace(type) {
+  if (!workspaceHandle || !currentWorkspaceFile) {
+    showToast('No workspace file active — use Save to download instead', 'info');
+    return;
+  }
+  try {
+    if (type === 'schema' && currentWorkspaceFile.type === 'schema') {
+      const f = workspaceFiles.schemas[currentWorkspaceFile.index];
+      const writable = await f.handle.createWritable();
+      await writable.write(devSchemaText);
+      await writable.close();
+      f.text = devSchemaText;
+      showToast(`Saved ${f.name} to workspace`);
+    } else if (type === 'template' && currentWorkspaceFile.type === 'template') {
+      const f = workspaceFiles.templates[currentWorkspaceFile.index];
+      const writable = await f.handle.createWritable();
+      await writable.write(devTemplateText);
+      await writable.close();
+      f.text = devTemplateText;
+      showToast(`Saved ${f.name} to workspace`);
+    }
+  } catch (e) {
+    showToast('Failed to save: ' + e.message, 'error');
+  }
+}
+
+let devPollErrorCount = 0;
+async function devPollWorkspace() {
+  if (!workspaceHandle || document.hidden) return;
+  try {
+    devPollErrorCount = 0;
+    for (const f of workspaceFiles.schemas) {
+      const file = await f.handle.getFile();
+      const text = await file.text();
+      if (text !== f.text) {
+        f.text = text;
+        // If this file is currently being edited, refresh the editor
+        if (currentWorkspaceFile && currentWorkspaceFile.type === 'schema' &&
+            workspaceFiles.schemas[currentWorkspaceFile.index] === f) {
+          devSchemaText = text;
+          if (schemaJar) schemaJar.updateCode(devSchemaText);
+          devUpdateSchemaPreview();
+        }
+      }
+    }
+    for (const f of workspaceFiles.templates) {
+      const file = await f.handle.getFile();
+      const text = await file.text();
+      if (text !== f.text) {
+        f.text = text;
+        if (currentWorkspaceFile && currentWorkspaceFile.type === 'template' &&
+            workspaceFiles.templates[currentWorkspaceFile.index] === f) {
+          devTemplateText = text;
+          if (templateJar) templateJar.updateCode(devTemplateText);
+        }
+      }
+    }
+  } catch (e) {
+    devPollErrorCount++;
+    if (devPollErrorCount >= 5) {
+      clearInterval(devWorkspacePoller);
+      devWorkspacePoller = null;
+      showToast('Workspace polling stopped — filesystem access lost', 'error');
+    }
+  }
+}
+
+async function devRefreshWorkspace() {
+  if (workspaceHandle) {
+    await devReadWorkspaceFromHandle();
+    showToast('Workspace refreshed');
+  }
+}
+
+// ============================================================
+//  DEV MODE: GITHUB WORKSPACE INTEGRATION
+// ============================================================
+
+function devGhHeaders() {
+  const h = { 'Accept': 'application/vnd.github.v3+json' };
+  if (devGhPat) h['Authorization'] = `token ${devGhPat}`;
+  return h;
+}
+
+async function devGhApiFetch(url, options = {}) {
+  const resp = await fetch(url, { headers: devGhHeaders(), ...options });
+  if (!resp.ok) {
+    const body = await resp.text().catch(() => '');
+    throw new Error(`GitHub API ${resp.status}: ${resp.statusText}${body ? ' — ' + body.slice(0, 200) : ''}`);
+  }
+  return resp;
+}
+
+function devGhShowConnectModal() {
+  const modal = document.getElementById('ghConnectModal');
+  const savedToken = localStorage.getItem('formforge-dev-github-token');
+  const savedRepo = localStorage.getItem('formforge-dev-github-repo');
+  const clearBtn = document.getElementById('btnGhClearToken');
+
+  if (savedToken) {
+    document.getElementById('ghConnectToken').value = savedToken;
+    clearBtn.style.display = 'inline-flex';
+  } else {
+    clearBtn.style.display = 'none';
+  }
+  if (savedRepo) {
+    try {
+      const info = JSON.parse(savedRepo);
+      document.getElementById('ghConnectRepo').value = info.owner + '/' + info.repo;
+      if (info.branch) document.getElementById('ghConnectBranch').value = info.branch;
+    } catch (e) { /* ignore */ }
+  }
+  modal.classList.add('open');
+}
+
+function devGhCloseConnectModal() {
+  document.getElementById('ghConnectModal').classList.remove('open');
+}
+
+function devGhClearToken() {
+  localStorage.removeItem('formforge-dev-github-token');
+  document.getElementById('ghConnectToken').value = '';
+  document.getElementById('btnGhClearToken').style.display = 'none';
+  showToast('Saved token cleared');
+}
+
+function devGhParseRepoInput(input) {
+  // Accept owner/repo or full GitHub URL
+  input = input.trim();
+  const urlMatch = input.match(/github\.com\/([^/]+)\/([^/\s#?]+)/);
+  if (urlMatch) return { owner: urlMatch[1], repo: urlMatch[2].replace(/\.git$/, '') };
+  const parts = input.split('/');
+  if (parts.length === 2 && parts[0] && parts[1]) return { owner: parts[0], repo: parts[1] };
+  return null;
+}
+
+async function devGhConnect() {
+  const repoInput = document.getElementById('ghConnectRepo').value;
+  const token = document.getElementById('ghConnectToken').value.trim();
+  const branchInput = document.getElementById('ghConnectBranch').value.trim();
+
+  const parsed = devGhParseRepoInput(repoInput);
+  if (!parsed) {
+    showToast('Enter a valid owner/repo or GitHub URL', 'error');
+    return;
+  }
+
+  devGhOwner = parsed.owner;
+  devGhRepoName = parsed.repo;
+  devGhPat = token;
+
+  // Store token and repo info
+  if (token) localStorage.setItem('formforge-dev-github-token', token);
+  localStorage.setItem('formforge-dev-github-repo', JSON.stringify({
+    owner: devGhOwner, repo: devGhRepoName, branch: branchInput
+  }));
+
+  const connectBtn = document.getElementById('btnGhConnect');
+  connectBtn.disabled = true;
+  connectBtn.textContent = 'Connecting...';
+
+  try {
+    // Get repo info to find default branch
+    const repoResp = await devGhApiFetch(`https://api.github.com/repos/${devGhOwner}/${devGhRepoName}`);
+    const repoData = await repoResp.json();
+    devGhBranch = branchInput || repoData.default_branch || 'main';
+
+    // Fetch branches
+    await devGhFetchBranches();
+
+    // Fetch files
+    await devGhFetchFiles();
+
+    devGhConnected = true;
+    devGhCloseConnectModal();
+
+    // Update UI
+    devGhUpdateToolbar();
+
+    showToast(`Connected to ${devGhOwner}/${devGhRepoName} @ ${devGhBranch}`);
+  } catch (e) {
+    showToast('Failed to connect: ' + e.message, 'error');
+  } finally {
+    connectBtn.disabled = false;
+    connectBtn.textContent = '';
+    connectBtn.innerHTML = '<svg width="12" height="12"><use href="#icon-github"/></svg> Connect';
+  }
+}
+
+async function devGhFetchBranches() {
+  try {
+    const resp = await devGhApiFetch(
+      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/branches?per_page=100`
+    );
+    devGhBranches = (await resp.json()).map(b => b.name);
+  } catch (e) {
+    devGhBranches = [devGhBranch];
+  }
+
+  // Populate branch selector
+  const select = document.getElementById('ghBranchSelect');
+  select.innerHTML = '';
+  devGhBranches.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    if (name === devGhBranch) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+async function devGhFetchFiles() {
+  workspaceFiles = { schemas: [], templates: [] };
+  devGhOriginalContents = {};
+  devGhModifiedFiles = new Set();
+
+  // Fetch schemas directory
+  try {
+    const schemaResp = await devGhApiFetch(
+      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/contents/schemas?ref=${devGhBranch}`
+    );
+    const schemaEntries = await schemaResp.json();
+    for (const entry of schemaEntries) {
+      if (entry.name.endsWith('.json') && entry.name !== '_schema.spec.json' && entry.type === 'file') {
+        const contentResp = await devGhApiFetch(
+          `https://raw.githubusercontent.com/${devGhOwner}/${devGhRepoName}/${devGhBranch}/schemas/${entry.name}?t=${Date.now()}`
+        );
+        const text = await contentResp.text();
+        workspaceFiles.schemas.push({ name: entry.name, text, handle: null, ghPath: `schemas/${entry.name}`, ghSha: entry.sha });
+        devGhOriginalContents[`schemas/${entry.name}`] = { content: text, sha: entry.sha };
+      }
+    }
+  } catch (e) {
+    if (!e.message.includes('404')) throw e;
+    // schemas dir may not exist — that's OK
+  }
+
+  // Fetch templates directory
+  try {
+    const tmplResp = await devGhApiFetch(
+      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/contents/templates?ref=${devGhBranch}`
+    );
+    const tmplEntries = await tmplResp.json();
+    for (const entry of tmplEntries) {
+      if (entry.name.endsWith('.py') && entry.name !== 'stencils.py' && entry.type === 'file') {
+        const contentResp = await devGhApiFetch(
+          `https://raw.githubusercontent.com/${devGhOwner}/${devGhRepoName}/${devGhBranch}/templates/${entry.name}?t=${Date.now()}`
+        );
+        const text = await contentResp.text();
+        workspaceFiles.templates.push({ name: entry.name, text, handle: null, ghPath: `templates/${entry.name}`, ghSha: entry.sha });
+        devGhOriginalContents[`templates/${entry.name}`] = { content: text, sha: entry.sha };
+      }
+    }
+  } catch (e) {
+    if (!e.message.includes('404')) throw e;
+  }
+
+  devRenderWorkspaceFiles();
+
+  // Update badge
+  const badge = document.getElementById('workspaceBadge');
+  const badgeText = document.getElementById('workspaceBadgeText');
+  const total = workspaceFiles.schemas.length + workspaceFiles.templates.length;
+  badge.className = 'dev-validation-badge valid';
+  badgeText.textContent = `${devGhOwner}/${devGhRepoName} @ ${devGhBranch} · ${total} file${total !== 1 ? 's' : ''}`;
+
+  // Show refresh button
+  document.getElementById('btnRefreshWorkspace').style.display = 'none'; // Hide local refresh for GH mode
+}
+
+function devGhUpdateToolbar() {
+  const ghBar = document.getElementById('ghWorkspaceBar');
+  const connectBtn = document.getElementById('btnConnectRepo');
+  const openFolderBtn = document.getElementById('btnOpenFolder');
+
+  if (devGhConnected) {
+    ghBar.style.display = 'flex';
+    connectBtn.style.display = 'none';
+    openFolderBtn.style.display = 'none';
+    devGhUpdateCommitButton();
+  } else {
+    ghBar.style.display = 'none';
+    connectBtn.style.display = 'inline-flex';
+    if (window.showDirectoryPicker) openFolderBtn.style.display = 'inline-flex';
+  }
+}
+
+function devGhTrackModification(type, index) {
+  // Called when a file is edited in the builder — compare current content with original
+  let path, currentContent;
+  if (type === 'schema') {
+    const f = workspaceFiles.schemas[index];
+    if (!f || !f.ghPath) return;
+    path = f.ghPath;
+    currentContent = devSchemaText;
+  } else {
+    const f = workspaceFiles.templates[index];
+    if (!f || !f.ghPath) return;
+    path = f.ghPath;
+    currentContent = devTemplateText;
+  }
+
+  const original = devGhOriginalContents[path];
+  if (!original) return;
+
+  if (currentContent !== original.content) {
+    devGhModifiedFiles.add(path);
+  } else {
+    devGhModifiedFiles.delete(path);
+  }
+
+  devGhUpdateCommitButton();
+  devGhUpdateFileModificationIndicators();
+}
+
+function devGhUpdateCommitButton() {
+  const btn = document.getElementById('btnGhCommit');
+  if (!btn) return;
+  btn.style.display = devGhModifiedFiles.size > 0 ? 'inline-flex' : 'none';
+}
+
+function devGhUpdateFileModificationIndicators() {
+  const items = document.querySelectorAll('.workspace-file-name[data-gh-path]');
+  items.forEach(item => {
+    const path = item.getAttribute('data-gh-path');
+    if (devGhModifiedFiles.has(path)) {
+      item.classList.add('modified');
+    } else {
+      item.classList.remove('modified');
+    }
+  });
+}
+
+async function devGhSwitchBranch(branchName) {
+  if (branchName === devGhBranch) return;
+  devGhBranch = branchName;
+
+  // Save branch preference
+  localStorage.setItem('formforge-dev-github-repo', JSON.stringify({
+    owner: devGhOwner, repo: devGhRepoName, branch: devGhBranch
+  }));
+
+  try {
+    await devGhFetchFiles();
+    showToast(`Switched to branch: ${devGhBranch}`);
+  } catch (e) {
+    showToast('Failed to switch branch: ' + e.message, 'error');
+  }
+}
+
+function devGhShowNewBranch() {
+  document.getElementById('ghNewBranchRow').style.display = 'flex';
+  document.getElementById('ghNewBranchName').value = '';
+  document.getElementById('ghNewBranchName').focus();
+}
+
+async function devGhCreateBranch() {
+  const name = document.getElementById('ghNewBranchName').value.trim();
+  if (!name) {
+    showToast('Enter a branch name', 'error');
+    return;
+  }
+  // Validate branch name
+  if (!/^[a-zA-Z0-9._\/-]+$/.test(name)) {
+    showToast('Invalid branch name — use alphanumeric, dots, dashes, slashes', 'error');
+    return;
+  }
+
+  try {
+    // Get current branch ref SHA
+    const refResp = await devGhApiFetch(
+      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/refs/heads/${devGhBranch}`
+    );
+    const refData = await refResp.json();
+    const sha = refData.object.sha;
+
+    // Create new ref
+    await devGhApiFetch(
+      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/refs`,
+      {
+        method: 'POST',
+        headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ref: `refs/heads/${name}`, sha })
+      }
+    );
+
+    // Switch to new branch
+    devGhBranch = name;
+    await devGhFetchBranches();
+    await devGhFetchFiles();
+    document.getElementById('ghNewBranchRow').style.display = 'none';
+    showToast(`Created and switched to branch: ${name}`);
+  } catch (e) {
+    showToast('Failed to create branch: ' + e.message, 'error');
+  }
+}
+
+function devGhShowCommitPanel() {
+  if (devGhModifiedFiles.size === 0) {
+    showToast('No files modified', 'info');
+    return;
+  }
+
+  const fileList = document.getElementById('ghCommitFileList');
+  fileList.innerHTML = '';
+  devGhModifiedFiles.forEach(path => {
+    const entry = document.createElement('div');
+    entry.className = 'gh-commit-file-entry';
+    entry.textContent = path;
+    fileList.appendChild(entry);
+  });
+
+  document.getElementById('ghCommitMsg').value = '';
+  document.getElementById('ghCommitPanel').style.display = 'block';
+  document.getElementById('ghCommitMsg').focus();
+}
+
+function devGhHideCommitPanel() {
+  document.getElementById('ghCommitPanel').style.display = 'none';
+}
+
+function devGhGetCurrentContent(path) {
+  // Get the current content for a modified file from workspaceFiles or active editor
+  for (const f of workspaceFiles.schemas) {
+    if (f.ghPath === path) {
+      // If this file is currently being edited, use the editor content
+      if (currentWorkspaceFile && currentWorkspaceFile.type === 'schema' &&
+          workspaceFiles.schemas[currentWorkspaceFile.index] === f) {
+        return devSchemaText;
+      }
+      return f.text;
+    }
+  }
+  for (const f of workspaceFiles.templates) {
+    if (f.ghPath === path) {
+      if (currentWorkspaceFile && currentWorkspaceFile.type === 'template' &&
+          workspaceFiles.templates[currentWorkspaceFile.index] === f) {
+        return devTemplateText;
+      }
+      return f.text;
+    }
+  }
+  return null;
+}
+
+async function devGhCommitAndPush() {
+  const message = document.getElementById('ghCommitMsg').value.trim();
+  if (!message) {
+    showToast('Commit message is required', 'error');
+    return;
+  }
+
+  const modifiedPaths = Array.from(devGhModifiedFiles);
+  if (modifiedPaths.length === 0) return;
+
+  const commitBtn = document.getElementById('btnGhCommitPush');
+  commitBtn.disabled = true;
+  commitBtn.textContent = 'Committing...';
+
+  try {
+    if (modifiedPaths.length === 1) {
+      // Single file: use Contents API (PUT)
+      const path = modifiedPaths[0];
+      const content = devGhGetCurrentContent(path);
+      if (content === null) throw new Error('Could not read file content for ' + path);
+      const original = devGhOriginalContents[path];
+
+      const resp = await devGhApiFetch(
+        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/contents/${path}`,
+        {
+          method: 'PUT',
+          headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            content: btoa(unescape(encodeURIComponent(content))),
+            sha: original.sha,
+            branch: devGhBranch
+          })
+        }
+      );
+      const result = await resp.json();
+      const commitSha = result.commit.sha.slice(0, 7);
+      showToast(`Committed ${commitSha} to ${devGhBranch}`);
+    } else {
+      // Multi-file: use Git Trees + Commits API for atomic commit
+      // 1. Get current commit SHA for the branch
+      const refResp = await devGhApiFetch(
+        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/refs/heads/${devGhBranch}`
+      );
+      const refData = await refResp.json();
+      const baseCommitSha = refData.object.sha;
+
+      // 2. Get the base tree
+      const commitResp = await devGhApiFetch(
+        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/commits/${baseCommitSha}`
+      );
+      const commitData = await commitResp.json();
+      const baseTreeSha = commitData.tree.sha;
+
+      // 3. Create blobs for each modified file
+      const treeItems = [];
+      for (const path of modifiedPaths) {
+        const content = devGhGetCurrentContent(path);
+        if (content === null) throw new Error('Could not read file content for ' + path);
+
+        const blobResp = await devGhApiFetch(
+          `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/blobs`,
+          {
+            method: 'POST',
+            headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, encoding: 'utf-8' })
+          }
+        );
+        const blobData = await blobResp.json();
+        treeItems.push({ path, mode: '100644', type: 'blob', sha: blobData.sha });
+      }
+
+      // 4. Create a new tree
+      const treeResp = await devGhApiFetch(
+        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/trees`,
+        {
+          method: 'POST',
+          headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base_tree: baseTreeSha, tree: treeItems })
+        }
+      );
+      const treeData = await treeResp.json();
+
+      // 5. Create a new commit
+      const newCommitResp = await devGhApiFetch(
+        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/commits`,
+        {
+          method: 'POST',
+          headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, tree: treeData.sha, parents: [baseCommitSha] })
+        }
+      );
+      const newCommitData = await newCommitResp.json();
+
+      // 6. Update the branch ref
+      await devGhApiFetch(
+        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/refs/heads/${devGhBranch}`,
+        {
+          method: 'PATCH',
+          headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sha: newCommitData.sha })
+        }
+      );
+
+      const commitSha = newCommitData.sha.slice(0, 7);
+      showToast(`Committed ${commitSha} to ${devGhBranch} (${modifiedPaths.length} files)`);
+    }
+
+    // Refresh files to get new SHAs
+    devGhHideCommitPanel();
+    await devGhFetchFiles();
+  } catch (e) {
+    if (e.message.includes('409')) {
+      showToast('Conflict: file changed on remote. Refresh and try again.', 'error');
+    } else {
+      showToast('Commit failed: ' + e.message, 'error');
+    }
+  } finally {
+    commitBtn.disabled = false;
+    commitBtn.innerHTML = '<svg width="12" height="12"><use href="#icon-git-commit"/></svg> Commit &amp; Push';
+  }
+}
+
+async function devGhRefreshFiles() {
+  if (!devGhConnected) return;
+  try {
+    await devGhFetchFiles();
+    showToast('Files refreshed from GitHub');
+  } catch (e) {
+    showToast('Failed to refresh: ' + e.message, 'error');
+  }
+}
+
+function devGhDisconnect() {
+  devGhConnected = false;
+  devGhOwner = '';
+  devGhRepoName = '';
+  devGhBranch = '';
+  devGhPat = '';
+  devGhBranches = [];
+  devGhOriginalContents = {};
+  devGhModifiedFiles = new Set();
+  workspaceFiles = { schemas: [], templates: [] };
+  currentWorkspaceFile = null;
+
+  // Clear stored repo info (keep token — user can clear manually)
+  localStorage.removeItem('formforge-dev-github-repo');
+
+  // Reset UI
+  devGhUpdateToolbar();
+  devGhHideCommitPanel();
+  document.getElementById('ghNewBranchRow').style.display = 'none';
+
+  // Re-show drop zone
+  const container = document.getElementById('workspaceFileList');
+  const dropZone = document.getElementById('workspaceDropZone');
+  container.classList.add('hidden');
+  container.innerHTML = '';
+  dropZone.style.display = 'flex';
+
+  // Reset badge
+  const badge = document.getElementById('workspaceBadge');
+  const badgeText = document.getElementById('workspaceBadgeText');
+  badge.className = 'dev-validation-badge';
+  badgeText.textContent = 'no folder loaded';
+
+  showToast('Disconnected from GitHub repo');
+}
+
+// Drag-drop fallback for workspace
+function initWorkspaceDropZone() {
+  const dropZone = document.getElementById('workspaceDropZone');
+  if (!dropZone) return;
+
+  dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+  dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('drag-over');
+  });
+  dropZone.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+
+    const items = e.dataTransfer.items;
+    if (!items || items.length === 0) return;
+
+    workspaceFiles = { schemas: [], templates: [] };
+
+    // Try FSAA handle first
+    if (items[0].getAsFileSystemHandle) {
+      try {
+        const handle = await items[0].getAsFileSystemHandle();
+        if (handle.kind === 'directory') {
+          workspaceHandle = handle;
+          await devReadWorkspaceFromHandle();
+          return;
+        }
+      } catch (e) { console.warn('FSAA drop handle failed, falling back:', e); }
+    }
+
+    // Fallback: webkitGetAsEntry
+    const entries = [];
+    for (let i = 0; i < items.length; i++) {
+      const entry = items[i].webkitGetAsEntry();
+      if (entry) entries.push(entry);
+    }
+
+    async function readEntries(dirEntry) {
+      return new Promise((resolve) => {
+        const reader = dirEntry.createReader();
+        const results = [];
+        function readBatch() {
+          reader.readEntries(
+            (entries) => {
+              if (entries.length === 0) { resolve(results); return; }
+              results.push(...entries);
+              readBatch();
+            },
+            () => resolve(results)
+          );
+        }
+        readBatch();
+      });
+    }
+
+    async function readFileText(fileEntry) {
+      return new Promise((resolve, reject) => {
+        fileEntry.file(f => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsText(f);
+        }, reject);
+      });
+    }
+
+    for (const entry of entries) {
+      if (entry.isDirectory) {
+        const children = await readEntries(entry);
+        for (const child of children) {
+          if (child.isDirectory && child.name === 'schemas') {
+            const schemaFiles = await readEntries(child);
+            for (const sf of schemaFiles) {
+              if (sf.isFile && sf.name.endsWith('.json') && sf.name !== '_schema.spec.json') {
+                const text = await readFileText(sf);
+                workspaceFiles.schemas.push({ name: sf.name, text, handle: null });
+              }
+            }
+          } else if (child.isDirectory && child.name === 'templates') {
+            const templateFiles = await readEntries(child);
+            for (const tf of templateFiles) {
+              if (tf.isFile && tf.name.endsWith('.py') && tf.name !== 'stencils.py') {
+                const text = await readFileText(tf);
+                workspaceFiles.templates.push({ name: tf.name, text, handle: null });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    devRenderWorkspaceFiles();
+    const total = workspaceFiles.schemas.length + workspaceFiles.templates.length;
+    const badge = document.getElementById('workspaceBadge');
+    const badgeText = document.getElementById('workspaceBadgeText');
+    if (total > 0) {
+      badge.className = 'dev-validation-badge valid';
+      badgeText.textContent = `${total} file${total !== 1 ? 's' : ''} loaded`;
+      document.getElementById('btnRefreshWorkspace').style.display = 'inline-flex';
+    } else {
+      badge.className = 'dev-validation-badge';
+      badgeText.textContent = 'no schemas or templates found';
+    }
+  });
+}
+
+// ============================================================
 //  KEYBOARD SHORTCUTS
 // ============================================================
 function handleGlobalKeydown(e) {
   const formViewActive = document.getElementById('view-form').classList.contains('active');
   const mod = e.metaKey || e.ctrlKey;
 
-  // Ctrl/Cmd+S — Save form data (form view only)
+  // Ctrl/Cmd+S — Save form data or dev mode save
   if (mod && e.key === 's') {
     if (formViewActive) {
       e.preventDefault();
       saveFormData();
+      return;
+    }
+    const activeDevView = document.querySelector('.view.active[id^="view-dev-"]');
+    if (activeDevView) {
+      e.preventDefault();
+      if (activeDevView.id === 'view-dev-schema') devSaveSchema();
+      else if (activeDevView.id === 'view-dev-template') devSaveTemplate();
     }
     return;
   }
 
-  // Ctrl/Cmd+Enter — Export to DOCX (form view only)
+  // Ctrl/Cmd+Enter — Export to DOCX or dev mode preview
   if (mod && e.key === 'Enter') {
     if (formViewActive) {
       e.preventDefault();
       handleExport();
+      return;
+    }
+    const activeDevView = document.querySelector('.view.active[id^="view-dev-"]');
+    if (activeDevView && activeDevView.id === 'view-dev-template') {
+      e.preventDefault();
+      devRunPreview();
     }
     return;
   }
@@ -5110,6 +8187,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Preload Pyodide in the background so the first export is faster
   preloadPyodide();
+
+  // Dev Mode: restore from localStorage (desktop only)
+  if (window.innerWidth >= 768 && localStorage.getItem('formforge-dev-mode') === '1') {
+    devMode = true;
+    document.getElementById('modeToggle').classList.add('active');
+    document.getElementById('modeToggleLabel').textContent = 'Dev On';
+    document.getElementById('devNav').style.display = 'flex';
+    loadDevModeDeps().then(() => {
+      const lastTab = localStorage.getItem('formforge-dev-tab') || 'dev-schema';
+      showDevTab(lastTab);
+    }).catch(() => {
+      showToast('Failed to load Dev Mode scripts', 'error');
+      devMode = false;
+      document.getElementById('modeToggle').classList.remove('active');
+      document.getElementById('modeToggleLabel').textContent = 'Dev';
+      document.getElementById('devNav').style.display = 'none';
+    });
+  }
+
+  // Hide Open Folder button if FSAA not supported
+  if (!window.showDirectoryPicker) {
+    const btn = document.getElementById('btnOpenFolder');
+    if (btn) btn.style.display = 'none';
+  }
+
+  // Workspace drop zone
+  initWorkspaceDropZone();
+
+  // GitHub connect modal — close on click outside or Escape
+  const ghModal = document.getElementById('ghConnectModal');
+  if (ghModal) {
+    ghModal.addEventListener('click', (e) => {
+      if (e.target === ghModal) devGhCloseConnectModal();
+    });
+    ghModal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') devGhCloseConnectModal();
+    });
+  }
+
+  // Dev mode resize listener
+  window.addEventListener('resize', handleDevModeResize);
 });
 </script>
 </body>
