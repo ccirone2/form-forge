@@ -1,13 +1,14 @@
 """
 FormForge DOCX Template: Event Registration (Field Type Demo)
 =============================================================
-Demonstrates all 23 field types, wizard mode, and conditional visibility.
+Demonstrates all 24 field types, wizard mode, and conditional visibility.
 
 Field type value formats:
   - text/email/tel/date/select/radio/textarea → str
   - number/currency → str (e.g. "50", "1250.00")
   - hidden → str (static default_value from schema)
   - heading → not passed (skipped in collectFormData)
+  - info → not passed (skipped in collectFormData)
   - checkbox → comma-separated str
   - longtext → str with possible newlines
   - list → newline-separated str

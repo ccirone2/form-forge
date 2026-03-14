@@ -65,6 +65,27 @@
           "hint": "Provide details so we can plan accordingly"
         },
         {
+          "id": "event_info_notice",
+          "label": "Event Guidelines",
+          "type": "info",
+          "content": "Events must be submitted at least 30 days in advance. All proposals are reviewed by the events committee.",
+          "style": "info"
+        },
+        {
+          "id": "event_capacity_warning",
+          "label": "Capacity Notice",
+          "type": "info",
+          "content": "In-person venues have a maximum capacity of 200 attendees. Requests exceeding this limit will require additional approval.",
+          "style": "warning"
+        },
+        {
+          "id": "event_funding_success",
+          "label": "Funding Available",
+          "type": "info",
+          "content": "This quarter's event budget has been approved. Eligible events may receive up to $5,000 in funding.",
+          "style": "success"
+        },
+        {
           "id": "event_type",
           "label": "Event Type",
           "type": "select",
@@ -146,6 +167,7 @@
           "id": "expense_items",
           "label": "Budget Line Items",
           "type": "repeater",
+          "display": "table",
           "min_rows": 1,
           "max_rows": 10,
           "fields": [
