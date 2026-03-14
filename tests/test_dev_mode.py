@@ -206,6 +206,7 @@ _REQUIRED_FUNCTIONS = [
     "devUpdateLineNumbers",
     "devFindFoldRegions",
     "devToggleFold",
+    "devHighlightWithFolding",
     "devEditorKeydownHandler",
     "devSetCursorOffset",
     "devGetCursorOffset",
@@ -583,7 +584,7 @@ def test_schema_editor_in_split_pane(index_html: str) -> None:
 def test_schema_editor_wires_prism_json(index_html: str) -> None:
     """initSchemaEditor wires Prism.js JSON highlighting to CodeJar."""
     body = _extract_func(index_html, "initSchemaEditor")
-    assert "Prism.highlight" in body
+    assert "devHighlightWithFolding" in body or "Prism.highlight" in body
     assert "Prism.languages.json" in body
     assert "CodeJar" in body
 
@@ -750,7 +751,7 @@ def test_template_editor_loads_starter_on_init(index_html: str) -> None:
 def test_template_editor_wires_prism_python(index_html: str) -> None:
     """initTemplateEditor uses Prism.js Python highlighting."""
     body = _extract_func(index_html, "initTemplateEditor")
-    assert "Prism.highlight" in body
+    assert "devHighlightWithFolding" in body or "Prism.highlight" in body
     assert "Prism.languages.python" in body
     assert "CodeJar" in body
 
@@ -1489,6 +1490,20 @@ def test_fold_regions_detects_python(index_html: str) -> None:
 def test_fold_state_variable(index_html: str) -> None:
     """devFoldState Map variable exists."""
     assert "devFoldState" in index_html
+
+
+def test_highlight_wraps_lines_in_divs(index_html: str) -> None:
+    """devHighlightWithFolding wraps lines in dev-code-line divs."""
+    body = _extract_func(index_html, "devHighlightWithFolding")
+    assert "dev-code-line" in body
+    assert "dev-folded-line" in body
+    assert "dev-fold-placeholder" in body
+
+
+def test_editors_use_fold_highlighting(index_html: str) -> None:
+    """All three CodeJar editors use devHighlightWithFolding."""
+    assert "devHighlightWithFolding(editor, Prism.languages.json" in index_html
+    assert "devHighlightWithFolding(editor, Prism.languages.python" in index_html
 
 
 # ============================================================

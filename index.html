@@ -1258,10 +1258,14 @@
     user-select: none;
   }
   .dev-fold-toggle:hover { opacity: 1; color: var(--accent); }
-  .dev-folded-line { display: none !important; }
+  .dev-code-line { min-height: 1.6em; }
+  .dev-code-line.dev-folded-line { display: none !important; }
   .dev-fold-placeholder {
     color: var(--text-muted); opacity: 0.5;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-xs); padding: 0 6px;
     font-style: italic; pointer-events: none;
+    margin-left: 4px; font-size: var(--text-xs);
   }
   .dev-editor {
     flex: 1; min-height: 200px; padding: 16px 16px 16px 12px;
@@ -6053,7 +6057,39 @@ function devToggleFold(editorEl, gutterEl, lineIndex) {
   const folded = devFoldState.get(key);
   if (folded.has(lineIndex)) folded.delete(lineIndex);
   else folded.add(lineIndex);
+  // Re-highlight to apply fold to editor content
+  const jarMap = {
+    schemaEditor: schemaJar,
+    templateEditor: templateJar,
+    sampleDataEditor: sampleJar
+  };
+  const jar = jarMap[editorEl.id];
+  if (jar) jar.updateCode(jar.toString());
   devUpdateLineNumbers(editorEl, gutterEl);
+}
+
+function devHighlightWithFolding(editor, prismLang, langName, gutterKey) {
+  const text = editor.textContent;
+  const highlighted = Prism.highlight(text, prismLang, langName);
+  const htmlLines = highlighted.split('\n');
+  const regions = devFindFoldRegions(text, langName === 'python' ? 'python' : 'json');
+  const foldStarts = new Map();
+  regions.forEach(r => { if (!foldStarts.has(r.start)) foldStarts.set(r.start, r); });
+  const folded = devFoldState.get(gutterKey) || new Set();
+
+  const hiddenLines = new Set();
+  folded.forEach(start => {
+    const region = foldStarts.get(start);
+    if (region) {
+      for (let i = region.start + 1; i <= region.end; i++) hiddenLines.add(i);
+    }
+  });
+
+  editor.innerHTML = htmlLines.map((line, i) => {
+    const hidden = hiddenLines.has(i) ? ' dev-folded-line' : '';
+    const placeholder = folded.has(i) ? '<span class="dev-fold-placeholder"> ...</span>' : '';
+    return `<div class="dev-code-line${hidden}">${line || '\n'}${placeholder}</div>`;
+  }).join('');
 }
 
 function devUpdateLineNumbers(editorEl, gutterEl) {
@@ -6117,7 +6153,7 @@ function initSchemaEditor() {
   const gutterEl = document.getElementById('schemaLineNumbers');
 
   schemaJar = CodeJar(el, (editor) => {
-    editor.innerHTML = Prism.highlight(editor.textContent, Prism.languages.json, 'json');
+    devHighlightWithFolding(editor, Prism.languages.json, 'json', 'schemaLineNumbers');
   }, { tab: '  ' });
 
   schemaJar.onUpdate(code => {
@@ -6718,7 +6754,7 @@ function initTemplateEditor() {
   const tplGutter = document.getElementById('templateLineNumbers');
 
   templateJar = CodeJar(el, (editor) => {
-    editor.innerHTML = Prism.highlight(editor.textContent, Prism.languages.python, 'python');
+    devHighlightWithFolding(editor, Prism.languages.python, 'python', 'templateLineNumbers');
   }, { tab: '    ' });
 
   templateJar.onUpdate(code => {
@@ -6745,7 +6781,7 @@ function initTemplateEditor() {
   if (sdEl) {
     sdEl.textContent = devSampleDataText;
     sampleJar = CodeJar(sdEl, (editor) => {
-      editor.innerHTML = Prism.highlight(editor.textContent, Prism.languages.json, 'json');
+      devHighlightWithFolding(editor, Prism.languages.json, 'json', 'sampleLineNumbers');
     }, { tab: '  ' });
     sampleJar.onUpdate(code => {
       devSampleDataText = code;
