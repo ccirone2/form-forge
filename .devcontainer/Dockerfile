@@ -45,8 +45,12 @@ RUN useradd -m -s /bin/bash dev \
     && mkdir -p /home/dev/.config/claude \
     && mkdir -p /home/dev/.config/gh \
     && mkdir -p /home/dev/.cache \
-    && cp -r /root/.cache/ms-playwright /home/dev/.cache/ms-playwright \
-    && chown -R dev:dev /home/dev
+    && if [ -d /root/.cache/ms-playwright ]; then cp -r /root/.cache/ms-playwright /home/dev/.cache/ms-playwright; fi \
+    && chown -R dev:dev /home/dev \
+    && npm_prefix="$(npm config get prefix)" \
+    && npm_root="$(npm root -g)" \
+    && if [ -d "$npm_root" ]; then chown -R dev:dev "$npm_root"; fi \
+    && if [ -d "$npm_prefix/bin" ]; then chown -R dev:dev "$npm_prefix/bin"; fi
 
 ENV PLAYWRIGHT_BROWSERS_PATH=/home/dev/.cache/ms-playwright
 
