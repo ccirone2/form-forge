@@ -25,10 +25,20 @@ RUN pip install --break-system-packages -r /tmp/requirements-dev.txt \
     && rm /tmp/requirements-dev.txt
 
 # ---------------------------------------------------------------------------
-# Playwright (installed as root so it has permission to write everywhere)
+# Playwright + frontend tools
 # ---------------------------------------------------------------------------
-RUN npm install -g @playwright/test \
+RUN npm install -g @playwright/test http-server live-server \
     && npx playwright install --with-deps chromium
+
+# ---------------------------------------------------------------------------
+# Chrome symlink — Playwright MCP and other tools look for "chrome" at
+# /opt/google/chrome/chrome or on PATH.  Symlink system Chromium so every
+# tool finds it without extra config.
+# ---------------------------------------------------------------------------
+RUN mkdir -p /opt/google/chrome \
+    && ln -sf /usr/bin/chromium /opt/google/chrome/chrome \
+    && ln -sf /usr/bin/chromium /usr/local/bin/chrome \
+    && ln -sf /usr/bin/chromium /usr/local/bin/google-chrome
 
 # ---------------------------------------------------------------------------
 # Browser env vars

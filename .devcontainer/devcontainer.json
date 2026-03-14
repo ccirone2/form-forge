@@ -23,7 +23,8 @@
         "esbenp.prettier-vscode",
         "redhat.vscode-json",
         "eamodio.gitlens",
-        "mhutchie.git-graph"
+        "mhutchie.git-graph",
+        "ms-playwright.playwright"
       ],
       "settings": {
         "python.defaultInterpreterPath": "/usr/local/bin/python",
@@ -71,5 +72,5 @@
 
   "initializeCommand": "mkdir -p ${localEnv:HOME}/.claude ${localEnv:HOME}/.config/claude ${localEnv:HOME}/.config/gh",
 
-  "postStartCommand": "echo '✓ Python:' $(python --version) && echo '✓ Node:' $(node --version) && echo '✓ Playwright:' $(npx playwright --version 2>/dev/null || echo 'not found') && echo '✓ Claude:' $(claude --version 2>/dev/null || echo 'run: claude') && echo '✓ gh:' $(gh --version 2>/dev/null | head -1 || echo 'run: gh auth login') && echo '' && echo 'Ready. Run: claude --dangerously-skip-permissions'"
+  "postStartCommand": "nohup http-server /workspace -p 8000 -c-1 --cors --silent > /tmp/devserver.log 2>&1 & echo '✓ Dev server started on :8000' && echo '✓ Python:' $(python --version) && echo '✓ Node:' $(node --version) && echo '✓ Chrome:' $(chrome --version 2>/dev/null || echo 'not found') && echo '✓ Playwright:' $(npx playwright --version 2>/dev/null || echo 'not found') && echo '✓ Claude:' $(claude --version 2>/dev/null || echo 'run: claude') && echo '✓ gh:' $(gh --version 2>/dev/null | head -1 || echo 'run: gh auth login') && echo '' && echo 'Ready. Run: claude --dangerously-skip-permissions'"
 }
