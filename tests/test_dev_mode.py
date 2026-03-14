@@ -207,6 +207,7 @@ _REQUIRED_FUNCTIONS = [
     "devFindFoldRegions",
     "devToggleFold",
     "devHighlightWithFolding",
+    "devGetFoldHiddenLines",
     "devEditorKeydownHandler",
     "devSetCursorOffset",
     "devGetCursorOffset",
@@ -1492,18 +1493,25 @@ def test_fold_state_variable(index_html: str) -> None:
     assert "devFoldState" in index_html
 
 
-def test_highlight_wraps_lines_in_divs(index_html: str) -> None:
-    """devHighlightWithFolding wraps lines in dev-code-line divs."""
+def test_highlight_applies_fold_placeholder(index_html: str) -> None:
+    """devHighlightWithFolding inserts fold placeholders and hides folded lines."""
     body = _extract_func(index_html, "devHighlightWithFolding")
-    assert "dev-code-line" in body
-    assert "dev-folded-line" in body
     assert "dev-fold-placeholder" in body
+    assert "hiddenLines" in body
 
 
 def test_editors_use_fold_highlighting(index_html: str) -> None:
     """All three CodeJar editors use devHighlightWithFolding."""
     assert "devHighlightWithFolding(editor, Prism.languages.json" in index_html
     assert "devHighlightWithFolding(editor, Prism.languages.python" in index_html
+
+
+def test_edit_clears_folds(index_html: str) -> None:
+    """Editing in any editor clears fold state to prevent data loss."""
+    schema_body = _extract_func(index_html, "initSchemaEditor")
+    assert "folds.clear()" in schema_body or "clear()" in schema_body
+    template_body = _extract_func(index_html, "initTemplateEditor")
+    assert "folds.clear()" in template_body or "clear()" in template_body
 
 
 # ============================================================

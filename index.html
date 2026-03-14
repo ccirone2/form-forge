@@ -1258,8 +1258,7 @@
     user-select: none;
   }
   .dev-fold-toggle:hover { opacity: 1; color: var(--accent); }
-  .dev-code-line { min-height: 1.6em; }
-  .dev-code-line.dev-folded-line { display: none !important; }
+  .dev-folded-line { display: none; }
   .dev-fold-placeholder {
     color: var(--text-muted); opacity: 0.5;
     background: var(--surface); border: 1px solid var(--border);
@@ -6049,34 +6048,15 @@ function devFindFoldRegions(text, language) {
   return regions;
 }
 
-let devFoldState = new Map(); // gutterEl.id -> Set of folded start lines
+let devFoldState = new Map(); // gutterKey -> Set of folded start lines
 
-function devToggleFold(editorEl, gutterEl, lineIndex) {
-  const key = gutterEl.id || 'default';
-  if (!devFoldState.has(key)) devFoldState.set(key, new Set());
-  const folded = devFoldState.get(key);
-  if (folded.has(lineIndex)) folded.delete(lineIndex);
-  else folded.add(lineIndex);
-  // Re-highlight to apply fold to editor content
-  const jarMap = {
-    schemaEditor: schemaJar,
-    templateEditor: templateJar,
-    sampleDataEditor: sampleJar
-  };
-  const jar = jarMap[editorEl.id];
-  if (jar) jar.updateCode(jar.toString());
-  devUpdateLineNumbers(editorEl, gutterEl);
-}
-
-function devHighlightWithFolding(editor, prismLang, langName, gutterKey) {
-  const text = editor.textContent;
-  const highlighted = Prism.highlight(text, prismLang, langName);
-  const htmlLines = highlighted.split('\n');
-  const regions = devFindFoldRegions(text, langName === 'python' ? 'python' : 'json');
+function devGetFoldHiddenLines(text, lang, gutterKey) {
+  const regions = devFindFoldRegions(text, lang);
   const foldStarts = new Map();
   regions.forEach(r => { if (!foldStarts.has(r.start)) foldStarts.set(r.start, r); });
   const folded = devFoldState.get(gutterKey) || new Set();
-
+  // Prune stale fold entries
+  folded.forEach(idx => { if (!foldStarts.has(idx)) folded.delete(idx); });
   const hiddenLines = new Set();
   folded.forEach(start => {
     const region = foldStarts.get(start);
@@ -6084,33 +6064,82 @@ function devHighlightWithFolding(editor, prismLang, langName, gutterKey) {
       for (let i = region.start + 1; i <= region.end; i++) hiddenLines.add(i);
     }
   });
+  return { hiddenLines, foldStarts, folded };
+}
 
-  editor.innerHTML = htmlLines.map((line, i) => {
-    const hidden = hiddenLines.has(i) ? ' dev-folded-line' : '';
-    const placeholder = folded.has(i) ? '<span class="dev-fold-placeholder"> ...</span>' : '';
-    return `<div class="dev-code-line${hidden}">${line || '\n'}${placeholder}</div>`;
-  }).join('');
+function devToggleFold(editorEl, gutterEl, lineIndex) {
+  const key = gutterEl.id || 'default';
+  if (!devFoldState.has(key)) devFoldState.set(key, new Set());
+  const folded = devFoldState.get(key);
+  if (folded.has(lineIndex)) folded.delete(lineIndex);
+  else folded.add(lineIndex);
+  // Re-highlight to apply fold to editor content — use the canonical text
+  const textMap = {
+    schemaEditor: devSchemaText,
+    templateEditor: devTemplateText,
+    sampleDataEditor: devSampleDataText
+  };
+  const jarMap = {
+    schemaEditor: schemaJar,
+    templateEditor: templateJar,
+    sampleDataEditor: sampleJar
+  };
+  const jar = jarMap[editorEl.id];
+  if (jar) jar.updateCode(textMap[editorEl.id]);
+  devUpdateLineNumbers(editorEl, gutterEl);
+}
+
+function devHighlightWithFolding(editor, prismLang, langName, gutterKey) {
+  const text = editor.textContent;
+  const lang = langName === 'python' ? 'python' : 'json';
+  const { hiddenLines, folded } = devGetFoldHiddenLines(text, lang, gutterKey);
+
+  // If nothing folded, use plain Prism output
+  if (folded.size === 0) {
+    editor.innerHTML = Prism.highlight(text, prismLang, langName);
+    return;
+  }
+
+  // Build a display version of text with folded lines removed,
+  // then highlight that. Keep fold-start lines but append " ..."
+  const lines = text.split('\n');
+  const displayLines = [];
+  const displayToSource = []; // maps display line index -> source line index
+  for (let i = 0; i < lines.length; i++) {
+    if (hiddenLines.has(i)) continue;
+    displayLines.push(lines[i]);
+    displayToSource.push(i);
+  }
+  const displayText = displayLines.join('\n');
+  let highlighted = Prism.highlight(displayText, prismLang, langName);
+
+  // Insert fold placeholders after fold-start lines in the highlighted output
+  const highlightedLines = highlighted.split('\n');
+  const result = [];
+  for (let di = 0; di < highlightedLines.length; di++) {
+    let line = highlightedLines[di];
+    const srcIdx = displayToSource[di];
+    if (folded.has(srcIdx)) {
+      line += '<span class="dev-fold-placeholder"> ...</span>';
+    }
+    result.push(line);
+  }
+  editor.innerHTML = result.join('\n');
 }
 
 function devUpdateLineNumbers(editorEl, gutterEl) {
-  const text = editorEl.textContent || '';
-  const lineCount = text.split('\n').length;
-  // Detect language from editor id
+  // Use canonical text, not editor textContent (which may be folded/truncated)
+  const textMap = {
+    schemaEditor: devSchemaText,
+    templateEditor: devTemplateText,
+    sampleDataEditor: devSampleDataText
+  };
+  const text = textMap[editorEl.id] || editorEl.textContent || '';
   const lang = editorEl.id === 'templateEditor' ? 'python' : 'json';
-  const regions = devFindFoldRegions(text, lang);
-  const foldStarts = new Map(); // lineIndex -> region
-  regions.forEach(r => { if (!foldStarts.has(r.start)) foldStarts.set(r.start, r); });
   const key = gutterEl.id || 'default';
-  const folded = devFoldState.get(key) || new Set();
 
-  // Build set of hidden lines
-  const hiddenLines = new Set();
-  folded.forEach(startLine => {
-    const region = foldStarts.get(startLine);
-    if (region) {
-      for (let i = region.start + 1; i <= region.end; i++) hiddenLines.add(i);
-    }
-  });
+  const { hiddenLines, foldStarts, folded } = devGetFoldHiddenLines(text, lang, key);
+  const lineCount = text.split('\n').length;
 
   let html = '';
   for (let i = 0; i < lineCount; i++) {
@@ -6134,9 +6163,6 @@ function devUpdateLineNumbers(editorEl, gutterEl) {
     });
   });
 
-  // Apply hidden lines to editor content via CSS
-  // CodeJar renders code in a flat structure — we apply fold via line-based approach
-  // by hiding lines in the gutter and using CSS to sync visual display
   gutterEl.scrollTop = editorEl.scrollTop;
 }
 
@@ -6157,6 +6183,9 @@ function initSchemaEditor() {
   }, { tab: '  ' });
 
   schemaJar.onUpdate(code => {
+    // Clear folds on edit to prevent folded content loss
+    const folds = devFoldState.get('schemaLineNumbers');
+    if (folds && folds.size > 0) folds.clear();
     devSchemaText = code;
     devUpdateLineNumbers(el, gutterEl);
     clearTimeout(devPreviewDebounce);
@@ -6758,6 +6787,8 @@ function initTemplateEditor() {
   }, { tab: '    ' });
 
   templateJar.onUpdate(code => {
+    const folds = devFoldState.get('templateLineNumbers');
+    if (folds && folds.size > 0) folds.clear();
     devTemplateText = code;
     devUpdateLineNumbers(el, tplGutter);
     devSaveEditorState();
@@ -6784,6 +6815,8 @@ function initTemplateEditor() {
       devHighlightWithFolding(editor, Prism.languages.json, 'json', 'sampleLineNumbers');
     }, { tab: '  ' });
     sampleJar.onUpdate(code => {
+      const folds = devFoldState.get('sampleLineNumbers');
+      if (folds && folds.size > 0) folds.clear();
       devSampleDataText = code;
       devUpdateLineNumbers(sdEl, sdGutter);
       devSaveEditorState();
