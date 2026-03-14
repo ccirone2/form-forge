@@ -32,18 +32,18 @@ Added 4 tests. Updated 1 existing test (`test_docx_preview_white_background_css`
 
 ---
 
-### 2026-03-14 — UX: Navigation & Organization Critique (#137)
+### 2026-03-14 — UX: Setup View Navigation & Organization (#137)
 **Issues:** #137
 
-Design critique of the app's navigation and information architecture. Created issue #137 with five minor improvements:
+Implemented five navigation and organization improvements from a design critique:
 
-1. Collapse documentation section behind a single accordion (separate form-filler vs form-creator content)
-2. Auto-scroll to form picker after successful GitHub connection
-3. Rename "Back to picker" → "Back" for consistency across all launch paths
-4. Add double-click to launch on picker cards (zero-friction flow)
-5. Add empty-state hint to profile dropdown
+1. **Docs accordion** — Wrapped four documentation cards (Schema Guide, Template Guide, Field Types, Example) in a collapsible "For form creators" accordion, collapsed by default. Keeps setup view focused on launch paths for form fillers.
+2. **Picker auto-scroll** — After successful GitHub connection, `pickerSection` scrolls into view smoothly so users see their forms immediately.
+3. **Back button rename** — Changed "Back to picker" → "Back" in form view for consistency across all launch paths (demo, local, GitHub).
+4. **Double-click launch** — Double-clicking a picker card now selects and launches the form directly, bypassing the two-step select-then-click flow.
+5. **Profile empty state** — Profile dropdown shows "Save a profile to autofill common fields" hint when no profiles exist.
 
-Also applied minor CSS cleanup: replaced remaining hardcoded transition values with design tokens (`--transition-base`, `--transition-slow`, `--transition-fast`) and added `focus-visible` outline to the Connect button.
+Added 11 new tests to `test_dev_mode.py` covering all changes. Also cleaned up unused `.docs-source-divider` CSS.
 
 **Decisions:**
 - Documentation stays on the setup page but collapsed by default — avoids a separate view for a small amount of content

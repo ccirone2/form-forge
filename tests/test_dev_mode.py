@@ -1712,3 +1712,79 @@ def test_dev_pane_scrollbar_fade(index_html: str) -> None:
     """Dev Mode panes should fade scrollbar when not hovering."""
     assert ".dev-pane:hover::-webkit-scrollbar-thumb" in index_html
     assert ".dev-editor:hover::-webkit-scrollbar-thumb" in index_html
+
+
+# --- Navigation & Organization (#137) ---
+
+
+def test_back_button_label(index_html: str) -> None:
+    """Back button in form view should say 'Back', not 'Back to picker'."""
+    pattern = re.compile(r'<button[^>]*class="btn-back"[^>]*>.*?</button>', re.DOTALL)
+    match = pattern.search(index_html)
+    assert match, "btn-back button not found"
+    btn_text = re.sub(r"<[^>]+>", "", match.group()).strip()
+    assert btn_text == "Back", f"Expected 'Back', got '{btn_text}'"
+
+
+def test_docs_accordion_exists(index_html: str) -> None:
+    """Documentation cards should be wrapped in a collapsible accordion."""
+    assert 'id="docsAccordion"' in index_html
+    assert 'id="docsAccordionBody"' in index_html
+
+
+def test_docs_accordion_contains_doc_cards(index_html: str) -> None:
+    """All four doc cards should be children of the accordion body."""
+    # Extract the accordion body content
+    start = index_html.index('id="docsAccordionBody"')
+    # Find docsSection inside it
+    section_start = index_html.index('id="docsSection"', start)
+    assert section_start > start, "docsSection should be inside docsAccordionBody"
+    for doc_id in ["schemaGuide", "templateGuide", "fieldTypes", "exampleSchema"]:
+        pos = index_html.index(f'id="{doc_id}"', start)
+        assert pos > start, f"{doc_id} should be inside the accordion"
+
+
+def test_docs_accordion_default_collapsed(index_html: str) -> None:
+    """The docs accordion body should start collapsed."""
+    assert 'class="docs-accordion-body collapsed" id="docsAccordionBody"' in index_html
+
+
+def test_how_it_works_outside_accordion(index_html: str) -> None:
+    """The 'How It Works' card should remain outside the docs accordion."""
+    hiw_pos = index_html.index("how-it-works-card")
+    accordion_pos = index_html.index('id="docsAccordion"')
+    assert hiw_pos < accordion_pos, (
+        "How It Works card should appear before the accordion"
+    )
+
+
+def test_profile_empty_state_hint(index_html: str) -> None:
+    """Profile dropdown should show a helpful hint when empty."""
+    assert "Save a profile to autofill common fields" in index_html
+
+
+def test_picker_card_dblclick_handler(index_html: str) -> None:
+    """Picker grid should have a dblclick event listener for quick launch."""
+    body = _extract_func(index_html, "renderPicker")
+    assert "dblclick" in body, "renderPicker should register a dblclick handler"
+    assert "launchForm" in body, "dblclick handler should call launchForm"
+
+
+def test_picker_auto_scroll_on_connect(index_html: str) -> None:
+    """connectRepo should scroll the picker section into view after rendering."""
+    body = _extract_func(index_html, "connectRepo")
+    assert "scrollIntoView" in body, "connectRepo should scroll to picker"
+
+
+def test_toggle_docs_accordion_function(index_html: str) -> None:
+    """toggleDocsAccordion function should exist and toggle the accordion body."""
+    body = _extract_func(index_html, "toggleDocsAccordion")
+    assert "docsAccordionBody" in body
+    assert "docsAccordionToggle" in body
+
+
+def test_docs_accordion_css(index_html: str) -> None:
+    """CSS classes for docs accordion should exist."""
+    assert ".docs-accordion " in index_html or ".docs-accordion{" in index_html
+    assert ".docs-accordion-header" in index_html
+    assert ".docs-accordion-body.collapsed" in index_html
