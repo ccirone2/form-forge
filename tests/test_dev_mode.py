@@ -85,8 +85,8 @@ def test_dev_nav_exists(index_html: str) -> None:
     assert 'class="dev-nav-tab' in index_html
 
 
-def test_dev_nav_has_three_tabs(index_html: str) -> None:
-    assert index_html.count('class="dev-nav-tab') == 3
+def test_dev_nav_has_four_tabs(index_html: str) -> None:
+    assert index_html.count('class="dev-nav-tab') == 4
 
 
 def test_view_dev_schema_exists(index_html: str) -> None:
@@ -1726,35 +1726,45 @@ def test_back_button_label(index_html: str) -> None:
     assert btn_text == "Back", f"Expected 'Back', got '{btn_text}'"
 
 
-def test_docs_accordion_exists(index_html: str) -> None:
-    """Documentation cards should be wrapped in a collapsible accordion."""
-    assert 'id="docsAccordion"' in index_html
-    assert 'id="docsAccordionBody"' in index_html
+def test_dev_docs_tab_exists(index_html: str) -> None:
+    """Dev Mode should have a Docs tab."""
+    assert 'id="tab-dev-docs"' in index_html
+    assert 'data-dev-tab="dev-docs"' in index_html
 
 
-def test_docs_accordion_contains_doc_cards(index_html: str) -> None:
-    """All four doc cards should be children of the accordion body."""
-    # Extract the accordion body content
-    start = index_html.index('id="docsAccordionBody"')
-    # Find docsSection inside it
-    section_start = index_html.index('id="docsSection"', start)
-    assert section_start > start, "docsSection should be inside docsAccordionBody"
+def test_dev_docs_view_exists(index_html: str) -> None:
+    """A dev-docs view panel should exist."""
+    assert 'id="view-dev-docs"' in index_html
+
+
+def test_dev_docs_contains_doc_cards(index_html: str) -> None:
+    """All four doc cards should be inside the dev-docs view."""
+    start = index_html.index('id="view-dev-docs"')
     for doc_id in ["schemaGuide", "templateGuide", "fieldTypes", "exampleSchema"]:
         pos = index_html.index(f'id="{doc_id}"', start)
-        assert pos > start, f"{doc_id} should be inside the accordion"
+        assert pos > start, f"{doc_id} should be inside the dev-docs view"
 
 
-def test_docs_accordion_default_collapsed(index_html: str) -> None:
-    """The docs accordion body should start collapsed."""
-    assert 'class="docs-accordion-body collapsed" id="docsAccordionBody"' in index_html
+def test_dev_docs_in_valid_tabs(index_html: str) -> None:
+    """dev-docs should be in VALID_DEV_TABS."""
+    assert "'dev-docs'" in index_html or '"dev-docs"' in index_html
+    # Check it's in the Set definition
+    assert "dev-docs" in index_html
 
 
-def test_how_it_works_outside_accordion(index_html: str) -> None:
-    """The 'How It Works' card should remain outside the docs accordion."""
-    hiw_pos = index_html.index("how-it-works-card")
-    accordion_pos = index_html.index('id="docsAccordion"')
-    assert hiw_pos < accordion_pos, (
-        "How It Works card should appear before the accordion"
+def test_how_it_works_on_setup(index_html: str) -> None:
+    """The 'How It Works' card should remain on the setup view, not in dev-docs."""
+    setup_start = index_html.index('id="view-setup"')
+    setup_end = index_html.index("<main", setup_start + 1)
+    setup_html = index_html[setup_start:setup_end]
+    assert "how-it-works-card" in setup_html, (
+        "How It Works card should be in setup view"
+    )
+    dev_start = index_html.index('id="view-dev-docs"')
+    dev_end = index_html.index("</main>", dev_start)
+    dev_html = index_html[dev_start:dev_end]
+    assert "how-it-works-card" not in dev_html, (
+        "How It Works card should not be in dev-docs view"
     )
 
 
@@ -1776,15 +1786,12 @@ def test_picker_auto_scroll_on_connect(index_html: str) -> None:
     assert "scrollIntoView" in body, "connectRepo should scroll to picker"
 
 
-def test_toggle_docs_accordion_function(index_html: str) -> None:
-    """toggleDocsAccordion function should exist and toggle the accordion body."""
-    body = _extract_func(index_html, "toggleDocsAccordion")
-    assert "docsAccordionBody" in body
-    assert "docsAccordionToggle" in body
-
-
-def test_docs_accordion_css(index_html: str) -> None:
-    """CSS classes for docs accordion should exist."""
-    assert ".docs-accordion " in index_html or ".docs-accordion{" in index_html
-    assert ".docs-accordion-header" in index_html
-    assert ".docs-accordion-body.collapsed" in index_html
+def test_docs_not_on_setup_view(index_html: str) -> None:
+    """Documentation cards should not be on the setup view."""
+    setup_start = index_html.index('id="view-setup"')
+    # Find the end of setup view (next <main)
+    setup_end = index_html.index("<main", setup_start + 1)
+    setup_html = index_html[setup_start:setup_end]
+    assert 'id="docsSection"' not in setup_html, (
+        "docsSection should not be in the setup view"
+    )

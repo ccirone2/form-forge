@@ -1161,25 +1161,6 @@
   }
   .docs-card-body strong { color: var(--text); }
 
-  .docs-accordion {
-    margin-top: 8px; margin-bottom: 24px;
-    border: 1px solid var(--border); border-radius: var(--radius);
-    background: var(--surface); overflow: hidden;
-  }
-  .docs-accordion-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 20px; cursor: pointer; user-select: none;
-    transition: background var(--transition-fast);
-  }
-  .docs-accordion-header:hover, .docs-accordion-header:focus-visible { background: var(--surface-2); }
-  .docs-accordion-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-  .docs-accordion-label {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-size: var(--text-sm); font-family: var(--font-mono); color: var(--text-muted); font-weight: 500;
-  }
-  .docs-accordion-body { padding: 0 16px 16px; }
-  .docs-accordion-body.collapsed { display: none; }
-
   .docs-code {
     background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md);
     padding: 16px; margin: 8px 0 12px; overflow-x: auto;
@@ -1913,6 +1894,10 @@
     <svg width="14" height="14" aria-hidden="true"><use href="#icon-folder"/></svg>
     Workspace
   </button>
+  <button type="button" class="dev-nav-tab" id="tab-dev-docs" data-dev-tab="dev-docs" role="tab" aria-selected="false" aria-controls="view-dev-docs" onclick="showDevTab('dev-docs')">
+    <svg width="14" height="14" aria-hidden="true"><use href="#icon-book"/></svg>
+    Docs
+  </button>
 </nav>
 
 <!-- ==================== SETUP VIEW ==================== -->
@@ -2027,77 +2012,6 @@
     └── my-form.py                 ← Python script with generate_docx(data)</pre>
     </div>
 
-    <div class="docs-accordion" id="docsAccordion">
-      <div class="docs-accordion-header" onclick="toggleDocsAccordion()" tabindex="0" role="button" aria-expanded="false" aria-controls="docsAccordionBody" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocsAccordion()}">
-        <span class="docs-accordion-label">
-          <svg width="14" height="14" class="icon-inline"><use href="#icon-book"/></svg>
-          For form creators
-        </span>
-        <span class="docs-toggle" id="docsAccordionToggle">&#9654;</span>
-      </div>
-      <div class="docs-accordion-body collapsed" id="docsAccordionBody">
-        <div class="docs-section" id="docsSection">
-
-          <!-- Dynamic doc slots — populated by JS -->
-          <div class="docs-card">
-            <div class="docs-card-header" onclick="toggleDocs('schemaGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="schemaGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('schemaGuide')}">
-              <h3>
-                <svg width="15" height="15" class="icon-inline"><use href="#icon-file"/></svg>
-                <span id="schemaGuideTitle">Schema Guide</span>
-              </h3>
-              <span class="docs-toggle" id="schemaGuideToggle">&#9654;</span>
-            </div>
-            <div class="docs-card-body collapsed" id="schemaGuide">
-              <div class="docs-source-badge" id="schemaGuideSource"></div>
-              <div id="schemaGuideContent"><p>Loading...</p></div>
-            </div>
-          </div>
-
-          <div class="docs-card">
-            <div class="docs-card-header" onclick="toggleDocs('templateGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="templateGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('templateGuide')}">
-              <h3>
-                <svg width="15" height="15" class="icon-inline"><use href="#icon-code"/></svg>
-                <span id="templateGuideTitle">Template Guide</span>
-              </h3>
-              <span class="docs-toggle" id="templateGuideToggle">&#9654;</span>
-            </div>
-            <div class="docs-card-body collapsed" id="templateGuide">
-              <div class="docs-source-badge" id="templateGuideSource"></div>
-              <div id="templateGuideContent"><p>Loading...</p></div>
-            </div>
-          </div>
-
-          <div class="docs-card">
-            <div class="docs-card-header" onclick="toggleDocs('fieldTypes')" tabindex="0" role="button" aria-expanded="false" aria-controls="fieldTypes" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('fieldTypes')}">
-              <h3>
-                <svg width="15" height="15" class="icon-inline"><use href="#icon-grid"/></svg>
-                <span id="fieldTypesTitle">Field Types Reference</span>
-              </h3>
-              <span class="docs-toggle" id="fieldTypesToggle">&#9654;</span>
-            </div>
-            <div class="docs-card-body collapsed" id="fieldTypes">
-              <div class="docs-source-badge" id="fieldTypesSource"></div>
-              <div id="fieldTypesContent"><p>Loading...</p></div>
-            </div>
-          </div>
-
-          <div class="docs-card">
-            <div class="docs-card-header" onclick="toggleDocs('exampleSchema')" tabindex="0" role="button" aria-expanded="false" aria-controls="exampleSchema" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('exampleSchema')}">
-              <h3>
-                <svg width="15" height="15" class="icon-inline"><use href="#icon-bolt"/></svg>
-                <span id="exampleSchemaTitle">Example Schema &amp; Template</span>
-              </h3>
-              <span class="docs-toggle" id="exampleSchemaToggle">&#9654;</span>
-            </div>
-            <div class="docs-card-body collapsed" id="exampleSchema">
-              <div class="docs-source-badge" id="exampleSchemaSource"></div>
-              <div id="exampleSchemaContent"><p>Loading...</p></div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
 
     <!-- Picker appears after connect -->
     <div class="picker-section" id="pickerSection" style="display:none;">
@@ -2355,6 +2269,71 @@
   </div>
 </main>
 
+<!-- ==================== DEV: DOCS VIEW ==================== -->
+<main class="view" id="view-dev-docs" role="tabpanel" aria-labelledby="tab-dev-docs">
+  <div class="main-container">
+    <div class="docs-section" id="docsSection">
+
+      <div class="docs-card">
+        <div class="docs-card-header" onclick="toggleDocs('schemaGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="schemaGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('schemaGuide')}">
+          <h3>
+            <svg width="15" height="15" class="icon-inline"><use href="#icon-file"/></svg>
+            <span id="schemaGuideTitle">Schema Guide</span>
+          </h3>
+          <span class="docs-toggle" id="schemaGuideToggle">&#9654;</span>
+        </div>
+        <div class="docs-card-body collapsed" id="schemaGuide">
+          <div class="docs-source-badge" id="schemaGuideSource"></div>
+          <div id="schemaGuideContent"><p>Loading...</p></div>
+        </div>
+      </div>
+
+      <div class="docs-card">
+        <div class="docs-card-header" onclick="toggleDocs('templateGuide')" tabindex="0" role="button" aria-expanded="false" aria-controls="templateGuide" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('templateGuide')}">
+          <h3>
+            <svg width="15" height="15" class="icon-inline"><use href="#icon-code"/></svg>
+            <span id="templateGuideTitle">Template Guide</span>
+          </h3>
+          <span class="docs-toggle" id="templateGuideToggle">&#9654;</span>
+        </div>
+        <div class="docs-card-body collapsed" id="templateGuide">
+          <div class="docs-source-badge" id="templateGuideSource"></div>
+          <div id="templateGuideContent"><p>Loading...</p></div>
+        </div>
+      </div>
+
+      <div class="docs-card">
+        <div class="docs-card-header" onclick="toggleDocs('fieldTypes')" tabindex="0" role="button" aria-expanded="false" aria-controls="fieldTypes" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('fieldTypes')}">
+          <h3>
+            <svg width="15" height="15" class="icon-inline"><use href="#icon-grid"/></svg>
+            <span id="fieldTypesTitle">Field Types Reference</span>
+          </h3>
+          <span class="docs-toggle" id="fieldTypesToggle">&#9654;</span>
+        </div>
+        <div class="docs-card-body collapsed" id="fieldTypes">
+          <div class="docs-source-badge" id="fieldTypesSource"></div>
+          <div id="fieldTypesContent"><p>Loading...</p></div>
+        </div>
+      </div>
+
+      <div class="docs-card">
+        <div class="docs-card-header" onclick="toggleDocs('exampleSchema')" tabindex="0" role="button" aria-expanded="false" aria-controls="exampleSchema" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleDocs('exampleSchema')}">
+          <h3>
+            <svg width="15" height="15" class="icon-inline"><use href="#icon-bolt"/></svg>
+            <span id="exampleSchemaTitle">Example Schema &amp; Template</span>
+          </h3>
+          <span class="docs-toggle" id="exampleSchemaToggle">&#9654;</span>
+        </div>
+        <div class="docs-card-body collapsed" id="exampleSchema">
+          <div class="docs-source-badge" id="exampleSchemaSource"></div>
+          <div id="exampleSchemaContent"><p>Loading...</p></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
 <!-- GitHub Connect Repo Modal -->
 <div class="gh-connect-modal" id="ghConnectModal" role="dialog" aria-labelledby="ghConnectTitle" aria-modal="true">
   <div class="gh-connect-panel">
@@ -2587,15 +2566,6 @@ function updateProgressStep(stepNum, state) {
 
 function toggleToken() {
   document.getElementById('tokenRow').classList.toggle('hidden');
-}
-
-function toggleDocsAccordion() {
-  const body = document.getElementById('docsAccordionBody');
-  const toggle = document.getElementById('docsAccordionToggle');
-  body.classList.toggle('collapsed');
-  toggle.classList.toggle('open');
-  const header = body.previousElementSibling;
-  header.setAttribute('aria-expanded', !body.classList.contains('collapsed'));
 }
 
 function toggleDocs(id) {
@@ -6045,7 +6015,7 @@ async function toggleDevMode() {
   }
 }
 
-const VALID_DEV_TABS = new Set(['dev-schema', 'dev-template', 'dev-workspace']);
+const VALID_DEV_TABS = new Set(['dev-schema', 'dev-template', 'dev-workspace', 'dev-docs']);
 
 function showDevTab(viewName) {
   if (!VALID_DEV_TABS.has(viewName)) viewName = 'dev-schema';
