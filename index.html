@@ -1911,18 +1911,18 @@
 
 <!-- ==================== GIT TOOLBAR ==================== -->
 <div class="gh-toolbar" id="ghToolbar" role="toolbar" aria-label="Git controls">
-  <svg width="14" height="14" style="color:var(--text-muted)"><use href="#icon-github"/></svg>
+  <svg width="14" height="14" style="color:var(--text-muted)" aria-hidden="true"><use href="#icon-github"/></svg>
   <span class="gh-toolbar-repo" id="ghToolbarRepo"></span>
   <span class="mono-label">@</span>
   <select class="gh-branch-select" id="ghBranchSelect" aria-label="Branch" onchange="devGhSwitchBranch(this.value)"></select>
   <button type="button" class="btn-secondary btn-sm" onclick="devGhShowNewBranch()" title="Create new branch" aria-label="Create new branch">
-    <svg width="12" height="12"><use href="#icon-git-branch"/></svg>
+    <svg width="12" height="12" aria-hidden="true"><use href="#icon-git-branch"/></svg>
   </button>
   <button type="button" class="btn-secondary btn-sm" onclick="devGhRefreshFiles()" title="Refresh files" aria-label="Refresh files">
-    <svg width="12" height="12"><use href="#icon-refresh"/></svg>
+    <svg width="12" height="12" aria-hidden="true"><use href="#icon-refresh"/></svg>
   </button>
   <button type="button" class="btn-secondary btn-sm" onclick="devGhDisconnect()" title="Disconnect" aria-label="Disconnect repo">
-    <svg width="12" height="12"><use href="#icon-unlink"/></svg>
+    <svg width="12" height="12" aria-hidden="true"><use href="#icon-unlink"/></svg>
   </button>
 </div>
 
@@ -2136,7 +2136,7 @@
       <button type="button" class="btn-secondary btn-sm" id="schemaCommitBtn" onclick="devGhShowCommitPanel()" style="display:none">
         <svg width="12" height="12"><use href="#icon-git-commit"/></svg> Commit
       </button>
-      <button type="button" class="btn-secondary btn-sm" id="schemaSaveLocalBtn" onclick="devSaveToWorkspace()" style="display:none">
+      <button type="button" class="btn-secondary btn-sm" id="schemaSaveLocalBtn" onclick="devSaveToWorkspace('schema')" style="display:none">
         <svg width="12" height="12"><use href="#icon-save"/></svg> Save to Disk
       </button>
     </div>
@@ -7982,6 +7982,7 @@ async function connectLocalFolder() {
     }
 
     contentSourceType = 'local';
+    updateGitToolbar();
 
     // Update status
     const statusEl = document.getElementById('localFolderStatus');
@@ -8428,6 +8429,16 @@ async function devGhCreateBranch() {
     ghBranch = name;
     await devGhFetchBranches();
     await devGhFetchFiles();
+    // Rebuild picker from refreshed workspace files
+    repoSchemas = [];
+    for (const sf of workspaceFiles.schemas) {
+      try {
+        const schema = JSON.parse(sf.text);
+        repoSchemas.push({ name: schema.title || sf.name, description: schema.description || '', icon: schema.icon || '', schema, schemaPath: sf.ghPath, templatePath: schema.template || '' });
+      } catch (e) { /* skip invalid JSON */ }
+    }
+    renderPicker();
+    updateSourceToolbar();
     document.getElementById('ghNewBranchRow').style.display = 'none';
     showToast(`Created and switched to branch: ${name}`);
   } catch (e) {
