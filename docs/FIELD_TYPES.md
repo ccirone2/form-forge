@@ -380,7 +380,7 @@ Dynamic field group — users can add N copies of a set of sub-fields. Each row 
 ```
 
 **Schema properties:**
-- `fields` — required array of sub-field definitions. Permitted sub-field types: `text`, `email`, `tel`, `number`, `currency`, `select`. No other types (including `heading`, `hidden`, `address`, `repeater`) are allowed inside a repeater.
+- `fields` — required array of sub-field definitions. Permitted sub-field types: `text`, `email`, `tel`, `number`, `currency`, `select`, `time`, `url`, `toggle`. No other types (including `heading`, `hidden`, `address`, `repeater`) are allowed inside a repeater.
 - `min_rows` — minimum rows; remove button is disabled when at the minimum (defaults to `1`)
 - `max_rows` — maximum rows; add button is disabled when at the maximum (defaults to `10`)
 

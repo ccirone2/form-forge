@@ -36,8 +36,8 @@ form-forge/
 │   ├── fixtures/               ← sample data for template tests
 │   ├── test_stencils.py        ← unit tests for stencils.py utilities (50 tests)
 │   ├── test_templates.py       ← integration tests for templates (10 tests)
-│   ├── test_schemas.py         ← schema validation tests (35 tests)
-│   └── test_dev_mode.py        ← dev mode acceptance criteria tests (193 tests)
+│   ├── test_schemas.py         ← schema validation tests (44 tests)
+│   └── test_dev_mode.py        ← dev mode acceptance criteria tests (332 tests)
 ├── docs/
 │   ├── DEVLOG.md               ← development journal
 │   ├── PLAN.md                 ← structured implementation plans
@@ -105,11 +105,16 @@ See `docs/TEMPLATE_GUIDE.md` for the full `stencils` API.
 | `email` | Email input | `str` |
 | `tel` | Phone input | `str` |
 | `date` | Date picker | `str` (`YYYY-MM-DD`) |
+| `time` | Time picker | `str` (`HH:MM`) |
+| `url` | URL input | `str` |
+| `datetime` | Combined date and time picker | `str` (`YYYY-MM-DDTHH:MM`) |
 | `textarea` | Multi-line text | `str` |
 | `longtext` | Large textarea with character counter | `str` (may contain `\n`) |
 | `select` | Dropdown | `str` |
 | `radio` | Radio buttons | `str` |
 | `checkbox` | Checkboxes | `str` (comma-separated) |
+| `multi_select` | Searchable multi-select with tags | `str` (comma-separated) |
+| `toggle` | Boolean yes/no switch | `str` (`true`/`false`) |
 | `list` | Dynamic add/remove rows | `str` (newline-separated) |
 | `number` | Number input with min/max/step | `str` |
 | `currency` | Number input with currency prefix | `str` |
@@ -128,7 +133,8 @@ FormForge includes a built-in development environment for creating and editing f
 
 - **Schema Builder** — JSON editor with syntax highlighting, live form preview, real-time validation, and right-click context menu with field type snippets
 - **Template Builder** — Python editor with DOCX preview powered by Pyodide + mammoth.js, and stencils helper snippets
-- **Local Workspace** — Open a local project folder (via File System Access API or drag-and-drop) to edit schemas and templates with auto-reload on external changes
+- **Local Workspace** — Open a local project folder (via File System Access API or drag-and-drop) to edit schemas and templates with auto-reload on external changes. Includes GitHub integration for connecting repos, committing, pushing, and branch management.
+- **Docs** — Embedded documentation for Schema Guide, Template Guide, Field Types, and example schema/template
 
 Dev Mode dependencies (Prism.js, CodeJar, mammoth.js, DOMPurify) are lazy-loaded from CDN on first activation.
 
@@ -168,8 +174,8 @@ Hidden fields are excluded from validation but are always included in `data` pas
 
 GitHub Actions runs on every push and pull request to `develop` and `main`:
 
-- **Schema validation** — validates all `schemas/*.json` against `schemas/_schema.spec.json`
-- **Tests** — runs `PYTHONPATH=. pytest tests/ -v` (297 tests)
+- **Lint** — runs `ruff check templates/ tests/`
+- **Tests** — runs `PYTHONPATH=. pytest tests/ -v` (436 tests)
 
 See `.github/workflows/validate.yml`.
 
@@ -179,7 +185,7 @@ See `.github/workflows/validate.yml`.
 # Run locally
 python -m http.server 8000
 
-# Run all tests (297 tests)
+# Run all tests (436 tests)
 PYTHONPATH=. python -m pytest tests/ -v
 
 # Lint

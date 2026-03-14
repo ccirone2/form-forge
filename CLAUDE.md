@@ -10,15 +10,15 @@ FormForge is a **client-side-only** browser application that turns GitHub-hosted
 
 ## Architecture
 
-- **`index.html`** — The entire frontend: HTML + CSS + JS in one file (~6400 lines). Contains the form builder, GitHub API integration, Pyodide loader, validation, Dev Mode (schema builder, template builder, workspace), and UI. Do not split this file.
-- **`schemas/_schema.spec.json`** — JSON Schema (draft 2020-12) that validates all form schemas. Enforces required fields, valid field types (18 enumerated), conditional constraints (e.g., `select` requires `options`, `repeater` requires `fields`), and `additionalProperties: false` at all levels.
+- **`index.html`** — The entire frontend: HTML + CSS + JS in one file (~8900 lines). Contains the form builder, GitHub API integration, Pyodide loader, validation, Dev Mode (schema builder, template builder, workspace, docs), and UI. Do not split this file.
+- **`schemas/_schema.spec.json`** — JSON Schema (draft 2020-12) that validates all form schemas. Enforces required fields, valid field types (23 enumerated), conditional constraints (e.g., `select` requires `options`, `repeater` requires `fields`), and `additionalProperties: false` at all levels.
 - **`schemas/*.json`** — Form definitions. Each schema has `title`, `description`, `icon`, `template` (path to .py), and `sections[]` containing `fields[]` with `id`, `label`, `type`, etc.
-- **`templates/stencils.py`** — Shared helper module for all templates. Provides `set_theme()`, `new_doc()`, `table_section()`, `longtext()`, `bullet_list()`, `signatures()`, `footer()`, `address()`, `image()`, `signature()`, `repeater_table()`, `finalize()`, and a `DocTheme` system with built-in themes (`THEME_CLASSIC`, `THEME_MINIMAL`, `THEME_MODERN`). Loaded into Pyodide's virtual filesystem once via `loadBaseModule()` before any template runs.
+- **`templates/stencils.py`** — Shared helper module for all templates. Provides `set_theme()`, `new_doc()`, `table_section()`, `longtext()`, `bullet_list()`, `signatures()`, `footer()`, `address()`, `image()`, `signature()`, `repeater_table()`, `format_time()`, `finalize()`, and a `DocTheme` system with built-in themes (`THEME_CLASSIC`, `THEME_MINIMAL`, `THEME_MODERN`). Loaded into Pyodide's virtual filesystem once via `loadBaseModule()` before any template runs.
 - **`templates/*.py`** — Python scripts that export a `generate_docx(data)` function. Called by Pyodide with form data as a dict. Must return DOCX bytes. Uses `python-docx` and `import stencils`.
 - **`docs/DEVLOG.md`** — Running development journal. Add a dated entry when completing work on any issue.
 - **`docs/SCHEMA_GUIDE.md`** — Guide for writing new form schemas.
 - **`docs/TEMPLATE_GUIDE.md`** — Guide for writing new Python templates.
-- **`docs/FIELD_TYPES.md`** — Reference for all 18 supported field types, their JSON schema, and template handling.
+- **`docs/FIELD_TYPES.md`** — Reference for all 23 supported field types, their JSON schema, and template handling.
 - **`docs/PLAN.md`** — Structured implementation plans for upcoming features.
 
 ## Pyodide Integration
@@ -42,11 +42,12 @@ Fields can have an optional `visible_when` object: `{ "field": "<source_id>", "e
 
 ### Dev Mode
 
-Dev Mode provides three in-app development tools for creating and editing forms without external editors. Activated via a header toggle button (desktop only, ≥768px). State persists in `localStorage`.
+Dev Mode provides four in-app development tools for creating and editing forms without external editors. Activated via a header toggle button (desktop only, ≥768px). First-time activation shows a confirmation gate tooltip. State persists in `localStorage`.
 
 - **Schema Builder** — Split-pane JSON editor (CodeJar + Prism.js) with live form preview on 300ms debounce, real-time validation badge, and right-click context menu with field type snippets for all 23 field types. Uses `buildForm(schema, targetForm)` to render previews into a separate container without affecting the main form.
 - **Template Builder** — Split-pane Python editor with collapsible sample data panel. "Preview DOCX" runs the full Pyodide pipeline and renders output via mammoth.js → DOMPurify. Right-click context menu inserts stencils helper snippets.
-- **Local Workspace** — File System Access API folder picker with 5s polling for external changes, plus drag-and-drop fallback via `webkitGetAsEntry`. Auto-discovers `schemas/*.json` and `templates/*.py` (excludes `_schema.spec.json` and `stencils.py`). Click-to-edit opens files in the appropriate builder tab.
+- **Local Workspace** — File System Access API folder picker with 5s polling for external changes, plus drag-and-drop fallback via `webkitGetAsEntry`. Auto-discovers `schemas/*.json` and `templates/*.py` (excludes `_schema.spec.json` and `stencils.py`). Click-to-edit opens files in the appropriate builder tab. GitHub integration for connecting repos, committing, pushing, and branch management.
+- **Docs** — Embedded documentation tabs for Schema Guide, Template Guide, Field Types, and Example schema/template.
 
 CDN dependencies (lazy-loaded on first Dev Mode activation): Prism.js 1.29.0, CodeJar 4.2.0, mammoth.js 1.6.0, DOMPurify 3.2.4.
 
@@ -75,7 +76,7 @@ No build system or package manager. Pyodide and python-docx load from CDN at run
 # Run locally — open index.html directly or use HTTP server for CORS
 python -m http.server 8000
 
-# Run all tests (297 tests)
+# Run all tests (436 tests)
 PYTHONPATH=. python -m pytest tests/ -v
 
 # Run a single test file
@@ -93,15 +94,15 @@ ruff format templates/ tests/
 
 - `tests/test_stencils.py` — Unit tests for all `stencils.py` utilities (50 tests)
 - `tests/test_templates.py` — Integration tests that load each template with sample data and verify valid DOCX output (10 tests)
-- `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas, wizard, and visible_when (35 tests)
-- `tests/test_dev_mode.py` — Dev Mode acceptance criteria tests: HTML structure, CDN deps, starter schema/template validation, field snippets, CSS classes, context menu, workspace, mobile gate, regression (193 tests, with 9 parameterized)
+- `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas, wizard, and visible_when (44 tests)
+- `tests/test_dev_mode.py` — Dev Mode acceptance criteria tests: HTML structure, CDN deps, starter schema/template validation, field snippets, CSS classes, context menu, workspace, mobile gate, regression (332 tests)
 - `tests/fixtures/*.json` — Sample form data matching each schema's field IDs
 - Templates are loaded via `importlib.util.spec_from_file_location()` with `sys.path` including `templates/` so `import stencils` resolves
 
 ## CI/CD
 
 `.github/workflows/validate.yml` runs on push/PR to `develop` and `main`:
-1. Schema validation — validates all `schemas/*.json` against `_schema.spec.json` using `jsonschema`
+1. Lint — runs `ruff check templates/ tests/`
 2. Test execution — runs `PYTHONPATH=. pytest tests/ -v` on Python 3.12
 
 ## GitHub Issues

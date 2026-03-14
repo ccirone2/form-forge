@@ -281,8 +281,8 @@ Behavior:
 
 FormForge automatically arranges fields in the form:
 
-- **Two-column rows:** `text`, `email`, `tel`, `date`, `select`, `number`, and `currency` fields are paired side-by-side when consecutive.
-- **Full-width:** `textarea`, `longtext`, `list`, `radio`, `checkbox`, `heading`, `address`, `file`, `signature`, and `repeater` fields always take the full width and break any two-column pairing.
+- **Two-column rows:** `text`, `email`, `tel`, `date`, `time`, `url`, `datetime`, `select`, `number`, `currency`, and `toggle` fields are paired side-by-side when consecutive.
+- **Full-width:** `textarea`, `longtext`, `list`, `radio`, `checkbox`, `multi_select`, `heading`, `address`, `file`, `signature`, and `repeater` fields always take the full width and break any two-column pairing.
 - **Not rendered:** `hidden` fields are completely invisible in the layout.
 
 Control layout by ordering fields intentionally. Two `text` fields in a row pair up. A `text` followed by a `textarea` does not.
