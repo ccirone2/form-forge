@@ -1647,9 +1647,16 @@
   }
   .gh-connect-warning svg { flex-shrink: 0; margin-top: 1px; color: var(--accent); }
 
-  /* Workspace GitHub toolbar elements */
-  .gh-workspace-bar {
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  /* Git toolbar (below nav, visible when GitHub connected) */
+  .gh-toolbar {
+    display: none; align-items: center; gap: 8px; padding: 4px 24px;
+    background: var(--surface-2); border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono); font-size: var(--text-2xs);
+  }
+  .gh-toolbar.visible { display: flex; }
+  .gh-toolbar .mono-label { color: var(--text-muted); }
+  .gh-toolbar .gh-toolbar-repo {
+    color: var(--success); font-weight: 500;
   }
   .gh-branch-select {
     padding: 4px 8px; background: var(--bg); border: 1px solid var(--border);
@@ -1901,6 +1908,23 @@
     Docs
   </button>
 </nav>
+
+<!-- ==================== GIT TOOLBAR ==================== -->
+<div class="gh-toolbar" id="ghToolbar" role="toolbar" aria-label="Git controls">
+  <svg width="14" height="14" style="color:var(--text-muted)"><use href="#icon-github"/></svg>
+  <span class="gh-toolbar-repo" id="ghToolbarRepo"></span>
+  <span class="mono-label">@</span>
+  <select class="gh-branch-select" id="ghBranchSelect" aria-label="Branch" onchange="devGhSwitchBranch(this.value)"></select>
+  <button type="button" class="btn-secondary btn-sm" onclick="devGhShowNewBranch()" title="Create new branch" aria-label="Create new branch">
+    <svg width="12" height="12"><use href="#icon-git-branch"/></svg>
+  </button>
+  <button type="button" class="btn-secondary btn-sm" onclick="devGhRefreshFiles()" title="Refresh files" aria-label="Refresh files">
+    <svg width="12" height="12"><use href="#icon-refresh"/></svg>
+  </button>
+  <button type="button" class="btn-secondary btn-sm" onclick="devGhDisconnect()" title="Disconnect" aria-label="Disconnect repo">
+    <svg width="12" height="12"><use href="#icon-unlink"/></svg>
+  </button>
+</div>
 
 <!-- ==================== SETUP VIEW ==================== -->
 <main class="view active" id="view-setup" role="tabpanel" aria-labelledby="tab-forms">
@@ -2167,6 +2191,17 @@
           Preview DOCX
         </button>
       </div>
+    </div>
+    <div class="dev-source-toolbar" id="templateSourceToolbar" style="display:none">
+      <span class="mono-label" id="templateSourceFile"></span>
+      <span class="dev-source-modified" id="templateSourceModified" style="display:none">modified</span>
+      <span class="mono-label" id="templateSourceBranch"></span>
+      <button type="button" class="btn-secondary btn-sm" id="templateCommitBtn" onclick="devGhShowCommitPanel()" style="display:none">
+        <svg width="12" height="12"><use href="#icon-git-commit"/></svg> Commit
+      </button>
+      <button type="button" class="btn-secondary btn-sm" id="templateSaveLocalBtn" onclick="devSaveToWorkspace('template')" style="display:none">
+        <svg width="12" height="12"><use href="#icon-save"/></svg> Save to Disk
+      </button>
     </div>
     <div class="dev-split" id="templateSplit">
       <div class="dev-pane dev-pane-editor" id="templateEditorPane">
@@ -3024,6 +3059,10 @@ async function connectRepo() {
         ghOriginalContents[sf.ghPath].sha = dirEntry.sha;
       }
     }
+
+    // Fetch branches and update git toolbar
+    devGhFetchBranches();
+    updateGitToolbar();
 
     renderPicker();
     document.getElementById('pickerSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -6037,6 +6076,7 @@ async function loadSchemaIntoEditor(schemaIdx) {
   // Track which workspace file is being edited
   const wsIdx = workspaceFiles.schemas.findIndex(s => 'schemas/' + s.name === entry.schemaPath);
   if (wsIdx >= 0) currentWorkspaceFile = { type: 'schema', index: wsIdx };
+  updateSourceToolbar();
   showTab('dev-schema');
 }
 
@@ -6061,6 +6101,7 @@ async function loadTemplateIntoEditor(schemaIdx) {
   if (templateJar) templateJar.updateCode(templateCode);
   const wsIdx = workspaceFiles.templates.findIndex(t => 'templates/' + t.name === entry.templatePath);
   if (wsIdx >= 0) currentWorkspaceFile = { type: 'template', index: wsIdx };
+  updateSourceToolbar();
   showTab('dev-template');
 }
 
@@ -6134,10 +6175,45 @@ function updateSourceToolbar() {
         document.getElementById('schemaCommitBtn').style.display = 'none';
         document.getElementById('schemaSaveLocalBtn').style.display = 'inline-flex';
       }
-      return;
+    } else {
+      schemaToolbar.style.display = 'none';
     }
+  } else if (schemaToolbar) {
+    schemaToolbar.style.display = 'none';
   }
-  if (schemaToolbar) schemaToolbar.style.display = 'none';
+
+  // Template toolbar
+  if (tmplToolbar && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
+    const f = workspaceFiles.templates[currentWorkspaceFile.index];
+    if (f) {
+      tmplToolbar.style.display = 'flex';
+      document.getElementById('templateSourceFile').textContent = f.ghPath || f.name;
+      if (contentSourceType === 'github') {
+        document.getElementById('templateSourceBranch').textContent = `@ ${ghBranch}`;
+        document.getElementById('templateCommitBtn').style.display = 'inline-flex';
+        document.getElementById('templateSaveLocalBtn').style.display = 'none';
+      } else if (contentSourceType === 'local') {
+        document.getElementById('templateSourceBranch').textContent = '';
+        document.getElementById('templateCommitBtn').style.display = 'none';
+        document.getElementById('templateSaveLocalBtn').style.display = 'inline-flex';
+      }
+    } else {
+      tmplToolbar.style.display = 'none';
+    }
+  } else if (tmplToolbar) {
+    tmplToolbar.style.display = 'none';
+  }
+}
+
+function updateGitToolbar() {
+  const toolbar = document.getElementById('ghToolbar');
+  if (!toolbar) return;
+  if (contentSourceType === 'github') {
+    toolbar.classList.add('visible');
+    document.getElementById('ghToolbarRepo').textContent = `${ghOwner}/${ghRepo}`;
+  } else {
+    toolbar.classList.remove('visible');
+  }
 }
 
 // ============================================================
@@ -7970,6 +8046,7 @@ function devLoadWorkspaceFile(type, index) {
     devSchemaText = f.text;
     currentWorkspaceFile = { type: 'schema', index };
     if (schemaJar) schemaJar.updateCode(devSchemaText);
+    updateSourceToolbar();
     showTab('dev-schema');
     devUpdateSchemaPreview();
     showToast(`Editing ${f.name}`);
@@ -7978,6 +8055,7 @@ function devLoadWorkspaceFile(type, index) {
     devTemplateText = f.text;
     currentWorkspaceFile = { type: 'template', index };
     if (templateJar) templateJar.updateCode(devTemplateText);
+    updateSourceToolbar();
     showTab('dev-template');
     showToast(`Editing ${f.name}`);
   }
@@ -8294,6 +8372,16 @@ async function devGhSwitchBranch(branchName) {
 
   try {
     await devGhFetchFiles();
+    // Rebuild picker from refreshed workspace files
+    repoSchemas = [];
+    for (const sf of workspaceFiles.schemas) {
+      try {
+        const schema = JSON.parse(sf.text);
+        repoSchemas.push({ name: schema.title || sf.name, description: schema.description || '', icon: schema.icon || '', schema, schemaPath: sf.ghPath, templatePath: schema.template || '' });
+      } catch (e) { /* skip invalid JSON */ }
+    }
+    renderPicker();
+    updateSourceToolbar();
     showToast(`Switched to branch: ${ghBranch}`);
   } catch (e) {
     showToast('Failed to switch branch: ' + e.message, 'error');
@@ -8552,6 +8640,7 @@ function devGhDisconnect() {
   // Reset UI
   devGhHideCommitPanel();
   document.getElementById('ghNewBranchRow').style.display = 'none';
+  updateGitToolbar();
 
   showToast('Disconnected from GitHub repo');
 }

@@ -1050,7 +1050,7 @@ class TestGitHubWorkspaceCSS:
             "gh-connect-field",
             "gh-connect-actions",
             "gh-connect-warning",
-            "gh-workspace-bar",
+            "gh-toolbar",
             "gh-branch-select",
             "gh-commit-panel",
             "gh-commit-file-list",
@@ -1813,3 +1813,63 @@ def test_picker_uses_abort_controller(index_html: str) -> None:
     body = match.group(1)
     assert "AbortController" in body
     assert "signal" in body
+
+
+# ============================================================
+#  ISSUE #157 — Git controls in editor tabs
+# ============================================================
+
+
+def test_git_toolbar_exists(index_html: str) -> None:
+    """Git toolbar element exists with branch selector and controls."""
+    assert 'id="ghToolbar"' in index_html
+    assert 'id="ghBranchSelect"' in index_html
+    assert 'id="ghToolbarRepo"' in index_html
+
+
+def test_git_toolbar_has_disconnect_button(index_html: str) -> None:
+    """Git toolbar has disconnect button."""
+    match = re.search(r'id="ghToolbar"([\s\S]*?)</div>', index_html)
+    assert match
+    assert "devGhDisconnect()" in match.group(1)
+
+
+def test_git_toolbar_has_new_branch_button(index_html: str) -> None:
+    """Git toolbar has new branch button."""
+    match = re.search(r'id="ghToolbar"([\s\S]*?)</div>', index_html)
+    assert match
+    assert "devGhShowNewBranch()" in match.group(1)
+
+
+def test_git_toolbar_has_refresh_button(index_html: str) -> None:
+    """Git toolbar has refresh button."""
+    match = re.search(r'id="ghToolbar"([\s\S]*?)</div>', index_html)
+    assert match
+    assert "devGhRefreshFiles()" in match.group(1)
+
+
+def test_update_git_toolbar_function(index_html: str) -> None:
+    """updateGitToolbar shows/hides toolbar based on contentSourceType."""
+    body = _extract_func(index_html, "updateGitToolbar")
+    assert "contentSourceType" in body
+    assert "'github'" in body
+    assert "visible" in body
+
+
+def test_template_source_toolbar_exists(index_html: str) -> None:
+    """Template editor has a source toolbar like the schema editor."""
+    assert 'id="templateSourceToolbar"' in index_html
+    assert 'id="templateCommitBtn"' in index_html
+    assert 'id="templateSaveLocalBtn"' in index_html
+
+
+def test_connect_repo_updates_git_toolbar(index_html: str) -> None:
+    """connectRepo calls updateGitToolbar after connecting."""
+    body = _extract_func(index_html, "connectRepo")
+    assert "updateGitToolbar()" in body
+
+
+def test_disconnect_updates_git_toolbar(index_html: str) -> None:
+    """devGhDisconnect calls updateGitToolbar after disconnecting."""
+    body = _extract_func(index_html, "devGhDisconnect")
+    assert "updateGitToolbar()" in body
