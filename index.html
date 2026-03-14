@@ -592,6 +592,9 @@
     transition: background 0.3s;
   }
   .wizard-step-connector.completed { background: var(--accent); }
+  .wizard-step.dragging { opacity: 0.4; }
+  .wizard-step.drag-over-left { box-shadow: -3px 0 0 0 var(--accent); }
+  .wizard-step.drag-over-right { box-shadow: 3px 0 0 0 var(--accent); }
   .wizard-nav {
     display: flex; align-items: center; justify-content: space-between;
     margin-top: 24px; gap: 16px;
@@ -1376,6 +1379,7 @@
     color: var(--error); max-height: 120px; overflow-y: auto;
     line-height: 1.8;
   }
+  .dev-errors.hidden { display: none; }
 
   .dev-validation-badge {
     display: inline-flex; align-items: center; gap: 5px;
@@ -3367,9 +3371,9 @@ function buildForm(schema, targetForm) {
       step.id = `wizard-tab-${i}`;
       step.setAttribute('aria-controls', `wizard-panel-${i}`);
       step.setAttribute('aria-label', `Step ${section.step || (i + 1)}: ${section.title}`);
-      step.onclick = () => wizardStepClick(i);
+      step.onclick = () => wizardStepClick(i, form);
       step.onkeydown = (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); wizardStepClick(i); }
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); wizardStepClick(i, form); }
         else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
           e.preventDefault();
           const next = i < schema.sections.length - 1 ? i + 1 : 0;
@@ -3456,7 +3460,7 @@ function buildForm(schema, targetForm) {
         backBtn.type = 'button';
         backBtn.className = 'btn-wizard btn-wizard-back';
         backBtn.innerHTML = '<svg width="14" height="14"><use href="#icon-arrow-left"/></svg> Back';
-        backBtn.onclick = () => wizardGoTo(sectionIdx - 1);
+        backBtn.onclick = () => wizardGoTo(sectionIdx - 1, form);
         nav.appendChild(backBtn);
       } else {
         nav.appendChild(document.createElement('div')); // spacer
@@ -3472,7 +3476,7 @@ function buildForm(schema, targetForm) {
         nextBtn.type = 'button';
         nextBtn.className = 'btn-wizard btn-wizard-next';
         nextBtn.innerHTML = 'Next <svg width="14" height="14"><use href="#icon-arrow-right"/></svg>';
-        nextBtn.onclick = () => wizardNext(sectionIdx);
+        nextBtn.onclick = () => wizardNext(sectionIdx, form);
         nav.appendChild(nextBtn);
       }
 
@@ -3483,11 +3487,13 @@ function buildForm(schema, targetForm) {
   }
 
   // Wizard: hide the default submit area, show it only on the last step
-  if (isWizard) {
-    wizardCurrentStep = 0;
-    document.querySelector('.submit-area').style.display = 'none';
-  } else {
-    document.querySelector('.submit-area').style.display = '';
+  if (!targetForm) {
+    if (isWizard) {
+      wizardCurrentStep = 0;
+      document.querySelector('.submit-area').style.display = 'none';
+    } else {
+      document.querySelector('.submit-area').style.display = '';
+    }
   }
 
   // Set up conditional visibility (visible_when)
@@ -3766,12 +3772,12 @@ function validateSectionWithErrors(section) {
 //  WIZARD NAVIGATION
 // ============================================================
 
-function wizardStepClick(targetStep) {
+function wizardStepClick(targetStep, formEl) {
+  const form = formEl || document.getElementById('dynamicForm');
+  const isPreview = form.id !== 'dynamicForm';
   if (targetStep === wizardCurrentStep) return;
-  // Only validate when moving forward.
-  // Note: multi-step forward jumps only validate the current step by design,
-  // allowing users to skip ahead once the current step is complete.
-  if (targetStep > wizardCurrentStep && currentSchema) {
+  // Only validate when moving forward (skip validation in preview)
+  if (!isPreview && targetStep > wizardCurrentStep && currentSchema) {
     const missing = validateSectionWithErrors(currentSchema.sections[wizardCurrentStep]);
     if (missing.length > 0) {
       showToast(`Missing ${missing.length} required field${missing.length !== 1 ? 's' : ''}: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ` and ${missing.length - 3} more` : ''}.`, 'error');
@@ -3779,11 +3785,13 @@ function wizardStepClick(targetStep) {
       return;
     }
   }
-  wizardGoTo(targetStep);
+  wizardGoTo(targetStep, form);
 }
 
-function wizardNext(fromStep) {
-  if (currentSchema) {
+function wizardNext(fromStep, formEl) {
+  const form = formEl || document.getElementById('dynamicForm');
+  const isPreview = form.id !== 'dynamicForm';
+  if (!isPreview && currentSchema) {
     const missing = validateSectionWithErrors(currentSchema.sections[fromStep]);
     if (missing.length > 0) {
       showToast(`Missing ${missing.length} required field${missing.length !== 1 ? 's' : ''}: ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ` and ${missing.length - 3} more` : ''}.`, 'error');
@@ -3791,16 +3799,18 @@ function wizardNext(fromStep) {
       return;
     }
   }
-  wizardGoTo(fromStep + 1);
+  wizardGoTo(fromStep + 1, form);
 }
 
-function wizardGoTo(stepIndex) {
-  if (!currentSchema) return;
-  const totalSteps = currentSchema.sections.length;
+function wizardGoTo(stepIndex, formEl) {
+  const form = formEl || document.getElementById('dynamicForm');
+  const isPreview = form.id !== 'dynamicForm';
+  const schema = isPreview ? devParsedSchema : currentSchema;
+  if (!schema) return;
+  const totalSteps = schema.sections.length;
   if (stepIndex < 0 || stepIndex >= totalSteps) return;
 
-  wizardCurrentStep = stepIndex;
-  const form = document.getElementById('dynamicForm');
+  if (!isPreview) wizardCurrentStep = stepIndex;
 
   // Toggle section visibility
   form.querySelectorAll('.form-section').forEach(el => {
@@ -3839,9 +3849,16 @@ function wizardGoTo(stepIndex) {
     else el.classList.remove('completed');
   });
 
-  // Show/hide submit area on last step
-  const isLast = stepIndex === totalSteps - 1;
-  document.querySelector('.submit-area').style.display = isLast ? '' : 'none';
+  // Show/hide submit area on last step (main form only)
+  if (!isPreview) {
+    const isLast = stepIndex === totalSteps - 1;
+    document.querySelector('.submit-area').style.display = isLast ? '' : 'none';
+  }
+
+  // Update add-section button visibility in wizard preview
+  if (isPreview) {
+    devUpdateWizardAddButtons(form, stepIndex);
+  }
 }
 
 // ============================================================
@@ -6462,6 +6479,7 @@ function initSchemaEditor() {
     if (folds && folds.size > 0) folds.clear();
     devSchemaText = code;
     devUpdateLineNumbers(el, gutterEl);
+    devUpdateSchemaValidation();
     clearTimeout(devPreviewDebounce);
     devPreviewDebounce = setTimeout(devUpdateSchemaPreview, 300);
     devSaveEditorState();
@@ -6518,12 +6536,10 @@ function devValidateSchema(schema) {
   return errors;
 }
 
-function devUpdateSchemaPreview() {
+function devUpdateSchemaValidation() {
   const badge = document.getElementById('schemaValidBadge');
   const badgeText = document.getElementById('schemaValidText');
   const errPanel = document.getElementById('schemaErrors');
-  const previewForm = document.getElementById('schemaPreviewForm');
-  const previewEmpty = document.getElementById('schemaPreviewEmpty');
 
   let schema;
   try {
@@ -6533,8 +6549,6 @@ function devUpdateSchemaPreview() {
     badgeText.textContent = 'parse error';
     errPanel.textContent = e.message;
     errPanel.classList.remove('hidden');
-    previewForm.innerHTML = '';
-    previewEmpty.style.display = 'flex';
     devSchemaValid = false;
     devParsedSchema = null;
     return;
@@ -6551,8 +6565,6 @@ function devUpdateSchemaPreview() {
       errPanel.appendChild(line);
     });
     errPanel.classList.remove('hidden');
-    previewForm.innerHTML = '';
-    previewEmpty.style.display = 'flex';
     devSchemaValid = false;
     devParsedSchema = null;
     return;
@@ -6564,6 +6576,21 @@ function devUpdateSchemaPreview() {
   errPanel.classList.add('hidden');
   devSchemaValid = true;
   devParsedSchema = schema;
+}
+
+function devUpdateSchemaPreview() {
+  devUpdateSchemaValidation();
+
+  const previewForm = document.getElementById('schemaPreviewForm');
+  const previewEmpty = document.getElementById('schemaPreviewEmpty');
+
+  if (!devSchemaValid || !devParsedSchema) {
+    previewForm.innerHTML = '';
+    previewEmpty.style.display = 'flex';
+    return;
+  }
+
+  const schema = devParsedSchema;
 
   // Auto-fill sample data if still default empty
   if (!devSampleDataText || devSampleDataText.trim() === '{}' || devSampleDataText.trim() === '') {
@@ -6671,12 +6698,21 @@ function devPreviewContextItems(sectionIdx) {
 function devCreateSectionAddButton(atIndex) {
   const wrapper = document.createElement('div');
   wrapper.className = 'dev-section-add';
+  wrapper.dataset.addIndex = atIndex;
   wrapper.title = 'Add section here';
   wrapper.innerHTML = '<div class="dev-section-add-line"></div>' +
     '<span class="dev-section-add-btn">+</span>' +
     '<div class="dev-section-add-line"></div>';
   wrapper.addEventListener('click', () => devInsertSection(atIndex));
   return wrapper;
+}
+
+function devUpdateWizardAddButtons(container, stepIndex) {
+  container.querySelectorAll('.dev-section-add').forEach(el => {
+    const idx = parseInt(el.dataset.addIndex);
+    // Show only the button before (idx === stepIndex) and after (idx === stepIndex + 1) the active section
+    el.style.display = (idx === stepIndex || idx === stepIndex + 1) ? '' : 'none';
+  });
 }
 
 function devEnablePreviewDragDrop() {
@@ -6699,12 +6735,18 @@ function devEnablePreviewDragDrop() {
   const sections = Array.from(container.querySelectorAll('.form-section'));
 
   // --- Add-section divider buttons between and after sections ---
+  const isWizard = devParsedSchema && devParsedSchema.wizard === true;
   sections.forEach((sectionEl, sIdx) => {
     // Insert add-button before each section (between previous and this)
     container.insertBefore(devCreateSectionAddButton(sIdx), sectionEl);
   });
   // Add-button after the last section
   container.appendChild(devCreateSectionAddButton(sections.length));
+
+  // In wizard mode, only show add-buttons adjacent to the visible step
+  if (isWizard) {
+    devUpdateWizardAddButtons(container, 0);
+  }
 
   sections.forEach((sectionEl, sIdx) => {
     // --- Section drag handle in title ---
@@ -6830,6 +6872,70 @@ function devEnablePreviewDragDrop() {
       showContextMenu(e.clientX, e.clientY, devPreviewContextItems(sIdx));
     });
   });
+
+  // --- Wizard step indicator drag-to-reorder ---
+  const indicator = container.querySelector('.wizard-indicator');
+  if (indicator) {
+    const steps = Array.from(indicator.querySelectorAll('.wizard-step'));
+    let stepDragState = null;
+
+    steps.forEach((stepEl, sIdx) => {
+      stepEl.draggable = true;
+      stepEl.style.cursor = 'grab';
+
+      stepEl.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
+        stepDragState = { el: stepEl, fromIdx: sIdx };
+        stepEl.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+      });
+
+      stepEl.addEventListener('dragend', () => {
+        stepEl.classList.remove('dragging');
+        steps.forEach(s => s.classList.remove('drag-over-left', 'drag-over-right'));
+        stepDragState = null;
+      });
+
+      stepEl.addEventListener('dragover', (e) => {
+        if (!stepDragState || stepDragState.el === stepEl) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = 'move';
+        steps.forEach(s => s.classList.remove('drag-over-left', 'drag-over-right'));
+        const rect = stepEl.getBoundingClientRect();
+        if (e.clientX < rect.left + rect.width / 2) {
+          stepEl.classList.add('drag-over-left');
+        } else {
+          stepEl.classList.add('drag-over-right');
+        }
+      });
+
+      stepEl.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!stepDragState) return;
+        const fromIdx = stepDragState.fromIdx;
+        const rect = stepEl.getBoundingClientRect();
+        let toIdx = sIdx;
+        if (e.clientX >= rect.left + rect.width / 2) toIdx++;
+        if (fromIdx < toIdx) toIdx--;
+        if (fromIdx !== toIdx) {
+          const moved = devParsedSchema.sections.splice(fromIdx, 1)[0];
+          devParsedSchema.sections.splice(toIdx, 0, moved);
+          devSyncSchemaFromPreview();
+        }
+        steps.forEach(s => s.classList.remove('drag-over-left', 'drag-over-right'));
+        stepDragState = null;
+      });
+    });
+
+    indicator.addEventListener('dragleave', (e) => {
+      if (!indicator.contains(e.relatedTarget)) {
+        steps.forEach(s => s.classList.remove('drag-over-left', 'drag-over-right'));
+      }
+    });
+  }
 }
 
 function devNewSchema() {

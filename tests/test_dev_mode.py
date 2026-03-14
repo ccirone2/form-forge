@@ -518,16 +518,16 @@ def test_schema_editor_debounce_300ms(index_html: str) -> None:
 
 
 def test_schema_valid_badge_states(index_html: str) -> None:
-    """devUpdateSchemaPreview sets badge to valid/invalid/parse error."""
-    body = _extract_func(index_html, "devUpdateSchemaPreview")
+    """devUpdateSchemaValidation sets badge to valid/invalid/parse error."""
+    body = _extract_func(index_html, "devUpdateSchemaValidation")
     assert "'dev-validation-badge valid'" in body
     assert "'dev-validation-badge invalid'" in body
     assert "'parse error'" in body
 
 
 def test_schema_errors_populated(index_html: str) -> None:
-    """devUpdateSchemaPreview populates error panel with error details."""
-    body = _extract_func(index_html, "devUpdateSchemaPreview")
+    """devUpdateSchemaValidation populates error panel with error details."""
+    body = _extract_func(index_html, "devUpdateSchemaValidation")
     assert "errPanel" in body
     # Errors are iterated and appended
     assert "forEach" in body
@@ -1638,14 +1638,14 @@ def test_auto_sync_on_first_use(index_html: str) -> None:
 
 
 def test_parsed_schema_set_on_valid(index_html: str) -> None:
-    """devUpdateSchemaPreview sets devParsedSchema on valid parse."""
-    body = _extract_func(index_html, "devUpdateSchemaPreview")
+    """devUpdateSchemaValidation sets devParsedSchema on valid parse."""
+    body = _extract_func(index_html, "devUpdateSchemaValidation")
     assert "devParsedSchema = schema" in body
 
 
 def test_parsed_schema_cleared_on_invalid(index_html: str) -> None:
-    """devUpdateSchemaPreview clears devParsedSchema on invalid parse."""
-    body = _extract_func(index_html, "devUpdateSchemaPreview")
+    """devUpdateSchemaValidation clears devParsedSchema on invalid parse."""
+    body = _extract_func(index_html, "devUpdateSchemaValidation")
     assert "devParsedSchema = null" in body
 
 
@@ -1795,3 +1795,82 @@ def test_docs_not_on_setup_view(index_html: str) -> None:
     assert 'id="docsSection"' not in setup_html, (
         "docsSection should not be in the setup view"
     )
+
+
+# --- Wizard Preview Navigation Fix ---
+
+
+def test_wizard_goto_accepts_form_param(index_html: str) -> None:
+    """wizardGoTo should accept an optional formEl parameter."""
+    body = _extract_func(index_html, "wizardGoTo")
+    assert "formEl" in body, "wizardGoTo should accept formEl parameter"
+    assert "dynamicForm" in body, "wizardGoTo should fall back to dynamicForm"
+
+
+def test_wizard_next_accepts_form_param(index_html: str) -> None:
+    """wizardNext should accept an optional formEl parameter."""
+    body = _extract_func(index_html, "wizardNext")
+    assert "formEl" in body, "wizardNext should accept formEl parameter"
+
+
+def test_wizard_step_click_accepts_form_param(index_html: str) -> None:
+    """wizardStepClick should accept an optional formEl parameter."""
+    body = _extract_func(index_html, "wizardStepClick")
+    assert "formEl" in body, "wizardStepClick should accept formEl parameter"
+
+
+def test_wizard_goto_skips_submit_area_in_preview(index_html: str) -> None:
+    """wizardGoTo should not touch .submit-area when operating on a preview form."""
+    body = _extract_func(index_html, "wizardGoTo")
+    assert "isPreview" in body, "wizardGoTo should detect preview mode"
+
+
+def test_buildform_passes_form_to_wizard_handlers(index_html: str) -> None:
+    """buildForm should pass the form container to wizard click handlers."""
+    body = _extract_func(index_html, "buildForm")
+    assert "wizardStepClick(i, form)" in body
+    assert "wizardNext(sectionIdx, form)" in body
+    assert "wizardGoTo(sectionIdx - 1, form)" in body
+
+
+def test_buildform_skips_submit_area_for_preview(index_html: str) -> None:
+    """buildForm should not touch .submit-area when rendering into a target form."""
+    body = _extract_func(index_html, "buildForm")
+    assert "if (!targetForm)" in body, (
+        "submit-area toggle should be guarded by targetForm check"
+    )
+
+
+def test_wizard_step_drag_reorder_in_preview(index_html: str) -> None:
+    """Wizard step indicators should support drag-to-reorder in preview."""
+    body = _extract_func(index_html, "devEnablePreviewDragDrop")
+    assert "wizard-indicator" in body, "should find the wizard indicator"
+    assert "wizard-step" in body
+    assert "dragstart" in body
+    assert "devSyncSchemaFromPreview" in body
+
+
+def test_wizard_add_buttons_scoped_to_active_step(index_html: str) -> None:
+    """In wizard preview, add-section buttons should only show near the active step."""
+    body = _extract_func(index_html, "devEnablePreviewDragDrop")
+    assert "devUpdateWizardAddButtons" in body, (
+        "should call devUpdateWizardAddButtons on initial render"
+    )
+    goto_body = _extract_func(index_html, "wizardGoTo")
+    assert "devUpdateWizardAddButtons" in goto_body, (
+        "should update add-button visibility on step change"
+    )
+
+
+def test_dev_update_wizard_add_buttons_function(index_html: str) -> None:
+    """devUpdateWizardAddButtons should toggle display of .dev-section-add elements."""
+    body = _extract_func(index_html, "devUpdateWizardAddButtons")
+    assert "dev-section-add" in body
+    assert "addIndex" in body
+
+
+def test_wizard_step_drag_css(index_html: str) -> None:
+    """CSS for wizard step drag indicators should exist."""
+    assert ".wizard-step.dragging" in index_html
+    assert ".wizard-step.drag-over-left" in index_html
+    assert ".wizard-step.drag-over-right" in index_html
