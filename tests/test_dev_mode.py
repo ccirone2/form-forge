@@ -1752,25 +1752,74 @@ def test_dev_docs_in_valid_tabs(index_html: str) -> None:
     assert "dev-docs" in index_html
 
 
-def test_how_it_works_on_setup(index_html: str) -> None:
-    """The 'How It Works' card should remain on the setup view, not in dev-docs."""
+def test_how_it_works_removed_from_setup(index_html: str) -> None:
+    """The 'How It Works' card was removed to reduce clutter on the setup view."""
     setup_start = index_html.index('id="view-setup"')
     setup_end = index_html.index("<main", setup_start + 1)
     setup_html = index_html[setup_start:setup_end]
-    assert "how-it-works-card" in setup_html, (
-        "How It Works card should be in setup view"
-    )
-    dev_start = index_html.index('id="view-dev-docs"')
-    dev_end = index_html.index("</main>", dev_start)
-    dev_html = index_html[dev_start:dev_end]
-    assert "how-it-works-card" not in dev_html, (
-        "How It Works card should not be in dev-docs view"
+    assert "how-it-works-card" not in setup_html, (
+        "How It Works card should not be in setup view"
     )
 
 
 def test_profile_empty_state_hint(index_html: str) -> None:
     """Profile dropdown should show a helpful hint when empty."""
     assert "Save a profile to autofill common fields" in index_html
+
+
+def test_picker_before_local_files(index_html: str) -> None:
+    """Picker section should appear before the Local Files card in setup view."""
+    setup_start = index_html.index('id="view-setup"')
+    setup_end = index_html.index("<main", setup_start + 1)
+    setup_html = index_html[setup_start:setup_end]
+    picker_pos = setup_html.index('id="pickerSection"')
+    local_pos = setup_html.index('id="localCard"')
+    assert picker_pos < local_pos, "Picker section should appear above Local Files card"
+
+
+def test_local_files_collapsed_by_default(index_html: str) -> None:
+    """Local Files card body should be collapsed by default."""
+    assert 'id="localCardBody"' in index_html
+    # The local-card-body should not have 'open' class by default
+    start = index_html.index('id="localCardBody"')
+    tag_start = index_html.rfind("<", 0, start)
+    tag_end = index_html.index(">", start)
+    tag = index_html[tag_start : tag_end + 1]
+    assert "local-card-body" in tag
+    assert "open" not in tag.split("class=")[1].split('"')[1], (
+        "Local card body should not have 'open' class by default"
+    )
+
+
+def test_choose_a_form_heading(index_html: str) -> None:
+    """Picker section should use 'Choose a Form' heading."""
+    assert "Choose a Form" in index_html
+
+
+def test_activity_log_label(index_html: str) -> None:
+    """Console panel should be labeled 'Activity Log' not 'console output'."""
+    assert "Activity Log" in index_html
+    assert "console output" not in index_html
+
+
+def test_console_panel_hidden_by_default(index_html: str) -> None:
+    """Console panel should be hidden initially, shown when log entries are added."""
+    start = index_html.index('id="consolePanel"')
+    tag_start = index_html.rfind("<", 0, start)
+    tag_end = index_html.index(">", start)
+    tag = index_html[tag_start : tag_end + 1]
+    assert "display:none" in tag, "Console panel should be hidden by default"
+
+
+def test_dev_mode_confirmation_gate(index_html: str) -> None:
+    """Dev Mode toggle should show a confirmation tooltip on first activation."""
+    body = _extract_func(index_html, "toggleDevMode")
+    assert "formforge-dev-confirmed" in body, (
+        "toggleDevMode should check for first-time confirmation"
+    )
+    assert "dev-confirm-tooltip" in body, (
+        "toggleDevMode should create a confirmation tooltip"
+    )
 
 
 def test_picker_card_dblclick_handler(index_html: str) -> None:

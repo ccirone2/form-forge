@@ -14,6 +14,27 @@
 
 ## Log
 
+### 2026-03-14 — UX: Audience Separation (#141)
+**Issues:** #141
+
+Improved separation between end-user and developer experiences across the interface:
+
+1. **Setup page reordered** — GitHub repository connection (primary end-user path) now appears first. Picker section ("Choose a Form") appears directly below the GitHub card for prominence. Local Files section moved below the divider with a collapsible toggle, collapsed by default.
+2. **Labels softened** — "owner / repo" → "Repository", "Schema JSON" → "Form Definition", "Template Python" → "Document Template". Branch input moved into "Advanced options" alongside access token.
+3. **"How It Works" card removed** — Removed the developer-oriented "How It Works" card entirely (directory trees, `generate_docx(data)`). The hero text already communicates the value prop; the card was redundant clutter.
+4. **Dev Mode entry gate** — First-time activation shows a confirmation tooltip explaining Dev Mode is for building forms, with Cancel/Enter buttons. Subsequent activations skip the gate (persisted in localStorage).
+5. **Console panel → Activity Log** — Renamed from "console output" to "Activity Log". Hidden by default, auto-shows when first log entry is added.
+6. **Page title updated** — "GitHub-Driven Form Builder" → "Fill Forms, Get Documents".
+7. **Picker heading updated** — "Available Forms" → "Choose a Form" (action-oriented).
+8. **Unused CSS cleaned up** — Removed `.how-it-works-card`, `.how-it-works-description`, `.how-it-works-pre` styles.
+
+**Decisions:**
+- Used localStorage flag `formforge-dev-confirmed` for the Dev Mode gate so it only appears once per browser
+- Local Files section expands on click rather than being removed entirely, since it's still a valid workflow for both audiences
+- Picker section placed between GitHub card and divider so connected forms appear prominently without scrolling past unrelated sections
+
+---
+
 ### 2026-03-14 — UX: Custom Scrollbar Styling (#139)
 **Issues:** #139
 
