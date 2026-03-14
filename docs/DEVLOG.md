@@ -14,6 +14,46 @@
 
 ## Log
 
+### 2026-03-14 — Dev Mode: GitHub Repo Integration in Workspace (#125)
+**Issue:** #125
+
+Added GitHub repository integration to the Dev Mode Workspace tab, completing the development loop: edit in Dev Mode, commit, push, forms are live.
+
+**Connect Repo:**
+- "Connect Repo" button in workspace toolbar alongside "Open Folder"
+- Modal dialog with owner/repo input (accepts full GitHub URLs), PAT input (masked), and optional branch field
+- Token stored in localStorage (`formforge-dev-github-token`) with clear button
+- Security warning about token scope displayed in modal
+- Fetches `schemas/*.json` and `templates/*.py` from connected repo via GitHub API
+- Excludes `_schema.spec.json` and `stencils.py` as with local workspace
+- Badge shows `owner/repo @ branch` with file count
+
+**Commit & Push:**
+- Commit button appears when files are modified in the builders
+- Commit panel shows changed files summary and commit message textarea
+- Single-file commits use GitHub Contents API (`PUT /repos/{owner}/{repo}/contents/{path}`)
+- Multi-file commits use Git Trees + Commits API for atomic operations (blobs, tree, commit, ref update)
+- 409 conflict detection with user-friendly error message
+- Success toast with abbreviated commit SHA
+
+**Branch Support:**
+- Branch selector dropdown populated from GitHub API after connecting
+- "New Branch" button creates a branch from current via `POST /repos/{owner}/{repo}/git/refs`
+- Branch name validation (alphanumeric, dots, dashes, slashes)
+- Switching branches re-fetches all files
+
+**File Modification Tracking:**
+- Original content stored on fetch for diff comparison
+- Modified files tracked in `devGhModifiedFiles` Set
+- Visual indicator (warning-colored dot) on modified files in file list
+- Schema and template editor `onUpdate` hooks trigger modification tracking
+
+**Other:**
+- Disconnect button clears all GitHub workspace state and returns to empty workspace
+- 3 new SVG icons: git-branch, git-commit, unlink
+- All new CSS uses design tokens (no hard-coded values)
+- 56 new tests covering HTML structure, CSS classes, SVG icons, JS functions, API patterns, and security
+
 ### 2026-03-13 — Dev Mode: Schema Builder, Template Builder & Local Workspace (#115)
 **Issues:** #115 (#116, #117, #118, #119, #120, #121, #122)
 
