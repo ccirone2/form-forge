@@ -14,6 +14,28 @@
 
 ## Log
 
+### 2026-03-14 — Info Field Type & Repeater Table Display (#159)
+**Issues:** #159
+
+Added two enhancements to FormForge field types:
+
+1. **New `info` field type** — Read-only display block for inline instructions, warnings, or policy text within form sections. Supports three visual styles (`info`, `warning`, `success`). Not an input — skipped in data collection, validation, and population. Schema requires `content` property; `style` is optional (defaults to `info`).
+
+2. **Repeater table display mode** — Extended the existing `repeater` field with an optional `display` property (`"cards"` default, `"table"` for compact table layout). Table mode renders sub-fields as column headers with data rows in a `<table>`, with horizontal scroll on narrow viewports. Same data format and collection logic as card mode — no breaking changes.
+
+**Changes:**
+- `schemas/_schema.spec.json` — Added `info` to fieldType enum, `content`/`style`/`display` properties with conditional requirements and exclusion blocks
+- `index.html` — CSS for `.info-block*` and `.repeater-table*`, `createInfoField()` function, `createRepeaterSubInput()` helper extracted from repeater, table mode branch in `createRepeaterField()`, skip logic updates in 6 locations, snippets, context menu entries, sample data generator
+- `docs/FIELD_TYPES.md` — Added info type docs, updated repeater docs with display property
+- `tests/test_schemas.py` — 6 new tests for info and repeater display validation (positive + negative)
+
+**Decisions:**
+- Extended repeater with `display` property rather than creating a new `table` field type — avoids duplicating data model, collection, validation, and template handling
+- Extracted `createRepeaterSubInput()` helper to share input creation logic between card and table modes
+- Info field uses `label` as block title and `content` as body text, following the pattern of heading using `label` for its display text
+
+---
+
 ### 2026-03-14 — Git Controls in Editor Tabs (#157)
 **Issues:** #157
 

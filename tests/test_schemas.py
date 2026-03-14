@@ -52,6 +52,7 @@ def test_spec_enumerates_all_field_types():
         "currency",
         "heading",
         "hidden",
+        "info",
         "address",
         "file",
         "signature",
@@ -840,3 +841,147 @@ def test_no_duplicate_field_ids():
         ids = _collect_all_ids(schema)
         dupes = [i for i in ids if ids.count(i) > 1]
         assert len(ids) == len(set(ids)), f"Duplicate field IDs in {path.name}: {dupes}"
+
+
+# ------------------------------------------------------------------
+# Info field type tests
+# ------------------------------------------------------------------
+
+
+def test_info_field_validates():
+    """A schema with an info field (content + style) should validate."""
+    spec = _load_spec()
+    schema = {
+        "title": "Info Test",
+        "sections": [
+            {
+                "title": "Section",
+                "fields": [
+                    {
+                        "id": "notice",
+                        "label": "Notice",
+                        "type": "info",
+                        "content": "Please read carefully.",
+                        "style": "warning",
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_info_field_missing_content_fails():
+    """An info field without content should fail validation."""
+    spec = _load_spec()
+    schema = {
+        "title": "Info Test",
+        "sections": [
+            {
+                "title": "Section",
+                "fields": [{"id": "notice", "label": "Notice", "type": "info"}],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_non_info_field_with_content_fails():
+    """A non-info field with content property should fail validation."""
+    spec = _load_spec()
+    schema = {
+        "title": "Bad Content",
+        "sections": [
+            {
+                "title": "Section",
+                "fields": [
+                    {
+                        "id": "name",
+                        "label": "Name",
+                        "type": "text",
+                        "content": "Not allowed",
+                    }
+                ],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_non_info_field_with_style_fails():
+    """A non-info field with style property should fail validation."""
+    spec = _load_spec()
+    schema = {
+        "title": "Bad Style",
+        "sections": [
+            {
+                "title": "Section",
+                "fields": [
+                    {
+                        "id": "name",
+                        "label": "Name",
+                        "type": "text",
+                        "style": "warning",
+                    }
+                ],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=schema, schema=spec)
+
+
+# ------------------------------------------------------------------
+# Repeater display property tests
+# ------------------------------------------------------------------
+
+
+def test_repeater_table_display_validates():
+    """A repeater with display='table' should validate."""
+    spec = _load_spec()
+    schema = {
+        "title": "Table Repeater",
+        "sections": [
+            {
+                "title": "Items",
+                "fields": [
+                    {
+                        "id": "items",
+                        "label": "Items",
+                        "type": "repeater",
+                        "display": "table",
+                        "fields": [
+                            {"id": "name", "label": "Name", "type": "text"},
+                            {"id": "qty", "label": "Qty", "type": "number"},
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_non_repeater_with_display_fails():
+    """A non-repeater field with display property should fail validation."""
+    spec = _load_spec()
+    schema = {
+        "title": "Bad Display",
+        "sections": [
+            {
+                "title": "Section",
+                "fields": [
+                    {
+                        "id": "name",
+                        "label": "Name",
+                        "type": "text",
+                        "display": "table",
+                    }
+                ],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=schema, schema=spec)
