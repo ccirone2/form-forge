@@ -751,19 +751,6 @@
     display: flex; gap: 8px; justify-content: flex-end;
   }
 
-  .how-it-works-card { background: var(--surface-2); border-style: dashed; }
-  .how-it-works-description {
-    font-size: var(--text-sm-md); color: var(--text-muted); line-height: 1.7; margin-bottom: 12px;
-  }
-  .how-it-works-description strong { color: var(--text); }
-  .how-it-works-description code {
-    font-family: var(--font-mono); font-size: var(--text-sm);
-    background: var(--bg); padding: 1px 5px; border-radius: var(--radius-xs); color: var(--accent-hover);
-  }
-  .how-it-works-pre {
-    font-family: var(--font-mono); font-size: var(--text-sm); color: var(--text-muted);
-    line-height: 1.8; padding: 4px 0; margin: 0;
-  }
   .icon-inline {
     vertical-align: -2px; margin-right: 6px;
   }
@@ -1984,6 +1971,18 @@
       </div>
     </div>
 
+    <!-- Picker appears after connect — positioned directly under GitHub card for prominence -->
+    <div class="picker-section" id="pickerSection" style="display:none;">
+      <h3>Choose a Form</h3>
+      <div class="picker-grid" id="pickerGrid"></div>
+      <div class="launch-area">
+        <button type="button" class="btn-primary" id="launchBtn" disabled onclick="launchForm()">
+          <svg width="16" height="16"><use href="#icon-arrow-right"/></svg>
+          Open Selected Form
+        </button>
+      </div>
+    </div>
+
     <!-- Divider -->
     <div class="source-divider">
       <span>or load files from your computer</span>
@@ -2033,30 +2032,6 @@
           </button>
           <span class="local-status" id="localStatus"></span>
         </div>
-      </div>
-    </div>
-
-    <!-- ===== HOW IT WORKS (kept for dev reference, uses same class for CSS) ===== -->
-    <div class="config-card how-it-works-card">
-      <h3>
-        <svg width="16" height="16" class="icon-inline"><use href="#icon-book"/></svg>
-        How It Works
-      </h3>
-      <p class="how-it-works-description">
-        Connect a GitHub repository or load local files to get started. Pick a form, fill it out, and export a professionally formatted DOCX document — all without leaving your browser. No data is uploaded or stored anywhere.
-      </p>
-    </div>
-
-
-    <!-- Picker appears after connect -->
-    <div class="picker-section" id="pickerSection" style="display:none;">
-      <h3>Available Forms</h3>
-      <div class="picker-grid" id="pickerGrid"></div>
-      <div class="launch-area">
-        <button type="button" class="btn-primary" id="launchBtn" disabled onclick="launchForm()">
-          <svg width="16" height="16"><use href="#icon-arrow-right"/></svg>
-          Open Selected Form
-        </button>
       </div>
     </div>
   </div>
@@ -5871,7 +5846,7 @@ docx_bytes = generate_docx(form_data)
   } catch (err) {
     console.error(err);
     log('Export error: ' + err.message, 'error');
-    showToast('Export failed — see console output below for details.', 'error');
+    showToast('Export failed — see Activity Log below for details.', 'error');
   } finally {
     hideOverlay();
   }
