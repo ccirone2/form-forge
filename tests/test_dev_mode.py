@@ -203,6 +203,16 @@ _REQUIRED_FUNCTIONS = [
     "devPollWorkspace",
     "devRefreshWorkspace",
     "initWorkspaceDropZone",
+    "devUpdateLineNumbers",
+    "devFindFoldRegions",
+    "devToggleFold",
+    "devEditorKeydownHandler",
+    "devSetCursorOffset",
+    "devGetCursorOffset",
+    "devGenerateSampleData",
+    "devAutoFillSampleData",
+    "getFieldAccessor",
+    "devCountTemplateFieldRefs",
 ]
 
 
@@ -228,6 +238,7 @@ _REQUIRED_STATE_VARS = [
     "workspaceFiles",
     "devWorkspacePoller",
     "currentWorkspaceFile",
+    "devParsedSchema",
 ]
 
 
@@ -1409,3 +1420,243 @@ class TestGitHubWorkspaceJavaScript:
         body = match.group(1)
         # Check for regex validation of branch name
         assert "test(name)" in body or "test(" in body
+
+
+# ============================================================
+#  ISSUE #130 — Line Numbers in Editors
+# ============================================================
+
+
+def test_schema_line_numbers_element(index_html: str) -> None:
+    """Schema editor has a line numbers gutter element."""
+    assert 'id="schemaLineNumbers"' in index_html
+
+
+def test_template_line_numbers_element(index_html: str) -> None:
+    """Template editor has a line numbers gutter element."""
+    assert 'id="templateLineNumbers"' in index_html
+
+
+def test_sample_line_numbers_element(index_html: str) -> None:
+    """Sample data editor has a line numbers gutter element."""
+    assert 'id="sampleLineNumbers"' in index_html
+
+
+def test_editor_wrap_css_class(index_html: str) -> None:
+    """CSS class .dev-editor-wrap exists."""
+    assert ".dev-editor-wrap" in index_html
+
+
+def test_line_numbers_css_class(index_html: str) -> None:
+    """CSS class .dev-line-numbers exists with user-select: none."""
+    assert ".dev-line-numbers" in index_html
+    match = re.search(r"\.dev-line-numbers\s*\{([^}]+)\}", index_html)
+    assert match
+    assert "user-select: none" in match.group(1)
+
+
+def test_scroll_sync_schema_editor(index_html: str) -> None:
+    """Schema editor has scroll sync for line numbers."""
+    body = _extract_func(index_html, "initSchemaEditor")
+    assert "'scroll'" in body
+    assert "gutterEl.scrollTop" in body or "scrollTop" in body
+
+
+def test_scroll_sync_template_editor(index_html: str) -> None:
+    """Template editor has scroll sync for line numbers."""
+    body = _extract_func(index_html, "initTemplateEditor")
+    assert "'scroll'" in body
+    assert "tplGutter.scrollTop" in body or "scrollTop" in body
+
+
+def test_fold_toggle_css_class(index_html: str) -> None:
+    """CSS class .dev-fold-toggle exists."""
+    assert ".dev-fold-toggle" in index_html
+
+
+def test_fold_regions_detects_json(index_html: str) -> None:
+    """devFindFoldRegions handles JSON language."""
+    body = _extract_func(index_html, "devFindFoldRegions")
+    assert "'json'" in body or '"json"' in body
+
+
+def test_fold_regions_detects_python(index_html: str) -> None:
+    """devFindFoldRegions handles Python language."""
+    body = _extract_func(index_html, "devFindFoldRegions")
+    assert "'python'" in body or '"python"' in body
+
+
+def test_fold_state_variable(index_html: str) -> None:
+    """devFoldState Map variable exists."""
+    assert "devFoldState" in index_html
+
+
+# ============================================================
+#  ISSUE #131 — Keyboard Shortcuts
+# ============================================================
+
+
+def test_comment_toggle_python(index_html: str) -> None:
+    """Keyboard handler has Python comment toggle logic."""
+    body = _extract_func(index_html, "devEditorKeydownHandler")
+    assert "'# '" in body or '"# "' in body
+
+
+def test_move_line_alt_arrows(index_html: str) -> None:
+    """Keyboard handler checks altKey with ArrowUp/ArrowDown."""
+    body = _extract_func(index_html, "devEditorKeydownHandler")
+    assert "altKey" in body
+    assert "ArrowUp" in body
+    assert "ArrowDown" in body
+
+
+def _extract_global_keydown(html: str) -> str:
+    """Extract handleGlobalKeydown body (ends at window.addEventListener)."""
+    match = re.search(
+        r"function handleGlobalKeydown\b[^{]*\{([\s\S]*?)^(?:window\.|//\s*=)",
+        html,
+        re.M,
+    )
+    assert match, "handleGlobalKeydown not found"
+    return match.group(1)
+
+
+def test_ctrl_s_dev_mode_schema(index_html: str) -> None:
+    """Global handler routes Ctrl+S to devSaveSchema in dev mode."""
+    body = _extract_global_keydown(index_html)
+    assert "devSaveSchema" in body
+
+
+def test_ctrl_s_dev_mode_template(index_html: str) -> None:
+    """Global handler routes Ctrl+S to devSaveTemplate in dev mode."""
+    body = _extract_global_keydown(index_html)
+    assert "devSaveTemplate" in body
+
+
+def test_ctrl_enter_dev_mode_preview(index_html: str) -> None:
+    """Global handler routes Ctrl+Enter to devRunPreview in dev mode."""
+    body = _extract_global_keydown(index_html)
+    assert "devRunPreview" in body
+
+
+def test_schema_save_button_title(index_html: str) -> None:
+    """Schema save button has shortcut title attribute."""
+    assert re.search(
+        r'onclick="devSaveSchema\(\)"[^>]*title="[^"]*Ctrl\+S',
+        index_html,
+    )
+
+
+def test_template_save_button_title(index_html: str) -> None:
+    """Template save button has shortcut title attribute."""
+    assert re.search(
+        r'onclick="devSaveTemplate\(\)"[^>]*title="[^"]*Ctrl\+S',
+        index_html,
+    )
+
+
+def test_preview_button_title(index_html: str) -> None:
+    """Preview DOCX button has shortcut title attribute."""
+    assert re.search(
+        r'onclick="devRunPreview\(\)"[^>]*title="[^"]*Ctrl\+Enter',
+        index_html,
+    )
+
+
+# ============================================================
+#  ISSUE #132 — Auto-Generated Sample Data
+# ============================================================
+
+
+def test_sample_data_generators_object(index_html: str) -> None:
+    """SAMPLE_DATA_GENERATORS object exists."""
+    assert "SAMPLE_DATA_GENERATORS" in index_html
+
+
+def test_auto_fill_button_exists(index_html: str) -> None:
+    """Auto-fill button exists in HTML."""
+    assert "devAutoFillSampleData()" in index_html
+
+
+def test_generators_cover_field_types(index_html: str) -> None:
+    """Generators cover key field types."""
+    match = re.search(
+        r"const SAMPLE_DATA_GENERATORS\s*=\s*\{([\s\S]*?)\n\};",
+        index_html,
+    )
+    assert match
+    body = match.group(1)
+    for ft in [
+        "text",
+        "email",
+        "tel",
+        "number",
+        "currency",
+        "address",
+        "repeater",
+        "select",
+        "checkbox",
+        "toggle",
+        "hidden",
+    ]:
+        assert f"  {ft}:" in body or f"  {ft} :" in body, f"Generator missing for {ft}"
+
+
+def test_auto_sync_on_first_use(index_html: str) -> None:
+    """devUpdateSchemaPreview auto-fills sample data when empty."""
+    body = _extract_func(index_html, "devUpdateSchemaPreview")
+    assert "devGenerateSampleData" in body
+
+
+# ============================================================
+#  ISSUE #133 — Schema-Template Cross-Awareness
+# ============================================================
+
+
+def test_parsed_schema_set_on_valid(index_html: str) -> None:
+    """devUpdateSchemaPreview sets devParsedSchema on valid parse."""
+    body = _extract_func(index_html, "devUpdateSchemaPreview")
+    assert "devParsedSchema = schema" in body
+
+
+def test_parsed_schema_cleared_on_invalid(index_html: str) -> None:
+    """devUpdateSchemaPreview clears devParsedSchema on invalid parse."""
+    body = _extract_func(index_html, "devUpdateSchemaPreview")
+    assert "devParsedSchema = null" in body
+
+
+def test_template_context_uses_parsed_schema(index_html: str) -> None:
+    """devTemplateContextItems references devParsedSchema."""
+    body = _extract_func(index_html, "devTemplateContextItems")
+    assert "devParsedSchema" in body
+
+
+def test_coverage_badge_element(index_html: str) -> None:
+    """Schema preview header has coverage badge element."""
+    assert 'id="schemaCoverageBadge"' in index_html
+
+
+def test_coverage_badge_updated(index_html: str) -> None:
+    """devUpdateSchemaPreview updates coverage badge."""
+    body = _extract_func(index_html, "devUpdateSchemaPreview")
+    assert "schemaCoverageBadge" in body
+    assert "devCountTemplateFieldRefs" in body
+
+
+# ============================================================
+#  ISSUE #134 — Smart Save
+# ============================================================
+
+
+def test_save_schema_checks_workspace(index_html: str) -> None:
+    """devSaveSchema checks workspaceHandle before downloading."""
+    body = _extract_func(index_html, "devSaveSchema")
+    assert "workspaceHandle" in body
+    assert "currentWorkspaceFile" in body
+
+
+def test_save_template_checks_workspace(index_html: str) -> None:
+    """devSaveTemplate checks workspaceHandle before downloading."""
+    body = _extract_func(index_html, "devSaveTemplate")
+    assert "workspaceHandle" in body
+    assert "currentWorkspaceFile" in body

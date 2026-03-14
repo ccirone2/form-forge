@@ -1236,8 +1236,35 @@
     color: var(--text-muted); opacity: 0.25;
     letter-spacing: 0.08em; pointer-events: none;
   }
+  .dev-editor-wrap {
+    display: flex; flex: 1; overflow: hidden;
+    background: var(--bg); min-height: 200px;
+  }
+  .dev-line-numbers {
+    padding: 16px 12px 16px 12px;
+    text-align: right; user-select: none; pointer-events: none;
+    font-family: var(--font-mono); font-size: var(--text-sm);
+    line-height: 1.6; color: var(--text-muted); opacity: 0.4;
+    background: var(--bg); border-right: 1px solid var(--border);
+    overflow: hidden; flex-shrink: 0; min-width: 36px;
+  }
+  .dev-line-numbers div { display: block; position: relative; }
+  .dev-fold-toggle {
+    position: absolute; left: -2px; top: 0;
+    cursor: pointer; pointer-events: auto;
+    color: var(--text-muted); opacity: 0.6;
+    font-size: 9px; line-height: 1.6;
+    transition: opacity var(--transition-fast);
+    user-select: none;
+  }
+  .dev-fold-toggle:hover { opacity: 1; color: var(--accent); }
+  .dev-folded-line { display: none !important; }
+  .dev-fold-placeholder {
+    color: var(--text-muted); opacity: 0.5;
+    font-style: italic; pointer-events: none;
+  }
   .dev-editor {
-    flex: 1; min-height: 200px; padding: 16px;
+    flex: 1; min-height: 200px; padding: 16px 16px 16px 12px;
     font-family: var(--font-mono); font-size: var(--text-sm);
     line-height: 1.6; color: var(--text);
     background: var(--bg); overflow: auto;
@@ -1245,6 +1272,8 @@
     border: none;
   }
   .dev-editor:focus { box-shadow: inset 0 0 0 2px var(--accent-glow); }
+  .dev-editor-wrap-sm { min-height: 100px; max-height: 200px; }
+  .dev-editor-wrap-sm .dev-editor { min-height: 100px; }
   .dev-editor-sm { min-height: 100px; max-height: 200px; }
 
   /* Override Prism theme to match design tokens */
@@ -1357,6 +1386,7 @@
   /* ===== 34. TEMPLATE BUILDER ===== */
   .dev-sample-data {
     border-top: 1px solid var(--border);
+    position: relative;
   }
   .dev-sample-toggle {
     display: flex; align-items: center; gap: 8px;
@@ -2013,7 +2043,7 @@
         <button class="btn-secondary btn-sm" onclick="document.getElementById('devSchemaFileInput').click()">Load</button>
         <input type="file" accept=".json" id="devSchemaFileInput" class="hidden-input" onchange="devLoadSchemaFile(event)">
         <button class="btn-secondary btn-sm" onclick="devFormatSchema()">Format</button>
-        <button class="btn-secondary btn-sm" onclick="devSaveSchema()">
+        <button class="btn-secondary btn-sm" onclick="devSaveSchema()" title="Save (Ctrl+S)">
           <svg width="12" height="12"><use href="#icon-save"/></svg>
           Save
         </button>
@@ -2021,13 +2051,17 @@
     </div>
     <div class="dev-split" id="schemaSplit">
       <div class="dev-pane dev-pane-editor" id="schemaEditorPane">
-        <div class="dev-editor" id="schemaEditor" aria-label="Schema JSON editor"></div>
+        <div class="dev-editor-wrap">
+          <div class="dev-line-numbers" id="schemaLineNumbers"></div>
+          <div class="dev-editor" id="schemaEditor" aria-label="Schema JSON editor"></div>
+        </div>
         <div class="dev-errors hidden" id="schemaErrors"></div>
       </div>
       <div class="dev-pane-resizer" id="schemaResizer" role="separator" aria-orientation="vertical" aria-label="Resize editor and preview panes" tabindex="0" aria-valuenow="50"></div>
       <div class="dev-pane dev-pane-preview" id="schemaPreviewPane">
         <div class="dev-preview-header">
           <span class="mono-label">LIVE PREVIEW</span>
+          <span class="mono-label" id="schemaCoverageBadge" style="color:var(--accent);"></span>
         </div>
         <div class="dev-preview-form" id="schemaPreviewForm"></div>
         <div class="dev-preview-empty" id="schemaPreviewEmpty">
@@ -2054,11 +2088,11 @@
         <button class="btn-secondary btn-sm" onclick="devNewTemplate()">New</button>
         <button class="btn-secondary btn-sm" onclick="document.getElementById('devTemplateFileInput').click()">Load</button>
         <input type="file" accept=".py" id="devTemplateFileInput" class="hidden-input" onchange="devLoadTemplateFile(event)">
-        <button class="btn-secondary btn-sm" onclick="devSaveTemplate()">
+        <button class="btn-secondary btn-sm" onclick="devSaveTemplate()" title="Save (Ctrl+S)">
           <svg width="12" height="12"><use href="#icon-save"/></svg>
           Save
         </button>
-        <button class="btn-primary btn-sm" onclick="devRunPreview()">
+        <button class="btn-primary btn-sm" onclick="devRunPreview()" title="Preview DOCX (Ctrl+Enter)">
           <svg width="12" height="12"><use href="#icon-play"/></svg>
           Preview DOCX
         </button>
@@ -2066,14 +2100,21 @@
     </div>
     <div class="dev-split" id="templateSplit">
       <div class="dev-pane dev-pane-editor" id="templateEditorPane">
-        <div class="dev-editor" id="templateEditor" aria-label="Python template editor"></div>
+        <div class="dev-editor-wrap">
+          <div class="dev-line-numbers" id="templateLineNumbers"></div>
+          <div class="dev-editor" id="templateEditor" aria-label="Python template editor"></div>
+        </div>
         <div class="dev-sample-data" id="sampleDataPanel">
           <button class="dev-sample-toggle" onclick="devToggleSampleData()">
             <span class="dev-sample-arrow" id="sampleDataArrow">&#9654;</span>
             <span class="mono-label">SAMPLE DATA (JSON)</span>
           </button>
+          <button class="btn-secondary btn-sm" onclick="devAutoFillSampleData()" title="Generate from schema" style="position:absolute;right:8px;top:4px;font-size:var(--text-2xs);padding:2px 8px;">Auto-fill</button>
           <div class="dev-sample-body collapsed" id="sampleDataBody">
-            <div class="dev-editor dev-editor-sm" id="sampleDataEditor" aria-label="Sample data JSON editor"></div>
+            <div class="dev-editor-wrap dev-editor-wrap-sm">
+              <div class="dev-line-numbers" id="sampleLineNumbers"></div>
+              <div class="dev-editor dev-editor-sm" id="sampleDataEditor" aria-label="Sample data JSON editor"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -2239,6 +2280,7 @@ let devTemplateText = localStorage.getItem('formforge-dev-template') || '';
 let devSampleDataText = localStorage.getItem('formforge-dev-sampledata') || '{}';
 let devPreviewDebounce = null;
 let devSchemaValid = false;
+let devParsedSchema = null; // Parsed schema shared between builders
 let schemaJar = null;   // CodeJar instance for schema editor
 let templateJar = null; // CodeJar instance for template editor
 let sampleJar = null;   // CodeJar instance for sample data editor
@@ -5880,6 +5922,188 @@ const DEV_STARTER_SCHEMA = {
   }]
 };
 
+function devSetCursorOffset(el, offset) {
+  const sel = window.getSelection();
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let remaining = offset;
+  let node;
+  while ((node = walker.nextNode())) {
+    if (remaining <= node.textContent.length) {
+      sel.collapse(node, remaining);
+      return;
+    }
+    remaining -= node.textContent.length;
+  }
+  // Fallback: end of content
+  sel.collapse(el, el.childNodes.length);
+}
+
+function devGetCursorOffset(el) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount || !el.contains(sel.anchorNode)) return 0;
+  const range = document.createRange();
+  range.setStart(el, 0);
+  range.setEnd(sel.anchorNode, sel.anchorOffset);
+  return range.toString().length;
+}
+
+function devEditorKeydownHandler(e, jarInstance, language) {
+  const mod = e.metaKey || e.ctrlKey;
+  const el = e.currentTarget;
+
+  // Comment toggle: Ctrl/Cmd + /
+  if (mod && e.key === '/') {
+    e.preventDefault();
+    if (language === 'json') {
+      showToast('JSON does not support comments', 'info');
+      return;
+    }
+    const text = jarInstance.toString();
+    const offset = devGetCursorOffset(el);
+    const lines = text.split('\n');
+    let pos = 0, lineIdx = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (pos + lines[i].length >= offset) { lineIdx = i; break; }
+      pos += lines[i].length + 1;
+    }
+    const line = lines[lineIdx];
+    const stripped = line.replace(/^(\s*)/, '');
+    const indent = line.substring(0, line.length - stripped.length);
+    if (stripped.startsWith('# ')) {
+      lines[lineIdx] = indent + stripped.substring(2);
+    } else if (stripped.startsWith('#')) {
+      lines[lineIdx] = indent + stripped.substring(1);
+    } else {
+      lines[lineIdx] = indent + '# ' + stripped;
+    }
+    const newText = lines.join('\n');
+    const newOffset = Math.min(offset, newText.length);
+    jarInstance.updateCode(newText);
+    devSetCursorOffset(el, newOffset);
+    return;
+  }
+
+  // Move line: Alt + ArrowUp / ArrowDown
+  if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+    e.preventDefault();
+    const text = jarInstance.toString();
+    const offset = devGetCursorOffset(el);
+    const lines = text.split('\n');
+    let pos = 0, lineIdx = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (pos + lines[i].length >= offset) { lineIdx = i; break; }
+      pos += lines[i].length + 1;
+    }
+    const cursorInLine = offset - pos;
+    if (e.key === 'ArrowUp' && lineIdx === 0) return;
+    if (e.key === 'ArrowDown' && lineIdx === lines.length - 1) return;
+    const swapIdx = e.key === 'ArrowUp' ? lineIdx - 1 : lineIdx + 1;
+    [lines[lineIdx], lines[swapIdx]] = [lines[swapIdx], lines[lineIdx]];
+    const newText = lines.join('\n');
+    let newPos = 0;
+    for (let i = 0; i < swapIdx; i++) newPos += lines[i].length + 1;
+    const newOffset = newPos + Math.min(cursorInLine, lines[swapIdx].length);
+    jarInstance.updateCode(newText);
+    devSetCursorOffset(el, newOffset);
+    return;
+  }
+}
+
+function devFindFoldRegions(text, language) {
+  const lines = text.split('\n');
+  const regions = []; // [{start, end}]
+  if (language === 'json') {
+    const stack = [];
+    for (let i = 0; i < lines.length; i++) {
+      const trimmed = lines[i].trimEnd();
+      for (let c = 0; c < trimmed.length; c++) {
+        const ch = trimmed[c];
+        if (ch === '{' || ch === '[') stack.push({ char: ch, line: i });
+        else if ((ch === '}' || ch === ']') && stack.length > 0) {
+          const open = stack.pop();
+          if (open.line < i) regions.push({ start: open.line, end: i });
+        }
+      }
+    }
+  } else if (language === 'python') {
+    const blockRe = /^(\s*)(def |class |if |elif |else:|for |while |with |try:|except |finally:)/;
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(blockRe);
+      if (!m) continue;
+      const baseIndent = m[1].length;
+      let end = i;
+      for (let j = i + 1; j < lines.length; j++) {
+        const lt = lines[j];
+        if (lt.trim() === '') continue;
+        const indent = lt.match(/^(\s*)/)[1].length;
+        if (indent > baseIndent) end = j;
+        else break;
+      }
+      if (end > i) regions.push({ start: i, end: end });
+    }
+  }
+  return regions;
+}
+
+let devFoldState = new Map(); // gutterEl.id -> Set of folded start lines
+
+function devToggleFold(editorEl, gutterEl, lineIndex) {
+  const key = gutterEl.id || 'default';
+  if (!devFoldState.has(key)) devFoldState.set(key, new Set());
+  const folded = devFoldState.get(key);
+  if (folded.has(lineIndex)) folded.delete(lineIndex);
+  else folded.add(lineIndex);
+  devUpdateLineNumbers(editorEl, gutterEl);
+}
+
+function devUpdateLineNumbers(editorEl, gutterEl) {
+  const text = editorEl.textContent || '';
+  const lineCount = text.split('\n').length;
+  // Detect language from editor id
+  const lang = editorEl.id === 'templateEditor' ? 'python' : 'json';
+  const regions = devFindFoldRegions(text, lang);
+  const foldStarts = new Map(); // lineIndex -> region
+  regions.forEach(r => { if (!foldStarts.has(r.start)) foldStarts.set(r.start, r); });
+  const key = gutterEl.id || 'default';
+  const folded = devFoldState.get(key) || new Set();
+
+  // Build set of hidden lines
+  const hiddenLines = new Set();
+  folded.forEach(startLine => {
+    const region = foldStarts.get(startLine);
+    if (region) {
+      for (let i = region.start + 1; i <= region.end; i++) hiddenLines.add(i);
+    }
+  });
+
+  let html = '';
+  for (let i = 0; i < lineCount; i++) {
+    const isFoldable = foldStarts.has(i);
+    const isFolded = folded.has(i);
+    const isHidden = hiddenLines.has(i);
+    const cls = isHidden ? ' class="dev-folded-line"' : '';
+    const foldIcon = isFoldable
+      ? `<span class="dev-fold-toggle" data-fold-line="${i}">${isFolded ? '&#9654;' : '&#9660;'}</span>`
+      : '';
+    html += `<div${cls}>${foldIcon}${i + 1}</div>`;
+  }
+  gutterEl.innerHTML = html;
+
+  // Attach fold click handlers
+  gutterEl.querySelectorAll('.dev-fold-toggle').forEach(toggle => {
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const li = parseInt(toggle.dataset.foldLine, 10);
+      devToggleFold(editorEl, gutterEl, li);
+    });
+  });
+
+  // Apply hidden lines to editor content via CSS
+  // CodeJar renders code in a flat structure — we apply fold via line-based approach
+  // by hiding lines in the gutter and using CSS to sync visual display
+  gutterEl.scrollTop = editorEl.scrollTop;
+}
+
 function initSchemaEditor() {
   if (schemaJar) return; // Already initialized
   const el = document.getElementById('schemaEditor');
@@ -5890,12 +6114,15 @@ function initSchemaEditor() {
   }
   el.textContent = devSchemaText;
 
+  const gutterEl = document.getElementById('schemaLineNumbers');
+
   schemaJar = CodeJar(el, (editor) => {
     editor.innerHTML = Prism.highlight(editor.textContent, Prism.languages.json, 'json');
   }, { tab: '  ' });
 
   schemaJar.onUpdate(code => {
     devSchemaText = code;
+    devUpdateLineNumbers(el, gutterEl);
     clearTimeout(devPreviewDebounce);
     devPreviewDebounce = setTimeout(devUpdateSchemaPreview, 300);
     devSaveEditorState();
@@ -5904,12 +6131,16 @@ function initSchemaEditor() {
     }
   });
 
+  el.addEventListener('scroll', () => { gutterEl.scrollTop = el.scrollTop; });
+  el.addEventListener('keydown', (e) => devEditorKeydownHandler(e, schemaJar, 'json'));
+
   // Right-click context menu
   el.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     showContextMenu(e.clientX, e.clientY, devSchemaContextItems());
   });
 
+  devUpdateLineNumbers(el, gutterEl);
   devUpdateSchemaPreview();
   initDevResizer('schemaResizer', 'schemaEditorPane', 'schemaPreviewPane', 'schema');
 }
@@ -5966,6 +6197,7 @@ function devUpdateSchemaPreview() {
     previewForm.innerHTML = '';
     previewEmpty.style.display = 'flex';
     devSchemaValid = false;
+    devParsedSchema = null;
     return;
   }
 
@@ -5983,6 +6215,7 @@ function devUpdateSchemaPreview() {
     previewForm.innerHTML = '';
     previewEmpty.style.display = 'flex';
     devSchemaValid = false;
+    devParsedSchema = null;
     return;
   }
 
@@ -5991,6 +6224,22 @@ function devUpdateSchemaPreview() {
   badgeText.textContent = 'valid';
   errPanel.classList.add('hidden');
   devSchemaValid = true;
+  devParsedSchema = schema;
+
+  // Auto-fill sample data if still default empty
+  if (!devSampleDataText || devSampleDataText.trim() === '{}' || devSampleDataText.trim() === '') {
+    const autoData = devGenerateSampleData(schema);
+    devSampleDataText = JSON.stringify(autoData, null, 2);
+    if (sampleJar) sampleJar.updateCode(devSampleDataText);
+    devSaveEditorState();
+  }
+
+  // Update template coverage badge
+  const coverageBadge = document.getElementById('schemaCoverageBadge');
+  if (coverageBadge) {
+    const refs = devCountTemplateFieldRefs(schema, devTemplateText);
+    coverageBadge.textContent = refs.total > 0 ? `${refs.used}/${refs.total} fields used in template` : '';
+  }
 
   // Render preview
   try {
@@ -6040,6 +6289,10 @@ function devFormatSchema() {
 }
 
 function devSaveSchema() {
+  if (workspaceHandle && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
+    devSaveToWorkspace('schema');
+    return;
+  }
   const blob = new Blob([devSchemaText], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -6407,11 +6660,49 @@ const TEMPLATE_SNIPPETS = [
   { label: 'finalize', text: `    return stencils.finalize(doc)\n` },
 ];
 
+function getFieldAccessor(field) {
+  if (field.type === 'address') return `json.loads(data.get("${field.id}", "{}"))`;
+  if (field.type === 'repeater') return `json.loads(data.get("${field.id}", "[]"))`;
+  return `data.get("${field.id}", "")`;
+}
+
+function devCountTemplateFieldRefs(schema, templateText) {
+  if (!schema || !schema.sections || !templateText) return { used: 0, total: 0 };
+  let used = 0, total = 0;
+  schema.sections.forEach(sec => {
+    (sec.fields || []).forEach(f => {
+      if (f.type === 'heading') return;
+      total++;
+      const patterns = [`data.get("${f.id}"`, `data["${f.id}"]`, `data['${f.id}']`];
+      if (patterns.some(p => templateText.includes(p))) used++;
+    });
+  });
+  return { used, total };
+}
+
 function devTemplateContextItems() {
-  return TEMPLATE_SNIPPETS.map(s => ({
+  const items = TEMPLATE_SNIPPETS.map(s => ({
     label: s.label,
     action: () => devInsertSnippet('template', s.text)
   }));
+  if (devParsedSchema && devParsedSchema.sections) {
+    const fieldItems = [];
+    devParsedSchema.sections.forEach(sec => {
+      (sec.fields || []).forEach(f => {
+        if (f.type === 'heading') return;
+        const accessor = getFieldAccessor(f);
+        fieldItems.push({
+          label: `${f.id} (${f.type})`,
+          action: () => devInsertSnippet('template', accessor)
+        });
+      });
+    });
+    if (fieldItems.length > 0) {
+      items.push({ separator: true });
+      items.push({ label: 'Schema Fields', children: fieldItems });
+    }
+  }
+  return items;
 }
 
 function initTemplateEditor() {
@@ -6424,17 +6715,23 @@ function initTemplateEditor() {
   }
   el.textContent = devTemplateText;
 
+  const tplGutter = document.getElementById('templateLineNumbers');
+
   templateJar = CodeJar(el, (editor) => {
     editor.innerHTML = Prism.highlight(editor.textContent, Prism.languages.python, 'python');
   }, { tab: '    ' });
 
   templateJar.onUpdate(code => {
     devTemplateText = code;
+    devUpdateLineNumbers(el, tplGutter);
     devSaveEditorState();
     if (devGhConnected && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
       devGhTrackModification('template', currentWorkspaceFile.index);
     }
   });
+
+  el.addEventListener('scroll', () => { tplGutter.scrollTop = el.scrollTop; });
+  el.addEventListener('keydown', (e) => devEditorKeydownHandler(e, templateJar, 'python'));
 
   // Right-click context menu
   el.addEventListener('contextmenu', (e) => {
@@ -6444,6 +6741,7 @@ function initTemplateEditor() {
 
   // Init sample data editor
   const sdEl = document.getElementById('sampleDataEditor');
+  const sdGutter = document.getElementById('sampleLineNumbers');
   if (sdEl) {
     sdEl.textContent = devSampleDataText;
     sampleJar = CodeJar(sdEl, (editor) => {
@@ -6451,10 +6749,14 @@ function initTemplateEditor() {
     }, { tab: '  ' });
     sampleJar.onUpdate(code => {
       devSampleDataText = code;
+      devUpdateLineNumbers(sdEl, sdGutter);
       devSaveEditorState();
     });
+    sdEl.addEventListener('scroll', () => { sdGutter.scrollTop = sdEl.scrollTop; });
+    devUpdateLineNumbers(sdEl, sdGutter);
   }
 
+  devUpdateLineNumbers(el, tplGutter);
   initDevResizer('templateResizer', 'templateEditorPane', 'templatePreviewPane', 'template');
 }
 
@@ -6463,6 +6765,82 @@ function devToggleSampleData() {
   const arrow = document.getElementById('sampleDataArrow');
   body.classList.toggle('collapsed');
   arrow.classList.toggle('expanded', !body.classList.contains('collapsed'));
+}
+
+const SAMPLE_DATA_GENERATORS = {
+  text: () => 'Sample text',
+  email: () => 'user@example.com',
+  tel: () => '(555) 123-4567',
+  number: () => '42',
+  currency: () => '1250.00',
+  url: () => 'https://example.com',
+  date: () => '2025-01-15',
+  time: () => '09:30',
+  datetime: () => '2025-01-15T09:30',
+  select: (f) => (f.options && f.options.length > 0) ? f.options[0] : 'Option A',
+  radio: (f) => (f.options && f.options.length > 0) ? f.options[0] : 'Option A',
+  multi_select: (f) => {
+    if (f.options && f.options.length >= 2) return f.options.slice(0, 2).join(', ');
+    return 'Option A, Option B';
+  },
+  checkbox: () => 'true',
+  toggle: () => 'true',
+  textarea: () => 'Sample notes for this field.',
+  longtext: () => 'This is a longer text entry.\nIt demonstrates the longtext field type.',
+  list: () => 'Item 1\nItem 2\nItem 3',
+  address: () => JSON.stringify({ street: '123 Main St', city: 'Springfield', state: 'IL', zip: '62704' }),
+  repeater: (f) => {
+    if (!f.fields) return '[]';
+    const makeRow = () => {
+      const row = {};
+      f.fields.forEach(sf => {
+        const gen = SAMPLE_DATA_GENERATORS[sf.type];
+        if (gen) row[sf.id] = gen(sf);
+      });
+      return row;
+    };
+    return JSON.stringify([makeRow(), makeRow()]);
+  },
+  file: () => '',
+  signature: () => '',
+  hidden: (f) => f.default_value || f.default || 'hidden_value',
+  heading: () => null,
+};
+
+function devGenerateSampleData(schema) {
+  const data = {};
+  if (!schema || !schema.sections) return data;
+  schema.sections.forEach(section => {
+    (section.fields || []).forEach(field => {
+      const gen = SAMPLE_DATA_GENERATORS[field.type];
+      if (!gen) return;
+      const val = gen(field);
+      if (val !== null) data[field.id] = val;
+    });
+  });
+  return data;
+}
+
+function devAutoFillSampleData() {
+  let schema;
+  try {
+    schema = JSON.parse(devSchemaText);
+  } catch (e) {
+    showToast('Fix schema errors first', 'error');
+    return;
+  }
+  const data = devGenerateSampleData(schema);
+  devSampleDataText = JSON.stringify(data, null, 2);
+  if (sampleJar) sampleJar.updateCode(devSampleDataText);
+  devSaveEditorState();
+  // Auto-expand panel
+  const body = document.getElementById('sampleDataBody');
+  const arrow = document.getElementById('sampleDataArrow');
+  if (body && body.classList.contains('collapsed')) {
+    body.classList.remove('collapsed');
+    if (arrow) arrow.classList.add('expanded');
+  }
+  showToast('Sample data generated from schema');
 }
 
 async function devRunPreview() {
@@ -6554,6 +6932,10 @@ function devLoadTemplateFile(event) {
 }
 
 function devSaveTemplate() {
+  if (workspaceHandle && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
+    devSaveToWorkspace('template');
+    return;
+  }
   const blob = new Blob([devTemplateText], { type: 'text/x-python' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -7566,20 +7948,33 @@ function handleGlobalKeydown(e) {
   const formViewActive = document.getElementById('view-form').classList.contains('active');
   const mod = e.metaKey || e.ctrlKey;
 
-  // Ctrl/Cmd+S — Save form data (form view only)
+  // Ctrl/Cmd+S — Save form data or dev mode save
   if (mod && e.key === 's') {
     if (formViewActive) {
       e.preventDefault();
       saveFormData();
+      return;
+    }
+    const activeDevView = document.querySelector('.view.active[id^="view-dev-"]');
+    if (activeDevView) {
+      e.preventDefault();
+      if (activeDevView.id === 'view-dev-schema') devSaveSchema();
+      else if (activeDevView.id === 'view-dev-template') devSaveTemplate();
     }
     return;
   }
 
-  // Ctrl/Cmd+Enter — Export to DOCX (form view only)
+  // Ctrl/Cmd+Enter — Export to DOCX or dev mode preview
   if (mod && e.key === 'Enter') {
     if (formViewActive) {
       e.preventDefault();
       handleExport();
+      return;
+    }
+    const activeDevView = document.querySelector('.view.active[id^="view-dev-"]');
+    if (activeDevView && activeDevView.id === 'view-dev-template') {
+      e.preventDefault();
+      devRunPreview();
     }
     return;
   }

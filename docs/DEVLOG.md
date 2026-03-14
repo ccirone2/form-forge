@@ -14,6 +14,45 @@
 
 ## Log
 
+### 2026-03-14 — Dev Mode: Editor Enhancements (#130-#135)
+**Issues:** #130, #131, #132, #133, #134, #135
+
+Six enhancements to Dev Mode editors, improving the schema-to-template development workflow:
+
+**Line Numbers & Code Folding (#130):**
+- Added synchronized line-number gutters to all three editors (schema, template, sample data)
+- Line numbers update on edit, scroll-synced with editor content
+- Code folding for JSON `{}`/`[]` blocks and Python indented blocks (def, class, if, for, etc.)
+- Fold indicators (▶/▼) in gutter, click to collapse/expand regions
+
+**Keyboard Shortcuts (#131):**
+- `Ctrl/Cmd+/` toggles `# ` comment prefix in Python editor (toast in JSON editors)
+- `Alt+Up/Down` moves current line up or down
+- `Ctrl+S` saves schema/template (workspace-aware, see #134)
+- `Ctrl+Enter` runs DOCX preview in template builder
+- Toolbar buttons show shortcut hints in title attributes
+
+**Auto-Generated Sample Data (#132):**
+- `SAMPLE_DATA_GENERATORS` maps all 23 field types to realistic placeholder values
+- "Auto-fill" button in sample data panel generates JSON from current schema
+- Auto-syncs on first use: when sample data is still `{}`, auto-fills on valid schema parse
+- Repeater fields generate 2 sample rows recursively
+
+**Schema-Template Cross-Awareness (#133):**
+- Shared `devParsedSchema` state variable kept in sync with schema validation
+- Template editor right-click menu gains "Schema Fields" submenu listing all fields with type-appropriate Python accessors (`data.get()`, `json.loads()`)
+- Schema preview header shows coverage badge: "N/M fields used in template"
+
+**Smart Save (#134):**
+- `devSaveSchema()` and `devSaveTemplate()` check for active workspace before downloading
+- If workspace connected and active file matches, saves to workspace via File System Access API
+- Falls back to browser download otherwise
+
+**Tests (#135):**
+- 34 new tests covering all features (296 total in test_dev_mode.py, 424 total)
+
+---
+
 ### 2026-03-14 — Dev Mode: GitHub Repo Integration in Workspace (#125)
 **Issue:** #125
 
