@@ -130,6 +130,49 @@
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
+  /* ===== 1b. SCROLLBARS ===== */
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  /* WebKit (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: var(--radius-xs);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+  ::-webkit-scrollbar-corner { background: transparent; }
+
+  /* Dev Mode panes: fade scrollbar when not hovering */
+  .dev-pane::-webkit-scrollbar-thumb,
+  .dev-editor::-webkit-scrollbar-thumb,
+  .dev-preview-form::-webkit-scrollbar-thumb,
+  .dev-errors::-webkit-scrollbar-thumb {
+    background: transparent;
+    transition: background 0.2s;
+  }
+  .dev-pane:hover::-webkit-scrollbar-thumb,
+  .dev-editor:hover::-webkit-scrollbar-thumb,
+  .dev-preview-form:hover::-webkit-scrollbar-thumb,
+  .dev-errors:hover::-webkit-scrollbar-thumb {
+    background: var(--border);
+  }
+  .dev-pane:hover::-webkit-scrollbar-thumb:hover,
+  .dev-editor:hover::-webkit-scrollbar-thumb:hover,
+  .dev-preview-form:hover::-webkit-scrollbar-thumb:hover,
+  .dev-errors:hover::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+
+  /* DOCX preview: light scrollbar for white background */
+  .dev-docx-preview { scrollbar-color: #ccc #f5f5f5; }
+  .dev-docx-preview::-webkit-scrollbar-track { background: #f5f5f5; }
+  .dev-docx-preview::-webkit-scrollbar-thumb { background: #ccc; }
+  .dev-docx-preview::-webkit-scrollbar-thumb:hover { background: #aaa; }
+
   /* ===== 2. UTILITY CLASSES ===== */
   .mono-label {
     font-size: var(--text-sm);
@@ -182,8 +225,18 @@
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
   /* ===== 4. VIEWS & LAYOUT ===== */
+  body.dev-mode-active {
+    height: 100vh; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  body.dev-mode-active > .app-header,
+  body.dev-mode-active > .dev-nav { flex-shrink: 0; }
   .view { display: none; }
   .view.active { display: block; }
+  .view.active[role="tabpanel"] {
+    display: flex; flex-direction: column; flex: 1;
+    width: 100%; min-height: 0; overflow: hidden;
+  }
   .main-container { max-width: 820px; margin: 0 auto; padding: 40px 24px 80px; }
 
   /* ===== 5. SETUP VIEW ===== */
@@ -1196,8 +1249,10 @@
   }
 
   .dev-container {
-    max-width: 1600px; margin: 0 auto;
+    width: 100%; max-width: 1600px; margin: 0 auto;
     padding: 12px 24px;
+    display: flex; flex-direction: column;
+    flex: 1; min-height: 0;
   }
 
   /* ===== 32. DEV SPLIT PANE & EDITOR ===== */
@@ -1220,7 +1275,7 @@
   }
 
   .dev-split {
-    display: flex; height: calc(100vh - 160px);
+    display: flex; flex: 1; min-height: 0;
     border: 1px solid var(--border); border-radius: var(--radius);
     overflow: hidden; background: var(--surface);
   }
@@ -5924,6 +5979,7 @@ async function toggleDevMode() {
   document.getElementById('modeToggle').classList.toggle('active', devMode);
   document.getElementById('modeToggleLabel').textContent = devMode ? 'Dev On' : 'Dev';
   document.getElementById('devNav').style.display = devMode ? 'flex' : 'none';
+  document.body.classList.toggle('dev-mode-active', devMode);
 
   if (devMode) {
     // Lazy-load dev mode dependencies on first activation
@@ -5935,6 +5991,7 @@ async function toggleDevMode() {
       document.getElementById('modeToggle').classList.remove('active');
       document.getElementById('modeToggleLabel').textContent = 'Dev';
       document.getElementById('devNav').style.display = 'none';
+      document.body.classList.remove('dev-mode-active');
       return;
     }
     const lastTab = localStorage.getItem('formforge-dev-tab') || 'dev-schema';
@@ -5969,6 +6026,7 @@ function handleDevModeResize() {
     localStorage.setItem('formforge-dev-mode', '0');
     document.getElementById('modeToggle').classList.remove('active');
     document.getElementById('devNav').style.display = 'none';
+    document.body.classList.remove('dev-mode-active');
     showView('setup');
     showToast('Dev Mode disabled — viewport too narrow', 'info');
   }
@@ -8656,6 +8714,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modeToggle').classList.add('active');
     document.getElementById('modeToggleLabel').textContent = 'Dev On';
     document.getElementById('devNav').style.display = 'flex';
+    document.body.classList.add('dev-mode-active');
     loadDevModeDeps().then(() => {
       const lastTab = localStorage.getItem('formforge-dev-tab') || 'dev-schema';
       showDevTab(lastTab);
@@ -8665,6 +8724,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('modeToggle').classList.remove('active');
       document.getElementById('modeToggleLabel').textContent = 'Dev';
       document.getElementById('devNav').style.display = 'none';
+      document.body.classList.remove('dev-mode-active');
     });
   }
 
