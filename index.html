@@ -5925,6 +5925,19 @@ const DEV_STARTER_SCHEMA = {
   }]
 };
 
+function devFindTextPosition(el, offset) {
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  let remaining = offset;
+  let node;
+  while ((node = walker.nextNode())) {
+    if (remaining <= node.textContent.length) {
+      return { node, offset: remaining };
+    }
+    remaining -= node.textContent.length;
+  }
+  return null;
+}
+
 function devSetCursorOffset(el, offset) {
   const sel = window.getSelection();
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
@@ -5986,28 +5999,80 @@ function devEditorKeydownHandler(e, jarInstance, language) {
     return;
   }
 
-  // Move line: Alt + ArrowUp / ArrowDown
+  // Move line(s): Alt + ArrowUp / ArrowDown — supports multi-line selection
   if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
     e.preventDefault();
     const text = jarInstance.toString();
-    const offset = devGetCursorOffset(el);
     const lines = text.split('\n');
-    let pos = 0, lineIdx = 0;
+
+    // Find selection range (anchor + focus) to determine selected line span
+    const sel = window.getSelection();
+    const startOff = devGetCursorOffset(el);
+    let endOff = startOff;
+    if (sel.rangeCount && !sel.isCollapsed) {
+      const range = sel.getRangeAt(0);
+      const preStart = document.createRange();
+      preStart.setStart(el, 0);
+      preStart.setEnd(range.startContainer, range.startOffset);
+      const preEnd = document.createRange();
+      preEnd.setStart(el, 0);
+      preEnd.setEnd(range.endContainer, range.endOffset);
+      const selStart = preStart.toString().length;
+      const selEnd = preEnd.toString().length;
+      // Use the actual selection boundaries
+      endOff = Math.max(selStart, selEnd);
+      // Recalculate startOff to be the min
+      var actualStart = Math.min(selStart, selEnd);
+    } else {
+      var actualStart = startOff;
+    }
+
+    // Map offsets to line indices
+    let firstLine = 0, lastLine = 0, pos = 0;
     for (let i = 0; i < lines.length; i++) {
-      if (pos + lines[i].length >= offset) { lineIdx = i; break; }
+      const lineEnd = pos + lines[i].length;
+      if (pos <= actualStart && actualStart <= lineEnd) firstLine = i;
+      if (pos <= endOff && endOff <= lineEnd) { lastLine = i; break; }
       pos += lines[i].length + 1;
     }
-    const cursorInLine = offset - pos;
-    if (e.key === 'ArrowUp' && lineIdx === 0) return;
-    if (e.key === 'ArrowDown' && lineIdx === lines.length - 1) return;
-    const swapIdx = e.key === 'ArrowUp' ? lineIdx - 1 : lineIdx + 1;
-    [lines[lineIdx], lines[swapIdx]] = [lines[swapIdx], lines[lineIdx]];
+    // If endOff is at the very start of a line (after a newline), don't include that line
+    if (endOff > actualStart) {
+      let p = 0;
+      for (let i = 0; i <= lastLine; i++) p += lines[i].length + 1;
+      if (endOff === p - lines[lastLine].length - 1 && lastLine > firstLine) lastLine--;
+    }
+
+    const up = e.key === 'ArrowUp';
+    if (up && firstLine === 0) return;
+    if (!up && lastLine === lines.length - 1) return;
+
+    // Extract the block and the adjacent line to swap with
+    const block = lines.splice(firstLine, lastLine - firstLine + 1);
+    const targetIdx = up ? firstLine - 1 : firstLine; // after splice, insertion point shifts
+    lines.splice(targetIdx, 0, ...block);
+
     const newText = lines.join('\n');
-    let newPos = 0;
-    for (let i = 0; i < swapIdx; i++) newPos += lines[i].length + 1;
-    const newOffset = newPos + Math.min(cursorInLine, lines[swapIdx].length);
+    const newFirstLine = up ? firstLine - 1 : firstLine + 1;
+    const newLastLine = newFirstLine + block.length - 1;
+
+    // Compute new selection offsets
+    let newSelStart = 0;
+    for (let i = 0; i < newFirstLine; i++) newSelStart += lines[i].length + 1;
+    let newSelEnd = newSelStart;
+    for (let i = newFirstLine; i <= newLastLine; i++) newSelEnd += lines[i].length + (i < newLastLine ? 1 : 0);
+
     jarInstance.updateCode(newText);
-    devSetCursorOffset(el, newOffset);
+
+    // Restore selection across the moved block
+    if (block.length > 1) {
+      devSetCursorOffset(el, newSelStart);
+      const sel2 = window.getSelection();
+      const endNode = devFindTextPosition(el, newSelEnd);
+      if (endNode) sel2.extend(endNode.node, endNode.offset);
+    } else {
+      const cursorInLine = actualStart - (function() { let p=0; for(let i=0;i<firstLine;i++) p+=lines[i].length+1; return p; })();
+      devSetCursorOffset(el, newSelStart + Math.min(cursorInLine, lines[newFirstLine].length));
+    }
     return;
   }
 }

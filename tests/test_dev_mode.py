@@ -209,6 +209,7 @@ _REQUIRED_FUNCTIONS = [
     "devHighlightWithFolding",
     "devGetFoldHiddenLines",
     "devEditorKeydownHandler",
+    "devFindTextPosition",
     "devSetCursorOffset",
     "devGetCursorOffset",
     "devGenerateSampleData",
@@ -1526,11 +1527,12 @@ def test_comment_toggle_python(index_html: str) -> None:
 
 
 def test_move_line_alt_arrows(index_html: str) -> None:
-    """Keyboard handler checks altKey with ArrowUp/ArrowDown."""
+    """Keyboard handler checks altKey with ArrowUp/ArrowDown and supports multi-line."""
     body = _extract_func(index_html, "devEditorKeydownHandler")
     assert "altKey" in body
     assert "ArrowUp" in body
     assert "ArrowDown" in body
+    assert "firstLine" in body and "lastLine" in body  # multi-line support
 
 
 def _extract_global_keydown(html: str) -> str:
