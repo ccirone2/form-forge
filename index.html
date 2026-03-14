@@ -225,8 +225,16 @@
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
   /* ===== 4. VIEWS & LAYOUT ===== */
+  body.dev-mode-active {
+    height: 100vh; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
   .view { display: none; }
   .view.active { display: block; }
+  .view.active[role="tabpanel"] {
+    display: flex; flex-direction: column; flex: 1;
+    min-height: 0; overflow: hidden;
+  }
   .main-container { max-width: 820px; margin: 0 auto; padding: 40px 24px 80px; }
 
   /* ===== 5. SETUP VIEW ===== */
@@ -1241,6 +1249,8 @@
   .dev-container {
     max-width: 1600px; margin: 0 auto;
     padding: 12px 24px;
+    display: flex; flex-direction: column;
+    flex: 1; min-height: 0;
   }
 
   /* ===== 32. DEV SPLIT PANE & EDITOR ===== */
@@ -1263,7 +1273,7 @@
   }
 
   .dev-split {
-    display: flex; height: calc(100vh - 160px);
+    display: flex; flex: 1; min-height: 0;
     border: 1px solid var(--border); border-radius: var(--radius);
     overflow: hidden; background: var(--surface);
   }
@@ -5967,6 +5977,7 @@ async function toggleDevMode() {
   document.getElementById('modeToggle').classList.toggle('active', devMode);
   document.getElementById('modeToggleLabel').textContent = devMode ? 'Dev On' : 'Dev';
   document.getElementById('devNav').style.display = devMode ? 'flex' : 'none';
+  document.body.classList.toggle('dev-mode-active', devMode);
 
   if (devMode) {
     // Lazy-load dev mode dependencies on first activation
@@ -5978,6 +5989,7 @@ async function toggleDevMode() {
       document.getElementById('modeToggle').classList.remove('active');
       document.getElementById('modeToggleLabel').textContent = 'Dev';
       document.getElementById('devNav').style.display = 'none';
+      document.body.classList.remove('dev-mode-active');
       return;
     }
     const lastTab = localStorage.getItem('formforge-dev-tab') || 'dev-schema';
@@ -6012,6 +6024,7 @@ function handleDevModeResize() {
     localStorage.setItem('formforge-dev-mode', '0');
     document.getElementById('modeToggle').classList.remove('active');
     document.getElementById('devNav').style.display = 'none';
+    document.body.classList.remove('dev-mode-active');
     showView('setup');
     showToast('Dev Mode disabled — viewport too narrow', 'info');
   }
@@ -8699,6 +8712,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modeToggle').classList.add('active');
     document.getElementById('modeToggleLabel').textContent = 'Dev On';
     document.getElementById('devNav').style.display = 'flex';
+    document.body.classList.add('dev-mode-active');
     loadDevModeDeps().then(() => {
       const lastTab = localStorage.getItem('formforge-dev-tab') || 'dev-schema';
       showDevTab(lastTab);
@@ -8708,6 +8722,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('modeToggle').classList.remove('active');
       document.getElementById('modeToggleLabel').textContent = 'Dev';
       document.getElementById('devNav').style.display = 'none';
+      document.body.classList.remove('dev-mode-active');
     });
   }
 
