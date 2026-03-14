@@ -45,8 +45,9 @@
    * 32. Dev Split Pane & Editor
    * 33. Context Menu
    * 34. Template Builder
-   * 35. Workspace
-   * 36. Dev Mode Mobile Gate
+   * 35. (removed)
+   * 36. Reduced Motion
+   * 37. Dev Mode Mobile Gate
    */
 
   /* ===== 1. VARIABLES & RESETS ===== */
@@ -1595,66 +1596,6 @@
   .dev-docx-preview h2 { font-size: 14pt; margin: 10px 0 4px; }
   .dev-docx-preview p { margin: 4px 0; }
 
-  /* ===== 35. WORKSPACE ===== */
-  .workspace-drop-zone {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 12px; padding: 48px 20px;
-    border: 2px dashed var(--border); border-radius: var(--radius);
-    background: var(--surface); text-align: center;
-    color: var(--text-muted); font-size: var(--text-sm);
-    transition: border-color var(--transition-base), background var(--transition-base);
-    min-height: 200px;
-  }
-  .workspace-drop-zone.drag-over {
-    border-color: var(--accent); background: var(--accent-subtle);
-  }
-  .workspace-drop-zone p { margin: 0; }
-
-  .workspace-file-list {
-    margin-top: 16px;
-  }
-  .workspace-section {
-    margin-bottom: 16px;
-  }
-  .workspace-section-title {
-    font-family: var(--font-mono); font-size: var(--text-xs);
-    color: var(--text-muted); text-transform: uppercase;
-    letter-spacing: 0.05em; padding: 8px 0; margin-bottom: 4px;
-    border-bottom: 1px solid var(--border);
-  }
-  .workspace-file-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 12px; border-radius: var(--radius-sm);
-    cursor: pointer; color: var(--text);
-    transition: background var(--transition-fast);
-    border: 1px solid transparent;
-  }
-  .workspace-file-item:hover {
-    background: var(--surface-2);
-    border-color: var(--border);
-  }
-  .workspace-file-name {
-    font-family: var(--font-mono); font-size: var(--text-sm);
-    display: flex; align-items: center; gap: 8px;
-  }
-  .workspace-file-name::before {
-    content: '';
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--text-muted); opacity: 0.3; flex-shrink: 0;
-  }
-  .workspace-file-action {
-    font-size: var(--text-2xs); color: var(--accent);
-    font-family: var(--font-mono);
-    opacity: 0; transition: opacity var(--transition-fast);
-  }
-  .workspace-file-item:hover .workspace-file-action { opacity: 1; }
-
-  /* GitHub workspace file modification indicator */
-  .workspace-file-name.modified::before {
-    background: var(--warning);
-    opacity: 1;
-  }
-
   /* Connect Repo modal */
   .gh-connect-modal {
     display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -1766,7 +1707,16 @@
     border-color: var(--accent);
   }
 
-  /* ===== 36. DEV MODE MOBILE GATE ===== */
+  /* ===== 36. REDUCED MOTION ===== */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* ===== 37. DEV MODE MOBILE GATE ===== */
   @media (max-width: 768px) {
     .mode-toggle { opacity: var(--disabled-opacity); pointer-events: none; }
     .mode-toggle::after {
@@ -1953,7 +1903,7 @@
 </nav>
 
 <!-- ==================== SETUP VIEW ==================== -->
-<main class="view active" id="view-setup">
+<main class="view active" id="view-setup" role="tabpanel" aria-labelledby="tab-forms">
   <div class="main-container">
     <div class="setup-hero">
       <h2>Forms that build documents</h2>
@@ -2225,7 +2175,7 @@
           <div class="dev-editor" id="templateEditor" aria-label="Python template editor"></div>
         </div>
         <div class="dev-sample-data" id="sampleDataPanel">
-          <button type="button" class="dev-sample-toggle" onclick="devToggleSampleData()">
+          <button type="button" class="dev-sample-toggle" onclick="devToggleSampleData()" aria-expanded="false" aria-controls="sampleDataBody">
             <span class="dev-sample-arrow" id="sampleDataArrow">&#9654;</span>
             <span class="mono-label">SAMPLE DATA (JSON)</span>
           </button>
@@ -2256,72 +2206,24 @@
   </div>
 </main>
 
-<!-- ==================== DEV: WORKSPACE VIEW ==================== -->
-<main class="view" id="view-dev-workspace" role="tabpanel" aria-labelledby="tab-dev-workspace">
-  <div class="dev-container">
-    <div class="dev-toolbar">
-      <div class="dev-toolbar-left">
-        <span class="dev-validation-badge" id="workspaceBadge">
-          <span class="dev-badge-dot"></span>
-          <span id="workspaceBadgeText">no folder loaded</span>
-        </span>
-      </div>
-      <div class="dev-toolbar-right">
-        <div class="gh-workspace-bar" id="ghWorkspaceBar" style="display:none">
-          <select class="gh-branch-select" id="ghBranchSelect" aria-label="Branch" onchange="devGhSwitchBranch(this.value)"></select>
-          <button type="button" class="btn-secondary btn-sm" id="btnGhNewBranch" onclick="devGhShowNewBranch()" title="Create new branch" aria-label="Create new branch">
-            <svg width="12" height="12"><use href="#icon-git-branch"/></svg>
-          </button>
-          <button type="button" class="btn-secondary btn-sm" id="btnGhCommit" onclick="devGhShowCommitPanel()" style="display:none">
-            <svg width="12" height="12"><use href="#icon-git-commit"/></svg>
-            Commit
-          </button>
-          <button type="button" class="btn-secondary btn-sm" onclick="devGhRefreshFiles()" aria-label="Refresh files">
-            <svg width="12" height="12"><use href="#icon-refresh"/></svg>
-          </button>
-          <button type="button" class="btn-secondary btn-sm" onclick="devGhDisconnect()" title="Disconnect repo" aria-label="Disconnect repo">
-            <svg width="12" height="12"><use href="#icon-unlink"/></svg>
-          </button>
-        </div>
-        <button type="button" class="btn-secondary btn-sm" id="btnConnectRepo" onclick="devGhShowConnectModal()">
-          <svg width="12" height="12"><use href="#icon-github"/></svg>
-          Connect Repo
-        </button>
-        <button type="button" class="btn-secondary btn-sm" id="btnOpenFolder" onclick="devOpenWorkspace()">
-          <svg width="12" height="12"><use href="#icon-folder-open"/></svg>
-          Open Folder
-        </button>
-        <button type="button" class="btn-secondary btn-sm" onclick="devRefreshWorkspace()" id="btnRefreshWorkspace" style="display:none">
-          <svg width="12" height="12"><use href="#icon-refresh"/></svg>
-          Refresh
-        </button>
-      </div>
-    </div>
-    <div class="workspace-drop-zone" id="workspaceDropZone">
-      <svg width="36" height="36" style="color:var(--text-muted);opacity:0.3"><use href="#icon-folder"/></svg>
-      <p>Drop a project folder here</p>
-      <p class="empty-hint" style="font-family:var(--font-mono);font-size:var(--text-2xs);color:var(--text-muted);opacity:0.6">expects schemas/ and templates/ subdirectories</p>
-    </div>
-    <div class="workspace-file-list hidden" id="workspaceFileList"></div>
-    <div class="gh-commit-panel" id="ghCommitPanel" style="display:none">
-      <h4>Commit Changes</h4>
-      <div class="gh-commit-file-list" id="ghCommitFileList"></div>
-      <textarea class="gh-commit-msg" id="ghCommitMsg" placeholder="Describe your changes..." aria-label="Commit message"></textarea>
-      <div class="gh-commit-actions">
-        <button type="button" class="btn-secondary btn-sm" onclick="devGhHideCommitPanel()">Cancel</button>
-        <button type="button" class="btn-primary btn-sm" id="btnGhCommitPush" onclick="devGhCommitAndPush()">
-          <svg width="12" height="12"><use href="#icon-git-commit"/></svg>
-          Commit &amp; Push
-        </button>
-      </div>
-    </div>
-    <div class="gh-new-branch-row" id="ghNewBranchRow" style="display:none">
-      <input type="text" id="ghNewBranchName" placeholder="new-branch-name" aria-label="New branch name" pattern="[a-zA-Z0-9._/-]+">
-      <button type="button" class="btn-primary btn-sm" onclick="devGhCreateBranch()">Create</button>
-      <button type="button" class="btn-secondary btn-sm" onclick="document.getElementById('ghNewBranchRow').style.display='none'">Cancel</button>
-    </div>
+<!-- ==================== GIT PANELS (shared by Schema & Template editors) ==================== -->
+<div class="gh-commit-panel" id="ghCommitPanel" style="display:none">
+  <h4>Commit Changes</h4>
+  <div class="gh-commit-file-list" id="ghCommitFileList"></div>
+  <textarea class="gh-commit-msg" id="ghCommitMsg" placeholder="Describe your changes..." aria-label="Commit message"></textarea>
+  <div class="gh-commit-actions">
+    <button type="button" class="btn-secondary btn-sm" onclick="devGhHideCommitPanel()">Cancel</button>
+    <button type="button" class="btn-primary btn-sm" id="btnGhCommitPush" onclick="devGhCommitAndPush()">
+      <svg width="12" height="12"><use href="#icon-git-commit"/></svg>
+      Commit &amp; Push
+    </button>
   </div>
-</main>
+</div>
+<div class="gh-new-branch-row" id="ghNewBranchRow" style="display:none">
+  <input type="text" id="ghNewBranchName" placeholder="new-branch-name" aria-label="New branch name" pattern="[a-zA-Z0-9._/-]+">
+  <button type="button" class="btn-primary btn-sm" onclick="devGhCreateBranch()">Create</button>
+  <button type="button" class="btn-secondary btn-sm" onclick="document.getElementById('ghNewBranchRow').style.display='none'">Cancel</button>
+</div>
 
 <!-- ==================== DEV: DOCS VIEW ==================== -->
 <main class="view" id="view-dev-docs" role="tabpanel" aria-labelledby="tab-dev-docs">
@@ -2434,6 +2336,7 @@ let wizardCurrentStep = 0;  // Current wizard step index (0-based)
 let currentTemplateCode = null;
 let repoSchemas = [];      // [{name, path, description, icon, templatePath}]
 let selectedSchemaIdx = -1;
+let pickerAbortController = null;
 let currentSchemaName = '';  // Derived schema name (e.g., 'onboarding' from 'schemas/onboarding.json')
 let pendingDataUrl = null;   // ?data= URL param, consumed after form launch
 let autosaveTimer = null;    // Debounce timer for autosave
@@ -2553,10 +2456,12 @@ function showOverlay(msg) {
   document.getElementById('overlaySpinner').classList.remove('hidden');
   document.getElementById('overlayRetryContainer').innerHTML = '';
   document.body.setAttribute('aria-busy', 'true');
+  document.querySelectorAll('body > :not(#loadingOverlay):not(script):not(style)').forEach(el => el.setAttribute('inert', ''));
 }
 function hideOverlay() {
   document.getElementById('loadingOverlay').classList.add('hidden');
   document.body.removeAttribute('aria-busy');
+  document.querySelectorAll('body > [inert]').forEach(el => el.removeAttribute('inert'));
   document.getElementById('progressSteps').classList.add('hidden');
   // Reset progress steps
   for (let i = 1; i <= 3; i++) {
@@ -2938,6 +2843,7 @@ async function launchLocal() {
 async function launchDemo() {
   showOverlay('Loading demo form...');
   try {
+    contentSourceType = 'demo';
     currentSchema = DEMO_SCHEMA;
     currentSchemaName = '';
     currentTemplateCode = DEMO_TEMPLATE;
@@ -3171,6 +3077,11 @@ function renderPicker() {
     grid.appendChild(card);
   });
 
+  // Abort previous listeners to prevent accumulation on repeated renderPicker() calls
+  if (pickerAbortController) pickerAbortController.abort();
+  pickerAbortController = new AbortController();
+  const pickerSignal = pickerAbortController.signal;
+
   // Event delegation: handle clicks, double-clicks, and keyboard on picker cards via the grid
   grid.addEventListener('click', (e) => {
     // Handle edit action buttons
@@ -3185,14 +3096,14 @@ function renderPicker() {
     }
     const card = e.target.closest('.picker-card');
     if (card && card.dataset.idx !== undefined) selectSchema(parseInt(card.dataset.idx));
-  });
+  }, { signal: pickerSignal });
   grid.addEventListener('dblclick', (e) => {
     const card = e.target.closest('.picker-card');
     if (card && card.dataset.idx !== undefined) {
       selectSchema(parseInt(card.dataset.idx));
       launchForm();
     }
-  });
+  }, { signal: pickerSignal });
   grid.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       const card = e.target.closest('.picker-card');
@@ -3201,7 +3112,7 @@ function renderPicker() {
         selectSchema(parseInt(card.dataset.idx));
       }
     }
-  });
+  }, { signal: pickerSignal });
 }
 
 function selectSchema(idx) {
@@ -7651,8 +7562,11 @@ function initTemplateEditor() {
 function devToggleSampleData() {
   const body = document.getElementById('sampleDataBody');
   const arrow = document.getElementById('sampleDataArrow');
+  const btn = body.closest('.dev-sample-data').querySelector('.dev-sample-toggle');
   body.classList.toggle('collapsed');
-  arrow.classList.toggle('expanded', !body.classList.contains('collapsed'));
+  const isOpen = !body.classList.contains('collapsed');
+  arrow.classList.toggle('expanded', isOpen);
+  btn.setAttribute('aria-expanded', String(isOpen));
 }
 
 const SAMPLE_DATA_GENERATORS = {
@@ -8015,21 +7929,6 @@ async function connectLocalFolder() {
   }
 }
 
-async function devOpenWorkspace() {
-  if (!window.showDirectoryPicker) {
-    showToast('Your browser does not support the File System Access API. Use drag-and-drop instead.', 'error');
-    return;
-  }
-  try {
-    workspaceHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-    await devReadWorkspaceFromHandle();
-  } catch (e) {
-    if (e.name !== 'AbortError') {
-      showToast('Failed to open folder: ' + e.message, 'error');
-    }
-  }
-}
-
 async function devReadWorkspaceFromHandle() {
   if (!workspaceHandle) return;
   workspaceFiles = { schemas: [], templates: [] };
@@ -8057,94 +7956,12 @@ async function devReadWorkspaceFromHandle() {
     }
   }
 
-  devRenderWorkspaceFiles();
-
-  // Update badge
-  const badge = document.getElementById('workspaceBadge');
-  const badgeText = document.getElementById('workspaceBadgeText');
   const total = workspaceFiles.schemas.length + workspaceFiles.templates.length;
-  badge.className = 'dev-validation-badge valid';
-  badgeText.textContent = `${total} file${total !== 1 ? 's' : ''} loaded`;
-
-  // Show refresh button
-  document.getElementById('btnRefreshWorkspace').style.display = 'inline-flex';
+  log(`Local folder: loaded ${total} file${total !== 1 ? 's' : ''}`, 'success');
 
   // Start polling for changes
   if (devWorkspacePoller) clearInterval(devWorkspacePoller);
   devWorkspacePoller = setInterval(devPollWorkspace, 5000);
-}
-
-function devRenderWorkspaceFiles() {
-  const container = document.getElementById('workspaceFileList');
-  const dropZone = document.getElementById('workspaceDropZone');
-  container.innerHTML = '';
-
-  if (workspaceFiles.schemas.length === 0 && workspaceFiles.templates.length === 0) {
-    container.classList.add('hidden');
-    dropZone.style.display = 'flex';
-    return;
-  }
-
-  container.classList.remove('hidden');
-  dropZone.style.display = 'none';
-
-  // Schemas section
-  if (workspaceFiles.schemas.length > 0) {
-    const section = document.createElement('div');
-    section.className = 'workspace-section';
-    const schemaTitle = document.createElement('div');
-    schemaTitle.className = 'workspace-section-title';
-    schemaTitle.textContent = `Schemas (${workspaceFiles.schemas.length})`;
-    section.appendChild(schemaTitle);
-    workspaceFiles.schemas.forEach((f, i) => {
-      const item = document.createElement('div');
-      item.className = 'workspace-file-item';
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'workspace-file-name';
-      nameSpan.textContent = f.name;
-      if (f.ghPath) {
-        nameSpan.setAttribute('data-gh-path', f.ghPath);
-        if (ghModifiedFiles.has(f.ghPath)) nameSpan.classList.add('modified');
-      }
-      const actionSpan = document.createElement('span');
-      actionSpan.className = 'workspace-file-action';
-      actionSpan.textContent = 'Edit in Schema Builder';
-      item.appendChild(nameSpan);
-      item.appendChild(actionSpan);
-      item.addEventListener('click', () => devLoadWorkspaceFile('schema', i));
-      section.appendChild(item);
-    });
-    container.appendChild(section);
-  }
-
-  // Templates section
-  if (workspaceFiles.templates.length > 0) {
-    const section = document.createElement('div');
-    section.className = 'workspace-section';
-    const tmplTitle = document.createElement('div');
-    tmplTitle.className = 'workspace-section-title';
-    tmplTitle.textContent = `Templates (${workspaceFiles.templates.length})`;
-    section.appendChild(tmplTitle);
-    workspaceFiles.templates.forEach((f, i) => {
-      const item = document.createElement('div');
-      item.className = 'workspace-file-item';
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'workspace-file-name';
-      nameSpan.textContent = f.name;
-      if (f.ghPath) {
-        nameSpan.setAttribute('data-gh-path', f.ghPath);
-        if (ghModifiedFiles.has(f.ghPath)) nameSpan.classList.add('modified');
-      }
-      const actionSpan = document.createElement('span');
-      actionSpan.className = 'workspace-file-action';
-      actionSpan.textContent = 'Edit in Template Builder';
-      item.appendChild(nameSpan);
-      item.appendChild(actionSpan);
-      item.addEventListener('click', () => devLoadWorkspaceFile('template', i));
-      section.appendChild(item);
-    });
-    container.appendChild(section);
-  }
 }
 
 function devLoadWorkspaceFile(type, index) {
@@ -8240,7 +8057,6 @@ async function devCreateWorkspaceFile(type) {
       currentWorkspaceFile = { type: 'template', index: workspaceFiles.templates.length - 1 };
     }
 
-    devRenderWorkspaceFiles();
     showToast(`Saved ${finalName} to workspace`);
   } catch (e) {
     if (e.name !== 'AbortError') {
@@ -8287,13 +8103,6 @@ async function devPollWorkspace() {
       devWorkspacePoller = null;
       showToast('Workspace polling stopped — filesystem access lost', 'error');
     }
-  }
-}
-
-async function devRefreshWorkspace() {
-  if (workspaceHandle) {
-    await devReadWorkspaceFromHandle();
-    showToast('Workspace refreshed');
   }
 }
 
@@ -8384,8 +8193,9 @@ async function devGhFetchBranches() {
     ghBranches = [ghBranch];
   }
 
-  // Populate branch selector
+  // Populate branch selector (if element exists)
   const select = document.getElementById('ghBranchSelect');
+  if (!select) return;
   select.innerHTML = '';
   ghBranches.forEach(name => {
     const opt = document.createElement('option');
@@ -8442,35 +8252,10 @@ async function devGhFetchFiles() {
     if (!e.message.includes('404')) throw e;
   }
 
-  devRenderWorkspaceFiles();
-
-  // Update badge
-  const badge = document.getElementById('workspaceBadge');
-  const badgeText = document.getElementById('workspaceBadgeText');
   const total = workspaceFiles.schemas.length + workspaceFiles.templates.length;
-  badge.className = 'dev-validation-badge valid';
-  badgeText.textContent = `${ghOwner}/${ghRepo} @ ${ghBranch} · ${total} file${total !== 1 ? 's' : ''}`;
-
-  // Show refresh button
-  document.getElementById('btnRefreshWorkspace').style.display = 'none'; // Hide local refresh for GH mode
+  log(`GitHub: loaded ${total} file${total !== 1 ? 's' : ''} from ${ghOwner}/${ghRepo}@${ghBranch}`, 'success');
 }
 
-function devGhUpdateToolbar() {
-  const ghBar = document.getElementById('ghWorkspaceBar');
-  const connectBtn = document.getElementById('btnConnectRepo');
-  const openFolderBtn = document.getElementById('btnOpenFolder');
-
-  if (contentSourceType === 'github') {
-    ghBar.style.display = 'flex';
-    connectBtn.style.display = 'none';
-    openFolderBtn.style.display = 'none';
-    devGhUpdateCommitButton();
-  } else {
-    ghBar.style.display = 'none';
-    connectBtn.style.display = 'inline-flex';
-    if (window.showDirectoryPicker) openFolderBtn.style.display = 'inline-flex';
-  }
-}
 
 function devGhTrackModification(type, index) {
   // Called when a file is edited in the builder — compare current content with original
@@ -8496,26 +8281,6 @@ function devGhTrackModification(type, index) {
     ghModifiedFiles.delete(path);
   }
 
-  devGhUpdateCommitButton();
-  devGhUpdateFileModificationIndicators();
-}
-
-function devGhUpdateCommitButton() {
-  const btn = document.getElementById('btnGhCommit');
-  if (!btn) return;
-  btn.style.display = ghModifiedFiles.size > 0 ? 'inline-flex' : 'none';
-}
-
-function devGhUpdateFileModificationIndicators() {
-  const items = document.querySelectorAll('.workspace-file-name[data-gh-path]');
-  items.forEach(item => {
-    const path = item.getAttribute('data-gh-path');
-    if (ghModifiedFiles.has(path)) {
-      item.classList.add('modified');
-    } else {
-      item.classList.remove('modified');
-    }
-  });
 }
 
 async function devGhSwitchBranch(branchName) {
@@ -8785,133 +8550,10 @@ function devGhDisconnect() {
   document.getElementById('pickerSection').style.display = 'none';
 
   // Reset UI
-  devGhUpdateToolbar();
   devGhHideCommitPanel();
   document.getElementById('ghNewBranchRow').style.display = 'none';
 
-  // Re-show drop zone
-  const container = document.getElementById('workspaceFileList');
-  const dropZone = document.getElementById('workspaceDropZone');
-  container.classList.add('hidden');
-  container.innerHTML = '';
-  dropZone.style.display = 'flex';
-
-  // Reset badge
-  const badge = document.getElementById('workspaceBadge');
-  const badgeText = document.getElementById('workspaceBadgeText');
-  badge.className = 'dev-validation-badge';
-  badgeText.textContent = 'no folder loaded';
-
   showToast('Disconnected from GitHub repo');
-}
-
-// Drag-drop fallback for workspace
-function initWorkspaceDropZone() {
-  const dropZone = document.getElementById('workspaceDropZone');
-  if (!dropZone) return;
-
-  dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('drag-over');
-  });
-  dropZone.addEventListener('dragleave', () => {
-    dropZone.classList.remove('drag-over');
-  });
-  dropZone.addEventListener('drop', async (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-
-    const items = e.dataTransfer.items;
-    if (!items || items.length === 0) return;
-
-    workspaceFiles = { schemas: [], templates: [] };
-
-    // Try FSAA handle first
-    if (items[0].getAsFileSystemHandle) {
-      try {
-        const handle = await items[0].getAsFileSystemHandle();
-        if (handle.kind === 'directory') {
-          workspaceHandle = handle;
-          await devReadWorkspaceFromHandle();
-          return;
-        }
-      } catch (e) { console.warn('FSAA drop handle failed, falling back:', e); }
-    }
-
-    // Fallback: webkitGetAsEntry
-    const entries = [];
-    for (let i = 0; i < items.length; i++) {
-      const entry = items[i].webkitGetAsEntry();
-      if (entry) entries.push(entry);
-    }
-
-    async function readEntries(dirEntry) {
-      return new Promise((resolve) => {
-        const reader = dirEntry.createReader();
-        const results = [];
-        function readBatch() {
-          reader.readEntries(
-            (entries) => {
-              if (entries.length === 0) { resolve(results); return; }
-              results.push(...entries);
-              readBatch();
-            },
-            () => resolve(results)
-          );
-        }
-        readBatch();
-      });
-    }
-
-    async function readFileText(fileEntry) {
-      return new Promise((resolve, reject) => {
-        fileEntry.file(f => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsText(f);
-        }, reject);
-      });
-    }
-
-    for (const entry of entries) {
-      if (entry.isDirectory) {
-        const children = await readEntries(entry);
-        for (const child of children) {
-          if (child.isDirectory && child.name === 'schemas') {
-            const schemaFiles = await readEntries(child);
-            for (const sf of schemaFiles) {
-              if (sf.isFile && sf.name.endsWith('.json') && sf.name !== '_schema.spec.json') {
-                const text = await readFileText(sf);
-                workspaceFiles.schemas.push({ name: sf.name, text, handle: null });
-              }
-            }
-          } else if (child.isDirectory && child.name === 'templates') {
-            const templateFiles = await readEntries(child);
-            for (const tf of templateFiles) {
-              if (tf.isFile && tf.name.endsWith('.py') && tf.name !== 'stencils.py') {
-                const text = await readFileText(tf);
-                workspaceFiles.templates.push({ name: tf.name, text, handle: null });
-              }
-            }
-          }
-        }
-      }
-    }
-
-    devRenderWorkspaceFiles();
-    const total = workspaceFiles.schemas.length + workspaceFiles.templates.length;
-    const badge = document.getElementById('workspaceBadge');
-    const badgeText = document.getElementById('workspaceBadgeText');
-    if (total > 0) {
-      badge.className = 'dev-validation-badge valid';
-      badgeText.textContent = `${total} file${total !== 1 ? 's' : ''} loaded`;
-      document.getElementById('btnRefreshWorkspace').style.display = 'inline-flex';
-    } else {
-      badge.className = 'dev-validation-badge';
-      badgeText.textContent = 'no schemas or templates found';
-    }
-  });
 }
 
 // ============================================================
@@ -9037,13 +8679,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Hide Open Folder buttons if FSAA not supported
   if (!window.showDirectoryPicker) {
-    document.querySelectorAll('#btnOpenFolder, #btnOpenFolderSetup').forEach(btn => {
-      if (btn) btn.style.display = 'none';
-    });
+    const folderBtn = document.getElementById('btnOpenFolderSetup');
+    if (folderBtn) folderBtn.style.display = 'none';
   }
-
-  // Workspace drop zone
-  initWorkspaceDropZone();
 
   // GitHub connect modal — close on click outside or Escape
   const ghModal = document.getElementById('ghConnectModal');

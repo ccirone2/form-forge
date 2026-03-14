@@ -92,10 +92,6 @@ def test_view_dev_template_exists(index_html: str) -> None:
     assert 'id="view-dev-template"' in index_html
 
 
-def test_view_dev_workspace_exists(index_html: str) -> None:
-    assert 'id="view-dev-workspace"' in index_html
-
-
 def test_context_menu_exists(index_html: str) -> None:
     assert 'id="ctxMenu"' in index_html
 
@@ -120,12 +116,9 @@ def test_docx_preview_container_exists(index_html: str) -> None:
     assert 'id="docxPreviewContainer"' in index_html
 
 
-def test_workspace_drop_zone_exists(index_html: str) -> None:
-    assert 'id="workspaceDropZone"' in index_html
-
-
-def test_workspace_file_list_exists(index_html: str) -> None:
-    assert 'id="workspaceFileList"' in index_html
+def test_no_orphaned_workspace_view(index_html: str) -> None:
+    """Workspace view was removed — no view-dev-workspace element should exist."""
+    assert 'id="view-dev-workspace"' not in index_html
 
 
 def test_forms_tab_exists(index_html: str) -> None:
@@ -190,12 +183,12 @@ def test_css_section_34_template_builder(index_html: str) -> None:
     assert "34. TEMPLATE BUILDER" in index_html
 
 
-def test_css_section_35_workspace(index_html: str) -> None:
-    assert "35. WORKSPACE" in index_html
+def test_css_section_36_reduced_motion(index_html: str) -> None:
+    assert "36. REDUCED MOTION" in index_html
 
 
-def test_css_section_36_mobile_gate(index_html: str) -> None:
-    assert "36. DEV MODE MOBILE GATE" in index_html
+def test_css_section_37_mobile_gate(index_html: str) -> None:
+    assert "37. DEV MODE MOBILE GATE" in index_html
 
 
 def test_mobile_gate_hides_toggle(index_html: str) -> None:
@@ -231,14 +224,10 @@ _REQUIRED_FUNCTIONS = [
     "devLoadTemplateFile",
     "devSaveTemplate",
     "initDevResizer",
-    "devOpenWorkspace",
     "devReadWorkspaceFromHandle",
-    "devRenderWorkspaceFiles",
     "devLoadWorkspaceFile",
     "devSaveToWorkspace",
     "devPollWorkspace",
-    "devRefreshWorkspace",
-    "initWorkspaceDropZone",
     "devUpdateLineNumbers",
     "devFindFoldRegions",
     "devToggleFold",
@@ -399,8 +388,9 @@ def test_devrunpreview_no_string_interpolation_in_python(index_html: str) -> Non
 # --- Boot sequence ---
 
 
-def test_boot_inits_workspace_drop_zone(index_html: str) -> None:
-    assert "initWorkspaceDropZone()" in index_html
+def test_no_init_workspace_drop_zone(index_html: str) -> None:
+    """initWorkspaceDropZone was removed with workspace view."""
+    assert "initWorkspaceDropZone()" not in index_html
 
 
 # --- Tab whitelist ---
@@ -864,16 +854,10 @@ def test_template_snippets_defined(index_html: str) -> None:
 # ============================================================
 
 
-def test_workspace_uses_show_directory_picker(index_html: str) -> None:
-    """devOpenWorkspace calls showDirectoryPicker."""
-    body = _extract_func(index_html, "devOpenWorkspace")
-    assert "showDirectoryPicker" in body
-
-
 def test_workspace_fsaa_feature_detect_hides_button(index_html: str) -> None:
     """Boot hides Open Folder button if FSAA not supported."""
     assert "!window.showDirectoryPicker" in index_html
-    assert "btnOpenFolder" in index_html
+    assert "btnOpenFolderSetup" in index_html
 
 
 def test_workspace_reads_schemas_and_templates(index_html: str) -> None:
@@ -883,20 +867,6 @@ def test_workspace_reads_schemas_and_templates(index_html: str) -> None:
     assert "'templates'" in body or '"templates"' in body
     assert "_schema.spec.json" in body  # excluded
     assert "stencils.py" in body  # excluded
-
-
-def test_workspace_excludes_stencils_in_drop_fallback(index_html: str) -> None:
-    """Drag-and-drop fallback also excludes stencils.py from template listing."""
-    body = _extract_func(index_html, "initWorkspaceDropZone")
-    assert "stencils.py" in body
-
-
-def test_workspace_renders_two_sections(index_html: str) -> None:
-    """devRenderWorkspaceFiles renders Schemas and Templates sections."""
-    body = _extract_func(index_html, "devRenderWorkspaceFiles")
-    assert "Schemas" in body
-    assert "Templates" in body
-    assert "workspace-section" in body
 
 
 def test_workspace_load_schema_switches_tab(index_html: str) -> None:
@@ -911,26 +881,6 @@ def test_workspace_load_template_switches_tab(index_html: str) -> None:
     assert "showTab('dev-template')" in body
 
 
-def test_workspace_hover_action_text(index_html: str) -> None:
-    """Workspace file items show action text on hover via CSS."""
-    assert "workspace-file-action" in index_html
-    # CSS: opacity 0 by default, 1 on hover
-    match = re.search(r"\.workspace-file-action\s*\{[^}]*opacity:\s*0", index_html)
-    assert match, "file-action should be opacity:0 by default"
-    match2 = re.search(
-        r"\.workspace-file-item:hover\s+\.workspace-file-action\s*\{[^}]*opacity:\s*1",
-        index_html,
-    )
-    assert match2, "file-action should be opacity:1 on hover"
-
-
-def test_workspace_badge_shows_file_count(index_html: str) -> None:
-    """devReadWorkspaceFromHandle updates badge with file count."""
-    body = _extract_func(index_html, "devReadWorkspaceFromHandle")
-    assert "workspaceBadgeText" in body or "badgeText" in body
-    assert "file" in body  # "N file(s) loaded"
-
-
 def test_workspace_polling_interval(index_html: str) -> None:
     """Workspace polling uses setInterval with a reasonable interval."""
     body = _extract_func(index_html, "devReadWorkspaceFromHandle")
@@ -943,48 +893,6 @@ def test_workspace_poll_auto_reloads_editor(index_html: str) -> None:
     body = _extract_func(index_html, "devPollWorkspace")
     assert "devSchemaText = text" in body or "schemaJar" in body
     assert "devTemplateText = text" in body or "templateJar" in body
-
-
-def test_workspace_refresh_button_appears(index_html: str) -> None:
-    """Refresh button is shown after folder is loaded."""
-    assert 'id="btnRefreshWorkspace"' in index_html
-    assert "btnRefreshWorkspace" in index_html
-    body = _extract_func(index_html, "devReadWorkspaceFromHandle")
-    assert "btnRefreshWorkspace" in body
-    assert "'inline-flex'" in body
-
-
-def test_workspace_dragdrop_uses_webkit_entry(index_html: str) -> None:
-    """Drop handler uses webkitGetAsEntry as fallback."""
-    body = _extract_func(index_html, "initWorkspaceDropZone")
-    assert "webkitGetAsEntry" in body
-
-
-def test_workspace_dragover_class(index_html: str) -> None:
-    """Drop zone adds drag-over class on dragover."""
-    body = _extract_func(index_html, "initWorkspaceDropZone")
-    assert "'drag-over'" in body or '"drag-over"' in body
-
-
-def test_workspace_drop_fsaa_fallthrough_warns(index_html: str) -> None:
-    """FSAA drop error logs console.warn before falling through."""
-    body = _extract_func(index_html, "initWorkspaceDropZone")
-    assert "console.warn" in body
-
-
-def test_workspace_drop_fsaa_handle_enables_polling(index_html: str) -> None:
-    """If dropped item has FSAA handle, it is stored for polling."""
-    body = _extract_func(index_html, "initWorkspaceDropZone")
-    assert "workspaceHandle = handle" in body
-    assert "devReadWorkspaceFromHandle()" in body
-
-
-def test_workspace_drag_over_css(index_html: str) -> None:
-    """CSS rule for .drag-over state on workspace drop zone."""
-    match = re.search(r"\.workspace-drop-zone\.drag-over\s*\{([^}]+)\}", index_html)
-    assert match
-    css = match.group(1)
-    assert "border-color" in css
 
 
 # ============================================================
@@ -1064,15 +972,9 @@ def test_existing_test_count(index_html: str) -> None:
 class TestGitHubWorkspaceHTML:
     """HTML structure tests for GitHub workspace integration."""
 
-    def test_connect_repo_button_exists(self, index_html: str) -> None:
-        """Connect Repo button exists in workspace toolbar."""
-        assert 'id="btnConnectRepo"' in index_html
-
-    def test_connect_repo_button_uses_github_icon(self, index_html: str) -> None:
-        """Connect Repo button uses the GitHub icon."""
-        match = re.search(r'id="btnConnectRepo"[^>]*>.*?</button>', index_html, re.S)
-        assert match
-        assert "#icon-github" in match.group(0)
+    def test_connect_modal_triggers_exist(self, index_html: str) -> None:
+        """Connect modal trigger function exists."""
+        assert "devGhShowConnectModal()" in index_html
 
     def test_connect_modal_exists(self, index_html: str) -> None:
         """GitHub connect modal dialog exists."""
@@ -1100,21 +1002,9 @@ class TestGitHubWorkspaceHTML:
         """Clear token button exists for security."""
         assert 'id="btnGhClearToken"' in index_html
 
-    def test_branch_selector_exists(self, index_html: str) -> None:
-        """Branch selector dropdown exists in workspace toolbar."""
-        assert 'id="ghBranchSelect"' in index_html
-
-    def test_new_branch_button_exists(self, index_html: str) -> None:
-        """New branch button exists."""
-        assert 'id="btnGhNewBranch"' in index_html
-
     def test_new_branch_input_exists(self, index_html: str) -> None:
         """New branch name input exists."""
         assert 'id="ghNewBranchName"' in index_html
-
-    def test_commit_button_exists(self, index_html: str) -> None:
-        """Commit button exists in workspace toolbar."""
-        assert 'id="btnGhCommit"' in index_html
 
     def test_commit_panel_exists(self, index_html: str) -> None:
         """Commit panel with file list and message textarea exists."""
@@ -1134,12 +1024,6 @@ class TestGitHubWorkspaceHTML:
         """Security warning about token scope is shown in connect modal."""
         assert "gh-connect-warning" in index_html
         assert "fine-grained personal access token" in index_html
-
-    def test_workspace_bar_hidden_by_default(self, index_html: str) -> None:
-        """GitHub workspace bar is hidden by default."""
-        match = re.search(r'id="ghWorkspaceBar"[^>]*>', index_html)
-        assert match
-        assert "display:none" in match.group(0)
 
 
 class TestGitHubWorkspaceSVGIcons:
@@ -1174,7 +1058,6 @@ class TestGitHubWorkspaceCSS:
             "gh-commit-msg",
             "gh-commit-actions",
             "gh-new-branch-row",
-            "workspace-file-name.modified",
         ],
     )
     def test_css_class_defined(self, index_html: str, css_class: str) -> None:
@@ -1847,3 +1730,86 @@ def test_wizard_step_drag_css(index_html: str) -> None:
     assert ".wizard-step.dragging" in index_html
     assert ".wizard-step.drag-over-left" in index_html
     assert ".wizard-step.drag-over-right" in index_html
+
+
+# ============================================================
+#  ISSUE #88 — Accessibility (WCAG 2.1 AA)
+# ============================================================
+
+
+def test_overlay_sets_inert_on_show(index_html: str) -> None:
+    """showOverlay should set inert on content behind the overlay."""
+    match = re.search(
+        r"function showOverlay\(msg\)([\s\S]*?)^function ",
+        index_html,
+        re.M,
+    )
+    assert match
+    assert "inert" in match.group(1)
+
+
+def test_overlay_removes_inert_on_hide(index_html: str) -> None:
+    """hideOverlay should remove inert from content."""
+    match = re.search(
+        r"function hideOverlay\(\)([\s\S]*?)^(?:async )?function ",
+        index_html,
+        re.M,
+    )
+    assert match
+    assert "removeAttribute('inert')" in match.group(1)
+
+
+def test_prefers_reduced_motion_media_query(index_html: str) -> None:
+    """CSS includes prefers-reduced-motion media query."""
+    assert "prefers-reduced-motion: reduce" in index_html
+    assert "animation-duration: 0.01ms" in index_html
+
+
+def test_sample_data_toggle_aria_expanded(index_html: str) -> None:
+    """Sample data toggle button has aria-expanded attribute."""
+    match = re.search(r'class="dev-sample-toggle"[^>]*>', index_html)
+    assert match
+    assert "aria-expanded" in match.group(0)
+
+
+def test_sample_data_toggle_updates_aria(index_html: str) -> None:
+    """devToggleSampleData updates aria-expanded."""
+    match = re.search(
+        r"function devToggleSampleData\(\)([\s\S]*?)^(?:async )?function ",
+        index_html,
+        re.M,
+    )
+    assert match
+    assert "aria-expanded" in match.group(1)
+
+
+def test_forms_view_has_tabpanel_role(index_html: str) -> None:
+    """Forms view (view-setup) should have role=tabpanel."""
+    match = re.search(r'id="view-setup"[^>]*>', index_html)
+    assert match
+    assert 'role="tabpanel"' in match.group(0)
+    assert 'aria-labelledby="tab-forms"' in match.group(0)
+
+
+def test_demo_sets_content_source_type(index_html: str) -> None:
+    """launchDemo should set contentSourceType to 'demo'."""
+    match = re.search(
+        r"async function launchDemo\(\)([\s\S]*?)^(?:async )?function ",
+        index_html,
+        re.M,
+    )
+    assert match
+    assert "contentSourceType = 'demo'" in match.group(1)
+
+
+def test_picker_uses_abort_controller(index_html: str) -> None:
+    """renderPicker should use AbortController to prevent listener accumulation."""
+    match = re.search(
+        r"function renderPicker\(\)([\s\S]*?)^(?:async )?function ",
+        index_html,
+        re.M,
+    )
+    assert match
+    body = match.group(1)
+    assert "AbortController" in body
+    assert "signal" in body

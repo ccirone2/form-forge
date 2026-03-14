@@ -14,6 +14,22 @@
 
 ## Log
 
+### 2026-03-14 — A11y & Cleanup (#88, #152–#155)
+**Issues:** #88, #152, #153, #154, #155
+
+Post-merge cleanup and accessibility improvements:
+
+1. **Focus trap on loading overlay (#88)** — `showOverlay()` now sets `inert` on all body children except the overlay; `hideOverlay()` removes it. Prevents keyboard users from tabbing to obscured content.
+2. **`prefers-reduced-motion` (#88)** — Added CSS media query that disables all animations and transitions for users with vestibular sensitivity.
+3. **Sample data `aria-expanded` (#88)** — Added `aria-expanded` and `aria-controls` to the sample data toggle button; `devToggleSampleData()` updates it.
+4. **Forms tab ARIA role (#154)** — Added `role="tabpanel"` and `aria-labelledby="tab-forms"` to `view-setup`.
+5. **Demo content source type (#153)** — `launchDemo()` now sets `contentSourceType = 'demo'`, completing the state machine.
+6. **Picker listener accumulation (#155)** — `renderPicker()` now uses `AbortController` to remove previous event listeners before attaching new ones.
+7. **Removed orphaned workspace view (#152)** — Deleted the unreachable `view-dev-workspace` HTML block (~65 lines), its CSS (~55 lines), and dead JS functions (`devOpenWorkspace`, `devRenderWorkspaceFiles`, `devRefreshWorkspace`, `initWorkspaceDropZone`). Moved git commit/branch panels to standalone elements. Cleaned up `devGhDisconnect()` and `devGhFetchFiles()`.
+8. **Tests updated** — Removed 24 dead-UI tests, added 9 new tests for a11y and cleanup. 409 tests pass.
+
+---
+
 ### 2026-03-14 — UX: Unified Content Source & Tab-Based Navigation (#143)
 **Issues:** #143, #144, #145, #146, #147, #148, #149, #150
 
