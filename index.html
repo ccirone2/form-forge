@@ -6009,6 +6009,7 @@ function devEditorKeydownHandler(e, jarInstance, language) {
     const sel = window.getSelection();
     const startOff = devGetCursorOffset(el);
     let endOff = startOff;
+    let actualStart = startOff;
     if (sel.rangeCount && !sel.isCollapsed) {
       const range = sel.getRangeAt(0);
       const preStart = document.createRange();
@@ -6019,12 +6020,8 @@ function devEditorKeydownHandler(e, jarInstance, language) {
       preEnd.setEnd(range.endContainer, range.endOffset);
       const selStart = preStart.toString().length;
       const selEnd = preEnd.toString().length;
-      // Use the actual selection boundaries
       endOff = Math.max(selStart, selEnd);
-      // Recalculate startOff to be the min
-      var actualStart = Math.min(selStart, selEnd);
-    } else {
-      var actualStart = startOff;
+      actualStart = Math.min(selStart, selEnd);
     }
 
     // Map offsets to line indices
@@ -6082,10 +6079,14 @@ function devFindFoldRegions(text, language) {
   const regions = []; // [{start, end}]
   if (language === 'json') {
     const stack = [];
+    let inString = false;
     for (let i = 0; i < lines.length; i++) {
       const trimmed = lines[i].trimEnd();
       for (let c = 0; c < trimmed.length; c++) {
         const ch = trimmed[c];
+        if (ch === '\\' && inString) { c++; continue; } // skip escaped char
+        if (ch === '"') { inString = !inString; continue; }
+        if (inString) continue;
         if (ch === '{' || ch === '[') stack.push({ char: ch, line: i });
         else if ((ch === '}' || ch === ']') && stack.length > 0) {
           const open = stack.pop();
@@ -6094,7 +6095,7 @@ function devFindFoldRegions(text, language) {
       }
     }
   } else if (language === 'python') {
-    const blockRe = /^(\s*)(def |class |if |elif |else:|for |while |with |try:|except |finally:)/;
+    const blockRe = /^(\s*)(?:async\s+)?(def |class |if |elif |else:|for |while |with |try:|except |finally:)/;
     for (let i = 0; i < lines.length; i++) {
       const m = lines[i].match(blockRe);
       if (!m) continue;
@@ -7019,29 +7020,32 @@ async function devRunPreview() {
     // Run generate_docx — pass data safely via Pyodide globals (no string interpolation)
     badgeText.textContent = 'generating DOCX...';
     pyodide.globals.set('_dev_input', pyodide.toPy(sampleData));
-    const result = await pyodide.runPythonAsync(`
+    try {
+      const result = await pyodide.runPythonAsync(`
 _data = dict(_dev_input)
 _result = generate_docx(_data)
 bytes(_result) if isinstance(_result, (bytes, bytearray)) else _result
-    `);
-    pyodide.globals.delete('_dev_input');
+      `);
 
-    // Get bytes
-    const docxBytes = result.toJs ? result.toJs() : result;
-    const arrayBuf = (docxBytes instanceof Uint8Array) ? docxBytes.buffer : new Uint8Array(docxBytes).buffer;
+      // Get bytes
+      const docxBytes = result.toJs ? result.toJs() : result;
+      const arrayBuf = (docxBytes instanceof Uint8Array) ? docxBytes.buffer : new Uint8Array(docxBytes).buffer;
 
-    // Convert to HTML via mammoth
-    badgeText.textContent = 'rendering preview...';
-    if (typeof mammoth === 'undefined') {
-      throw new Error('mammoth.js not loaded yet — please try again');
+      // Convert to HTML via mammoth
+      badgeText.textContent = 'rendering preview...';
+      if (typeof mammoth === 'undefined') {
+        throw new Error('mammoth.js not loaded yet — please try again');
+      }
+      const mammothResult = await mammoth.convertToHtml({ arrayBuffer: arrayBuf });
+      if (emptyEl) emptyEl.style.display = 'none';
+      // Sanitize mammoth output via DOMPurify
+      container.innerHTML = DOMPurify.sanitize(mammothResult.value);
+
+      badge.className = 'dev-validation-badge valid';
+      badgeText.textContent = 'success';
+    } finally {
+      pyodide.globals.delete('_dev_input');
     }
-    const mammothResult = await mammoth.convertToHtml({ arrayBuffer: arrayBuf });
-    if (emptyEl) emptyEl.style.display = 'none';
-    // Sanitize mammoth output via DOMPurify
-    container.innerHTML = DOMPurify.sanitize(mammothResult.value);
-
-    badge.className = 'dev-validation-badge valid';
-    badgeText.textContent = 'success';
   } catch (e) {
     badge.className = 'dev-validation-badge invalid';
     badgeText.textContent = 'error';

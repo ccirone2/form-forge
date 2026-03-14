@@ -49,7 +49,7 @@ Six enhancements to Dev Mode editors, improving the schema-to-template developme
 - Falls back to browser download otherwise
 
 **Tests (#135):**
-- 34 new tests covering all features (296 total in test_dev_mode.py, 424 total)
+- 39 new tests covering all features (302 total in test_dev_mode.py, 430 total)
 
 ---
 
