@@ -14,6 +14,26 @@
 
 ## Log
 
+### 2026-03-14 — UX: Unified Content Source & Tab-Based Navigation (#143)
+**Issues:** #143, #144, #145, #146, #147, #148, #149, #150
+
+Major UX overhaul to eliminate the Dev Mode toggle and unify the content source:
+
+1. **Always-on tab navigation** — Replaced binary Dev Mode toggle with permanent 4-tab nav bar (Forms | Schema | Template | Docs). No more mode switching, confirmation gate, or mobile viewport gate. All tools always accessible.
+2. **Unified content source** — Merged dual GitHub connection state (`ghOwner/ghRepo` and `devGhOwner/devGhRepoName`) into single set of globals. `connectRepo()` now populates both `repoSchemas[]` for the picker and `workspaceFiles` for editing.
+3. **Docs always embedded** — `loadDocs()` now always uses built-in fallbacks. No longer attempts to fetch docs from the connected repo (which would fail on user content repos).
+4. **Local folder as first-class source** — New `connectLocalFolder()` function on the Forms tab using File System Access API. Equal-weight source cards (GitHub + Local Folder) replace the old layout of a primary GitHub card and collapsed local files section.
+5. **Bidirectional form/editor flow** — Picker cards have "Edit Schema" and "Edit Template" actions. Form view has "Edit Schema" button. Schema preview has "Fill Form" button. Seamless navigation between filling and editing.
+6. **Test suite updated** — Removed 21 Dev Mode tests, updated 13, added 8 new tests for tab navigation and unified architecture. 424 tests pass.
+
+**Decisions:**
+- Eliminated Dev Mode entirely (user chose over lighter toggle or role-based approach)
+- Equal-weight source cards (user chose over GitHub-primary or local-primary)
+- Git operations in editor toolbar (user chose over dedicated panel in Forms tab)
+- Docs always use embedded fallbacks (FormForge project docs are independent of user's content repo)
+
+---
+
 ### 2026-03-14 — UX: Audience Separation (#141)
 **Issues:** #141
 

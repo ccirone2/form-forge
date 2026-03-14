@@ -225,14 +225,14 @@
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
   /* ===== 4. VIEWS & LAYOUT ===== */
-  body.dev-mode-active {
+  body {
     height: 100vh; overflow: hidden;
     display: flex; flex-direction: column;
   }
-  body.dev-mode-active > .app-header,
-  body.dev-mode-active > .dev-nav { flex-shrink: 0; }
+  body > .app-header,
+  body > .dev-nav { flex-shrink: 0; }
   .view { display: none; }
-  .view.active { display: block; }
+  .view.active { display: block; flex: 1; overflow-y: auto; }
   .view.active[role="tabpanel"] {
     display: flex; flex-direction: column; flex: 1;
     width: 100%; min-height: 0; overflow: hidden;
@@ -246,10 +246,19 @@
   .setup-hero h2 { font-size: var(--text-3xl); font-weight: 700; letter-spacing: -0.03em; margin-bottom: 8px; }
   .setup-hero p { color: var(--text-muted); font-size: var(--text-md); max-width: 520px; margin: 0 auto; }
 
+  .source-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;
+  }
+  @media (max-width: 767px) {
+    .source-grid { grid-template-columns: 1fr; }
+  }
   .config-card {
     background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
     padding: 28px; margin-bottom: 24px;
   }
+  .source-card { margin-bottom: 0; }
+  .source-card .config-card-description { font-size: var(--text-sm); color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+  .source-card .config-card-description code { font-family: var(--font-mono); font-size: var(--text-xs); background: var(--surface-2); padding: 2px 5px; border-radius: var(--radius-xs); }
   .config-card h3 { font-size: var(--text-md); font-weight: 600; margin-bottom: 16px; }
   .config-row { display: flex; gap: 12px; align-items: flex-end; }
   .config-row .field-grow { flex: 1; }
@@ -300,6 +309,16 @@
     background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border);
   }
   .picker-card.selected .card-badge { background: var(--accent); color: var(--text-on-accent); border-color: var(--accent); }
+  .card-edit-actions {
+    display: flex; gap: 6px; margin-top: 8px;
+  }
+  .btn-card-edit {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: var(--text-2xs); font-family: var(--font-mono); color: var(--text-muted);
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 3px 8px; cursor: pointer; transition: all var(--transition-fast);
+  }
+  .btn-card-edit:hover { color: var(--accent); border-color: var(--accent-border); background: var(--accent-subtle); }
 
   .picker-empty {
     grid-column: 1 / -1; text-align: center; padding: 40px;
@@ -1291,6 +1310,16 @@
   .dev-toolbar-right {
     display: flex; align-items: center; gap: 4px;
   }
+  .dev-source-toolbar {
+    display: flex; align-items: center; gap: 8px; padding: 4px 8px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    margin: 0 0 4px;
+  }
+  .dev-source-modified {
+    font-size: var(--text-2xs); font-family: var(--font-mono);
+    color: var(--warning); background: rgba(234,179,8,0.1);
+    padding: 1px 6px; border-radius: var(--radius-xs);
+  }
   .dev-toolbar-right .btn-primary {
     margin-left: 8px;
   }
@@ -1894,12 +1923,8 @@
 
 <!-- Header -->
 <header class="app-header">
-  <h1><button type="button" class="h1-home-btn" onclick="if(devMode){toggleDevMode()}showView('setup')"><span>&#9632;</span> FormForge</button></h1>
+  <h1><button type="button" class="h1-home-btn" onclick="showTab('forms')"><span>&#9632;</span> FormForge</button></h1>
   <div class="header-right">
-    <button type="button" class="mode-toggle" id="modeToggle" onclick="toggleDevMode()" title="Dev Mode — for building and editing forms">
-      <svg width="14" height="14"><use href="#icon-wrench"/></svg>
-      <span class="mode-toggle-label" id="modeToggleLabel">Dev</span>
-    </button>
     <div class="status-badge" id="statusBadge">
       <div class="status-dot" aria-hidden="true"></div>
       <span id="statusText">not connected</span>
@@ -1907,21 +1932,21 @@
   </div>
 </header>
 
-<!-- Dev Mode Navigation -->
-<nav class="dev-nav" id="devNav" role="tablist" aria-label="Dev Mode navigation" style="display:none">
-  <button type="button" class="dev-nav-tab active" id="tab-dev-schema" data-dev-tab="dev-schema" role="tab" aria-selected="true" aria-controls="view-dev-schema" onclick="showDevTab('dev-schema')">
+<!-- Primary Navigation -->
+<nav class="dev-nav" id="mainNav" role="tablist" aria-label="Main navigation">
+  <button type="button" class="dev-nav-tab active" id="tab-forms" data-tab="forms" role="tab" aria-selected="true" aria-controls="view-setup" onclick="showTab('forms')">
+    <svg width="14" height="14" aria-hidden="true"><use href="#icon-file-text"/></svg>
+    Forms
+  </button>
+  <button type="button" class="dev-nav-tab" id="tab-dev-schema" data-tab="dev-schema" role="tab" aria-selected="false" aria-controls="view-dev-schema" onclick="showTab('dev-schema')">
     <svg width="14" height="14" aria-hidden="true"><use href="#icon-file-upload"/></svg>
-    Schema Builder
+    Schema
   </button>
-  <button type="button" class="dev-nav-tab" id="tab-dev-template" data-dev-tab="dev-template" role="tab" aria-selected="false" aria-controls="view-dev-template" onclick="showDevTab('dev-template')">
+  <button type="button" class="dev-nav-tab" id="tab-dev-template" data-tab="dev-template" role="tab" aria-selected="false" aria-controls="view-dev-template" onclick="showTab('dev-template')">
     <svg width="14" height="14" aria-hidden="true"><use href="#icon-code"/></svg>
-    Template Builder
+    Template
   </button>
-  <button type="button" class="dev-nav-tab" id="tab-dev-workspace" data-dev-tab="dev-workspace" role="tab" aria-selected="false" aria-controls="view-dev-workspace" onclick="showDevTab('dev-workspace')">
-    <svg width="14" height="14" aria-hidden="true"><use href="#icon-folder"/></svg>
-    Workspace
-  </button>
-  <button type="button" class="dev-nav-tab" id="tab-dev-docs" data-dev-tab="dev-docs" role="tab" aria-selected="false" aria-controls="view-dev-docs" onclick="showDevTab('dev-docs')">
+  <button type="button" class="dev-nav-tab" id="tab-dev-docs" data-tab="dev-docs" role="tab" aria-selected="false" aria-controls="view-dev-docs" onclick="showTab('dev-docs')">
     <svg width="14" height="14" aria-hidden="true"><use href="#icon-book"/></svg>
     Docs
   </button>
@@ -1941,43 +1966,91 @@
       </div>
     </div>
 
-    <!-- ===== GITHUB ===== -->
-    <div class="config-card">
-      <h3>
-        <svg width="16" height="16" class="icon-inline"><use href="#icon-github"/></svg>
-        GitHub Repository <span class="section-label-muted">(shared, org-wide)</span>
-      </h3>
-      <div class="config-row">
-        <div class="field-grow">
-          <label>Repository</label>
-          <input type="text" id="repoInput" placeholder="myorg/form-templates" value="ccirone2/form-forge" spellcheck="false" autocomplete="off">
-        </div>
-        <button type="button" class="btn-connect" id="connectBtn" onclick="connectRepo()">
-          <svg width="16" height="16"><use href="#icon-github"/></svg>
-          Connect
-        </button>
-      </div>
-      <div class="repo-status" id="repoStatus"></div>
-
-      <div class="token-toggle" onclick="toggleToken()">&#9656; Advanced options (branch, access token)</div>
-      <div class="token-row hidden" id="tokenRow">
+    <!-- ===== SOURCE CARDS (equal weight) ===== -->
+    <div class="source-grid">
+      <!-- GitHub card -->
+      <div class="config-card source-card">
+        <h3>
+          <svg width="16" height="16" class="icon-inline"><use href="#icon-github"/></svg>
+          GitHub Repository
+        </h3>
+        <p class="config-card-description">Connect to a repo with <code>schemas/</code> and <code>templates/</code> directories. Shared, version-controlled.</p>
         <div class="config-row">
-          <div class="field-grow branch-input-wrapper">
-            <label>branch (optional)</label>
-            <input type="text" id="branchInput" placeholder="main" spellcheck="false">
-          </div>
-        </div>
-        <div class="config-row" style="margin-top:8px">
           <div class="field-grow">
-            <label>personal access token</label>
-            <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" spellcheck="false" autocomplete="off">
+            <label>Repository</label>
+            <input type="text" id="repoInput" placeholder="myorg/form-templates" spellcheck="false" autocomplete="off">
+          </div>
+          <button type="button" class="btn-connect" id="connectBtn" onclick="connectRepo()">
+            <svg width="16" height="16"><use href="#icon-github"/></svg>
+            Connect
+          </button>
+        </div>
+        <div class="repo-status" id="repoStatus"></div>
+        <div class="token-toggle" onclick="toggleToken()">&#9656; Advanced options (branch, access token)</div>
+        <div class="token-row hidden" id="tokenRow">
+          <div class="config-row">
+            <div class="field-grow branch-input-wrapper">
+              <label>branch (optional)</label>
+              <input type="text" id="branchInput" placeholder="main" spellcheck="false">
+            </div>
+          </div>
+          <div class="config-row" style="margin-top:8px">
+            <div class="field-grow">
+              <label>personal access token</label>
+              <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" spellcheck="false" autocomplete="off">
+            </div>
+          </div>
+          <div class="token-hint">Token is only used in-browser and never stored or transmitted elsewhere. Needs <code>repo</code> scope for private repos.</div>
+        </div>
+      </div>
+
+      <!-- Local Folder card -->
+      <div class="config-card source-card" id="localCard">
+        <h3>
+          <svg width="16" height="16" class="icon-inline"><use href="#icon-folder"/></svg>
+          Local Folder
+        </h3>
+        <p class="config-card-description">Open a folder with <code>schemas/</code> and <code>templates/</code> directories. Private, works offline.</p>
+        <button type="button" class="btn-connect" id="btnOpenFolderSetup" onclick="connectLocalFolder()" style="margin-bottom:12px">
+          <svg width="16" height="16"><use href="#icon-folder"/></svg>
+          Open Folder
+        </button>
+        <div class="local-folder-status" id="localFolderStatus"></div>
+
+        <div class="token-toggle" onclick="toggleLocalCard()">&#9656; Or load individual files</div>
+        <div class="local-card-body" id="localCardBody" style="display:none">
+          <div class="local-upload-row">
+            <div class="drop-zone" id="schemaDropZone" tabindex="0">
+              <input type="file" id="localSchemaFile" accept=".json" hidden>
+              <div class="drop-zone-icon">
+                <svg width="28" height="28"><use href="#icon-file-upload"/></svg>
+              </div>
+              <div class="drop-zone-label">Form Definition</div>
+              <div class="drop-zone-hint">Drop .json or click</div>
+              <div class="drop-zone-file" id="schemaFileName"></div>
+            </div>
+            <div class="drop-zone" id="templateDropZone" tabindex="0">
+              <input type="file" id="localTemplateFile" accept=".py" hidden>
+              <div class="drop-zone-icon">
+                <svg width="28" height="28"><use href="#icon-file-code"/></svg>
+              </div>
+              <div class="drop-zone-label">Document Template</div>
+              <div class="drop-zone-hint">Drop .py or click</div>
+              <div class="drop-zone-file" id="templateFileName"></div>
+            </div>
+          </div>
+          <div class="local-launch-row">
+            <button type="button" class="btn-connect" id="localLaunchBtn" disabled onclick="launchLocal()">
+              <svg width="16" height="16"><use href="#icon-arrow-right"/></svg>
+              Open Form
+            </button>
+            <span class="local-status" id="localStatus"></span>
           </div>
         </div>
-        <div class="token-hint">Token is only used in-browser and never stored or transmitted elsewhere. Needs <code>repo</code> scope for private repos.</div>
       </div>
     </div>
 
-    <!-- Picker appears after connect — positioned directly under GitHub card for prominence -->
+    <!-- Picker appears after connecting any source -->
     <div class="picker-section" id="pickerSection" style="display:none;">
       <h3>Choose a Form</h3>
       <div class="picker-grid" id="pickerGrid"></div>
@@ -1988,58 +2061,6 @@
         </button>
       </div>
     </div>
-
-    <!-- Divider -->
-    <div class="source-divider">
-      <span>or load files from your computer</span>
-    </div>
-
-    <!-- ===== LOCAL FILES (collapsed by default) ===== -->
-    <div class="config-card" id="localCard">
-      <div class="local-toggle" onclick="toggleLocalCard()" tabindex="0" role="button" aria-expanded="false" aria-controls="localCardBody" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLocalCard()}">
-        <span class="local-toggle-arrow" id="localToggleArrow">&#9654;</span>
-        <svg width="16" height="16" class="icon-inline" style="margin-right:0"><use href="#icon-folder"/></svg>
-        <span style="font-size:var(--text-md);font-weight:600;font-family:var(--font-sans);color:var(--text)">Local Files</span>
-        <span class="section-label-muted">(private, offline)</span>
-      </div>
-
-      <div class="local-card-body" id="localCardBody">
-        <p class="config-card-description">
-          Load a form definition and its document template directly from your machine. Files are read in-browser only — nothing is uploaded anywhere.
-        </p>
-        <div class="local-upload-row">
-          <!-- Schema drop zone -->
-          <div class="drop-zone" id="schemaDropZone" tabindex="0">
-            <input type="file" id="localSchemaFile" accept=".json" hidden>
-            <div class="drop-zone-icon">
-              <svg width="28" height="28"><use href="#icon-file-upload"/></svg>
-            </div>
-            <div class="drop-zone-label">Form Definition</div>
-            <div class="drop-zone-hint">Drop .json or click to browse</div>
-            <div class="drop-zone-file" id="schemaFileName"></div>
-          </div>
-
-          <!-- Template drop zone -->
-          <div class="drop-zone" id="templateDropZone" tabindex="0">
-            <input type="file" id="localTemplateFile" accept=".py" hidden>
-            <div class="drop-zone-icon">
-              <svg width="28" height="28"><use href="#icon-file-code"/></svg>
-            </div>
-            <div class="drop-zone-label">Document Template</div>
-            <div class="drop-zone-hint">Drop .py or click to browse</div>
-            <div class="drop-zone-file" id="templateFileName"></div>
-          </div>
-        </div>
-
-        <div class="local-launch-row">
-          <button type="button" class="btn-connect" id="localLaunchBtn" disabled onclick="launchLocal()">
-            <svg width="16" height="16"><use href="#icon-arrow-right"/></svg>
-            Open Form
-          </button>
-          <span class="local-status" id="localStatus"></span>
-        </div>
-      </div>
-    </div>
   </div>
 </main>
 
@@ -2047,7 +2068,7 @@
 <main class="view" id="view-form">
   <div class="main-container">
     <div class="form-nav">
-      <button type="button" class="btn-back" onclick="showView('setup')">
+      <button type="button" class="btn-back" onclick="showTab('forms')">
         <svg width="14" height="14"><use href="#icon-arrow-left"/></svg>
         Back
       </button>
@@ -2056,6 +2077,9 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
         Auto-saving
       </span>
+      <button type="button" class="btn-card-edit" id="editSchemaBtn" onclick="editCurrentSchema()" title="Edit this form's schema" style="display:none">
+        <svg width="12" height="12"><use href="#icon-file-upload"/></svg> Edit Schema
+      </button>
       <button type="button" class="profile-btn" id="profileNavBtn" onclick="toggleProfileNav()" title="Saved profiles — autofill common fields like name, email, and address">
         <svg width="14" height="14"><use href="#icon-person"/></svg>
         Profiles <span class="profile-badge" id="profileBadge" style="display:none">0</span>
@@ -2131,6 +2155,17 @@
         </button>
       </div>
     </div>
+    <div class="dev-source-toolbar" id="schemaSourceToolbar" style="display:none">
+      <span class="mono-label" id="schemaSourceFile"></span>
+      <span class="dev-source-modified" id="schemaSourceModified" style="display:none">modified</span>
+      <span class="mono-label" id="schemaSourceBranch"></span>
+      <button type="button" class="btn-secondary btn-sm" id="schemaCommitBtn" onclick="devGhShowCommitPanel()" style="display:none">
+        <svg width="12" height="12"><use href="#icon-git-commit"/></svg> Commit
+      </button>
+      <button type="button" class="btn-secondary btn-sm" id="schemaSaveLocalBtn" onclick="devSaveToWorkspace()" style="display:none">
+        <svg width="12" height="12"><use href="#icon-save"/></svg> Save to Disk
+      </button>
+    </div>
     <div class="dev-split" id="schemaSplit">
       <div class="dev-pane dev-pane-editor" id="schemaEditorPane">
         <div class="dev-editor-wrap">
@@ -2144,6 +2179,9 @@
         <div class="dev-preview-header">
           <span class="mono-label">LIVE PREVIEW</span>
           <span class="mono-label" id="schemaCoverageBadge" style="color:var(--accent);"></span>
+          <button type="button" class="btn-card-edit" onclick="fillFormFromEditor()" title="Fill this form in the Forms tab" style="margin-left:auto">
+            <svg width="12" height="12"><use href="#icon-arrow-right"/></svg> Fill Form
+          </button>
         </div>
         <div class="dev-preview-form" id="schemaPreviewForm"></div>
         <div class="dev-preview-empty" id="schemaPreviewEmpty">
@@ -2402,8 +2440,6 @@ let autosaveTimer = null;    // Debounce timer for autosave
 let formDirty = false;       // Whether the form has unsaved changes
 let pyodidePreloadPromise = null;  // Background preload promise for Pyodide
 
-// Dev Mode state
-let devMode = false;
 let devSchemaText = localStorage.getItem('formforge-dev-schema') || '';
 let devTemplateText = localStorage.getItem('formforge-dev-template') || '';
 let devSampleDataText = localStorage.getItem('formforge-dev-sampledata') || '{}';
@@ -2430,21 +2466,15 @@ let workspaceFiles = { schemas: [], templates: [] };
 let devWorkspacePoller = null;   // setInterval ID for FSAA change polling
 let currentWorkspaceFile = null;
 
-// GitHub workspace state (Dev Mode)
-let devGhConnected = false;           // Whether a GitHub repo is connected in workspace
-let devGhOwner = '';                  // Connected repo owner
-let devGhRepoName = '';               // Connected repo name
-let devGhBranch = '';                 // Current branch
-let devGhPat = '';                    // Personal access token
-let devGhBranches = [];               // Available branches
-let devGhOriginalContents = {};       // { path: { content, sha } } — original fetched content for diff
-let devGhModifiedFiles = new Set();   // Set of paths that have been modified
-
-// GitHub config
+// Unified content source (single GitHub connection for both filling and editing)
+let contentSourceType = null;         // 'github' | 'local' | 'demo' | null
 let ghOwner = '';
 let ghRepo = '';
 let ghBranch = 'main';
 let ghToken = '';
+let ghBranches = [];                  // Available branches
+let ghOriginalContents = {};          // { path: { content, sha } } — original fetched content for diff
+let ghModifiedFiles = new Set();      // Set of paths that have been modified
 
 // FormForge repo fallback (used when connected repo lacks stencils.py)
 const FORMFORGE_FALLBACK = { owner: 'ccirone2', repo: 'form-forge', branch: 'develop' };
@@ -2752,36 +2782,14 @@ function buildFallbackExamples() {
 }
 
 async function loadDocs() {
-  const isConnected = ghOwner && ghRepo;
-
   for (const [slotId, config] of Object.entries(DOCS_CONFIG)) {
     const contentEl = document.getElementById(slotId + 'Content');
     const sourceEl = document.getElementById(slotId + 'Source');
     const titleEl = document.getElementById(slotId + 'Title');
 
-    // Try GitHub first
-    if (isConnected && config.ghPath) {
-      try {
-        const md = await ghFetchRaw(config.ghPath);
-        if (md && md.trim().length > 10) {
-          contentEl.innerHTML = `<div class="docs-rendered-md">${renderMarkdown(md)}</div>`;
-          sourceEl.className = 'docs-source-badge from-github';
-          sourceEl.textContent = `from ${ghOwner}/${ghRepo} · ${config.ghPath}`;
-          titleEl.textContent = config.title;
-          log(`Docs loaded: ${config.ghPath}`, 'success');
-          continue;
-        }
-      } catch (e) {
-        log(`Docs not found: ${config.ghPath} — using fallback`, 'info');
-      }
-    }
-
-    // Fallback to embedded
     titleEl.textContent = config.fallbackTitle;
     sourceEl.className = 'docs-source-badge from-fallback';
-    sourceEl.textContent = isConnected
-      ? `${config.ghPath || 'n/a'} not found in repo — showing built-in reference`
-      : 'offline — showing built-in reference from demo files';
+    sourceEl.textContent = 'built-in reference';
 
     switch (slotId) {
       case 'schemaGuide':   contentEl.innerHTML = buildFallbackSchemaGuide(); break;
@@ -2800,10 +2808,8 @@ let localTemplateText = null;
 
 function toggleLocalCard() {
   const body = document.getElementById('localCardBody');
-  const isOpen = body.classList.toggle('open');
-  document.getElementById('localToggleArrow').classList.toggle('open', isOpen);
-  const toggle = body.previousElementSibling;
-  if (toggle) toggle.setAttribute('aria-expanded', isOpen);
+  const isOpen = body.style.display !== 'block';
+  body.style.display = isOpen ? 'block' : 'none';
 }
 
 function initDropZones() {
@@ -3078,12 +3084,44 @@ async function connectRepo() {
     badge.className = 'status-badge ready';
     document.getElementById('statusText').textContent = `${ghOwner}/${ghRepo}`;
 
+    contentSourceType = 'github';
+
+    // Populate workspaceFiles for editing (reuse data already fetched)
+    workspaceFiles = { schemas: [], templates: [] };
+    ghOriginalContents = {};
+    ghModifiedFiles = new Set();
+    for (const entry of repoSchemas) {
+      const raw = JSON.stringify(entry.schema, null, 2);
+      workspaceFiles.schemas.push({ name: entry.schemaPath.replace('schemas/', ''), text: raw, handle: null, ghPath: entry.schemaPath, ghSha: null });
+      ghOriginalContents[entry.schemaPath] = { content: raw, sha: null };
+    }
+    // Fetch template contents for workspace editing
+    try {
+      const tmplDir = await ghFetch('templates');
+      if (Array.isArray(tmplDir)) {
+        for (const entry of tmplDir) {
+          if (entry.name.endsWith('.py') && entry.name !== 'stencils.py' && entry.type === 'file') {
+            try {
+              const text = await ghFetchRaw(entry.path);
+              workspaceFiles.templates.push({ name: entry.name, text, handle: null, ghPath: entry.path, ghSha: entry.sha });
+              ghOriginalContents[entry.path] = { content: text, sha: entry.sha };
+            } catch (e) { /* skip individual template failures */ }
+          }
+        }
+      }
+    } catch (e) { /* templates dir may not exist */ }
+    // Also fetch exact SHAs for schema files (for commit support)
+    for (const sf of workspaceFiles.schemas) {
+      const dirEntry = schemaFiles.find(f => f.path === sf.ghPath);
+      if (dirEntry) {
+        sf.ghSha = dirEntry.sha;
+        ghOriginalContents[sf.ghPath].sha = dirEntry.sha;
+      }
+    }
+
     renderPicker();
     document.getElementById('pickerSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    // Reload docs from connected repo
-    log('Refreshing docs from GitHub...', 'info');
-    await loadDocs();
   } catch (err) {
     statusEl.className = 'repo-status error';
     statusEl.innerHTML = `${escapeHtml(friendlyError(err))} <button type="button" class="btn-retry" onclick="connectRepo()" style="margin-left: 12px; padding: 4px 12px; font-size: var(--text-sm);">Retry</button>`;
@@ -3121,12 +3159,30 @@ function renderPicker() {
       <h4>${escapeHtml(s.name)}</h4>
       <p>${escapeHtml(s.description || 'No description')}</p>
       <span class="card-badge">${s.schema.sections ? s.schema.sections.length + ' sections' : 'schema'}</span>
+      <div class="card-edit-actions">
+        <button type="button" class="btn-card-edit" data-action="edit-schema" data-idx="${i}" title="Edit schema">
+          <svg width="12" height="12"><use href="#icon-file-upload"/></svg> Schema
+        </button>
+        <button type="button" class="btn-card-edit" data-action="edit-template" data-idx="${i}" title="Edit template">
+          <svg width="12" height="12"><use href="#icon-code"/></svg> Template
+        </button>
+      </div>
     `;
     grid.appendChild(card);
   });
 
   // Event delegation: handle clicks, double-clicks, and keyboard on picker cards via the grid
   grid.addEventListener('click', (e) => {
+    // Handle edit action buttons
+    const editBtn = e.target.closest('.btn-card-edit');
+    if (editBtn) {
+      e.stopPropagation();
+      const idx = parseInt(editBtn.dataset.idx);
+      const action = editBtn.dataset.action;
+      if (action === 'edit-schema') loadSchemaIntoEditor(idx);
+      else if (action === 'edit-template') loadTemplateIntoEditor(idx);
+      return;
+    }
     const card = e.target.closest('.picker-card');
     if (card && card.dataset.idx !== undefined) selectSchema(parseInt(card.dataset.idx));
   });
@@ -3166,8 +3222,23 @@ async function launchForm() {
   showOverlay('Loading...');
 
   try {
-    log(`Fetching template: ${entry.templatePath}`, 'info');
-    const templateCode = await ghFetchRaw(entry.templatePath);
+    let templateCode;
+    let sourceLabel;
+
+    if (contentSourceType === 'local') {
+      // Local folder: find matching template from workspaceFiles
+      const tmplName = (entry.templatePath || '').replace('templates/', '');
+      const tmplFile = workspaceFiles.templates.find(t => t.name === tmplName);
+      if (!tmplFile) throw new Error(`Template not found: ${tmplName}. Expected in templates/ directory.`);
+      templateCode = tmplFile.text;
+      sourceLabel = `local: ${workspaceHandle ? workspaceHandle.name : 'folder'}`;
+    } else {
+      // GitHub: fetch template
+      log(`Fetching template: ${entry.templatePath}`, 'info');
+      templateCode = await ghFetchRaw(entry.templatePath);
+      sourceLabel = `${ghOwner}/${ghRepo}`;
+    }
+
     log(`Template loaded: ${templateCode.length} chars`, 'success');
 
     currentSchema = entry.schema;
@@ -3175,9 +3246,9 @@ async function launchForm() {
     currentTemplateCode = templateCode;
 
     buildForm(currentSchema);
-    document.getElementById('formNavInfo').textContent = `${entry.name} · from ${ghOwner}/${ghRepo}`;
+    document.getElementById('formNavInfo').textContent = `${entry.name} · from ${sourceLabel}`;
     document.getElementById('schemaInfoText').innerHTML =
-      `Loaded from GitHub — schema: <strong>${escapeHtml(entry.schemaPath)}</strong> · template: <strong>${escapeHtml(entry.templatePath)}</strong>`;
+      `Schema: <strong>${escapeHtml(entry.schemaPath)}</strong> · template: <strong>${escapeHtml(entry.templatePath)}</strong>`;
 
     if (!pyodideReady) {
       if (pyodidePreloadPromise) {
@@ -3193,6 +3264,9 @@ async function launchForm() {
     log('Template code loaded into Pyodide', 'success');
 
     document.getElementById('exportBtn').disabled = false;
+    // Show edit schema button if source is connected
+    const editBtn = document.getElementById('editSchemaBtn');
+    if (editBtn) editBtn.style.display = contentSourceType ? 'inline-flex' : 'none';
     showView('form');
     postLaunchHook();
   } catch (err) {
@@ -6006,97 +6080,157 @@ function loadScript(src) {
   });
 }
 
-async function toggleDevMode() {
-  if (!devMode && window.innerWidth < 768) {
-    showToast('Dev Mode requires a wider viewport (≥768px)', 'error');
-    return;
-  }
+const VALID_TABS = new Set(['forms', 'dev-schema', 'dev-template', 'dev-docs']);
 
-  // First-time gate: show confirmation tooltip if user has never entered Dev Mode
-  if (!devMode && !localStorage.getItem('formforge-dev-confirmed')) {
-    const existing = document.querySelector('.dev-confirm-tooltip');
-    if (existing) { existing.remove(); return; }
-    const tooltip = document.createElement('div');
-    tooltip.className = 'dev-confirm-tooltip';
-    tooltip.innerHTML = '<p><strong>Dev Mode</strong> is for building and editing forms and templates. If you\'re looking to fill out a form, stay on this page.</p>'
-      + '<div class="dev-confirm-actions">'
-      + '<button type="button" class="btn-secondary btn-sm" id="devConfirmCancel">Cancel</button>'
-      + '<button type="button" class="btn-primary btn-sm" id="devConfirmEnter">Enter Dev Mode</button>'
-      + '</div>';
-    document.querySelector('.header-right').appendChild(tooltip);
-    // Shared cleanup to remove tooltip and listener
-    function dismissTooltip() { tooltip.remove(); document.removeEventListener('mousedown', outsideDismiss); }
-    function outsideDismiss(e) { if (!tooltip.contains(e.target) && e.target !== document.getElementById('modeToggle')) dismissTooltip(); }
-    tooltip.querySelector('#devConfirmCancel').addEventListener('click', dismissTooltip);
-    tooltip.querySelector('#devConfirmEnter').addEventListener('click', () => {
-      localStorage.setItem('formforge-dev-confirmed', '1');
-      dismissTooltip();
-      toggleDevMode();
-    });
-    setTimeout(() => document.addEventListener('mousedown', outsideDismiss), 0);
-    return;
-  }
+async function showTab(tabName) {
+  if (!VALID_TABS.has(tabName)) tabName = 'forms';
 
-  devMode = !devMode;
-  localStorage.setItem('formforge-dev-mode', devMode ? '1' : '0');
-  document.getElementById('modeToggle').classList.toggle('active', devMode);
-  document.getElementById('modeToggleLabel').textContent = devMode ? 'Dev On' : 'Dev';
-  document.getElementById('devNav').style.display = devMode ? 'flex' : 'none';
-  document.body.classList.toggle('dev-mode-active', devMode);
-
-  if (devMode) {
-    // Lazy-load dev mode dependencies on first activation
+  // Lazy-load editor dependencies on first Schema/Template tab click
+  if ((tabName === 'dev-schema' || tabName === 'dev-template') && !devDepsLoaded) {
     try {
       await loadDevModeDeps();
     } catch (e) {
-      showToast('Failed to load Dev Mode scripts — check your connection', 'error');
-      devMode = false;
-      document.getElementById('modeToggle').classList.remove('active');
-      document.getElementById('modeToggleLabel').textContent = 'Dev';
-      document.getElementById('devNav').style.display = 'none';
-      document.body.classList.remove('dev-mode-active');
+      showToast('Failed to load editor scripts — check your connection', 'error');
       return;
     }
-    const lastTab = localStorage.getItem('formforge-dev-tab') || 'dev-schema';
-    showDevTab(lastTab);
-  } else {
-    // Stop workspace polling when exiting dev mode
-    if (devWorkspacePoller) { clearInterval(devWorkspacePoller); devWorkspacePoller = null; }
-    showView('setup');
   }
-}
 
-const VALID_DEV_TABS = new Set(['dev-schema', 'dev-template', 'dev-workspace', 'dev-docs']);
-
-function showDevTab(viewName) {
-  if (!VALID_DEV_TABS.has(viewName)) viewName = 'dev-schema';
+  // Update tab bar
   document.querySelectorAll('.dev-nav-tab').forEach(t => {
     t.classList.remove('active');
     t.setAttribute('aria-selected', 'false');
   });
-  const tab = document.querySelector(`.dev-nav-tab[data-dev-tab="${viewName}"]`);
+  const tab = document.querySelector(`.dev-nav-tab[data-tab="${tabName}"]`);
   if (tab) {
     tab.classList.add('active');
     tab.setAttribute('aria-selected', 'true');
   }
-  localStorage.setItem('formforge-dev-tab', viewName);
+  localStorage.setItem('formforge-active-tab', tabName);
+
+  // Map tab to view
+  const viewName = tabName === 'forms' ? 'setup' : tabName;
   showView(viewName);
 }
 
-function handleDevModeResize() {
-  if (devMode && window.innerWidth < 768) {
-    devMode = false;
-    localStorage.setItem('formforge-dev-mode', '0');
-    document.getElementById('modeToggle').classList.remove('active');
-    document.getElementById('devNav').style.display = 'none';
-    document.body.classList.remove('dev-mode-active');
-    showView('setup');
-    showToast('Dev Mode disabled — viewport too narrow', 'info');
+// ============================================================
+//  BIDIRECTIONAL FORM <-> EDITOR FLOW
+// ============================================================
+
+async function loadSchemaIntoEditor(schemaIdx) {
+  const entry = repoSchemas[schemaIdx];
+  if (!entry) return;
+  await loadDevModeDeps();
+  const schemaJSON = JSON.stringify(entry.schema, null, 2);
+  devSchemaText = schemaJSON;
+  if (schemaJar) schemaJar.updateCode(schemaJSON);
+  // Track which workspace file is being edited
+  const wsIdx = workspaceFiles.schemas.findIndex(s => 'schemas/' + s.name === entry.schemaPath);
+  if (wsIdx >= 0) currentWorkspaceFile = { type: 'schema', index: wsIdx };
+  showTab('dev-schema');
+}
+
+async function loadTemplateIntoEditor(schemaIdx) {
+  const entry = repoSchemas[schemaIdx];
+  if (!entry) return;
+  await loadDevModeDeps();
+
+  let templateCode = '';
+  if (contentSourceType === 'local') {
+    const tmplName = (entry.templatePath || '').replace('templates/', '');
+    const tmplFile = workspaceFiles.templates.find(t => t.name === tmplName);
+    if (tmplFile) templateCode = tmplFile.text;
+    else { showToast(`Template not found: ${tmplName}`, 'error'); return; }
+  } else if (contentSourceType === 'github') {
+    try {
+      templateCode = await ghFetchRaw(entry.templatePath);
+    } catch (e) { showToast(`Failed to fetch template: ${e.message}`, 'error'); return; }
+  }
+
+  devTemplateText = templateCode;
+  if (templateJar) templateJar.updateCode(templateCode);
+  const wsIdx = workspaceFiles.templates.findIndex(t => 'templates/' + t.name === entry.templatePath);
+  if (wsIdx >= 0) currentWorkspaceFile = { type: 'template', index: wsIdx };
+  showTab('dev-template');
+}
+
+function editCurrentSchema() {
+  if (!currentSchema) return;
+  const schemaJSON = JSON.stringify(currentSchema, null, 2);
+  devSchemaText = schemaJSON;
+  loadDevModeDeps().then(() => {
+    if (schemaJar) schemaJar.updateCode(schemaJSON);
+    showTab('dev-schema');
+  });
+}
+
+async function fillFormFromEditor() {
+  // Launch the schema currently in the editor as a fillable form
+  try {
+    const schema = JSON.parse(devSchemaText);
+    if (!schema.title || !schema.sections) {
+      showToast('Schema must have title and sections to fill as a form', 'error');
+      return;
+    }
+    currentSchema = schema;
+    currentSchemaName = 'editor-preview';
+
+    // Find template: from workspace or use editor template text
+    let templateCode = devTemplateText;
+    if (!templateCode || templateCode.trim().length < 10) {
+      showToast('No template code available. Add a template in the Template tab first.', 'error');
+      return;
+    }
+    currentTemplateCode = templateCode;
+
+    showOverlay('Preparing form...');
+    buildForm(currentSchema);
+    document.getElementById('formNavInfo').textContent = `${schema.title} · from editor`;
+    document.getElementById('schemaInfoText').innerHTML = 'Loaded from editor preview';
+
+    if (!pyodideReady) {
+      if (pyodidePreloadPromise) await pyodidePreloadPromise;
+      if (!pyodideReady) await initPyodide();
+    }
+    await loadBaseModule();
+    await pyodide.runPythonAsync(currentTemplateCode);
+
+    document.getElementById('exportBtn').disabled = false;
+    showView('form');
+    postLaunchHook();
+  } catch (err) {
+    showToast('Failed to launch from editor: ' + err.message, 'error');
+  } finally {
+    hideOverlay();
   }
 }
 
+function updateSourceToolbar() {
+  const schemaToolbar = document.getElementById('schemaSourceToolbar');
+  const tmplToolbar = document.getElementById('templateSourceToolbar');
+
+  // Schema toolbar
+  if (schemaToolbar && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
+    const f = workspaceFiles.schemas[currentWorkspaceFile.index];
+    if (f) {
+      schemaToolbar.style.display = 'flex';
+      document.getElementById('schemaSourceFile').textContent = f.ghPath || f.name;
+      if (contentSourceType === 'github') {
+        document.getElementById('schemaSourceBranch').textContent = `@ ${ghBranch}`;
+        document.getElementById('schemaCommitBtn').style.display = 'inline-flex';
+        document.getElementById('schemaSaveLocalBtn').style.display = 'none';
+      } else if (contentSourceType === 'local') {
+        document.getElementById('schemaSourceBranch').textContent = '';
+        document.getElementById('schemaCommitBtn').style.display = 'none';
+        document.getElementById('schemaSaveLocalBtn').style.display = 'inline-flex';
+      }
+      return;
+    }
+  }
+  if (schemaToolbar) schemaToolbar.style.display = 'none';
+}
+
 // ============================================================
-//  DEV MODE: SCHEMA BUILDER
+//  SCHEMA BUILDER
 // ============================================================
 
 const DEV_STARTER_SCHEMA = {
@@ -6517,7 +6651,7 @@ function initSchemaEditor() {
     clearTimeout(devPreviewDebounce);
     devPreviewDebounce = setTimeout(devUpdateSchemaPreview, 300);
     devSaveEditorState();
-    if (devGhConnected && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
+    if (contentSourceType === 'github' && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
       devGhTrackModification('schema', currentWorkspaceFile.index);
     }
   });
@@ -7476,7 +7610,7 @@ function initTemplateEditor() {
     devTemplateText = code;
     devUpdateLineNumbers(el, tplGutter);
     devSaveEditorState();
-    if (devGhConnected && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
+    if (contentSourceType === 'github' && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
       devGhTrackModification('template', currentWorkspaceFile.index);
     }
   });
@@ -7828,6 +7962,59 @@ function initDevResizer(resizerId, leftPaneId, rightPaneId, storageKey) {
 //  DEV MODE: WORKSPACE
 // ============================================================
 
+async function connectLocalFolder() {
+  if (!window.showDirectoryPicker) {
+    showToast('Your browser does not support folder access. Use the individual file drop zones instead.', 'error');
+    return;
+  }
+  try {
+    workspaceHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    await devReadWorkspaceFromHandle();
+
+    // Populate repoSchemas from discovered workspace files for the picker
+    repoSchemas = [];
+    for (const sf of workspaceFiles.schemas) {
+      try {
+        const schema = JSON.parse(sf.text);
+        const baseName = sf.name.replace('.json', '');
+        repoSchemas.push({
+          name: schema.title || baseName,
+          description: schema.description || '',
+          icon: schema.icon || '📄',
+          schemaPath: `schemas/${sf.name}`,
+          templatePath: schema.template || `templates/${baseName}.py`,
+          schema: schema,
+          localSchema: sf
+        });
+      } catch (e) {
+        log(`Skipped ${sf.name}: ${e.message}`, 'error');
+      }
+    }
+
+    contentSourceType = 'local';
+
+    // Update status
+    const statusEl = document.getElementById('localFolderStatus');
+    if (statusEl) {
+      statusEl.className = 'local-folder-status success';
+      statusEl.textContent = `${workspaceFiles.schemas.length} schema(s), ${workspaceFiles.templates.length} template(s) loaded`;
+    }
+    document.getElementById('statusBadge').className = 'status-badge ready';
+    document.getElementById('statusText').textContent = `local: ${workspaceHandle.name}`;
+
+    if (repoSchemas.length > 0) {
+      renderPicker();
+      document.getElementById('pickerSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      showToast('No schemas found in the selected folder. Expected: schemas/*.json', 'info');
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') {
+      showToast('Failed to open folder: ' + e.message, 'error');
+    }
+  }
+}
+
 async function devOpenWorkspace() {
   if (!window.showDirectoryPicker) {
     showToast('Your browser does not support the File System Access API. Use drag-and-drop instead.', 'error');
@@ -7917,7 +8104,7 @@ function devRenderWorkspaceFiles() {
       nameSpan.textContent = f.name;
       if (f.ghPath) {
         nameSpan.setAttribute('data-gh-path', f.ghPath);
-        if (devGhModifiedFiles.has(f.ghPath)) nameSpan.classList.add('modified');
+        if (ghModifiedFiles.has(f.ghPath)) nameSpan.classList.add('modified');
       }
       const actionSpan = document.createElement('span');
       actionSpan.className = 'workspace-file-action';
@@ -7946,7 +8133,7 @@ function devRenderWorkspaceFiles() {
       nameSpan.textContent = f.name;
       if (f.ghPath) {
         nameSpan.setAttribute('data-gh-path', f.ghPath);
-        if (devGhModifiedFiles.has(f.ghPath)) nameSpan.classList.add('modified');
+        if (ghModifiedFiles.has(f.ghPath)) nameSpan.classList.add('modified');
       }
       const actionSpan = document.createElement('span');
       actionSpan.className = 'workspace-file-action';
@@ -7966,7 +8153,7 @@ function devLoadWorkspaceFile(type, index) {
     devSchemaText = f.text;
     currentWorkspaceFile = { type: 'schema', index };
     if (schemaJar) schemaJar.updateCode(devSchemaText);
-    showDevTab('dev-schema');
+    showTab('dev-schema');
     devUpdateSchemaPreview();
     showToast(`Editing ${f.name}`);
   } else {
@@ -7974,7 +8161,7 @@ function devLoadWorkspaceFile(type, index) {
     devTemplateText = f.text;
     currentWorkspaceFile = { type: 'template', index };
     if (templateJar) templateJar.updateCode(devTemplateText);
-    showDevTab('dev-template');
+    showTab('dev-template');
     showToast(`Editing ${f.name}`);
   }
 }
@@ -8114,14 +8301,8 @@ async function devRefreshWorkspace() {
 //  DEV MODE: GITHUB WORKSPACE INTEGRATION
 // ============================================================
 
-function devGhHeaders() {
-  const h = { 'Accept': 'application/vnd.github.v3+json' };
-  if (devGhPat) h['Authorization'] = `token ${devGhPat}`;
-  return h;
-}
-
 async function devGhApiFetch(url, options = {}) {
-  const resp = await fetch(url, { headers: devGhHeaders(), ...options });
+  const resp = await fetch(url, { headers: ghHeaders(), ...options });
   if (!resp.ok) {
     const body = await resp.text().catch(() => '');
     throw new Error(`GitHub API ${resp.status}: ${resp.statusText}${body ? ' — ' + body.slice(0, 200) : ''}`);
@@ -8173,6 +8354,7 @@ function devGhParseRepoInput(input) {
 }
 
 async function devGhConnect() {
+  // Delegate to unified connectRepo() — populate the setup page inputs and call it
   const repoInput = document.getElementById('ghConnectRepo').value;
   const token = document.getElementById('ghConnectToken').value.trim();
   const branchInput = document.getElementById('ghConnectBranch').value.trim();
@@ -8183,89 +8365,56 @@ async function devGhConnect() {
     return;
   }
 
-  devGhOwner = parsed.owner;
-  devGhRepoName = parsed.repo;
-  devGhPat = token;
+  // Populate the setup page inputs so connectRepo() can use them
+  document.getElementById('repoInput').value = parsed.owner + '/' + parsed.repo;
+  if (branchInput) document.getElementById('branchInput').value = branchInput;
+  if (token) document.getElementById('tokenInput').value = token;
 
-  // Store token and repo info
-  if (token) localStorage.setItem('formforge-dev-github-token', token);
-  localStorage.setItem('formforge-dev-github-repo', JSON.stringify({
-    owner: devGhOwner, repo: devGhRepoName, branch: branchInput
-  }));
-
-  const connectBtn = document.getElementById('btnGhConnect');
-  connectBtn.disabled = true;
-  connectBtn.textContent = 'Connecting...';
-
-  try {
-    // Get repo info to find default branch
-    const repoResp = await devGhApiFetch(`https://api.github.com/repos/${devGhOwner}/${devGhRepoName}`);
-    const repoData = await repoResp.json();
-    devGhBranch = branchInput || repoData.default_branch || 'main';
-
-    // Fetch branches
-    await devGhFetchBranches();
-
-    // Fetch files
-    await devGhFetchFiles();
-
-    devGhConnected = true;
-    devGhCloseConnectModal();
-
-    // Update UI
-    devGhUpdateToolbar();
-
-    showToast(`Connected to ${devGhOwner}/${devGhRepoName} @ ${devGhBranch}`);
-  } catch (e) {
-    showToast('Failed to connect: ' + e.message, 'error');
-  } finally {
-    connectBtn.disabled = false;
-    connectBtn.textContent = '';
-    connectBtn.innerHTML = '<svg width="12" height="12"><use href="#icon-github"/></svg> Connect';
-  }
+  devGhCloseConnectModal();
+  await connectRepo();
 }
 
 async function devGhFetchBranches() {
   try {
     const resp = await devGhApiFetch(
-      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/branches?per_page=100`
+      `https://api.github.com/repos/${ghOwner}/${ghRepo}/branches?per_page=100`
     );
-    devGhBranches = (await resp.json()).map(b => b.name);
+    ghBranches = (await resp.json()).map(b => b.name);
   } catch (e) {
-    devGhBranches = [devGhBranch];
+    ghBranches = [ghBranch];
   }
 
   // Populate branch selector
   const select = document.getElementById('ghBranchSelect');
   select.innerHTML = '';
-  devGhBranches.forEach(name => {
+  ghBranches.forEach(name => {
     const opt = document.createElement('option');
     opt.value = name;
     opt.textContent = name;
-    if (name === devGhBranch) opt.selected = true;
+    if (name === ghBranch) opt.selected = true;
     select.appendChild(opt);
   });
 }
 
 async function devGhFetchFiles() {
   workspaceFiles = { schemas: [], templates: [] };
-  devGhOriginalContents = {};
-  devGhModifiedFiles = new Set();
+  ghOriginalContents = {};
+  ghModifiedFiles = new Set();
 
   // Fetch schemas directory
   try {
     const schemaResp = await devGhApiFetch(
-      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/contents/schemas?ref=${devGhBranch}`
+      `https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/schemas?ref=${ghBranch}`
     );
     const schemaEntries = await schemaResp.json();
     for (const entry of schemaEntries) {
       if (entry.name.endsWith('.json') && entry.name !== '_schema.spec.json' && entry.type === 'file') {
         const contentResp = await devGhApiFetch(
-          `https://raw.githubusercontent.com/${devGhOwner}/${devGhRepoName}/${devGhBranch}/schemas/${entry.name}?t=${Date.now()}`
+          `https://raw.githubusercontent.com/${ghOwner}/${ghRepo}/${ghBranch}/schemas/${entry.name}?t=${Date.now()}`
         );
         const text = await contentResp.text();
         workspaceFiles.schemas.push({ name: entry.name, text, handle: null, ghPath: `schemas/${entry.name}`, ghSha: entry.sha });
-        devGhOriginalContents[`schemas/${entry.name}`] = { content: text, sha: entry.sha };
+        ghOriginalContents[`schemas/${entry.name}`] = { content: text, sha: entry.sha };
       }
     }
   } catch (e) {
@@ -8276,17 +8425,17 @@ async function devGhFetchFiles() {
   // Fetch templates directory
   try {
     const tmplResp = await devGhApiFetch(
-      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/contents/templates?ref=${devGhBranch}`
+      `https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/templates?ref=${ghBranch}`
     );
     const tmplEntries = await tmplResp.json();
     for (const entry of tmplEntries) {
       if (entry.name.endsWith('.py') && entry.name !== 'stencils.py' && entry.type === 'file') {
         const contentResp = await devGhApiFetch(
-          `https://raw.githubusercontent.com/${devGhOwner}/${devGhRepoName}/${devGhBranch}/templates/${entry.name}?t=${Date.now()}`
+          `https://raw.githubusercontent.com/${ghOwner}/${ghRepo}/${ghBranch}/templates/${entry.name}?t=${Date.now()}`
         );
         const text = await contentResp.text();
         workspaceFiles.templates.push({ name: entry.name, text, handle: null, ghPath: `templates/${entry.name}`, ghSha: entry.sha });
-        devGhOriginalContents[`templates/${entry.name}`] = { content: text, sha: entry.sha };
+        ghOriginalContents[`templates/${entry.name}`] = { content: text, sha: entry.sha };
       }
     }
   } catch (e) {
@@ -8300,7 +8449,7 @@ async function devGhFetchFiles() {
   const badgeText = document.getElementById('workspaceBadgeText');
   const total = workspaceFiles.schemas.length + workspaceFiles.templates.length;
   badge.className = 'dev-validation-badge valid';
-  badgeText.textContent = `${devGhOwner}/${devGhRepoName} @ ${devGhBranch} · ${total} file${total !== 1 ? 's' : ''}`;
+  badgeText.textContent = `${ghOwner}/${ghRepo} @ ${ghBranch} · ${total} file${total !== 1 ? 's' : ''}`;
 
   // Show refresh button
   document.getElementById('btnRefreshWorkspace').style.display = 'none'; // Hide local refresh for GH mode
@@ -8311,7 +8460,7 @@ function devGhUpdateToolbar() {
   const connectBtn = document.getElementById('btnConnectRepo');
   const openFolderBtn = document.getElementById('btnOpenFolder');
 
-  if (devGhConnected) {
+  if (contentSourceType === 'github') {
     ghBar.style.display = 'flex';
     connectBtn.style.display = 'none';
     openFolderBtn.style.display = 'none';
@@ -8338,13 +8487,13 @@ function devGhTrackModification(type, index) {
     currentContent = devTemplateText;
   }
 
-  const original = devGhOriginalContents[path];
+  const original = ghOriginalContents[path];
   if (!original) return;
 
   if (currentContent !== original.content) {
-    devGhModifiedFiles.add(path);
+    ghModifiedFiles.add(path);
   } else {
-    devGhModifiedFiles.delete(path);
+    ghModifiedFiles.delete(path);
   }
 
   devGhUpdateCommitButton();
@@ -8354,14 +8503,14 @@ function devGhTrackModification(type, index) {
 function devGhUpdateCommitButton() {
   const btn = document.getElementById('btnGhCommit');
   if (!btn) return;
-  btn.style.display = devGhModifiedFiles.size > 0 ? 'inline-flex' : 'none';
+  btn.style.display = ghModifiedFiles.size > 0 ? 'inline-flex' : 'none';
 }
 
 function devGhUpdateFileModificationIndicators() {
   const items = document.querySelectorAll('.workspace-file-name[data-gh-path]');
   items.forEach(item => {
     const path = item.getAttribute('data-gh-path');
-    if (devGhModifiedFiles.has(path)) {
+    if (ghModifiedFiles.has(path)) {
       item.classList.add('modified');
     } else {
       item.classList.remove('modified');
@@ -8370,17 +8519,17 @@ function devGhUpdateFileModificationIndicators() {
 }
 
 async function devGhSwitchBranch(branchName) {
-  if (branchName === devGhBranch) return;
-  devGhBranch = branchName;
+  if (branchName === ghBranch) return;
+  ghBranch = branchName;
 
   // Save branch preference
   localStorage.setItem('formforge-dev-github-repo', JSON.stringify({
-    owner: devGhOwner, repo: devGhRepoName, branch: devGhBranch
+    owner: ghOwner, repo: ghRepo, branch: ghBranch
   }));
 
   try {
     await devGhFetchFiles();
-    showToast(`Switched to branch: ${devGhBranch}`);
+    showToast(`Switched to branch: ${ghBranch}`);
   } catch (e) {
     showToast('Failed to switch branch: ' + e.message, 'error');
   }
@@ -8407,23 +8556,23 @@ async function devGhCreateBranch() {
   try {
     // Get current branch ref SHA
     const refResp = await devGhApiFetch(
-      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/refs/heads/${devGhBranch}`
+      `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/refs/heads/${ghBranch}`
     );
     const refData = await refResp.json();
     const sha = refData.object.sha;
 
     // Create new ref
     await devGhApiFetch(
-      `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/refs`,
+      `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/refs`,
       {
         method: 'POST',
-        headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+        headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ ref: `refs/heads/${name}`, sha })
       }
     );
 
     // Switch to new branch
-    devGhBranch = name;
+    ghBranch = name;
     await devGhFetchBranches();
     await devGhFetchFiles();
     document.getElementById('ghNewBranchRow').style.display = 'none';
@@ -8434,14 +8583,14 @@ async function devGhCreateBranch() {
 }
 
 function devGhShowCommitPanel() {
-  if (devGhModifiedFiles.size === 0) {
+  if (ghModifiedFiles.size === 0) {
     showToast('No files modified', 'info');
     return;
   }
 
   const fileList = document.getElementById('ghCommitFileList');
   fileList.innerHTML = '';
-  devGhModifiedFiles.forEach(path => {
+  ghModifiedFiles.forEach(path => {
     const entry = document.createElement('div');
     entry.className = 'gh-commit-file-entry';
     entry.textContent = path;
@@ -8488,7 +8637,7 @@ async function devGhCommitAndPush() {
     return;
   }
 
-  const modifiedPaths = Array.from(devGhModifiedFiles);
+  const modifiedPaths = Array.from(ghModifiedFiles);
   if (modifiedPaths.length === 0) return;
 
   const commitBtn = document.getElementById('btnGhCommitPush');
@@ -8501,36 +8650,36 @@ async function devGhCommitAndPush() {
       const path = modifiedPaths[0];
       const content = devGhGetCurrentContent(path);
       if (content === null) throw new Error('Could not read file content for ' + path);
-      const original = devGhOriginalContents[path];
+      const original = ghOriginalContents[path];
 
       const resp = await devGhApiFetch(
-        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/contents/${path}`,
+        `https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/${path}`,
         {
           method: 'PUT',
-          headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+          headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
           body: JSON.stringify({
             message,
             content: btoa(unescape(encodeURIComponent(content))),
             sha: original.sha,
-            branch: devGhBranch
+            branch: ghBranch
           })
         }
       );
       const result = await resp.json();
       const commitSha = result.commit.sha.slice(0, 7);
-      showToast(`Committed ${commitSha} to ${devGhBranch}`);
+      showToast(`Committed ${commitSha} to ${ghBranch}`);
     } else {
       // Multi-file: use Git Trees + Commits API for atomic commit
       // 1. Get current commit SHA for the branch
       const refResp = await devGhApiFetch(
-        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/refs/heads/${devGhBranch}`
+        `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/refs/heads/${ghBranch}`
       );
       const refData = await refResp.json();
       const baseCommitSha = refData.object.sha;
 
       // 2. Get the base tree
       const commitResp = await devGhApiFetch(
-        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/commits/${baseCommitSha}`
+        `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/commits/${baseCommitSha}`
       );
       const commitData = await commitResp.json();
       const baseTreeSha = commitData.tree.sha;
@@ -8542,10 +8691,10 @@ async function devGhCommitAndPush() {
         if (content === null) throw new Error('Could not read file content for ' + path);
 
         const blobResp = await devGhApiFetch(
-          `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/blobs`,
+          `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/blobs`,
           {
             method: 'POST',
-            headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+            headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ content, encoding: 'utf-8' })
           }
         );
@@ -8555,10 +8704,10 @@ async function devGhCommitAndPush() {
 
       // 4. Create a new tree
       const treeResp = await devGhApiFetch(
-        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/trees`,
+        `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/trees`,
         {
           method: 'POST',
-          headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+          headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
           body: JSON.stringify({ base_tree: baseTreeSha, tree: treeItems })
         }
       );
@@ -8566,10 +8715,10 @@ async function devGhCommitAndPush() {
 
       // 5. Create a new commit
       const newCommitResp = await devGhApiFetch(
-        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/commits`,
+        `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/commits`,
         {
           method: 'POST',
-          headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+          headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
           body: JSON.stringify({ message, tree: treeData.sha, parents: [baseCommitSha] })
         }
       );
@@ -8577,16 +8726,16 @@ async function devGhCommitAndPush() {
 
       // 6. Update the branch ref
       await devGhApiFetch(
-        `https://api.github.com/repos/${devGhOwner}/${devGhRepoName}/git/refs/heads/${devGhBranch}`,
+        `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/refs/heads/${ghBranch}`,
         {
           method: 'PATCH',
-          headers: { ...devGhHeaders(), 'Content-Type': 'application/json' },
+          headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
           body: JSON.stringify({ sha: newCommitData.sha })
         }
       );
 
       const commitSha = newCommitData.sha.slice(0, 7);
-      showToast(`Committed ${commitSha} to ${devGhBranch} (${modifiedPaths.length} files)`);
+      showToast(`Committed ${commitSha} to ${ghBranch} (${modifiedPaths.length} files)`);
     }
 
     // Refresh files to get new SHAs
@@ -8605,7 +8754,7 @@ async function devGhCommitAndPush() {
 }
 
 async function devGhRefreshFiles() {
-  if (!devGhConnected) return;
+  if (contentSourceType !== 'github') return;
   try {
     await devGhFetchFiles();
     showToast('Files refreshed from GitHub');
@@ -8615,19 +8764,25 @@ async function devGhRefreshFiles() {
 }
 
 function devGhDisconnect() {
-  devGhConnected = false;
-  devGhOwner = '';
-  devGhRepoName = '';
-  devGhBranch = '';
-  devGhPat = '';
-  devGhBranches = [];
-  devGhOriginalContents = {};
-  devGhModifiedFiles = new Set();
+  contentSourceType = null;
+  ghOwner = '';
+  ghRepo = '';
+  ghBranch = 'main';
+  ghToken = '';
+  ghBranches = [];
+  ghOriginalContents = {};
+  ghModifiedFiles = new Set();
   workspaceFiles = { schemas: [], templates: [] };
+  repoSchemas = [];
   currentWorkspaceFile = null;
 
   // Clear stored repo info (keep token — user can clear manually)
   localStorage.removeItem('formforge-dev-github-repo');
+
+  // Reset status badge and picker
+  document.getElementById('statusBadge').className = 'status-badge';
+  document.getElementById('statusText').textContent = 'not connected';
+  document.getElementById('pickerSection').style.display = 'none';
 
   // Reset UI
   devGhUpdateToolbar();
@@ -8854,36 +9009,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Load docs with embedded fallbacks (will reload from GitHub after connect)
+  // Migrate legacy Dev Mode GitHub workspace localStorage keys
+  const legacyToken = localStorage.getItem('formforge-dev-github-token');
+  const legacyRepo = localStorage.getItem('formforge-dev-github-repo');
+  if (legacyRepo) {
+    try {
+      const info = JSON.parse(legacyRepo);
+      document.getElementById('repoInput').value = info.owner + '/' + info.repo;
+      if (info.branch) document.getElementById('branchInput').value = info.branch;
+    } catch (e) { /* ignore */ }
+  }
+  if (legacyToken) {
+    document.getElementById('tokenInput').value = legacyToken;
+  }
+
+  // Load embedded docs (always uses built-in reference, independent of content source)
   loadDocs();
 
   // Preload Pyodide in the background so the first export is faster
   preloadPyodide();
 
-  // Dev Mode: restore from localStorage (desktop only)
-  if (window.innerWidth >= 768 && localStorage.getItem('formforge-dev-mode') === '1') {
-    devMode = true;
-    document.getElementById('modeToggle').classList.add('active');
-    document.getElementById('modeToggleLabel').textContent = 'Dev On';
-    document.getElementById('devNav').style.display = 'flex';
-    document.body.classList.add('dev-mode-active');
-    loadDevModeDeps().then(() => {
-      const lastTab = localStorage.getItem('formforge-dev-tab') || 'dev-schema';
-      showDevTab(lastTab);
-    }).catch(() => {
-      showToast('Failed to load Dev Mode scripts', 'error');
-      devMode = false;
-      document.getElementById('modeToggle').classList.remove('active');
-      document.getElementById('modeToggleLabel').textContent = 'Dev';
-      document.getElementById('devNav').style.display = 'none';
-      document.body.classList.remove('dev-mode-active');
-    });
+  // Restore last active tab
+  const lastTab = localStorage.getItem('formforge-active-tab');
+  if (lastTab && lastTab !== 'forms') {
+    showTab(lastTab);
   }
 
-  // Hide Open Folder button if FSAA not supported
+  // Hide Open Folder buttons if FSAA not supported
   if (!window.showDirectoryPicker) {
-    const btn = document.getElementById('btnOpenFolder');
-    if (btn) btn.style.display = 'none';
+    document.querySelectorAll('#btnOpenFolder, #btnOpenFolderSetup').forEach(btn => {
+      if (btn) btn.style.display = 'none';
+    });
   }
 
   // Workspace drop zone
@@ -8899,9 +9055,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.key === 'Escape') devGhCloseConnectModal();
     });
   }
-
-  // Dev mode resize listener
-  window.addEventListener('resize', handleDevModeResize);
 });
 </script>
 </body>

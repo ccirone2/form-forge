@@ -10,7 +10,7 @@ FormForge is a **client-side-only** browser application that turns GitHub-hosted
 
 ## Architecture
 
-- **`index.html`** — The entire frontend: HTML + CSS + JS in one file (~8900 lines). Contains the form builder, GitHub API integration, Pyodide loader, validation, Dev Mode (schema builder, template builder, workspace, docs), and UI. Do not split this file.
+- **`index.html`** — The entire frontend: HTML + CSS + JS in one file (~8900 lines). Contains the form builder, GitHub API integration, Pyodide loader, validation, tab-based navigation (Forms, Schema, Template, Docs), and UI. Do not split this file.
 - **`schemas/_schema.spec.json`** — JSON Schema (draft 2020-12) that validates all form schemas. Enforces required fields, valid field types (23 enumerated), conditional constraints (e.g., `select` requires `options`, `repeater` requires `fields`), and `additionalProperties: false` at all levels.
 - **`schemas/*.json`** — Form definitions. Each schema has `title`, `description`, `icon`, `template` (path to .py), and `sections[]` containing `fields[]` with `id`, `label`, `type`, etc.
 - **`templates/stencils.py`** — Shared helper module for all templates. Provides `set_theme()`, `new_doc()`, `table_section()`, `longtext()`, `bullet_list()`, `signatures()`, `footer()`, `address()`, `image()`, `signature()`, `repeater_table()`, `format_time()`, `finalize()`, and a `DocTheme` system with built-in themes (`THEME_CLASSIC`, `THEME_MINIMAL`, `THEME_MODERN`). Loaded into Pyodide's virtual filesystem once via `loadBaseModule()` before any template runs.
@@ -30,7 +30,7 @@ FormForge is a **client-side-only** browser application that turns GitHub-hosted
 3. `pyodide.runPythonAsync(templateCode)` — Loads the template
 4. `generate_docx(form_data)` — Called via `runPythonAsync` with serialized form data
 
-There are 3 template loading paths that all follow this pattern: `launchForm()` (GitHub), `launchLocal()` (local files), and `launchDemo()` (embedded demo). Dev Mode's template builder uses a 4th path: `devRunPreview()` which runs user-authored Python directly via Pyodide with data passed safely through `pyodide.toPy()`.
+There are 3 template loading paths that all follow this pattern: `launchForm()` (GitHub or local folder), `launchLocal()` (individual local files), and `launchDemo()` (embedded demo). The Template tab's preview uses a 4th path: `devRunPreview()` which runs user-authored Python directly via Pyodide with data passed safely through `pyodide.toPy()`.
 
 ### Wizard Form Support
 
@@ -40,16 +40,26 @@ Schemas with `"wizard": true` render as multi-step forms instead of all-at-once.
 
 Fields can have an optional `visible_when` object: `{ "field": "<source_id>", "equals": "<value>" }`. When the source field's value doesn't match, the dependent field is hidden (CSS class `conditional-hidden`). `setupConditionalVisibility(schema)` builds the dependency map and attaches listeners. Hidden fields are skipped during validation but still collected as empty strings in `collectFormData()`.
 
-### Dev Mode
+### Tab-Based Navigation
 
-Dev Mode provides four in-app development tools for creating and editing forms without external editors. Activated via a header toggle button (desktop only, ≥768px). First-time activation shows a confirmation gate tooltip. State persists in `localStorage`.
+The app uses a permanent 4-tab navigation bar (no Dev Mode toggle):
 
-- **Schema Builder** — Split-pane JSON editor (CodeJar + Prism.js) with live form preview on 300ms debounce, real-time validation badge, and right-click context menu with field type snippets for all 23 field types. Uses `buildForm(schema, targetForm)` to render previews into a separate container without affecting the main form.
-- **Template Builder** — Split-pane Python editor with collapsible sample data panel. "Preview DOCX" runs the full Pyodide pipeline and renders output via mammoth.js → DOMPurify. Right-click context menu inserts stencils helper snippets.
-- **Local Workspace** — File System Access API folder picker with 5s polling for external changes, plus drag-and-drop fallback via `webkitGetAsEntry`. Auto-discovers `schemas/*.json` and `templates/*.py` (excludes `_schema.spec.json` and `stencils.py`). Click-to-edit opens files in the appropriate builder tab. GitHub integration for connecting repos, committing, pushing, and branch management.
-- **Docs** — Embedded documentation tabs for Schema Guide, Template Guide, Field Types, and Example schema/template.
+```
+[FormForge]  [Forms] [Schema] [Template] [Docs]     [source badge]
+```
 
-CDN dependencies (lazy-loaded on first Dev Mode activation): Prism.js 1.29.0, CodeJar 4.2.0, mammoth.js 1.6.0, DOMPurify 3.2.4.
+- **Forms** — Connect a content source (GitHub repo or local folder), browse available forms, fill and export. Two equal-weight source cards: GitHub Repository and Local Folder. `connectRepo()` or `connectLocalFolder()` sets the unified `contentSourceType` global (`'github' | 'local' | 'demo' | null`).
+- **Schema** — Split-pane JSON editor (CodeJar + Prism.js) with live form preview on 300ms debounce, real-time validation badge, and right-click context menu with field type snippets for all 23 field types. Uses `buildForm(schema, targetForm)` to render previews. Has "Fill Form" button to test the schema as a fillable form.
+- **Template** — Split-pane Python editor with collapsible sample data panel. "Preview DOCX" runs the full Pyodide pipeline and renders output via mammoth.js → DOMPurify. Right-click context menu inserts stencils helper snippets.
+- **Docs** — Embedded documentation tabs for Schema Guide, Template Guide, Field Types, and Example schema/template. Always uses built-in reference (independent of connected source).
+
+**Unified content source:** A single set of GitHub globals (`ghOwner`, `ghRepo`, `ghBranch`, `ghToken`) serves both form-filling and editing. `connectRepo()` populates both `repoSchemas[]` (for the picker) and `workspaceFiles` (for editing in Schema/Template tabs). Git operations (commit, push, branch) are available in editor toolbars when editing GitHub-sourced files.
+
+**Local folder support:** `connectLocalFolder()` uses the File System Access API to open a folder, discover `schemas/*.json` and `templates/*.py`, populate the picker, and enable editing with 5s file polling. Falls back to individual file drag-and-drop when FSAA is unavailable.
+
+**Bidirectional flow:** Picker cards have "Edit Schema" and "Edit Template" actions. Form view has an "Edit Schema" button. Schema preview has a "Fill Form" button. Functions: `loadSchemaIntoEditor()`, `loadTemplateIntoEditor()`, `editCurrentSchema()`, `fillFormFromEditor()`.
+
+CDN dependencies (lazy-loaded on first Schema/Template tab click): Prism.js 1.29.0, CodeJar 4.2.0, mammoth.js 1.6.0, DOMPurify 3.2.4.
 
 ## Key Conventions
 
@@ -76,7 +86,7 @@ No build system or package manager. Pyodide and python-docx load from CDN at run
 # Run locally — open index.html directly or use HTTP server for CORS
 python -m http.server 8000
 
-# Run all tests (436 tests)
+# Run all tests (424 tests)
 PYTHONPATH=. python -m pytest tests/ -v
 
 # Run a single test file
@@ -95,7 +105,7 @@ ruff format templates/ tests/
 - `tests/test_stencils.py` — Unit tests for all `stencils.py` utilities (50 tests)
 - `tests/test_templates.py` — Integration tests that load each template with sample data and verify valid DOCX output (10 tests)
 - `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas, wizard, and visible_when (44 tests)
-- `tests/test_dev_mode.py` — Dev Mode acceptance criteria tests: HTML structure, CDN deps, starter schema/template validation, field snippets, CSS classes, context menu, workspace, mobile gate, regression (332 tests)
+- `tests/test_dev_mode.py` — UI structure and feature tests: HTML structure, CDN deps, starter schema/template validation, field snippets, CSS classes, context menu, tab navigation, source grid, bidirectional flow (320 tests)
 - `tests/fixtures/*.json` — Sample form data matching each schema's field IDs
 - Templates are loaded via `importlib.util.spec_from_file_location()` with `sys.path` including `templates/` so `import stencils` resolves
 
