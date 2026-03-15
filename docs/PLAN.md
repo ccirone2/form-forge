@@ -5,7 +5,18 @@
 
 ---
 
-*No active plans. Use `/plan` to create one.*
+### Issues #161, #162, #163 — Paste Data, Presets, Bundle Export/Import
+
+**Plan:** `~/.claude/plans/cuddly-churning-tower.md`
+**Implementation order:** Paste Data → Presets → Bundle
+
+| # | Feature | Branch | Sub-issues | Status |
+|---|---------|--------|------------|--------|
+| #161 | Clipboard Paste for Form Data | `feature/161-paste-data` | — | Planned |
+| #162 | Per-Schema Presets | `feature/162-per-schema-presets` | #164, #165, #166 | Planned |
+| #163 | Bundle Export/Import | `feature/163-bundle-export-import` | #167, #168 | Planned |
+
+TODO: Schema context menu improvements — add option to add base scaffold (e.g. editor is blank)
 
 ---
 

@@ -14,6 +14,17 @@
 
 ## Log
 
+### 2026-03-15 — Created Issues for Three New Features (#161, #162, #163)
+**Issues:** #161, #162, #163 (+ sub-issues #164–#168)
+
+Created GitHub issues for three new features planned to reduce friction in the form/template authoring loop:
+
+1. **#161 — Clipboard Paste for Form Data** — "Paste Data" button + modal for pasting JSON directly into forms. Branch: `feature/161-paste-data`
+2. **#162 — Per-Schema Presets** — Named presets per form stored in localStorage for recurring data. Sub-issues: #164 (HTML/CSS), #165 (CRUD/storage), #166 (dropdown/integration). Branch: `feature/162-per-schema-presets`
+3. **#163 — Bundle Export/Import** — Package schema + template + sample data as one JSON artifact for LLM workflows. Sub-issues: #167 (export), #168 (import). Branch: `feature/163-bundle-export-import`
+
+**Implementation order:** Paste Data → Presets → Bundle (smallest → largest scope)
+
 ### 2026-03-14 — Info Field Type & Repeater Table Display (#159)
 **Issues:** #159
 
