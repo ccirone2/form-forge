@@ -176,12 +176,10 @@ def test_css_section_37_mobile_gate(index_html: str) -> None:
     assert "37. DEV MODE MOBILE GATE" in index_html
 
 
-def test_mobile_gate_hides_toggle(index_html: str) -> None:
-    """The mode toggle must be disabled on narrow viewports."""
-    # Find the @media block for 768px in section 36 — toggle is disabled via
-    # pointer-events:none (shown but non-interactive) rather than display:none
-    pattern = r"@media\s*\(max-width:\s*768px\)\s*\{[^}]*\.mode-toggle\s*\{"
-    assert re.search(pattern, index_html), "mode-toggle must be gated at <=768px"
+def test_mobile_gate_hides_dev_nav(index_html: str) -> None:
+    """The dev nav must be hidden on narrow viewports."""
+    pattern = r"@media\s*\(max-width:\s*768px\)\s*\{[^}]*\.dev-nav\s*\{"
+    assert re.search(pattern, index_html), "dev-nav must be hidden at <=768px"
 
 
 # --- JavaScript Functions ---

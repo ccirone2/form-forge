@@ -1,4 +1,4 @@
-"""End-to-end browser tests for the Dev Mode context menu system.
+"""End-to-end browser tests for the context menu system.
 
 Uses Playwright to exercise runtime behavior:
 - Right-click in schema/template editors opens context menus
@@ -60,14 +60,14 @@ def browser_instance():
         browser.close()
 
 
-def _activate_dev_mode(pg):
-    """Activate Dev Mode and ensure the schema editor is ready.
+def _activate_schema_tab(pg):
+    """Navigate to the Schema tab and ensure the editor is ready.
 
-    Clicks the Dev Mode toggle, which triggers ``loadDevModeDeps()`` to load
+    Clicks the Schema tab, which triggers ``loadDevModeDeps()`` to load
     CDN dependencies (Prism, CodeJar via dynamic import, mammoth, DOMPurify),
     then ``initSchemaEditor()`` initialises the CodeJar editor.
     """
-    pg.click("#modeToggle")
+    pg.click("#tab-dev-schema")
 
     # Wait for CDN deps to load and schema editor to initialise.
     # CodeJar sets contenteditable on the editor element.
@@ -77,14 +77,14 @@ def _activate_dev_mode(pg):
 
 @pytest.fixture()
 def page(browser_instance, server):
-    """Create a new page, navigate to index.html, and activate Dev Mode.
+    """Create a new page, navigate to index.html, and open the Schema tab.
 
     Each test gets a fresh page so state does not leak between tests.
     """
     ctx = browser_instance.new_context(viewport={"width": 1280, "height": 900})
     pg = ctx.new_page()
     pg.goto(f"{server}/index.html", wait_until="networkidle")
-    _activate_dev_mode(pg)
+    _activate_schema_tab(pg)
     yield pg
     ctx.close()
 
