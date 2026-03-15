@@ -14,6 +14,16 @@
 
 ## Log
 
+### 2026-03-15 — Bug Fixes: Button Icon, Source Persistence, Docs Refresh (#181, #182, #183)
+
+Three UI bug fixes:
+
+- **#181** — Added missing `icon-link` SVG symbol so the "Connect a Source" button icon renders. Added `justify-content: center` to `.btn-connect` for proper text centering.
+- **#182** — GitHub connection info now persists to `localStorage` (`formforge-source` key). On page load, saved connections auto-reconnect. Cleared on disconnect.
+- **#183** — `loadDocs()` now fetches documentation from the connected GitHub repo (via `ghFetchRaw`) when available, falling back to built-in reference. Called after `connectRepo()` and on disconnect to keep docs in sync.
+
+---
+
 ### 2026-03-15 — Connection UX Moved to Dialog (#179)
 
 Moved the GitHub Repository and Local Folder connection cards from the Forms tab into a modal dialog triggered by clicking the header status badge. The Forms tab now shows a clean empty state when not connected and goes straight to the form picker when connected.

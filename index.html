@@ -331,7 +331,7 @@
   .config-row input:focus { border-color: var(--border-focus); }
 
   .btn-connect {
-    display: inline-flex; align-items: center; gap: 8px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     padding: 10px 20px; background: var(--accent); color: var(--text-on-accent); border: none;
     border-radius: var(--radius-md); font-family: var(--font-sans); font-size: var(--text-base);
     font-weight: 600; cursor: pointer; transition: background var(--transition-base); white-space: nowrap;
@@ -2128,6 +2128,10 @@
   <symbol id="icon-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
     <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
   </symbol>
+  <!-- Link: used for Connect a Source -->
+  <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+  </symbol>
 </svg>
 
 <!-- Loading overlay -->
@@ -3329,6 +3333,21 @@ async function loadDocs() {
     const sourceEl = document.getElementById(slotId + 'Source');
     const titleEl = document.getElementById(slotId + 'Title');
 
+    // Try to fetch from connected GitHub source
+    if (contentSourceType === 'github' && config.ghPath) {
+      try {
+        const md = await ghFetchRaw(config.ghPath);
+        titleEl.textContent = config.title;
+        sourceEl.className = 'docs-source-badge from-github';
+        sourceEl.textContent = `${ghOwner}/${ghRepo}`;
+        contentEl.innerHTML = renderMarkdown(md);
+        continue;
+      } catch (e) {
+        // Fall through to built-in reference
+      }
+    }
+
+    // Fallback to built-in reference
     titleEl.textContent = config.fallbackTitle;
     sourceEl.className = 'docs-source-badge from-fallback';
     sourceEl.textContent = 'built-in reference';
@@ -3629,6 +3648,11 @@ async function connectRepo() {
 
     contentSourceType = 'github';
 
+    // Persist connection info for page refresh survival
+    localStorage.setItem('formforge-source', JSON.stringify({
+      type: 'github', owner: ghOwner, repo: ghRepo, branch: ghBranch, token: ghToken
+    }));
+
     // Populate workspaceFiles for editing (reuse data already fetched)
     workspaceFiles = { schemas: [], templates: [] };
     ghOriginalContents = {};
@@ -3665,6 +3689,9 @@ async function connectRepo() {
     // Fetch branches and update git toolbar
     devGhFetchBranches();
     updateGitToolbar();
+
+    // Refresh docs from connected source
+    loadDocs();
 
     hideConnectDialog();
     document.getElementById('setupEmptyState').style.display = 'none';
@@ -10211,8 +10238,9 @@ function devGhDisconnect() {
   repoSchemas = [];
   currentWorkspaceFile = null;
 
-  // Clear stored repo info (keep token — user can clear manually)
+  // Clear stored connection info
   localStorage.removeItem('formforge-dev-github-repo');
+  localStorage.removeItem('formforge-source');
 
   // Reset status badge and picker
   document.getElementById('statusBadge').className = 'status-badge';
@@ -10224,6 +10252,9 @@ function devGhDisconnect() {
   devGhHideCommitPanel();
   document.getElementById('ghNewBranchRow').style.display = 'none';
   updateGitToolbar();
+
+  // Reset docs to built-in reference
+  loadDocs();
 
   showToast('Disconnected from GitHub repo');
 }
@@ -10368,6 +10399,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Load embedded docs (always uses built-in reference, independent of content source)
   loadDocs();
+
+  // Restore saved GitHub connection from previous session
+  const savedSource = localStorage.getItem('formforge-source');
+  if (savedSource) {
+    try {
+      const src = JSON.parse(savedSource);
+      if (src.type === 'github' && src.owner && src.repo) {
+        document.getElementById('repoInput').value = src.owner + '/' + src.repo;
+        if (src.branch) document.getElementById('branchInput').value = src.branch;
+        if (src.token) document.getElementById('tokenInput').value = src.token;
+        // Auto-reconnect in the background
+        connectRepo().catch(e => {
+          log('Auto-reconnect failed: ' + e.message, 'error');
+          localStorage.removeItem('formforge-source');
+        });
+      }
+    } catch (e) { /* ignore corrupt data */ }
+  }
 
   // Preload Pyodide in the background so the first export is faster
   preloadPyodide();
