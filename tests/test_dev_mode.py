@@ -15,21 +15,6 @@ from pathlib import Path
 import jsonschema
 import pytest
 
-INDEX_PATH = Path(__file__).resolve().parent.parent / "index.html"
-SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "schemas"
-SPEC_PATH = SCHEMAS_DIR / "_schema.spec.json"
-
-
-@pytest.fixture(scope="module")
-def index_html() -> str:
-    return INDEX_PATH.read_text(encoding="utf-8")
-
-
-@pytest.fixture(scope="module")
-def spec() -> dict:
-    return json.loads(SPEC_PATH.read_text(encoding="utf-8"))
-
-
 # --- CDN Dependencies ---
 
 

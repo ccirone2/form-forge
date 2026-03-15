@@ -20,6 +20,8 @@ import pytest
 # Playwright is optional — skip entire module if not installed
 pw = pytest.importorskip("playwright.sync_api")
 
+pytestmark = pytest.mark.e2e
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 

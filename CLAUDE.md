@@ -86,8 +86,14 @@ No build system or package manager. Pyodide and python-docx load from CDN at run
 # Run locally — open index.html directly or use HTTP server for CORS
 python -m http.server 8000
 
-# Run all tests (417 tests)
+# Run fast tests (excludes e2e browser tests)
 PYTHONPATH=. python -m pytest tests/ -v
+
+# Run ALL tests including Playwright e2e
+PYTHONPATH=. python -m pytest tests/ -v -m ''
+
+# Run only e2e browser tests (requires: pip install playwright)
+PYTHONPATH=. python -m pytest tests/ -v -m e2e
 
 # Run a single test file
 PYTHONPATH=. python -m pytest tests/test_stencils.py -v
@@ -102,18 +108,24 @@ ruff format templates/ tests/
 
 ### Test structure
 
+- `tests/conftest.py` — Shared session-scoped fixtures (`index_html`, `spec`)
 - `tests/test_stencils.py` — Unit tests for all `stencils.py` utilities (50 tests)
 - `tests/test_templates.py` — Integration tests that load each template with sample data and verify valid DOCX output (10 tests)
 - `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas, wizard, and visible_when (44 tests)
 - `tests/test_dev_mode.py` — UI structure and feature tests: HTML structure, CDN deps, starter schema/template validation, field snippets, CSS classes, context menu, tab navigation, source grid, bidirectional flow (313 tests)
+- `tests/test_context_menu.py` — Playwright e2e browser tests for context menu system (24 tests, marked `e2e`)
 - `tests/fixtures/*.json` — Sample form data matching each schema's field IDs
 - Templates are loaded via `importlib.util.spec_from_file_location()` with `sys.path` including `templates/` so `import stencils` resolves
+
+### Test markers
+
+- `e2e` — Playwright browser tests (excluded by default via `pyproject.toml` `addopts`). Run with `-m e2e` or include all with `-m ''`.
 
 ## CI/CD
 
 `.github/workflows/validate.yml` runs on push/PR to `develop` and `main`:
-1. Lint — runs `ruff check templates/ tests/`
-2. Test execution — runs `PYTHONPATH=. pytest tests/ -v` on Python 3.12
+1. **test** job — Lint (`ruff check`) + fast tests (excludes e2e) on Python 3.12
+2. **e2e** job — Installs Playwright + Chromium, runs `pytest -m e2e` (depends on test job passing)
 
 ## GitHub Issues
 

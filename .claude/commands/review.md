@@ -11,6 +11,7 @@ Review the recent changes for quality and correctness.
    - Error handling (don't silently swallow exceptions)
    - Data round-trip safety (form data → DOCX export without loss)
 3. Run tests: `PYTHONPATH=. python -m pytest tests/ -v`
+   (e2e browser tests excluded by default; use `-m ''` to include all)
 4. Check for any TODO/FIXME/HACK comments that should be issues
 5. Provide a summary of findings
 
