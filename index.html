@@ -2744,7 +2744,7 @@ function bundleDownload(json, schemaObj) {
     try { sampleObj = JSON.parse(devSampleDataText); } catch (e) { /* null */ }
     const pkg = {
       formforge_package: { version: 1, exportedAt: new Date().toISOString(), source: 'editor' },
-      schema: schemaObj || (devSchemaText ? JSON.parse(devSchemaText) : null),
+      schema: schemaObj || (() => { try { return JSON.parse(devSchemaText); } catch (e) { return null; } })(),
       template: devTemplateText || null,
       sampleData: sampleObj
     };
@@ -2774,6 +2774,7 @@ function showBundleImportModal() {
   status.textContent = '';
   status.className = 'bundle-import-status';
   importBtn.disabled = true;
+  _bundleParseResult = { type: null };
   modal.classList.add('open');
   textarea.focus();
 }
@@ -2793,20 +2794,21 @@ function bundleParsePreview(text) {
     return { type: null };
   }
 
-  // Check for bare Python template (not JSON)
   const trimmed = text.trim();
-  if (/^(import |from |def generate_docx|#)/.test(trimmed) && !trimmed.startsWith('{')) {
-    const lines = trimmed.split('\n').length;
-    status.textContent = `Template detected — ${lines} lines of Python`;
-    status.className = 'bundle-import-status success';
-    importBtn.disabled = false;
-    return { type: 'template', template: text };
-  }
 
+  // Try JSON first; fall back to Python template detection
   let parsed;
   try {
     parsed = JSON.parse(text);
   } catch (err) {
+    // Not valid JSON — check for bare Python template
+    if (/^(import |from |def generate_docx|#)/.test(trimmed)) {
+      const lines = trimmed.split('\n').length;
+      status.textContent = `Template detected — ${lines} lines of Python`;
+      status.className = 'bundle-import-status success';
+      importBtn.disabled = false;
+      return { type: 'template', template: text };
+    }
     status.textContent = 'Invalid JSON — check syntax';
     status.className = 'bundle-import-status error';
     importBtn.disabled = true;
@@ -2833,8 +2835,8 @@ function bundleParsePreview(text) {
     const parts = [];
     if (parsed.schema && parsed.schema.title) parts.push(`Schema: ${parsed.schema.title}`);
     else if (parsed.schema) parts.push('Schema: untitled');
-    if (parsed.template) parts.push(`Template: ${parsed.template.split('\n').length} lines`);
-    if (parsed.sampleData) parts.push(`Sample Data: ${Object.keys(parsed.sampleData).length} fields`);
+    if (parsed.template && typeof parsed.template === 'string') parts.push(`Template: ${parsed.template.split('\n').length} lines`);
+    if (parsed.sampleData && typeof parsed.sampleData === 'object' && !Array.isArray(parsed.sampleData)) parts.push(`Sample Data: ${Object.keys(parsed.sampleData).length} fields`);
     status.textContent = parts.length > 0 ? parts.join(' | ') : 'Empty package';
     status.className = parts.length > 0 ? 'bundle-import-status success' : 'bundle-import-status warning';
     importBtn.disabled = parts.length === 0;
@@ -2860,7 +2862,6 @@ function bundleParsePreview(text) {
 let _bundleParseResult = { type: null };
 
 function bundleImportFromModal() {
-  const textarea = document.getElementById('bundleImportTextarea');
   bundleImport(_bundleParseResult);
 }
 
@@ -9935,6 +9936,7 @@ document.addEventListener('DOMContentLoaded', () => {
           textarea.value = ev.target.result;
           _bundleParseResult = bundleParsePreview(ev.target.result);
         };
+        reader.onerror = () => showToast('Failed to read file', 'error');
         reader.readAsText(file);
       });
       dropZone.addEventListener('click', () => {
@@ -9950,6 +9952,7 @@ document.addEventListener('DOMContentLoaded', () => {
             textarea.value = ev.target.result;
             _bundleParseResult = bundleParsePreview(ev.target.result);
           };
+          reader.onerror = () => showToast('Failed to read file', 'error');
           reader.readAsText(file);
         };
         input.click();
