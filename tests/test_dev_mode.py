@@ -1034,7 +1034,6 @@ class TestGitHubWorkspaceCSS:
             "gh-connect-field",
             "gh-connect-actions",
             "gh-connect-warning",
-            "gh-toolbar",
             "gh-branch-select",
             "gh-commit-panel",
             "gh-commit-file-list",
@@ -1801,40 +1800,24 @@ def test_picker_uses_abort_controller(index_html: str) -> None:
 # ============================================================
 
 
-def test_git_toolbar_exists(index_html: str) -> None:
-    """Git toolbar element exists with branch selector and controls."""
-    assert 'id="ghToolbar"' in index_html
-    assert 'id="ghBranchSelect"' in index_html
-    assert 'id="ghToolbarRepo"' in index_html
+def test_ghtoolbar_removed(index_html: str) -> None:
+    """Global ghToolbar element has been removed (#190)."""
+    assert 'id="ghToolbar"' not in index_html
+    assert "updateGitToolbar" not in index_html
 
 
-def test_git_toolbar_has_disconnect_button(index_html: str) -> None:
-    """Git toolbar has disconnect button."""
-    match = re.search(r'id="ghToolbar"([\s\S]*?)</div>', index_html)
-    assert match
-    assert "devGhDisconnect()" in match.group(1)
+def test_source_toolbar_branch_controls_schema(index_html: str) -> None:
+    """Schema source toolbar has branch select and action buttons (#190)."""
+    assert 'id="schemaBranchSelect"' in index_html
+    assert 'id="schemaNewBranchBtn"' in index_html
+    assert 'id="schemaRefreshBtn"' in index_html
 
 
-def test_git_toolbar_has_new_branch_button(index_html: str) -> None:
-    """Git toolbar has new branch button."""
-    match = re.search(r'id="ghToolbar"([\s\S]*?)</div>', index_html)
-    assert match
-    assert "devGhShowNewBranch()" in match.group(1)
-
-
-def test_git_toolbar_has_refresh_button(index_html: str) -> None:
-    """Git toolbar has refresh button."""
-    match = re.search(r'id="ghToolbar"([\s\S]*?)</div>', index_html)
-    assert match
-    assert "devGhRefreshFiles()" in match.group(1)
-
-
-def test_update_git_toolbar_function(index_html: str) -> None:
-    """updateGitToolbar shows/hides toolbar based on contentSourceType."""
-    body = _extract_func(index_html, "updateGitToolbar")
-    assert "contentSourceType" in body
-    assert "'github'" in body
-    assert "visible" in body
+def test_source_toolbar_branch_controls_template(index_html: str) -> None:
+    """Template source toolbar has branch select and action buttons (#190)."""
+    assert 'id="templateBranchSelect"' in index_html
+    assert 'id="templateNewBranchBtn"' in index_html
+    assert 'id="templateRefreshBtn"' in index_html
 
 
 def test_template_source_toolbar_exists(index_html: str) -> None:
@@ -1844,16 +1827,20 @@ def test_template_source_toolbar_exists(index_html: str) -> None:
     assert 'id="templateSaveLocalBtn"' in index_html
 
 
-def test_connect_repo_updates_git_toolbar(index_html: str) -> None:
-    """connectRepo calls updateGitToolbar after connecting."""
-    body = _extract_func(index_html, "connectRepo")
-    assert "updateGitToolbar()" in body
+def test_update_source_toolbar_shows_branch_controls(index_html: str) -> None:
+    """updateSourceToolbar shows branch controls for GitHub sources (#190)."""
+    body = _extract_func(index_html, "updateSourceToolbar")
+    assert "schemaBranchSelect" in body
+    assert "templateBranchSelect" in body
+    assert "schemaNewBranchBtn" in body
+    assert "templateNewBranchBtn" in body
 
 
-def test_disconnect_updates_git_toolbar(index_html: str) -> None:
-    """disconnectSource calls updateGitToolbar after disconnecting."""
-    body = _extract_func(index_html, "disconnectSource")
-    assert "updateGitToolbar()" in body
+def test_fetch_branches_populates_both_selects(index_html: str) -> None:
+    """devGhFetchBranches populates both schema and template selects (#190)."""
+    body = _extract_func(index_html, "devGhFetchBranches")
+    assert "schemaBranchSelect" in body
+    assert "templateBranchSelect" in body
 
 
 # --- Paste Data Feature (#161) ---
