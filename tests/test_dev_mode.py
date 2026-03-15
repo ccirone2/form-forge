@@ -883,7 +883,7 @@ def test_workspace_poll_auto_reloads_editor(index_html: str) -> None:
 # ============================================================
 
 
-def test_mobile_gate_hides_dev_nav(index_html: str) -> None:
+def test_mobile_gate_hides_dev_nav_display_none(index_html: str) -> None:
     """Dev nav is hidden at max-width 768px via CSS."""
     # The @media block contains multiple rules; use [\s\S] to span across them
     pattern = r"@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.dev-nav\s*\{\s*display:\s*none\s*!important"
