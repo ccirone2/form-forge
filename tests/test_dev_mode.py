@@ -1830,10 +1830,12 @@ def test_template_source_toolbar_exists(index_html: str) -> None:
 def test_update_source_toolbar_shows_branch_controls(index_html: str) -> None:
     """updateSourceToolbar shows branch controls for GitHub sources (#190)."""
     body = _extract_func(index_html, "updateSourceToolbar")
-    assert "schemaBranchSelect" in body
-    assert "templateBranchSelect" in body
-    assert "schemaNewBranchBtn" in body
-    assert "templateNewBranchBtn" in body
+    # Refactored to use configureToolbar helper with prefix concatenation
+    assert "BranchSelect" in body
+    assert "NewBranchBtn" in body
+    assert "RefreshBtn" in body
+    assert "configureToolbar(schemaToolbar" in body
+    assert "configureToolbar(tmplToolbar" in body
 
 
 def test_fetch_branches_populates_both_selects(index_html: str) -> None:

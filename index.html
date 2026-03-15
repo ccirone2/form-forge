@@ -3745,8 +3745,9 @@ async function connectRepo() {
       }
     }
 
-    // Fetch branches
+    // Fetch branches and update source toolbars
     devGhFetchBranches();
+    updateSourceToolbar();
 
     // Refresh docs from connected source
     loadDocs();
@@ -7724,6 +7725,11 @@ async function showTab(tabName) {
   // Map tab to view
   const viewName = tabName === 'forms' ? 'setup' : tabName;
   showView(viewName);
+
+  // Refresh source toolbars so branch controls appear on Schema/Template tabs
+  if (tabName === 'dev-schema' || tabName === 'dev-template') {
+    updateSourceToolbar();
+  }
 }
 
 // ============================================================
@@ -7824,61 +7830,41 @@ function updateSourceToolbar() {
   const schemaToolbar = document.getElementById('schemaSourceToolbar');
   const tmplToolbar = document.getElementById('templateSourceToolbar');
 
-  // Schema toolbar
-  if (schemaToolbar && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
-    const f = workspaceFiles.schemas[currentWorkspaceFile.index];
-    if (f) {
-      schemaToolbar.style.display = 'flex';
-      document.getElementById('schemaSourceFile').textContent = f.ghPath || f.name;
-      if (contentSourceType === 'github') {
-        document.getElementById('schemaSourceBranch').textContent = `@ ${ghBranch}`;
-        document.getElementById('schemaBranchSelect').style.display = '';
-        document.getElementById('schemaNewBranchBtn').style.display = 'inline-flex';
-        document.getElementById('schemaRefreshBtn').style.display = 'inline-flex';
-        document.getElementById('schemaCommitBtn').style.display = 'inline-flex';
-        document.getElementById('schemaSaveLocalBtn').style.display = 'none';
-      } else if (contentSourceType === 'local') {
-        document.getElementById('schemaSourceBranch').textContent = '';
-        document.getElementById('schemaBranchSelect').style.display = 'none';
-        document.getElementById('schemaNewBranchBtn').style.display = 'none';
-        document.getElementById('schemaRefreshBtn').style.display = 'none';
-        document.getElementById('schemaCommitBtn').style.display = 'none';
-        document.getElementById('schemaSaveLocalBtn').style.display = 'inline-flex';
-      }
+  // Helper: configure one source toolbar
+  function configureToolbar(toolbar, prefix, fileType) {
+    if (!toolbar) return;
+    const hasFile = currentWorkspaceFile && currentWorkspaceFile.type === fileType;
+    const files = fileType === 'schema' ? workspaceFiles.schemas : workspaceFiles.templates;
+    const f = hasFile ? files[currentWorkspaceFile.index] : null;
+    const isGh = contentSourceType === 'github';
+    const isLocal = contentSourceType === 'local';
+
+    // Show toolbar if a file is loaded OR if GitHub is connected (branch controls)
+    if (f || isGh) {
+      toolbar.style.display = 'flex';
+      document.getElementById(prefix + 'SourceFile').textContent = f ? (f.ghPath || f.name) : '';
+      document.getElementById(prefix + 'SourceBranch').textContent = isGh ? `@ ${ghBranch}` : '';
+      document.getElementById(prefix + 'BranchSelect').style.display = isGh ? '' : 'none';
+      document.getElementById(prefix + 'NewBranchBtn').style.display = isGh ? 'inline-flex' : 'none';
+      document.getElementById(prefix + 'RefreshBtn').style.display = isGh ? 'inline-flex' : 'none';
+      document.getElementById(prefix + 'CommitBtn').style.display = (f && isGh) ? 'inline-flex' : 'none';
+      document.getElementById(prefix + 'SaveLocalBtn').style.display = (f && isLocal) ? 'inline-flex' : 'none';
+    } else if (isLocal && f) {
+      toolbar.style.display = 'flex';
+      document.getElementById(prefix + 'SourceFile').textContent = f.name;
+      document.getElementById(prefix + 'SourceBranch').textContent = '';
+      document.getElementById(prefix + 'BranchSelect').style.display = 'none';
+      document.getElementById(prefix + 'NewBranchBtn').style.display = 'none';
+      document.getElementById(prefix + 'RefreshBtn').style.display = 'none';
+      document.getElementById(prefix + 'CommitBtn').style.display = 'none';
+      document.getElementById(prefix + 'SaveLocalBtn').style.display = 'inline-flex';
     } else {
-      schemaToolbar.style.display = 'none';
+      toolbar.style.display = 'none';
     }
-  } else if (schemaToolbar) {
-    schemaToolbar.style.display = 'none';
   }
 
-  // Template toolbar
-  if (tmplToolbar && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
-    const f = workspaceFiles.templates[currentWorkspaceFile.index];
-    if (f) {
-      tmplToolbar.style.display = 'flex';
-      document.getElementById('templateSourceFile').textContent = f.ghPath || f.name;
-      if (contentSourceType === 'github') {
-        document.getElementById('templateSourceBranch').textContent = `@ ${ghBranch}`;
-        document.getElementById('templateBranchSelect').style.display = '';
-        document.getElementById('templateNewBranchBtn').style.display = 'inline-flex';
-        document.getElementById('templateRefreshBtn').style.display = 'inline-flex';
-        document.getElementById('templateCommitBtn').style.display = 'inline-flex';
-        document.getElementById('templateSaveLocalBtn').style.display = 'none';
-      } else if (contentSourceType === 'local') {
-        document.getElementById('templateSourceBranch').textContent = '';
-        document.getElementById('templateBranchSelect').style.display = 'none';
-        document.getElementById('templateNewBranchBtn').style.display = 'none';
-        document.getElementById('templateRefreshBtn').style.display = 'none';
-        document.getElementById('templateCommitBtn').style.display = 'none';
-        document.getElementById('templateSaveLocalBtn').style.display = 'inline-flex';
-      }
-    } else {
-      tmplToolbar.style.display = 'none';
-    }
-  } else if (tmplToolbar) {
-    tmplToolbar.style.display = 'none';
-  }
+  configureToolbar(schemaToolbar, 'schema', 'schema');
+  configureToolbar(tmplToolbar, 'template', 'template');
 }
 
 // ============================================================
@@ -10340,6 +10326,7 @@ function disconnectSource() {
   // Reset UI
   devGhHideCommitPanel();
   document.getElementById('ghNewBranchRow').style.display = 'none';
+  updateSourceToolbar();
 
   // Reset docs to built-in reference
   loadDocs();
