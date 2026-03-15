@@ -2071,6 +2071,12 @@ def test_autofill_dropdown_functions_exist(index_html: str) -> None:
     assert "function updateAutofillBadge()" in index_html
 
 
+def test_autofill_closes_profile_dropdown(index_html: str) -> None:
+    """showAutofillDropdown closes the field-level profile dropdown."""
+    body = _extract_func(index_html, "showAutofillDropdown")
+    assert "hideProfileDropdown" in body
+
+
 def test_autofill_dropdown_has_sections(index_html: str) -> None:
     """Autofill dropdown renders profiles, presets, and action sections."""
     body = _extract_func(index_html, "showAutofillDropdown")
