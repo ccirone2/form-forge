@@ -18,9 +18,9 @@
 
 Three UX improvements to the Forms tab picker experience:
 
-- **Hide demo button when connected** — "Try the demo form" button is now hidden when a content source is connected and restored on disconnect.
-- **Disconnect action** — Added a "Disconnect" button in the picker header so users can switch sources without refreshing the page. Works for both GitHub and local folder sources.
-- **Accessible "Open Form" action** — Moved "Open Selected Form" button to a sticky picker header (stays visible while scrolling). Added inline "Open Form" button on each selected card for quick access. Double-click and Enter on cards still work.
+- **Demo → Open swap** — "Try the demo form" button swaps to "Open Selected Form" in the same hero position when a source is connected. Restored on disconnect.
+- **Disconnect on source card** — The "Connect a Source" card transforms when connected: shows source name, form count, a "Change Source" button, and a "Disconnect" button in the upper-right corner.
+- **Inline Open Form** — Each picker card shows an "Open Form" button when selected. Double-click and Enter on cards still work.
 
 Refactored `devGhDisconnect()` into a unified `disconnectSource()` that handles both GitHub and local folder cleanup (clears file polling, workspace handle, and base module cache).
 
