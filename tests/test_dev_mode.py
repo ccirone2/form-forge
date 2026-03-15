@@ -1151,17 +1151,14 @@ class TestGitHubWorkspaceJavaScript:
         assert "'409'" in body or '"409"' in body
 
     def test_disconnect_clears_state(self, index_html: str) -> None:
-        """devGhDisconnect resets all GitHub workspace state."""
-        match = re.search(
-            r"function devGhDisconnect\(\)([\s\S]*?)^(?:async )?function ",
-            index_html,
-            re.M,
-        )
-        assert match
-        body = match.group(1)
+        """disconnectSource resets all workspace state (devGhDisconnect delegates to it)."""
+        body = _extract_func(index_html, "disconnectSource")
         assert "contentSourceType = null" in body
         assert "ghOwner = ''" in body
         assert "ghModifiedFiles" in body
+        # devGhDisconnect delegates to disconnectSource
+        dgh_body = _extract_func(index_html, "devGhDisconnect")
+        assert "disconnectSource()" in dgh_body
 
     def test_schema_editor_tracks_modifications(self, index_html: str) -> None:
         """Schema editor onUpdate hook calls modification tracker."""
@@ -1854,8 +1851,8 @@ def test_connect_repo_updates_git_toolbar(index_html: str) -> None:
 
 
 def test_disconnect_updates_git_toolbar(index_html: str) -> None:
-    """devGhDisconnect calls updateGitToolbar after disconnecting."""
-    body = _extract_func(index_html, "devGhDisconnect")
+    """disconnectSource calls updateGitToolbar after disconnecting."""
+    body = _extract_func(index_html, "disconnectSource")
     assert "updateGitToolbar()" in body
 
 
@@ -2325,6 +2322,51 @@ def test_connect_repo_hides_dialog(index_html: str) -> None:
 
 
 def test_disconnect_shows_empty_state(index_html: str) -> None:
-    """devGhDisconnect should show the empty state after disconnecting."""
-    body = _extract_func(index_html, "devGhDisconnect")
+    """disconnectSource should show the empty state after disconnecting."""
+    body = _extract_func(index_html, "disconnectSource")
     assert "setupEmptyState" in body
+
+
+# --- Forms Tab UX (#185) ---
+
+
+def test_demo_button_has_wrapper_id(index_html: str) -> None:
+    """Demo button wrapper has an id for toggling visibility."""
+    assert 'id="demoBtnWrapper"' in index_html
+
+
+def test_demo_button_hidden_when_connected(index_html: str) -> None:
+    """renderPicker hides the demo button wrapper."""
+    body = _extract_func(index_html, "renderPicker")
+    assert "demoBtnWrapper" in body
+
+
+def test_demo_button_restored_on_disconnect(index_html: str) -> None:
+    """disconnectSource restores demo button visibility."""
+    body = _extract_func(index_html, "disconnectSource")
+    assert "demoBtnWrapper" in body
+
+
+def test_disconnect_button_in_picker(index_html: str) -> None:
+    """Picker section has a disconnect button."""
+    assert 'class="btn-disconnect"' in index_html
+    assert "disconnectSource()" in index_html
+
+
+def test_picker_cards_have_open_button(index_html: str) -> None:
+    """Picker cards include an inline Open Form button."""
+    body = _extract_func(index_html, "renderPicker")
+    assert "btn-card-open" in body
+    assert "Open Form" in body
+
+
+def test_open_button_visible_only_when_selected(index_html: str) -> None:
+    """Open Form button is hidden by default, shown on selected card via CSS."""
+    assert ".picker-card .btn-card-open" in index_html
+    assert ".picker-card.selected .btn-card-open { display: inline-flex" in index_html
+
+
+def test_picker_header_is_sticky(index_html: str) -> None:
+    """Picker header uses sticky positioning for scroll accessibility."""
+    assert "position: sticky" in index_html
+    assert "picker-header" in index_html
