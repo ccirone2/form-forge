@@ -348,19 +348,16 @@
 
   /* ===== 6. PICKER GRID ===== */
   .picker-section { margin-top: 32px; }
-  .picker-header {
-    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
-    position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 8px 0;
-  }
-  .picker-header h3 { font-size: var(--text-lg); font-weight: 600; margin: 0; }
-  .picker-header-actions { display: flex; align-items: center; gap: 10px; }
-  .btn-disconnect {
+  .picker-section h3 { font-size: var(--text-lg); font-weight: 600; margin-bottom: 16px; }
+  .setup-empty-state { position: relative; }
+  .source-disconnect {
+    position: absolute; top: 12px; right: 12px;
     display: inline-flex; align-items: center; gap: 6px;
     font-size: var(--text-xs); font-family: var(--font-mono); color: var(--text-muted);
     background: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
     padding: 5px 12px; cursor: pointer; transition: all var(--transition-fast);
   }
-  .btn-disconnect:hover { color: var(--error); border-color: var(--error); background: var(--error-subtle); }
+  .source-disconnect:hover { color: var(--error); border-color: var(--error); background: var(--error-subtle); }
   .picker-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px;
   }
@@ -2325,37 +2322,42 @@
       <h2>Forms that build documents</h2>
       <p>Fill out a form, get a formatted DOCX — all in your browser. No servers, no accounts.</p>
       <div class="demo-btn-wrapper" id="demoBtnWrapper">
-        <button type="button" class="btn-primary btn-demo-primary" onclick="launchDemo()">
+        <button type="button" class="btn-primary btn-demo-primary" id="demoBtnAction" onclick="launchDemo()">
           <svg width="15" height="15"><use href="#icon-play"/></svg>
           Try the demo form
+        </button>
+        <button type="button" class="btn-primary btn-demo-primary" id="launchBtn" style="display:none;" disabled onclick="launchForm()">
+          <svg width="15" height="15"><use href="#icon-arrow-right"/></svg>
+          Open Selected Form
         </button>
       </div>
     </div>
 
-    <!-- ===== EMPTY STATE (shown when not connected) ===== -->
+    <!-- ===== SOURCE CARD (connect prompt or connected info) ===== -->
     <div class="setup-empty-state" id="setupEmptyState">
-      <p>No source connected.<br>Connect a GitHub repo or local folder to browse available forms.</p>
-      <button type="button" class="btn-connect" onclick="showConnectDialog()">
-        <svg width="16" height="16"><use href="#icon-link"/></svg>
-        Connect a Source
+      <button type="button" class="btn-disconnect source-disconnect" id="sourceDisconnectBtn" onclick="disconnectSource()" title="Disconnect source" style="display:none;">
+        <svg width="12" height="12"><use href="#icon-unlink"/></svg>
+        Disconnect
       </button>
+      <div id="sourcePrompt">
+        <p>No source connected.<br>Connect a GitHub repo or local folder to browse available forms.</p>
+        <button type="button" class="btn-connect" onclick="showConnectDialog()">
+          <svg width="16" height="16"><use href="#icon-link"/></svg>
+          Connect a Source
+        </button>
+      </div>
+      <div id="sourceConnectedInfo" style="display:none;">
+        <p id="sourceConnectedLabel"></p>
+        <button type="button" class="btn-connect" onclick="showConnectDialog()">
+          <svg width="16" height="16"><use href="#icon-refresh"/></svg>
+          Change Source
+        </button>
+      </div>
     </div>
 
     <!-- Picker appears after connecting any source -->
     <div class="picker-section" id="pickerSection" style="display:none;">
-      <div class="picker-header">
-        <h3>Choose a Form</h3>
-        <div class="picker-header-actions">
-          <button type="button" class="btn-primary" id="launchBtn" disabled onclick="launchForm()">
-            <svg width="16" height="16"><use href="#icon-arrow-right"/></svg>
-            Open Selected Form
-          </button>
-          <button type="button" class="btn-disconnect" onclick="disconnectSource()" title="Disconnect source">
-            <svg width="12" height="12"><use href="#icon-unlink"/></svg>
-            Disconnect
-          </button>
-        </div>
-      </div>
+      <h3>Choose a Form</h3>
       <div class="picker-grid" id="pickerGrid"></div>
     </div>
   </div>
@@ -3739,11 +3741,26 @@ function renderPicker() {
   const section = document.getElementById('pickerSection');
   const grid = document.getElementById('pickerGrid');
   section.style.display = 'block';
-  document.getElementById('setupEmptyState').style.display = 'none';
-  document.getElementById('demoBtnWrapper').style.display = 'none';
+
+  // Transform source card: show connected info + disconnect, hide connect prompt
+  document.getElementById('sourcePrompt').style.display = 'none';
+  document.getElementById('sourceConnectedInfo').style.display = '';
+  document.getElementById('sourceDisconnectBtn').style.display = '';
+  const label = contentSourceType === 'github'
+    ? `Connected to <strong>${escapeHtml(ghOwner + '/' + ghRepo)}</strong>`
+    : contentSourceType === 'local'
+    ? `Connected to <strong>${escapeHtml(workspaceHandle ? workspaceHandle.name : 'local folder')}</strong>`
+    : 'Source connected';
+  document.getElementById('sourceConnectedLabel').innerHTML = label + `<br><span style="color:var(--text-muted);font-size:var(--text-sm)">${repoSchemas.length} form${repoSchemas.length !== 1 ? 's' : ''} available</span>`;
+
+  // Swap demo button → open selected form button
+  document.getElementById('demoBtnAction').style.display = 'none';
+  const launchBtn = document.getElementById('launchBtn');
+  launchBtn.style.display = '';
+  launchBtn.disabled = true;
+
   grid.innerHTML = '';
   selectedSchemaIdx = -1;
-  document.getElementById('launchBtn').disabled = true;
 
   if (repoSchemas.length === 0) {
     grid.innerHTML = '<div class="picker-empty">No schemas found in this repository.</div>';
@@ -10289,8 +10306,15 @@ function disconnectSource() {
   document.getElementById('statusBadge').className = 'status-badge';
   document.getElementById('statusText').textContent = 'not connected';
   document.getElementById('pickerSection').style.display = 'none';
-  document.getElementById('setupEmptyState').style.display = '';
-  document.getElementById('demoBtnWrapper').style.display = '';
+
+  // Restore source card to connect prompt
+  document.getElementById('sourcePrompt').style.display = '';
+  document.getElementById('sourceConnectedInfo').style.display = 'none';
+  document.getElementById('sourceDisconnectBtn').style.display = 'none';
+
+  // Restore demo button, hide open button
+  document.getElementById('demoBtnAction').style.display = '';
+  document.getElementById('launchBtn').style.display = 'none';
 
   // Reset UI
   devGhHideCommitPanel();

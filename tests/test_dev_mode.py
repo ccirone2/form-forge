@@ -2321,10 +2321,10 @@ def test_connect_repo_hides_dialog(index_html: str) -> None:
     assert "hideConnectDialog()" in body
 
 
-def test_disconnect_shows_empty_state(index_html: str) -> None:
-    """disconnectSource should show the empty state after disconnecting."""
+def test_disconnect_shows_source_prompt(index_html: str) -> None:
+    """disconnectSource should restore the source prompt after disconnecting."""
     body = _extract_func(index_html, "disconnectSource")
-    assert "setupEmptyState" in body
+    assert "sourcePrompt" in body
 
 
 # --- Forms Tab UX (#185) ---
@@ -2335,22 +2335,31 @@ def test_demo_button_has_wrapper_id(index_html: str) -> None:
     assert 'id="demoBtnWrapper"' in index_html
 
 
-def test_demo_button_hidden_when_connected(index_html: str) -> None:
-    """renderPicker hides the demo button wrapper."""
+def test_demo_button_swapped_when_connected(index_html: str) -> None:
+    """renderPicker hides the demo button and shows the open button."""
     body = _extract_func(index_html, "renderPicker")
-    assert "demoBtnWrapper" in body
+    assert "demoBtnAction" in body
+    assert "launchBtn" in body
 
 
 def test_demo_button_restored_on_disconnect(index_html: str) -> None:
-    """disconnectSource restores demo button visibility."""
+    """disconnectSource restores demo button and hides open button."""
     body = _extract_func(index_html, "disconnectSource")
-    assert "demoBtnWrapper" in body
+    assert "demoBtnAction" in body
+    assert "launchBtn" in body
 
 
-def test_disconnect_button_in_picker(index_html: str) -> None:
-    """Picker section has a disconnect button."""
-    assert 'class="btn-disconnect"' in index_html
+def test_disconnect_button_on_source_card(index_html: str) -> None:
+    """Source card has a disconnect button in upper-right corner."""
+    assert "source-disconnect" in index_html
     assert "disconnectSource()" in index_html
+
+
+def test_source_card_shows_connected_info(index_html: str) -> None:
+    """renderPicker shows connected info and disconnect on the source card."""
+    body = _extract_func(index_html, "renderPicker")
+    assert "sourceConnectedInfo" in body
+    assert "sourceDisconnectBtn" in body
 
 
 def test_picker_cards_have_open_button(index_html: str) -> None:
@@ -2366,7 +2375,7 @@ def test_open_button_visible_only_when_selected(index_html: str) -> None:
     assert ".picker-card.selected .btn-card-open { display: inline-flex" in index_html
 
 
-def test_picker_header_is_sticky(index_html: str) -> None:
-    """Picker header uses sticky positioning for scroll accessibility."""
-    assert "position: sticky" in index_html
-    assert "picker-header" in index_html
+def test_open_selected_form_replaces_demo(index_html: str) -> None:
+    """Open Selected Form button lives in the demo-btn-wrapper alongside the demo button."""
+    assert 'id="launchBtn"' in index_html
+    assert 'id="demoBtnAction"' in index_html
