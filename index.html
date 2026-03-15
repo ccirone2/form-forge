@@ -5164,18 +5164,14 @@ function pasteDataPreview(text) {
   const data = { ...parsed };
   delete data._formforge;
 
-  // Count matching fields
+  // Count matching fields (top-level IDs only — repeater sub-fields
+  // are stored as a JSON string under the parent repeater's ID)
   const schemaFields = new Set();
   if (currentSchema && currentSchema.sections) {
     for (const section of currentSchema.sections) {
       if (section.fields) {
         for (const field of section.fields) {
           schemaFields.add(field.id);
-          if (field.type === 'repeater' && field.fields) {
-            for (const sub of field.fields) {
-              schemaFields.add(sub.id);
-            }
-          }
         }
       }
     }
@@ -5216,11 +5212,8 @@ function applyPastedData() {
   const meta = parsed._formforge;
   delete parsed._formforge;
 
-  if (meta && meta.schemaTitle && currentSchema && meta.schemaTitle !== currentSchema.title) {
-    showToast(
-      `Data was saved for "${meta.schemaTitle}" but current form is "${currentSchema.title}"`,
-      'warning'
-    );
+  const schemaMismatch = meta && meta.schemaTitle && currentSchema && meta.schemaTitle !== currentSchema.title;
+  if (schemaMismatch) {
     log(
       `Paste data: schema mismatch — data schema "${meta.schemaTitle}", current schema "${currentSchema.title}"`,
       'warning'
@@ -5242,7 +5235,15 @@ function applyPastedData() {
 
   setTimeout(() => populateForm(parsed), 0);
   hidePasteDataModal();
-  showToast(`Form data pasted — ${matched} field${matched !== 1 ? 's' : ''} populated`);
+
+  if (schemaMismatch) {
+    showToast(
+      `Schema mismatch: data is for "${meta.schemaTitle}" — ${matched} field${matched !== 1 ? 's' : ''} populated`,
+      'warning'
+    );
+  } else {
+    showToast(`Form data pasted — ${matched} field${matched !== 1 ? 's' : ''} populated`);
+  }
   log(`Paste data: populated ${matched} fields from clipboard`);
 }
 
