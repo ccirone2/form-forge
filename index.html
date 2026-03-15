@@ -1496,6 +1496,9 @@
   .docs-rendered-md h1 { font-size: var(--text-lg-xl); font-weight: 700; margin: 20px 0 8px; color: var(--text); }
   .docs-rendered-md h2 { font-size: var(--text-md); font-weight: 600; margin: 16px 0 6px; color: var(--text); }
   .docs-rendered-md h3 { font-size: var(--text-sm-md); font-weight: 600; margin: 14px 0 4px; color: var(--text); }
+  .docs-rendered-md h4 { font-size: var(--text-base); font-weight: 600; margin: 14px 0 4px; color: var(--text); }
+  .docs-rendered-md h5 { font-size: var(--text-sm-md); font-weight: 600; margin: 12px 0 4px; color: var(--text-muted); }
+  .docs-rendered-md h6 { font-size: var(--text-sm); font-weight: 600; margin: 12px 0 4px; color: var(--text-muted); }
   .docs-rendered-md p { margin-bottom: 10px; }
   .docs-rendered-md ul, .docs-rendered-md ol { margin: 8px 0 12px 20px; }
   .docs-rendered-md li { margin-bottom: 4px; }
@@ -2629,19 +2632,19 @@
       <div class="docs-tab-content">
         <div class="docs-tab-panel active" id="schemaGuide" role="tabpanel" aria-labelledby="docsTabSchemaGuide">
           <div class="docs-source-badge" id="schemaGuideSource"></div>
-          <div id="schemaGuideContent"><p>Loading...</p></div>
+          <div id="schemaGuideContent" class="docs-rendered-md"><p>Loading...</p></div>
         </div>
         <div class="docs-tab-panel" id="templateGuide" role="tabpanel" aria-labelledby="docsTabTemplateGuide">
           <div class="docs-source-badge" id="templateGuideSource"></div>
-          <div id="templateGuideContent"><p>Loading...</p></div>
+          <div id="templateGuideContent" class="docs-rendered-md"><p>Loading...</p></div>
         </div>
         <div class="docs-tab-panel" id="fieldTypes" role="tabpanel" aria-labelledby="docsTabFieldTypes">
           <div class="docs-source-badge" id="fieldTypesSource"></div>
-          <div id="fieldTypesContent"><p>Loading...</p></div>
+          <div id="fieldTypesContent" class="docs-rendered-md"><p>Loading...</p></div>
         </div>
         <div class="docs-tab-panel" id="exampleSchema" role="tabpanel" aria-labelledby="docsTabExampleSchema">
           <div class="docs-source-badge" id="exampleSchemaSource"></div>
-          <div id="exampleSchemaContent"><p>Loading...</p></div>
+          <div id="exampleSchemaContent" class="docs-rendered-md"><p>Loading...</p></div>
         </div>
       </div>
 
@@ -3213,16 +3216,10 @@ function renderMarkdown(md) {
   let codeBuffer = [];
   let inTable = false;
   let tableBuffer = [];
-  let inList = false;
-  let listBuffer = [];
+  let listStack = []; // [{tag:'ul'|'ol', indent}] for nested lists
 
   function flushList() {
-    if (listBuffer.length > 0) {
-      const tag = listBuffer[0].ordered ? 'ol' : 'ul';
-      html += `<${tag}>${listBuffer.map(l => `<li>${inlineFormat(l.text)}</li>`).join('')}</${tag}>`;
-      listBuffer = [];
-    }
-    inList = false;
+    while (listStack.length > 0) { html += `</${listStack.pop().tag}>`; }
   }
 
   function flushTable() {
@@ -3278,23 +3275,62 @@ function renderMarkdown(md) {
     }
 
     // Empty line
-    if (line.trim() === '') { flushList(); html += ''; i++; continue; }
+    if (line.trim() === '') { flushList(); i++; continue; }
 
-    // Headings
-    const hMatch = line.match(/^(#{1,3})\s+(.+)/);
+    // Headings (h1–h6)
+    const hMatch = line.match(/^(#{1,6})\s+(.+)/);
     if (hMatch) { flushList(); const lvl = hMatch[1].length; html += `<h${lvl}>${inlineFormat(hMatch[2])}</h${lvl}>`; i++; continue; }
 
     // HR
     if (/^---+$/.test(line.trim())) { flushList(); html += '<hr>'; i++; continue; }
 
-    // Blockquote
-    if (line.trim().startsWith('>')) { flushList(); html += `<blockquote>${inlineFormat(line.trim().replace(/^>\s*/, ''))}</blockquote>`; i++; continue; }
+    // Blockquote (collect consecutive > lines into one block)
+    if (line.trim().startsWith('>')) {
+      flushList();
+      const bqLines = [];
+      while (i < lines.length && lines[i].trim().startsWith('>')) {
+        bqLines.push(lines[i].trim().replace(/^>\s?/, ''));
+        i++;
+      }
+      html += `<blockquote>${bqLines.map(l => l.trim() === '' ? '<br>' : inlineFormat(l)).join(' ')}</blockquote>`;
+      continue;
+    }
 
     // Unordered list
-    if (/^\s*[-*]\s+/.test(line)) { inList = true; listBuffer.push({ ordered: false, text: line.replace(/^\s*[-*]\s+/, '') }); i++; continue; }
+    const ulMatch = line.match(/^(\s*)([-*])\s+(.*)/);
+    if (ulMatch) {
+      const indent = ulMatch[1].length;
+      const text = ulMatch[3];
+      if (listStack.length === 0) {
+        html += '<ul>'; listStack.push({ tag: 'ul', indent });
+      } else if (indent > listStack[listStack.length - 1].indent) {
+        html += '<ul>'; listStack.push({ tag: 'ul', indent });
+      } else {
+        while (listStack.length > 1 && indent < listStack[listStack.length - 1].indent) {
+          html += `</${listStack.pop().tag}>`;
+        }
+      }
+      html += `<li>${inlineFormat(text)}</li>`;
+      i++; continue;
+    }
 
     // Ordered list
-    if (/^\s*\d+\.\s+/.test(line)) { inList = true; listBuffer.push({ ordered: true, text: line.replace(/^\s*\d+\.\s+/, '') }); i++; continue; }
+    const olMatch = line.match(/^(\s*)\d+\.\s+(.*)/);
+    if (olMatch) {
+      const indent = olMatch[1].length;
+      const text = olMatch[2];
+      if (listStack.length === 0) {
+        html += '<ol>'; listStack.push({ tag: 'ol', indent });
+      } else if (indent > listStack[listStack.length - 1].indent) {
+        html += '<ol>'; listStack.push({ tag: 'ol', indent });
+      } else {
+        while (listStack.length > 1 && indent < listStack[listStack.length - 1].indent) {
+          html += `</${listStack.pop().tag}>`;
+        }
+      }
+      html += `<li>${inlineFormat(text)}</li>`;
+      i++; continue;
+    }
 
     // Paragraph
     flushList();
@@ -10308,6 +10344,10 @@ function disconnectSource() {
   // Restore demo button, hide open button
   document.getElementById('demoBtnAction').style.display = '';
   document.getElementById('launchBtn').style.display = 'none';
+
+  // Clear connect dialog repo status
+  const repoStatusEl = document.getElementById('repoStatus');
+  if (repoStatusEl) { repoStatusEl.className = 'repo-status'; repoStatusEl.textContent = ''; }
 
   // Reset UI
   devGhHideCommitPanel();
