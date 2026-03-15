@@ -14,7 +14,7 @@
 
 ## Log
 
-### 2026-03-15 — Connection UX Moved to Dialog
+### 2026-03-15 — Connection UX Moved to Dialog (#179)
 
 Moved the GitHub Repository and Local Folder connection cards from the Forms tab into a modal dialog triggered by clicking the header status badge. The Forms tab now shows a clean empty state when not connected and goes straight to the form picker when connected.
 
@@ -32,6 +32,31 @@ Moved the GitHub Repository and Local Folder connection cards from the Forms tab
 - Moved HTML rather than duplicating to avoid maintaining two copies of input elements
 - Kept `source-grid` and `source-card` CSS classes for potential future reuse
 - Dialog is always available via status badge regardless of current connection state
+
+---
+
+### 2026-03-15 — Code Review Fixes — XSS, Mobile, ARIA (#172, #178)
+
+Security and polish fixes from unified Autofill code review:
+
+- Fixed XSS vulnerability in profile dropdown: `_profileName` values now escaped via `_escapeHtml()` before being inserted into innerHTML
+- Fixed orphan profile on cancel: profile editor "Cancel" now deletes the just-created profile if cancelling a new profile creation
+- Fixed editor return flow: returning from profile/preset editor re-opens the correct parent dropdown
+- Fixed TypeError when Autofill dropdown opened before any profiles/presets exist
+- Mobile layout improvements for Autofill dropdown
+- ARIA attribute updates for dropdown accessibility
+- All CSS hardcoded values replaced with design tokens
+
+---
+
+### 2026-03-15 — Stale Reference & Test Cleanup
+
+Post-merge cleanup after unified tabs and autofill changes:
+
+- Removed stale Dev Mode references from CLAUDE.md and code
+- Removed dead CSS classes no longer referenced in HTML
+- Optimized test architecture: added `e2e` marker for Playwright browser tests, extracted shared fixtures to `conftest.py`
+- Fixed duplicate test function names (`ruff` F811 lint error)
 
 ---
 
@@ -72,7 +97,7 @@ Added form package export/import for sharing complete form definitions (schema +
 
 ---
 
-### 2026-03-15 — Per-Schema Presets (#162)
+### 2026-03-14 — Per-Schema Presets (#162)
 **Issues:** #162, #164, #165, #166
 
 Added per-schema preset system for saving and reusing recurring form field values. Mirrors the existing profile dropdown pattern.
@@ -91,7 +116,7 @@ Added per-schema preset system for saving and reusing recurring form field value
 
 ---
 
-### 2026-03-15 — Clipboard Paste for Form Data (#161)
+### 2026-03-14 — Clipboard Paste for Form Data (#161)
 **Issues:** #161
 
 Added "Paste Data" button and modal to the form view, enabling users to paste JSON data directly into forms without the save-file-then-upload round-trip.
@@ -342,6 +367,13 @@ Added 24 Playwright-based end-to-end browser tests covering the right-click cont
 - **Template Builder context menu:** menu appearance, stencils helper snippet items, snippet insertion into editor, close on Escape and click-outside.
 
 Tests use a local HTTP server with OS-assigned port and a shared browser instance for efficiency. CodeJar loads as an ES module via dynamic `import()` in the app.
+
+---
+
+### 2026-03-13 — Fix DOCX Preview Hang on Stencils Load (#128)
+**Issues:** #128
+
+Fixed a bug where the Dev Mode DOCX preview would hang indefinitely when `stencils.py` was loaded for the first time. The `loadBaseModule()` call was not awaited in the preview path, causing `pyodide.runPythonAsync()` to fail silently when `import stencils` hadn't completed yet.
 
 ---
 

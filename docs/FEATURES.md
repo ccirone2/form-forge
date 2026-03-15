@@ -25,16 +25,21 @@
 | 2 | **Form data save** | Out | `.json` file download |
 | 3 | **Form data load** | In | `.json` file upload → `populateForm()` |
 | 4 | **URL data load** | In | `?data=<url>` → fetch JSON → `populateForm()` |
-| 5 | **Profile save** | Internal | localStorage (multi-profile) |
-| 6 | **Profile apply** | Internal | localStorage → autofill matched fields |
-| 7 | **Autosave** | Internal | localStorage, 2s debounce, per-schema key |
-| 8 | **Autosave restore** | Internal | Prompt on form launch if saved data exists |
+| 5 | **Clipboard paste** | In | Paste JSON data modal → `populateForm()` (#161) |
+| 6 | **Profile save** | Internal | localStorage (multi-profile, named via Autofill) |
+| 7 | **Profile apply** | Internal | localStorage → autofill matched fields |
+| 8 | **Preset save** | Internal | localStorage per-schema, named field subsets (#162) |
+| 9 | **Preset apply** | Internal | localStorage → populate selected fields |
+| 10 | **Bundle export** | Out | Copy/download schema + template + sample data as `.formforge.json` (#163) |
+| 11 | **Bundle import** | In | Paste/drop package → load into Schema + Template editors (#163) |
+| 12 | **Autosave** | Internal | localStorage, 2s debounce, per-schema key |
+| 13 | **Autosave restore** | Internal | Prompt on form launch if saved data exists |
 
 ## Editing Surfaces
 
 | # | Surface | What you can do |
 |---|---------|----------------|
-| 1 | **Schema editor** (CodeJar) | Write/edit JSON, live preview, validation badge, context menu with all 23 field snippets |
+| 1 | **Schema editor** (CodeJar) | Write/edit JSON, live preview, validation badge, context menu with all 24 field snippets |
 | 2 | **Template editor** (CodeJar) | Write/edit Python, run preview via Pyodide, context menu with stencils snippets |
 | 3 | **Schema preview** | Visual form preview, drag-drop reorder fields/sections, insert fields, wrap in wizard |
 | 4 | **Sample data editor** | Edit test data JSON, auto-generate from schema |
@@ -65,14 +70,6 @@
 
 Features below are organized by impact on the core goal: **idea → working document workflow in minimal time**. When a feature ships, move it to the appropriate inventory table above and note the issue/PR.
 
-### In Progress
-
-| Feature | Issue | Status |
-|---------|-------|--------|
-| Clipboard Paste for Form Data | #161 | Planned |
-| Per-Schema Presets | #162 | Planned |
-| Bundle Export/Import (Form Package) | #163 | Planned |
-
 ### Tier 1: High Impact — Accelerate Creation
 
 #### Auto-Generate Template from Schema
@@ -82,11 +79,9 @@ When you create or edit a schema, you still have to manually write the Python te
 The Template tab has DOCX preview (mammoth.js rendering), but the Forms tab does not. Users fill a form and blindly download. A "Preview" button next to "Export DOCX" that renders the document inline — reusing the existing mammoth.js pipeline from `devRunPreview()` — eliminates the export-open-check-fix cycle.
 
 #### Copy-to-Clipboard Buttons for LLM Workflows
-To use an LLM to help build/edit schemas or templates, users manually select-all and copy from editors. Opportunities:
-- "Copy Schema" / "Copy Template" buttons on editor toolbars
-- "Copy Schema + Template" combined export for LLM context
+To use an LLM to help build/edit schemas or templates, users manually select-all and copy from editors. Bundle export/import (#163) covers the combined copy/paste use case. Remaining opportunities:
+- "Copy Schema" / "Copy Template" individual buttons on editor toolbars
 - "Copy as LLM Prompt" wrapping content with instructions
-- "Paste from Clipboard" that detects JSON vs Python and routes to the correct editor
 
 #### Schema Scaffolding from Field List
 Creating a schema requires knowing JSON structure. A "Quick Start" mode where the user types a simple field list — each line is `field_name: type` (e.g., `employee_name: text`, `department: select[Engineering,Marketing,Sales]`) — and the app generates the full schema JSON. Combined with auto-template generation, this creates a path from idea → workflow in under a minute.
