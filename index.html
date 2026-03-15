@@ -2847,7 +2847,7 @@ function renderMarkdown(md) {
 }
 
 function escapeHtml(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // Map raw error messages to user-friendly language
@@ -6288,7 +6288,7 @@ function applyPreset(preset) {
   if (!preset.fields) return;
   setTimeout(() => populateForm(preset.fields, { skipFileFields: true }), 0);
   hidePresetDropdown();
-  showToast(`Preset "${escapeHtml(preset.name)}" applied`);
+  showToast(`Preset "${preset.name}" applied`);
   log(`Preset "${preset.name}" applied`, 'success');
 }
 
@@ -6317,9 +6317,6 @@ function showPresetEditor(idx) {
   }
 
   // For editing, merge current form values for any fields not in existing preset
-  const allFieldIds = isEdit
-    ? Object.keys(existing.fields)
-    : Object.keys(currentFields);
   const availableFields = isEdit
     ? { ...currentFields, ...existing.fields }
     : currentFields;
@@ -6404,17 +6401,22 @@ function showPresetEditor(idx) {
   }
 }
 
+let _presetDismissListenerAdded = false;
+
 function setupPresets() {
   updatePresetBadge();
 
-  // Global dismiss on click outside
-  document.addEventListener('mousedown', (e) => {
-    const dd = document.getElementById('presetDropdown');
-    if (dd.style.display === 'none') return;
-    if (dd.contains(e.target)) return;
-    if (e.target.closest('.preset-btn')) return;
-    hidePresetDropdown();
-  });
+  // Global dismiss on click outside (attach once)
+  if (!_presetDismissListenerAdded) {
+    _presetDismissListenerAdded = true;
+    document.addEventListener('mousedown', (e) => {
+      const dd = document.getElementById('presetDropdown');
+      if (dd.style.display === 'none') return;
+      if (dd.contains(e.target)) return;
+      if (e.target.closest('.preset-btn')) return;
+      hidePresetDropdown();
+    });
+  }
 }
 
 // ============================================================
