@@ -2321,10 +2321,10 @@ def test_connect_repo_hides_dialog(index_html: str) -> None:
     assert "hideConnectDialog()" in body
 
 
-def test_disconnect_shows_source_prompt(index_html: str) -> None:
-    """disconnectSource should restore the source prompt after disconnecting."""
+def test_disconnect_restores_empty_state(index_html: str) -> None:
+    """disconnectSource should restore the empty state after disconnecting."""
     body = _extract_func(index_html, "disconnectSource")
-    assert "sourcePrompt" in body
+    assert "setupEmptyState" in body
 
 
 # --- Forms Tab UX (#185) ---
@@ -2349,17 +2349,31 @@ def test_demo_button_restored_on_disconnect(index_html: str) -> None:
     assert "launchBtn" in body
 
 
-def test_disconnect_button_on_source_card(index_html: str) -> None:
-    """Source card has a disconnect button in upper-right corner."""
-    assert "source-disconnect" in index_html
+def test_empty_state_hidden_when_connected(index_html: str) -> None:
+    """renderPicker hides the empty state card."""
+    body = _extract_func(index_html, "renderPicker")
+    assert "setupEmptyState" in body
+
+
+def test_disconnect_in_connect_dialog(index_html: str) -> None:
+    """Connect dialog has a status banner with disconnect button."""
+    assert 'id="connectDialogStatus"' in index_html
+    assert "connect-dialog-status" in index_html
     assert "disconnectSource()" in index_html
 
 
-def test_source_card_shows_connected_info(index_html: str) -> None:
-    """renderPicker shows connected info and disconnect on the source card."""
-    body = _extract_func(index_html, "renderPicker")
-    assert "sourceConnectedInfo" in body
-    assert "sourceDisconnectBtn" in body
+def test_connect_dialog_status_updated_on_open(index_html: str) -> None:
+    """showConnectDialog calls updateConnectDialogStatus before opening."""
+    body = _extract_func(index_html, "showConnectDialog")
+    assert "updateConnectDialogStatus()" in body
+
+
+def test_update_connect_dialog_status_function(index_html: str) -> None:
+    """updateConnectDialogStatus populates the dialog status banner."""
+    body = _extract_func(index_html, "updateConnectDialogStatus")
+    assert "connectDialogStatus" in body
+    assert "connectDialogStatusLabel" in body
+    assert "connectDialogStatusMeta" in body
 
 
 def test_picker_cards_have_open_button(index_html: str) -> None:
