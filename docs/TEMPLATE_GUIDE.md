@@ -200,6 +200,7 @@ Use this table to pick the right stencil helper for each field type. Types not l
 | `signature` | `signature()` | Pass the base64 data URI string + a label |
 | `repeater` | `repeater_table()` | Parse JSON first with `json.loads()` |
 | `heading` | *(not in data)* | Skipped during data collection |
+| `info` | *(not in data)* | Skipped during data collection |
 
 ### Document themes
 
@@ -245,7 +246,7 @@ For a one-off theme on a single document without changing the module-level theme
 doc = stencils.new_doc("Title", "Subtitle", theme=stencils.THEME_MINIMAL)
 ```
 
-The active theme (set by `set_theme()`) is still used by helpers like `footer()` and `longtext()` within that document.
+**Note:** The `theme=` parameter only affects the cloned document template (heading styles, margins). Helper functions like `footer()`, `longtext()`, and `table_section()` still use the active theme set by `set_theme()`. For fully consistent styling, call `set_theme(X)` before `new_doc()` rather than using the `theme=` parameter alone.
 
 #### Custom themes
 
@@ -284,7 +285,7 @@ run.font.name = stencils.THEME_CLASSIC.font_heading
 
 ## Understanding the Data Dictionary
 
-All values in `data` are strings, regardless of field type. `heading` fields are the only exception — they are skipped during data collection and never appear in `data`.
+All values in `data` are strings, regardless of field type. `heading` and `info` fields are the only exceptions — they are skipped during data collection and never appear in `data`.
 
 | Field Type | Value Format | Example |
 |---|---|---|
@@ -309,6 +310,7 @@ All values in `data` are strings, regardless of field type. `heading` fields are
 | `signature` | Base64 PNG data URI string or `""` | `"data:image/png;base64,iVBOR..."` |
 | `repeater` | JSON array string | `'[{"description":"Flight","amount":"250"}]'` |
 | `heading` | *(not present in data)* | — |
+| `info` | *(not present in data)* | — |
 
 Empty or unfilled fields are empty strings `""`. Always use `data.get('field_id', '')` — never assume a key exists.
 

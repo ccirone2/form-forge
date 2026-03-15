@@ -235,7 +235,7 @@ Numeric input with optional `min`, `max`, and `step` constraints. Renders as `<i
 { "id": "quantity", "label": "Quantity", "type": "number", "min": 0, "max": 100, "step": 1 }
 ```
 
-**Schema properties:** `min` (integer), `max` (integer), `step` (number) — all optional. These are the only field types where `min`, `max`, and `step` are permitted; they are forbidden on all other types by the schema spec.
+**Schema properties:** `min` (number), `max` (number), `step` (number) — all optional. These properties are also available on `number` sub-fields within a `repeater`. They are forbidden on all other field types by the schema spec.
 
 **Template:** Value is a string — parse with `int()` or `float()` as needed.
 
@@ -562,7 +562,9 @@ Any top-level field can include a `visible_when` object to make it appear only w
 **Supported target field types** (the field with `visible_when`):
 Works for any type that renders a direct element with `id = field.id`: `text`, `email`, `tel`, `date`, `time`, `url`, `datetime`, `textarea`, `longtext`, `select`, `number`, `currency`, `hidden`, `file`, `signature`, `toggle`.
 
-Does **not** reliably work as a target for: `checkbox`, `radio`, `list`, `address`, `repeater`, `heading`, `multi_select` — these types do not render a single element with `id = field.id`, so the visibility logic cannot find their field group.
+Does **not** reliably work as a target for: `checkbox`, `radio`, `list`, `address`, `repeater`, `heading` — these types do not render a single element with `id = field.id`, so the visibility logic cannot find their field group.
+
+**Note:** `multi_select` renders a hidden input with `id = field.id` and works as a `visible_when` target. However, as a `visible_when` *source*, `multi_select` may not trigger visibility updates reliably because its widget updates the hidden input programmatically without firing DOM events.
 
 `visible_when` is not supported inside `repeater` sub-fields.
 

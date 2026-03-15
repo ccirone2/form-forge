@@ -110,18 +110,21 @@ Each field defines a single input in the form. The `id` becomes the key in the `
 | `required` | no | boolean | When `true`, prevents export until the field is filled. |
 | `placeholder` | no | string | Ghost text shown inside empty inputs. |
 | `hint` | no | string | Help text displayed below the field in smaller text. |
-| `options` | conditional | array | Array of strings. Required for `select`, `radio`, and `checkbox`. Forbidden on all other types. |
+| `options` | conditional | array | Array of strings. Required for `select`, `radio`, `checkbox`, and `multi_select`. Forbidden on all other types. |
 | `default_value` | conditional | string | Static value to inject. Required for `hidden`. Forbidden on all other types. |
 | `fields` | conditional | array | Sub-field definitions. Required for `repeater`. Forbidden on all other types. |
 | `maxLength` | no | integer | Maximum character count. Minimum 1. Allowed on `text` and `longtext` only. On `longtext`, displays a live counter (defaults to 5000). On `text`, schema validation only — no counter in the browser. |
-| `min` | no | integer | Minimum value. Allowed on `number` only. |
-| `max` | no | integer | Maximum value. Allowed on `number` only. |
+| `min` | no | number | Minimum value. Allowed on `number` only. |
+| `max` | no | number | Maximum value. Allowed on `number` only. |
 | `step` | no | number | Step increment. Allowed on `number` only. |
 | `currency_symbol` | no | string | Currency prefix. Allowed on `currency` only. Defaults to `$`. |
 | `accept` | no | string | File type filter (e.g. `"image/*"`). Allowed on `file` only. |
 | `max_size_mb` | no | integer | Maximum file size in MB. Minimum 1. Allowed on `file` only. |
+| `content` | conditional | string | Display text for `info` blocks. Required for `info`. Forbidden on all other types. |
+| `style` | no | string | Visual variant for `info` blocks: `"info"`, `"warning"`, or `"success"`. Defaults to `"info"`. Allowed on `info` only. |
 | `min_rows` | no | integer | Minimum rows shown initially. Minimum 1. Allowed on `repeater` only. |
 | `max_rows` | no | integer | Maximum rows allowed. Minimum 1. Allowed on `repeater` only. |
+| `display` | no | string | Display mode for `repeater`: `"cards"` (default) or `"table"`. Allowed on `repeater` only. |
 | `visible_when` | no | object | Conditional visibility rule. See [Conditional Visibility](#conditional-visibility). |
 
 No other field properties are allowed.
@@ -144,7 +147,7 @@ Examples:
 
 ## Field Types
 
-23 types are supported. The `type` value must be exactly one of these strings.
+24 types are supported. The `type` value must be exactly one of these strings.
 
 | Type | Renders As | `options` needed? | Special properties |
 |------|-----------|-------------------|--------------------|
@@ -166,11 +169,12 @@ Examples:
 | `number` | Numeric input | no | `min`, `max`, `step` |
 | `currency` | Numeric input with currency prefix | no | `currency_symbol` |
 | `heading` | Non-input visual divider | no | — |
+| `info` | Read-only info/warning/success block | no | `content` (required), `style` |
 | `hidden` | Not rendered; passes static value | no | `default_value` (required) |
 | `address` | Street / city / state / ZIP group | no | — |
 | `file` | File upload with preview | no | `accept`, `max_size_mb` |
 | `signature` | Canvas drawing pad | no | — |
-| `repeater` | Dynamic rows of sub-fields | no | `fields` (required), `min_rows`, `max_rows` |
+| `repeater` | Dynamic rows of sub-fields | no | `fields` (required), `min_rows`, `max_rows`, `display` |
 
 See `docs/FIELD_TYPES.md` for detailed examples, template handling code, and layout rules for each type.
 
@@ -282,7 +286,7 @@ Behavior:
 FormForge automatically arranges fields in the form:
 
 - **Two-column rows:** `text`, `email`, `tel`, `date`, `time`, `url`, `datetime`, `select`, `number`, `currency`, and `toggle` fields are paired side-by-side when consecutive.
-- **Full-width:** `textarea`, `longtext`, `list`, `radio`, `checkbox`, `multi_select`, `heading`, `address`, `file`, `signature`, and `repeater` fields always take the full width and break any two-column pairing.
+- **Full-width:** `textarea`, `longtext`, `list`, `radio`, `checkbox`, `multi_select`, `heading`, `info`, `address`, `file`, `signature`, and `repeater` fields always take the full width and break any two-column pairing.
 - **Not rendered:** `hidden` fields are completely invisible in the layout.
 
 Control layout by ordering fields intentionally. Two `text` fields in a row pair up. A `text` followed by a `textarea` does not.
