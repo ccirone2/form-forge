@@ -2076,3 +2076,142 @@ def test_preset_mutual_exclusion_with_profile(index_html: str) -> None:
     assert "hidePresetDropdown()" in toggle_profile
     toggle_preset = _extract_func(index_html, "showPresetDropdown")
     assert "hideProfileDropdown()" in toggle_preset
+
+
+# --- Bundle Export/Import Feature (#163) ---
+
+
+def test_copy_package_button_in_schema_toolbar(index_html: str) -> None:
+    """Copy Package button exists in Schema toolbar."""
+    # Find the schema dev-toolbar-right section
+    match = re.search(
+        r'onclick="devNewSchema\(\)".*?</div>\s*</div>',
+        index_html,
+        re.DOTALL,
+    )
+    assert match, "Schema toolbar not found"
+    toolbar = match.group(0)
+    assert "Copy Package" in toolbar
+    assert "bundleExport()" in toolbar
+
+
+def test_copy_package_button_in_template_toolbar(index_html: str) -> None:
+    """Copy Package button exists in Template toolbar."""
+    match = re.search(
+        r'onclick="devNewTemplate\(\)".*?Preview DOCX',
+        index_html,
+        re.DOTALL,
+    )
+    assert match, "Template toolbar not found"
+    toolbar = match.group(0)
+    assert "Copy Package" in toolbar
+    assert "bundleExport()" in toolbar
+
+
+def test_import_package_button_in_schema_toolbar(index_html: str) -> None:
+    """Import Package button exists in Schema toolbar."""
+    match = re.search(
+        r'onclick="devNewSchema\(\)".*?</div>\s*</div>',
+        index_html,
+        re.DOTALL,
+    )
+    assert match
+    assert "Import Package" in match.group(0)
+    assert "showBundleImportModal()" in match.group(0)
+
+
+def test_import_package_button_in_template_toolbar(index_html: str) -> None:
+    """Import Package button exists in Template toolbar."""
+    match = re.search(
+        r'onclick="devNewTemplate\(\)".*?Preview DOCX',
+        index_html,
+        re.DOTALL,
+    )
+    assert match
+    assert "Import Package" in match.group(0)
+    assert "showBundleImportModal()" in match.group(0)
+
+
+def test_bundle_import_modal_exists(index_html: str) -> None:
+    """Bundle import modal exists with textarea and drop zone."""
+    assert 'id="bundleImportModal"' in index_html
+    assert 'id="bundleImportTextarea"' in index_html
+    assert 'id="bundleDropZone"' in index_html
+
+
+def test_bundle_import_modal_has_import_and_cancel(index_html: str) -> None:
+    """Modal has Import and Cancel buttons."""
+    assert 'id="btnBundleImport"' in index_html
+    assert "bundleImportFromModal()" in index_html
+    assert "hideBundleImportModal()" in index_html
+
+
+def test_bundle_import_status_element_exists(index_html: str) -> None:
+    """Preview/status line element exists."""
+    assert 'id="bundleImportStatus"' in index_html
+    assert 'class="bundle-import-status"' in index_html
+
+
+def test_bundle_import_modal_css(index_html: str) -> None:
+    """Bundle import modal CSS exists."""
+    assert ".bundle-import-modal" in index_html
+    assert ".bundle-import-modal.open" in index_html
+    assert ".bundle-drop-zone" in index_html
+    assert ".bundle-import-status.error" in index_html
+    assert ".bundle-import-status.success" in index_html
+
+
+def test_bundle_import_modal_is_dialog(index_html: str) -> None:
+    """Bundle import modal has proper ARIA dialog attributes."""
+    assert 'aria-labelledby="bundleImportTitle"' in index_html
+    assert 'aria-modal="true"' in index_html
+
+
+def test_bundle_export_functions_exist(index_html: str) -> None:
+    """Export functions are defined."""
+    assert "function bundleExport()" in index_html
+    assert "function bundleDownload(" in index_html
+    assert "function bundleShowCopyToast(" in index_html
+
+
+def test_bundle_import_functions_exist(index_html: str) -> None:
+    """Import functions are defined."""
+    assert "function showBundleImportModal()" in index_html
+    assert "function hideBundleImportModal()" in index_html
+    assert "function bundleParsePreview(" in index_html
+    assert "function bundleImport(" in index_html
+    assert "function bundleImportFromModal()" in index_html
+
+
+def test_bundle_export_constructs_package(index_html: str) -> None:
+    """bundleExport constructs package with formforge_package metadata."""
+    body = _extract_func(index_html, "bundleExport")
+    assert "formforge_package" in body
+    assert "version" in body
+    assert "devSchemaText" in body
+    assert "devTemplateText" in body
+
+
+def test_bundle_import_smart_detection(index_html: str) -> None:
+    """bundleParsePreview detects packages, bare schemas, bare templates, and form data."""
+    body = _extract_func(index_html, "bundleParsePreview")
+    assert "formforge_package" in body
+    assert "sections" in body
+    assert "generate_docx" in body
+    assert "_formforge" in body
+
+
+def test_bundle_import_updates_editors(index_html: str) -> None:
+    """bundleImport updates editor globals and calls updateCode."""
+    body = _extract_func(index_html, "bundleImport")
+    assert "devSchemaText" in body
+    assert "devTemplateText" in body
+    assert "devSampleDataText" in body
+    assert "schemaJar" in body
+    assert "devUpdateSchemaPreview" in body
+    assert "devSaveEditorState" in body
+
+
+def test_bundle_toast_has_action_css(index_html: str) -> None:
+    """Toast action link CSS exists for download action."""
+    assert ".toast-action" in index_html
