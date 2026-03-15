@@ -14,6 +14,27 @@
 
 ## Log
 
+### 2026-03-15 — Connection UX Moved to Dialog
+
+Moved the GitHub Repository and Local Folder connection cards from the Forms tab into a modal dialog triggered by clicking the header status badge. The Forms tab now shows a clean empty state when not connected and goes straight to the form picker when connected.
+
+- Status badge (`#statusBadge`) changed from `<div>` to `<button>` with chevron indicator
+- New `connect-dialog-overlay` with two-tab switcher (GitHub / Local Folder)
+- Existing connection HTML moved (not duplicated) — all element IDs preserved
+- Empty state card (`#setupEmptyState`) with "Connect a Source" CTA replaces the source-grid
+- Dialog auto-closes on successful connection via `hideConnectDialog()`
+- `devGhDisconnect()` restores the empty state
+- Escape key and backdrop click dismiss the dialog
+- Mobile responsive: bottom-sheet layout on narrow viewports
+- Updated 2 existing tests, added 6 new tests for dialog, tabs, empty state, and status badge
+
+**Decisions:**
+- Moved HTML rather than duplicating to avoid maintaining two copies of input elements
+- Kept `source-grid` and `source-card` CSS classes for potential future reuse
+- Dialog is always available via status badge regardless of current connection state
+
+---
+
 ### 2026-03-15 — Unified Autofill Dropdown (#172)
 **Issues:** #172, #173, #174, #175, #176
 

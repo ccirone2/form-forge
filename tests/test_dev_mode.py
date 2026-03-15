@@ -121,9 +121,10 @@ def test_no_dev_mode_variable(index_html: str) -> None:
     assert "let devMode" not in index_html
 
 
-def test_source_grid_exists(index_html: str) -> None:
-    """Source grid CSS class should be defined."""
-    assert ".source-grid" in index_html
+def test_connect_dialog_exists(index_html: str) -> None:
+    """Connection dialog overlay and panel should exist."""
+    assert 'id="connectDialogOverlay"' in index_html
+    assert "connect-dialog" in index_html
 
 
 def test_connect_local_folder_exists(index_html: str) -> None:
@@ -1568,14 +1569,14 @@ def test_profile_empty_state_hint(index_html: str) -> None:
     assert "Save a profile to autofill common fields" in index_html
 
 
-def test_picker_after_source_grid(index_html: str) -> None:
-    """Picker section should appear after the source grid in setup view."""
+def test_picker_after_empty_state(index_html: str) -> None:
+    """Picker section should appear after the empty state in setup view."""
     setup_start = index_html.index('id="view-setup"')
     setup_end = index_html.index("<main", setup_start + 1)
     setup_html = index_html[setup_start:setup_end]
-    grid_pos = setup_html.index("source-grid")
+    empty_pos = setup_html.index('id="setupEmptyState"')
     picker_pos = setup_html.index('id="pickerSection"')
-    assert picker_pos > grid_pos, "Picker section should appear after source grid"
+    assert picker_pos > empty_pos, "Picker section should appear after empty state"
 
 
 def test_local_files_collapsed_by_default(index_html: str) -> None:
@@ -2276,3 +2277,54 @@ def test_bundle_import_updates_editors(index_html: str) -> None:
 def test_bundle_toast_has_action_css(index_html: str) -> None:
     """Toast action link CSS exists for download action."""
     assert ".toast-action" in index_html
+
+
+# ============================================================
+#  Connection Dialog UX
+# ============================================================
+
+
+def test_connect_dialog_has_tabs(index_html: str) -> None:
+    """Connect dialog should have GitHub and Local Folder tabs."""
+    assert 'id="connectTabBtnGithub"' in index_html
+    assert 'id="connectTabBtnLocal"' in index_html
+    assert 'id="connectTabGithub"' in index_html
+    assert 'id="connectTabLocal"' in index_html
+
+
+def test_status_badge_is_button(index_html: str) -> None:
+    """Status badge should be a clickable button element."""
+    start = index_html.index('id="statusBadge"')
+    tag_start = index_html.rfind("<", 0, start)
+    tag = index_html[tag_start : start + 20]
+    assert "<button" in tag, "Status badge should be a <button> element"
+    assert "showConnectDialog()" in index_html
+
+
+def test_empty_state_exists(index_html: str) -> None:
+    """Setup view should have an empty state with Connect a Source button."""
+    assert 'id="setupEmptyState"' in index_html
+    setup_start = index_html.index('id="view-setup"')
+    setup_end = index_html.index("<main", setup_start + 1)
+    setup_html = index_html[setup_start:setup_end]
+    assert "setupEmptyState" in setup_html
+    assert "Connect a Source" in setup_html
+
+
+def test_connect_dialog_functions_exist(index_html: str) -> None:
+    """showConnectDialog, hideConnectDialog, switchConnectTab should exist."""
+    assert "function showConnectDialog()" in index_html
+    assert "function hideConnectDialog()" in index_html
+    assert "function switchConnectTab(" in index_html
+
+
+def test_connect_repo_hides_dialog(index_html: str) -> None:
+    """connectRepo should hide the connect dialog on success."""
+    body = _extract_func(index_html, "connectRepo")
+    assert "hideConnectDialog()" in body
+
+
+def test_disconnect_shows_empty_state(index_html: str) -> None:
+    """devGhDisconnect should show the empty state after disconnecting."""
+    body = _extract_func(index_html, "devGhDisconnect")
+    assert "setupEmptyState" in body

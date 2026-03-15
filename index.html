@@ -224,6 +224,64 @@
   .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
   .status-badge.loading .status-dot { animation: pulse 1.2s ease-in-out infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .status-badge { cursor: pointer; }
+  .status-badge:hover { border-color: var(--text-muted); }
+  .status-badge.ready:hover { border-color: var(--success); }
+  .status-chevron { font-size: var(--text-2xs); margin-left: 2px; opacity: 0.6; }
+
+  /* ===== 3b. CONNECT DIALOG ===== */
+  .connect-dialog-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.5); display: none;
+    align-items: flex-start; justify-content: center;
+    padding-top: 80px;
+  }
+  .connect-dialog-overlay.visible { display: flex; }
+  .connect-dialog {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px;
+    width: 480px; max-width: 90vw; max-height: 80vh; overflow-y: auto;
+    box-shadow: var(--shadow-xl); animation: dialogIn 0.2s ease;
+  }
+  @keyframes dialogIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  .connect-dialog-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+  }
+  .connect-dialog-header h3 { font-size: var(--text-lg); font-weight: 600; margin: 0; }
+  .connect-dialog-close {
+    background: none; border: none; color: var(--text-muted); cursor: pointer;
+    font-size: var(--text-xl); line-height: 1; padding: 4px 8px; border-radius: var(--radius-sm);
+    transition: color var(--transition-fast);
+  }
+  .connect-dialog-close:hover { color: var(--text); }
+  .connect-tabs {
+    display: flex; gap: 4px; margin-bottom: 20px;
+    background: var(--surface-2); border-radius: var(--radius-md); padding: 3px;
+  }
+  .connect-tab {
+    flex: 1; padding: 8px 12px; text-align: center; border: none;
+    background: transparent; color: var(--text-muted); font-family: var(--font-sans);
+    font-size: var(--text-sm); font-weight: 500; border-radius: var(--radius-sm);
+    cursor: pointer; transition: all var(--transition-fast);
+  }
+  .connect-tab:hover { color: var(--text); }
+  .connect-tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+  .connect-tab-content { display: none; }
+  .connect-tab-content.active { display: block; }
+  .connect-dialog-footer { margin-top: 20px; text-align: right; }
+  .connect-dialog-footer .btn-secondary { padding: 8px 16px; }
+  @media (max-width: 600px) {
+    .connect-dialog-overlay { align-items: flex-end; padding-top: 0; }
+    .connect-dialog { width: 100%; max-width: 100%; border-radius: var(--radius) var(--radius) 0 0; }
+  }
+
+  /* ===== 3c. EMPTY STATE ===== */
+  .setup-empty-state {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 48px 28px; text-align: center; margin-bottom: 24px;
+  }
+  .setup-empty-state p { color: var(--text-muted); font-size: var(--text-base); margin-bottom: 20px; line-height: 1.6; }
+  .setup-empty-state .btn-connect { margin: 0 auto; }
 
   /* ===== 4. VIEWS & LAYOUT ===== */
   body {
@@ -2099,12 +2157,106 @@
 <header class="app-header">
   <h1><button type="button" class="h1-home-btn" onclick="showTab('forms')"><span>&#9632;</span> FormForge</button></h1>
   <div class="header-right">
-    <div class="status-badge" id="statusBadge">
+    <button type="button" class="status-badge" id="statusBadge" onclick="showConnectDialog()" title="Connection settings">
       <div class="status-dot" aria-hidden="true"></div>
       <span id="statusText">not connected</span>
-    </div>
+      <span class="status-chevron" aria-hidden="true">&#9662;</span>
+    </button>
   </div>
 </header>
+
+<!-- ==================== CONNECT DIALOG ==================== -->
+<div class="connect-dialog-overlay" id="connectDialogOverlay" onclick="if(event.target===this)hideConnectDialog()">
+  <div class="connect-dialog" role="dialog" aria-label="Connect a source">
+    <div class="connect-dialog-header">
+      <h3>Connect a Source</h3>
+      <button type="button" class="connect-dialog-close" onclick="hideConnectDialog()" aria-label="Close">&times;</button>
+    </div>
+    <div class="connect-tabs">
+      <button type="button" class="connect-tab active" id="connectTabBtnGithub" onclick="switchConnectTab('github')">
+        <svg width="14" height="14" class="icon-inline"><use href="#icon-github"/></svg>
+        GitHub
+      </button>
+      <button type="button" class="connect-tab" id="connectTabBtnLocal" onclick="switchConnectTab('local')">
+        <svg width="14" height="14" class="icon-inline"><use href="#icon-folder"/></svg>
+        Local Folder
+      </button>
+    </div>
+    <!-- GitHub tab -->
+    <div class="connect-tab-content active" id="connectTabGithub">
+      <p class="config-card-description" style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:16px;line-height:1.5">Connect to a repo with <code style="font-family:var(--font-mono);font-size:var(--text-xs);background:var(--surface-2);padding:2px 5px;border-radius:var(--radius-xs)">schemas/</code> and <code style="font-family:var(--font-mono);font-size:var(--text-xs);background:var(--surface-2);padding:2px 5px;border-radius:var(--radius-xs)">templates/</code> directories.</p>
+      <div class="config-row">
+        <div class="field-grow">
+          <label>Repository</label>
+          <input type="text" id="repoInput" placeholder="myorg/form-templates" spellcheck="false" autocomplete="off">
+        </div>
+        <button type="button" class="btn-connect" id="connectBtn" onclick="connectRepo()">
+          <svg width="16" height="16"><use href="#icon-github"/></svg>
+          Connect
+        </button>
+      </div>
+      <div class="repo-status" id="repoStatus"></div>
+      <div class="token-toggle" onclick="toggleToken()">&#9656; Advanced options (branch, access token)</div>
+      <div class="token-row hidden" id="tokenRow">
+        <div class="config-row">
+          <div class="field-grow branch-input-wrapper">
+            <label>branch (optional)</label>
+            <input type="text" id="branchInput" placeholder="main" spellcheck="false">
+          </div>
+        </div>
+        <div class="config-row" style="margin-top:8px">
+          <div class="field-grow">
+            <label>personal access token</label>
+            <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" spellcheck="false" autocomplete="off">
+          </div>
+        </div>
+        <div class="token-hint">Token is only used in-browser and never stored or transmitted elsewhere. Needs <code>repo</code> scope for private repos.</div>
+      </div>
+    </div>
+    <!-- Local Folder tab -->
+    <div class="connect-tab-content" id="connectTabLocal">
+      <p class="config-card-description" style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:16px;line-height:1.5">Open a folder with <code style="font-family:var(--font-mono);font-size:var(--text-xs);background:var(--surface-2);padding:2px 5px;border-radius:var(--radius-xs)">schemas/</code> and <code style="font-family:var(--font-mono);font-size:var(--text-xs);background:var(--surface-2);padding:2px 5px;border-radius:var(--radius-xs)">templates/</code> directories.</p>
+      <button type="button" class="btn-connect" id="btnOpenFolderSetup" onclick="connectLocalFolder()" style="margin-bottom:12px">
+        <svg width="16" height="16"><use href="#icon-folder"/></svg>
+        Open Folder
+      </button>
+      <div class="local-folder-status" id="localFolderStatus"></div>
+      <div class="token-toggle" onclick="toggleLocalCard()">&#9656; Or load individual files</div>
+      <div class="local-card-body" id="localCardBody" style="display:none">
+        <div class="local-upload-row">
+          <div class="drop-zone" id="schemaDropZone" tabindex="0">
+            <input type="file" id="localSchemaFile" accept=".json" hidden>
+            <div class="drop-zone-icon">
+              <svg width="28" height="28"><use href="#icon-file-upload"/></svg>
+            </div>
+            <div class="drop-zone-label">Form Definition</div>
+            <div class="drop-zone-hint">Drop .json or click</div>
+            <div class="drop-zone-file" id="schemaFileName"></div>
+          </div>
+          <div class="drop-zone" id="templateDropZone" tabindex="0">
+            <input type="file" id="localTemplateFile" accept=".py" hidden>
+            <div class="drop-zone-icon">
+              <svg width="28" height="28"><use href="#icon-file-code"/></svg>
+            </div>
+            <div class="drop-zone-label">Document Template</div>
+            <div class="drop-zone-hint">Drop .py or click</div>
+            <div class="drop-zone-file" id="templateFileName"></div>
+          </div>
+        </div>
+        <div class="local-launch-row">
+          <button type="button" class="btn-connect" id="localLaunchBtn" disabled onclick="launchLocal()">
+            <svg width="16" height="16"><use href="#icon-arrow-right"/></svg>
+            Open Form
+          </button>
+          <span class="local-status" id="localStatus"></span>
+        </div>
+      </div>
+    </div>
+    <div class="connect-dialog-footer">
+      <button type="button" class="btn-secondary" onclick="hideConnectDialog()">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <!-- Primary Navigation -->
 <nav class="dev-nav" id="mainNav" role="tablist" aria-label="Main navigation">
@@ -2157,88 +2309,13 @@
       </div>
     </div>
 
-    <!-- ===== SOURCE CARDS (equal weight) ===== -->
-    <div class="source-grid">
-      <!-- GitHub card -->
-      <div class="config-card source-card">
-        <h3>
-          <svg width="16" height="16" class="icon-inline"><use href="#icon-github"/></svg>
-          GitHub Repository
-        </h3>
-        <p class="config-card-description">Connect to a repo with <code>schemas/</code> and <code>templates/</code> directories. Shared, version-controlled.</p>
-        <div class="config-row">
-          <div class="field-grow">
-            <label>Repository</label>
-            <input type="text" id="repoInput" placeholder="myorg/form-templates" spellcheck="false" autocomplete="off">
-          </div>
-          <button type="button" class="btn-connect" id="connectBtn" onclick="connectRepo()">
-            <svg width="16" height="16"><use href="#icon-github"/></svg>
-            Connect
-          </button>
-        </div>
-        <div class="repo-status" id="repoStatus"></div>
-        <div class="token-toggle" onclick="toggleToken()">&#9656; Advanced options (branch, access token)</div>
-        <div class="token-row hidden" id="tokenRow">
-          <div class="config-row">
-            <div class="field-grow branch-input-wrapper">
-              <label>branch (optional)</label>
-              <input type="text" id="branchInput" placeholder="main" spellcheck="false">
-            </div>
-          </div>
-          <div class="config-row" style="margin-top:8px">
-            <div class="field-grow">
-              <label>personal access token</label>
-              <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" spellcheck="false" autocomplete="off">
-            </div>
-          </div>
-          <div class="token-hint">Token is only used in-browser and never stored or transmitted elsewhere. Needs <code>repo</code> scope for private repos.</div>
-        </div>
-      </div>
-
-      <!-- Local Folder card -->
-      <div class="config-card source-card" id="localCard">
-        <h3>
-          <svg width="16" height="16" class="icon-inline"><use href="#icon-folder"/></svg>
-          Local Folder
-        </h3>
-        <p class="config-card-description">Open a folder with <code>schemas/</code> and <code>templates/</code> directories. Private, works offline.</p>
-        <button type="button" class="btn-connect" id="btnOpenFolderSetup" onclick="connectLocalFolder()" style="margin-bottom:12px">
-          <svg width="16" height="16"><use href="#icon-folder"/></svg>
-          Open Folder
-        </button>
-        <div class="local-folder-status" id="localFolderStatus"></div>
-
-        <div class="token-toggle" onclick="toggleLocalCard()">&#9656; Or load individual files</div>
-        <div class="local-card-body" id="localCardBody" style="display:none">
-          <div class="local-upload-row">
-            <div class="drop-zone" id="schemaDropZone" tabindex="0">
-              <input type="file" id="localSchemaFile" accept=".json" hidden>
-              <div class="drop-zone-icon">
-                <svg width="28" height="28"><use href="#icon-file-upload"/></svg>
-              </div>
-              <div class="drop-zone-label">Form Definition</div>
-              <div class="drop-zone-hint">Drop .json or click</div>
-              <div class="drop-zone-file" id="schemaFileName"></div>
-            </div>
-            <div class="drop-zone" id="templateDropZone" tabindex="0">
-              <input type="file" id="localTemplateFile" accept=".py" hidden>
-              <div class="drop-zone-icon">
-                <svg width="28" height="28"><use href="#icon-file-code"/></svg>
-              </div>
-              <div class="drop-zone-label">Document Template</div>
-              <div class="drop-zone-hint">Drop .py or click</div>
-              <div class="drop-zone-file" id="templateFileName"></div>
-            </div>
-          </div>
-          <div class="local-launch-row">
-            <button type="button" class="btn-connect" id="localLaunchBtn" disabled onclick="launchLocal()">
-              <svg width="16" height="16"><use href="#icon-arrow-right"/></svg>
-              Open Form
-            </button>
-            <span class="local-status" id="localStatus"></span>
-          </div>
-        </div>
-      </div>
+    <!-- ===== EMPTY STATE (shown when not connected) ===== -->
+    <div class="setup-empty-state" id="setupEmptyState">
+      <p>No source connected.<br>Connect a GitHub repo or local folder to browse available forms.</p>
+      <button type="button" class="btn-connect" onclick="showConnectDialog()">
+        <svg width="16" height="16"><use href="#icon-link"/></svg>
+        Connect a Source
+      </button>
     </div>
 
     <!-- Picker appears after connecting any source -->
@@ -3589,6 +3666,8 @@ async function connectRepo() {
     devGhFetchBranches();
     updateGitToolbar();
 
+    hideConnectDialog();
+    document.getElementById('setupEmptyState').style.display = 'none';
     renderPicker();
     document.getElementById('pickerSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -3608,6 +3687,7 @@ function renderPicker() {
   const section = document.getElementById('pickerSection');
   const grid = document.getElementById('pickerGrid');
   section.style.display = 'block';
+  document.getElementById('setupEmptyState').style.display = 'none';
   grid.innerHTML = '';
   selectedSchemaIdx = -1;
   document.getElementById('launchBtn').disabled = true;
@@ -9482,6 +9562,8 @@ async function connectLocalFolder() {
     document.getElementById('statusBadge').className = 'status-badge ready';
     document.getElementById('statusText').textContent = `local: ${workspaceHandle.name}`;
 
+    hideConnectDialog();
+    document.getElementById('setupEmptyState').style.display = 'none';
     if (repoSchemas.length > 0) {
       renderPicker();
       document.getElementById('pickerSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -10136,6 +10218,7 @@ function devGhDisconnect() {
   document.getElementById('statusBadge').className = 'status-badge';
   document.getElementById('statusText').textContent = 'not connected';
   document.getElementById('pickerSection').style.display = 'none';
+  document.getElementById('setupEmptyState').style.display = '';
 
   // Reset UI
   devGhHideCommitPanel();
@@ -10143,6 +10226,30 @@ function devGhDisconnect() {
   updateGitToolbar();
 
   showToast('Disconnected from GitHub repo');
+}
+
+// ============================================================
+//  CONNECT DIALOG
+// ============================================================
+function showConnectDialog() {
+  document.getElementById('connectDialogOverlay').classList.add('visible');
+  document.addEventListener('keydown', connectDialogKeyHandler);
+}
+
+function hideConnectDialog() {
+  document.getElementById('connectDialogOverlay').classList.remove('visible');
+  document.removeEventListener('keydown', connectDialogKeyHandler);
+}
+
+function connectDialogKeyHandler(e) {
+  if (e.key === 'Escape') { hideConnectDialog(); e.stopPropagation(); }
+}
+
+function switchConnectTab(tab) {
+  document.getElementById('connectTabBtnGithub').classList.toggle('active', tab === 'github');
+  document.getElementById('connectTabBtnLocal').classList.toggle('active', tab === 'local');
+  document.getElementById('connectTabGithub').classList.toggle('active', tab === 'github');
+  document.getElementById('connectTabLocal').classList.toggle('active', tab === 'local');
 }
 
 // ============================================================
