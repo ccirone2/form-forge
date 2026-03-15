@@ -14,6 +14,22 @@
 
 ## Log
 
+### 2026-03-15 — Clipboard Paste for Form Data (#161)
+**Issues:** #161
+
+Added "Paste Data" button and modal to the form view, enabling users to paste JSON data directly into forms without the save-file-then-upload round-trip.
+
+- Added clipboard SVG icon to sprite sheet
+- Added "Paste Data" button in `submit-area-secondary` (between Load Data and Load Sample)
+- Built paste modal following `gh-connect-modal` pattern with monospace textarea, live status line, Apply/Cancel buttons
+- Implemented 4 JS functions: `showPasteDataModal()`, `hidePasteDataModal()`, `pasteDataPreview()`, `applyPastedData()`
+- Live field match counter shows "X of Y fields matched" as user types/pastes
+- Handles invalid JSON, array-instead-of-object, schema mismatch (warning), and `_formforge` metadata stripping
+- Escape key and backdrop click close modal
+- Added 11 new tests covering button placement, modal structure, ARIA attributes, CSS classes, and function existence
+
+---
+
 ### 2026-03-15 — Created Issues for Three New Features (#161, #162, #163)
 **Issues:** #161, #162, #163 (+ sub-issues #164–#168)
 

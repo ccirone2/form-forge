@@ -1661,6 +1661,31 @@
   }
   .gh-connect-warning svg { flex-shrink: 0; margin-top: 1px; color: var(--accent); }
 
+  /* Paste Data Modal */
+  .paste-data-modal {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 2000; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  }
+  .paste-data-modal.open { display: flex; }
+  .paste-data-modal textarea {
+    width: 100%; padding: 10px 12px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    color: var(--text); font-family: var(--font-mono); font-size: var(--text-sm);
+    outline: none; transition: border-color var(--transition-base);
+    box-sizing: border-box; resize: vertical; line-height: 1.5;
+  }
+  .paste-data-modal textarea:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+  .paste-data-status {
+    font-family: var(--font-mono); font-size: var(--text-xs);
+    color: var(--text-muted); min-height: 18px; margin-top: 4px;
+  }
+  .paste-data-status.error { color: var(--error); }
+  .paste-data-status.success { color: var(--success); }
+  .paste-data-status.warning { color: var(--warning); }
+
   /* Git toolbar (below nav, visible when GitHub connected) */
   .gh-toolbar {
     display: none; align-items: center; gap: 8px; padding: 4px 24px;
@@ -1860,6 +1885,9 @@
   <!-- Folder open: used in workspace -->
   <symbol id="icon-folder-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
     <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><path d="M2 10h20"/>
+  </symbol>
+  <symbol id="icon-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
   </symbol>
 </svg>
 
@@ -2095,6 +2123,10 @@
           Load Data
         </button>
         <input type="file" accept=".json" id="loadDataInput" class="hidden-input" onchange="handleLoadDataFile(event)">
+        <button type="button" class="btn-secondary" onclick="showPasteDataModal()">
+          <svg width="14" height="14"><use href="#icon-clipboard"/></svg>
+          Paste Data
+        </button>
         <button type="button" class="btn-secondary" onclick="loadSampleData()">
           <svg width="14" height="14"><use href="#icon-file-text"/></svg>
           Load Sample
@@ -2345,6 +2377,25 @@
       <button type="button" class="btn-primary btn-sm" id="btnGhConnect" onclick="devGhConnect()">
         <svg width="12" height="12"><use href="#icon-github"/></svg>
         Connect
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Paste Data Modal -->
+<div class="paste-data-modal" id="pasteDataModal" role="dialog" aria-labelledby="pasteDataTitle" aria-modal="true">
+  <div class="gh-connect-panel" style="max-width:520px">
+    <h3 id="pasteDataTitle">Paste Form Data</h3>
+    <p class="gh-connect-subtitle">Paste JSON data to populate the current form</p>
+    <div class="gh-connect-field">
+      <label for="pasteDataTextarea">JSON Data</label>
+      <textarea id="pasteDataTextarea" rows="12" placeholder='{ "field_id": "value", ... }' spellcheck="false"></textarea>
+    </div>
+    <div class="paste-data-status" id="pasteDataStatus"></div>
+    <div class="gh-connect-actions">
+      <button type="button" class="btn-secondary btn-sm" onclick="hidePasteDataModal()">Cancel</button>
+      <button type="button" class="btn-primary btn-sm" id="btnPasteApply" onclick="applyPastedData()" disabled>
+        Apply
       </button>
     </div>
   </div>
@@ -5050,6 +5101,150 @@ function handleLoadDataFile(event) {
   };
 
   reader.readAsText(file);
+}
+
+// ============================================================
+//  PASTE DATA MODAL
+// ============================================================
+
+function showPasteDataModal() {
+  if (!currentSchema) return;
+  const modal = document.getElementById('pasteDataModal');
+  const textarea = document.getElementById('pasteDataTextarea');
+  const status = document.getElementById('pasteDataStatus');
+  const applyBtn = document.getElementById('btnPasteApply');
+  textarea.value = '';
+  status.textContent = '';
+  status.className = 'paste-data-status';
+  applyBtn.disabled = true;
+  modal.classList.add('open');
+  textarea.focus();
+}
+
+function hidePasteDataModal() {
+  document.getElementById('pasteDataModal').classList.remove('open');
+}
+
+function pasteDataPreview(text) {
+  const status = document.getElementById('pasteDataStatus');
+  const applyBtn = document.getElementById('btnPasteApply');
+
+  if (!text.trim()) {
+    status.textContent = '';
+    status.className = 'paste-data-status';
+    applyBtn.disabled = true;
+    return;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (err) {
+    status.textContent = 'Invalid JSON — check syntax';
+    status.className = 'paste-data-status error';
+    applyBtn.disabled = true;
+    return;
+  }
+
+  if (Array.isArray(parsed)) {
+    status.textContent = 'Expected a JSON object, not an array';
+    status.className = 'paste-data-status error';
+    applyBtn.disabled = true;
+    return;
+  }
+
+  if (typeof parsed !== 'object' || parsed === null) {
+    status.textContent = 'Expected a JSON object';
+    status.className = 'paste-data-status error';
+    applyBtn.disabled = true;
+    return;
+  }
+
+  // Strip _formforge metadata for field matching
+  const data = { ...parsed };
+  delete data._formforge;
+
+  // Count matching fields (top-level IDs only — repeater sub-fields
+  // are stored as a JSON string under the parent repeater's ID)
+  const schemaFields = new Set();
+  if (currentSchema && currentSchema.sections) {
+    for (const section of currentSchema.sections) {
+      if (section.fields) {
+        for (const field of section.fields) {
+          schemaFields.add(field.id);
+        }
+      }
+    }
+  }
+
+  const dataKeys = Object.keys(data);
+  const matched = dataKeys.filter(k => schemaFields.has(k)).length;
+
+  if (matched === 0 && dataKeys.length > 0) {
+    status.textContent = `0 of ${schemaFields.size} fields matched — possible schema mismatch`;
+    status.className = 'paste-data-status warning';
+  } else {
+    status.textContent = `${matched} of ${schemaFields.size} fields matched`;
+    status.className = 'paste-data-status success';
+  }
+
+  applyBtn.disabled = false;
+}
+
+function applyPastedData() {
+  const textarea = document.getElementById('pasteDataTextarea');
+  const text = textarea.value.trim();
+  if (!text) return;
+
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (err) {
+    showToast('Invalid JSON — check syntax.', 'error');
+    return;
+  }
+
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    showToast('Expected a JSON object.', 'error');
+    return;
+  }
+
+  const meta = parsed._formforge;
+  delete parsed._formforge;
+
+  const schemaMismatch = meta && meta.schemaTitle && currentSchema && meta.schemaTitle !== currentSchema.title;
+  if (schemaMismatch) {
+    log(
+      `Paste data: schema mismatch — data schema "${meta.schemaTitle}", current schema "${currentSchema.title}"`,
+      'warning'
+    );
+  }
+
+  // Count matched fields for toast
+  const schemaFields = new Set();
+  if (currentSchema && currentSchema.sections) {
+    for (const section of currentSchema.sections) {
+      if (section.fields) {
+        for (const field of section.fields) {
+          schemaFields.add(field.id);
+        }
+      }
+    }
+  }
+  const matched = Object.keys(parsed).filter(k => schemaFields.has(k)).length;
+
+  setTimeout(() => populateForm(parsed), 0);
+  hidePasteDataModal();
+
+  if (schemaMismatch) {
+    showToast(
+      `Schema mismatch: data is for "${meta.schemaTitle}" — ${matched} field${matched !== 1 ? 's' : ''} populated`,
+      'warning'
+    );
+  } else {
+    showToast(`Form data pasted — ${matched} field${matched !== 1 ? 's' : ''} populated`);
+  }
+  log(`Paste data: populated ${matched} fields from clipboard`);
 }
 
 // ============================================================
@@ -8872,6 +9067,21 @@ document.addEventListener('DOMContentLoaded', () => {
     ghModal.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') devGhCloseConnectModal();
     });
+  }
+
+  // Paste Data modal — close on click outside or Escape, live preview on input
+  const pasteModal = document.getElementById('pasteDataModal');
+  if (pasteModal) {
+    pasteModal.addEventListener('click', (e) => {
+      if (e.target === pasteModal) hidePasteDataModal();
+    });
+    pasteModal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hidePasteDataModal();
+    });
+    const pasteTextarea = document.getElementById('pasteDataTextarea');
+    if (pasteTextarea) {
+      pasteTextarea.addEventListener('input', () => pasteDataPreview(pasteTextarea.value));
+    }
   }
 });
 </script>
