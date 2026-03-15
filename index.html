@@ -3721,7 +3721,6 @@ async function connectRepo() {
     loadDocs();
 
     hideConnectDialog();
-    document.getElementById('setupEmptyState').style.display = 'none';
     renderPicker();
     document.getElementById('pickerSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
@@ -9644,7 +9643,6 @@ async function connectLocalFolder() {
     document.getElementById('statusText').textContent = `local: ${workspaceHandle.name}`;
 
     hideConnectDialog();
-    document.getElementById('setupEmptyState').style.display = 'none';
     if (repoSchemas.length > 0) {
       renderPicker();
       document.getElementById('pickerSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
