@@ -14,6 +14,26 @@
 
 ## Log
 
+### 2026-03-15 — Unified Autofill Dropdown (#172)
+**Issues:** #172, #173, #174, #175, #176
+
+Consolidated Profiles, Presets, and data-loading actions (Load Sample, Paste Data, Load from File) into a single unified **Autofill** dropdown button in the form nav toolbar.
+
+- Replaced separate `[Profiles]` and `[Presets]` buttons with single `[Autofill ▾]` button
+- Dropdown has three sections: Profiles, Presets, and Actions (Load Sample Data, Paste Data, Load from File)
+- Combined badge shows total count of profiles + presets
+- Profiles now have an explicit `_profileName` field — user-editable in the profile editor, with auto-detected name as placeholder/default
+- Migration: existing profiles without `_profileName` get it auto-populated from field values on first load
+- "Save current form as profile" now opens the editor (instead of quick-saving) so users can name their profile
+- Moved Load Sample, Paste Data, and Load from File from bottom submit toolbar into dropdown action items
+- Bottom toolbar simplified from 5 buttons to 2: `[Save Data]` `[Reset]`
+- Added shared `_positionDropdown()` helper to reduce duplicate positioning logic
+- Field-level profile indicators remain unchanged (they open the profile dropdown independently)
+- Preset editor now renders inside the shared `profileDropdown` element via `_showPresetEditorInDropdown()`
+- Updated 6 existing tests and added 9 new tests for the unified UI
+
+---
+
 ### 2026-03-15 — Bundle Export/Import (#163)
 **Issues:** #163, #167, #168
 

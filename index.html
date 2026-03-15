@@ -816,21 +816,56 @@
   .skip-link:focus { top: 0; }
 
   /* ===== USER PROFILE ===== */
-  .profile-btn {
+  /* ===== AUTOFILL BUTTON ===== */
+  .autofill-btn {
     margin-left: auto; display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 12px; background: var(--surface-2); border: 1px solid var(--border);
     border-radius: var(--radius-md); color: var(--text-muted); font-family: var(--font-sans);
     font-size: var(--text-sm); font-weight: 500; cursor: pointer; transition: all 0.2s;
     position: relative;
   }
-  .profile-btn:hover { border-color: var(--text-muted); color: var(--text); }
-  .profile-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .profile-btn svg { flex-shrink: 0; }
-  .profile-btn .profile-badge {
+  .autofill-btn:hover { border-color: var(--text-muted); color: var(--text); }
+  .autofill-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .autofill-btn svg { flex-shrink: 0; }
+  .autofill-badge {
     background: var(--accent); color: var(--text-on-accent); font-size: var(--text-2xs); font-weight: 700;
     min-width: 16px; height: 16px; border-radius: var(--radius-md); display: inline-flex;
     align-items: center; justify-content: center; padding: 0 4px;
   }
+
+  /* ===== AUTOFILL DROPDOWN ===== */
+  .autofill-dropdown {
+    position: absolute; z-index: 150;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow-lg);
+    min-width: 300px; max-width: 400px; overflow: hidden;
+    animation: fadeInPrompt 0.15s ease-out;
+  }
+  .autofill-section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px 4px; font-size: var(--text-xs); font-family: var(--font-mono);
+    color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .autofill-section-header button {
+    background: none; border: none; color: var(--accent); cursor: pointer;
+    padding: 2px 4px; font-size: var(--text-sm); line-height: 1; border-radius: var(--radius-xs);
+    transition: all 0.15s; display: inline-flex; align-items: center;
+  }
+  .autofill-section-header button:hover { background: var(--accent-overlay); }
+  .autofill-section-divider { border-top: 1px solid var(--border); margin-top: 4px; }
+  .autofill-action-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 14px; cursor: pointer; transition: background 0.15s;
+    font-size: var(--text-sm); color: var(--text); font-weight: 400;
+  }
+  .autofill-action-item:hover { background: var(--surface-2); }
+  .autofill-action-item svg { flex-shrink: 0; color: var(--text-muted); }
+  .autofill-empty-hint {
+    padding: 6px 14px 8px; font-size: var(--text-xs); color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* ===== PROFILE DROPDOWN (field-level) ===== */
 
   .profile-dropdown {
     position: absolute; z-index: 150;
@@ -941,22 +976,6 @@
   .profile-field-indicator svg { width: 14px; height: 14px; pointer-events: none; }
 
   /* ===== SCHEMA PRESETS ===== */
-  .preset-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 12px; background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: var(--radius-md); color: var(--text-muted); font-family: var(--font-sans);
-    font-size: var(--text-sm); font-weight: 500; cursor: pointer; transition: all 0.2s;
-    position: relative;
-  }
-  .preset-btn:hover { border-color: var(--text-muted); color: var(--text); }
-  .preset-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .preset-btn svg { flex-shrink: 0; }
-  .preset-btn .preset-badge {
-    background: var(--accent); color: var(--text-on-accent); font-size: var(--text-2xs); font-weight: 700;
-    min-width: 16px; height: 16px; border-radius: var(--radius-md); display: inline-flex;
-    align-items: center; justify-content: center; padding: 0 4px;
-  }
-
   .preset-dropdown {
     position: absolute; z-index: 150;
     background: var(--surface); border: 1px solid var(--border);
@@ -2244,13 +2263,9 @@
       <button type="button" class="btn-card-edit" id="editSchemaBtn" onclick="editCurrentSchema()" title="Edit this form's schema" style="display:none">
         <svg width="12" height="12"><use href="#icon-file-upload"/></svg> Edit Schema
       </button>
-      <button type="button" class="profile-btn" id="profileNavBtn" onclick="toggleProfileNav()" title="Saved profiles — autofill common fields like name, email, and address">
-        <svg width="14" height="14"><use href="#icon-person"/></svg>
-        Profiles <span class="profile-badge" id="profileBadge" style="display:none">0</span>
-      </button>
-      <button type="button" class="preset-btn" id="presetNavBtn" onclick="togglePresetDropdown()" title="Saved presets — pre-fill recurring field values for this form">
+      <button type="button" class="autofill-btn" id="autofillNavBtn" onclick="toggleAutofillDropdown()" title="Autofill — profiles, presets, and data loading">
         <svg width="14" height="14"><use href="#icon-bolt"/></svg>
-        Presets <span class="preset-badge" id="presetBadge" style="display:none">0</span>
+        Autofill <span class="autofill-badge" id="autofillBadge" style="display:none">0</span>
       </button>
     </div>
 
@@ -2276,19 +2291,7 @@
           <svg width="14" height="14"><use href="#icon-save"/></svg>
           Save Data
         </button>
-        <button type="button" class="btn-secondary" onclick="document.getElementById('loadDataInput').click()">
-          <svg width="14" height="14"><use href="#icon-upload"/></svg>
-          Load Data
-        </button>
         <input type="file" accept=".json" id="loadDataInput" class="hidden-input" onchange="handleLoadDataFile(event)">
-        <button type="button" class="btn-secondary" onclick="showPasteDataModal()">
-          <svg width="14" height="14"><use href="#icon-clipboard"/></svg>
-          Paste Data
-        </button>
-        <button type="button" class="btn-secondary" onclick="loadSampleData()">
-          <svg width="14" height="14"><use href="#icon-file-text"/></svg>
-          Load Sample
-        </button>
         <button type="button" class="btn-reset" onclick="resetForm()">
           <svg width="14" height="14"><use href="#icon-reset"/></svg>
           Reset
@@ -2604,11 +2607,11 @@
 <!-- Toast -->
 <div class="toast" id="toast" role="alert" aria-live="polite"></div>
 
-<!-- Profile Dropdown (shared, positioned dynamically) -->
-<div class="profile-dropdown" id="profileDropdown" style="display:none"></div>
+<!-- Autofill Dropdown (unified: profiles + presets + actions) -->
+<div class="autofill-dropdown" id="autofillDropdown" style="display:none"></div>
 
-<!-- Preset Dropdown (shared, positioned dynamically) -->
-<div class="preset-dropdown" id="presetDropdown" style="display:none"></div>
+<!-- Profile Dropdown (field-level indicators only) -->
+<div class="profile-dropdown" id="profileDropdown" style="display:none"></div>
 
 <script>
 // ============================================================
@@ -5896,18 +5899,33 @@ const PROFILE_FIELD_LABELS = {
 
 function getProfiles() {
   try {
+    let arr;
     const raw = localStorage.getItem(PROFILES_STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-    // Migrate old single-profile format
-    const old = localStorage.getItem('formforge_user_profile');
-    if (old) {
-      const parsed = JSON.parse(old);
-      const arr = [parsed];
-      localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(arr));
-      localStorage.removeItem('formforge_user_profile');
-      return arr;
+    if (raw) {
+      arr = JSON.parse(raw);
+    } else {
+      // Migrate old single-profile format
+      const old = localStorage.getItem('formforge_user_profile');
+      if (old) {
+        const parsed = JSON.parse(old);
+        arr = [parsed];
+        localStorage.removeItem('formforge_user_profile');
+      } else {
+        return [];
+      }
     }
-    return [];
+    // Migrate: ensure every profile has _profileName
+    let migrated = false;
+    for (const p of arr) {
+      if (!p._profileName) {
+        const auto = _autoProfileName(p);
+        if (auto) { p._profileName = auto; migrated = true; }
+      }
+    }
+    if (migrated) {
+      try { localStorage.setItem(PROFILES_STORAGE_KEY, JSON.stringify(arr)); } catch (e) { /* ignore */ }
+    }
+    return arr;
   } catch (err) {
     console.warn('Failed to read profiles:', err.message);
     return [];
@@ -5935,19 +5953,19 @@ function deleteProfile(index) {
   return profiles;
 }
 
-function getProfileDisplayName(profile) {
-  if (profile.name) return profile.name;
+function _autoProfileName(profile) {
   if (profile.first_name || profile.last_name) return [profile.first_name, profile.last_name].filter(Boolean).join(' ');
   if (profile.email) return profile.email;
-  return 'Unnamed Profile';
+  return '';
+}
+
+function getProfileDisplayName(profile) {
+  if (profile._profileName) return profile._profileName;
+  return _autoProfileName(profile) || 'Unnamed Profile';
 }
 
 function updateProfileBadge() {
-  const badge = document.getElementById('profileBadge');
-  if (!badge) return;
-  const count = getProfiles().length;
-  badge.textContent = count;
-  badge.style.display = count > 0 ? '' : 'none';
+  updateAutofillBadge();
 }
 
 // --- Matching ---
@@ -6036,6 +6054,29 @@ let _activeDropdownField = null;
 const _dismissedProfileFields = new Set();
 let _profileFocusTimer = null;
 
+function _positionDropdown(dd, anchorEl) {
+  if (window.innerWidth <= 600) {
+    dd.style.position = '';
+    dd.style.top = '';
+    dd.style.left = '';
+  } else {
+    const rect = anchorEl.getBoundingClientRect();
+    const vpWidth = window.innerWidth;
+    dd.style.position = 'fixed';
+    dd.style.top = (rect.bottom + 4) + 'px';
+    dd.style.left = rect.left + 'px';
+    requestAnimationFrame(() => {
+      const ddRect = dd.getBoundingClientRect();
+      if (ddRect.right > vpWidth - 8) {
+        dd.style.left = Math.max(8, vpWidth - ddRect.width - 8) + 'px';
+      }
+      if (ddRect.bottom > window.innerHeight - 8) {
+        dd.style.top = Math.max(8, rect.top - ddRect.height - 4) + 'px';
+      }
+    });
+  }
+}
+
 function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
   const dd = document.getElementById('profileDropdown');
   const profiles = getProfiles();
@@ -6050,8 +6091,8 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
       if (!showAll && !preview) return;
       html += `<div class="profile-dropdown-item" data-index="${i}">
         <div class="profile-dropdown-item-info">
-          <div class="profile-dropdown-item-name">${name}</div>
-          ${preview ? `<div class="profile-dropdown-item-preview">${preview}</div>` : ''}
+          <div class="profile-dropdown-item-name">${escapeHtml(name)}</div>
+          ${preview ? `<div class="profile-dropdown-item-preview">${escapeHtml(preview)}</div>` : ''}
         </div>
         <div class="profile-dropdown-item-actions">
           ${showAll ? `<button type="button" class="profile-edit-btn" data-edit="${i}" title="Edit profile" aria-label="Edit profile">✎</button>` : ''}
@@ -6072,27 +6113,8 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
   dd.setAttribute('role', 'menu');
   dd.setAttribute('aria-label', 'Profile options');
 
-  // Position below anchor (desktop) or bottom-sheet (mobile)
-  if (window.innerWidth <= 600) {
-    dd.style.position = '';
-    dd.style.top = '';
-    dd.style.left = '';
-  } else {
-    // Batch reads, then writes to avoid layout thrashing
-    const rect = anchorEl.getBoundingClientRect();
-    const vpWidth = window.innerWidth;
-    dd.style.position = 'fixed';
-    dd.style.top = (rect.bottom + 4) + 'px';
-    dd.style.left = rect.left + 'px';
-    // Check overflow after initial position — single additional read
-    requestAnimationFrame(() => {
-      const ddRect = dd.getBoundingClientRect();
-      if (ddRect.right > vpWidth - 8) {
-        dd.style.left = Math.max(8, vpWidth - ddRect.width - 8) + 'px';
-      }
-    });
-  }
-
+  // Position below anchor
+  _positionDropdown(dd, anchorEl);
   _activeDropdownField = anchorEl;
 
   // Delegated click handler for all dropdown interactions (guard prevents accumulation)
@@ -6125,7 +6147,7 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
         }
         return;
       }
-      // Save action
+      // Save action — open editor for new profile (don't persist until user confirms)
       if (e.target.closest('#profileSaveAction')) {
         if (!currentSchema) return;
         const data = collectProfileFromForm(currentSchema);
@@ -6133,10 +6155,10 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
           showToast('Fill in some fields first.', 'error');
           return;
         }
-        addProfile(data);
-        hideProfileDropdown();
-        showToast(`Profile "${getProfileDisplayName(data)}" saved`);
-        log(`New profile saved: ${getProfileDisplayName(data)}`, 'success');
+        const auto = _autoProfileName(data);
+        if (auto) data._profileName = auto;
+        // Pass index beyond array length + pre-populated data so editor treats it as "new"
+        showProfileEditor(getProfiles().length, anchorEl || document.getElementById('autofillNavBtn'), data);
       }
     });
   }
@@ -6204,11 +6226,17 @@ function hideProfileDropdown(dismissed) {
   if (prevFocus && typeof prevFocus.focus === 'function') prevFocus.focus();
 }
 
-function showProfileEditor(index, anchorEl) {
+function showProfileEditor(index, anchorEl, prefillData, returnToAutofill) {
   const dd = document.getElementById('profileDropdown');
   const profiles = getProfiles();
-  const p = profiles[index] || {};
+  const p = prefillData || profiles[index] || {};
   const addr = p.address || {};
+  const autoName = _autoProfileName(p);
+
+  const nameField = `<div class="profile-editor-field">
+    <label>Profile Name</label>
+    <input type="text" id="peProfileName" value="${(p._profileName || '').replace(/"/g, '&quot;')}" placeholder="${autoName ? escapeHtml(autoName) : 'e.g., Work Profile'}" />
+  </div>`;
 
   const fields = Object.entries(PROFILE_FIELD_LABELS).map(([key, label]) =>
     `<div class="profile-editor-field">
@@ -6237,6 +6265,7 @@ function showProfileEditor(index, anchorEl) {
     <div class="profile-editor-title">
       <span>${index < profiles.length ? 'Edit Profile' : 'New Profile'}</span>
     </div>
+    ${nameField}
     ${fields}
     ${addrFields}
     <div class="profile-editor-actions">
@@ -6246,20 +6275,13 @@ function showProfileEditor(index, anchorEl) {
   </div>`;
 
   // Reposition
-  const rect = anchorEl.getBoundingClientRect();
-  dd.style.position = 'fixed';
-  dd.style.top = (rect.bottom + 4) + 'px';
-  dd.style.left = rect.left + 'px';
-  const ddRect = dd.getBoundingClientRect();
-  if (ddRect.right > window.innerWidth - 8) {
-    dd.style.left = Math.max(8, window.innerWidth - ddRect.width - 8) + 'px';
-  }
-  if (ddRect.bottom > window.innerHeight - 8) {
-    dd.style.top = Math.max(8, rect.top - ddRect.height - 4) + 'px';
-  }
+  _positionDropdown(dd, anchorEl);
 
   dd.querySelector('#peEditorSave').addEventListener('click', () => {
     const updated = {};
+    // Save profile name
+    const profileName = (document.getElementById('peProfileName').value || '').trim();
+    if (profileName) updated._profileName = profileName;
     dd.querySelectorAll('input[data-key]').forEach(inp => {
       const v = inp.value.trim();
       if (v) updated[inp.dataset.key] = v;
@@ -6272,7 +6294,13 @@ function showProfileEditor(index, anchorEl) {
       if (v) { addrData[inp.dataset.addr] = v; hasAddr = true; }
     });
     if (hasAddr) updated.address = addrData;
-    if (Object.keys(updated).length === 0) {
+    // Auto-set _profileName if user didn't provide one
+    if (!updated._profileName) {
+      const auto = _autoProfileName(updated);
+      if (auto) updated._profileName = auto;
+    }
+    const nonMetaKeys = Object.keys(updated).filter(k => k !== '_profileName');
+    if (nonMetaKeys.length === 0) {
       showToast('Fill in at least one field.', 'error');
       return;
     }
@@ -6283,11 +6311,16 @@ function showProfileEditor(index, anchorEl) {
       addProfile(updated);
     }
     showToast(`Profile "${getProfileDisplayName(updated)}" saved`);
-    showProfileDropdown(anchorEl, null, null, true);
+    dd.style.display = 'none';
+    if (returnToAutofill) showAutofillDropdown();
+    else showProfileDropdown(anchorEl, null, null, true);
   });
 
   dd.querySelector('#peEditorCancel').addEventListener('click', () => {
-    showProfileDropdown(anchorEl, null, null, true);
+    // If this was a new profile (not yet saved), nothing to clean up
+    dd.style.display = 'none';
+    if (returnToAutofill) showAutofillDropdown();
+    else showProfileDropdown(anchorEl, null, null, true);
   });
 
   // Stop clicks inside editor from dismissing
@@ -6390,7 +6423,7 @@ function setupProfileDropdowns(schema) {
     const dd = document.getElementById('profileDropdown');
     if (dd.style.display === 'none') return;
     if (dd.contains(e.target)) return;
-    if (e.target.closest('.profile-btn')) return;
+    if (e.target.closest('.autofill-btn')) return;
     if (e.target.closest('.profile-field-indicator')) return;
     if (e.target === _activeDropdownField) return;
     hideProfileDropdown(true);
@@ -6450,11 +6483,7 @@ function deletePreset(idx) {
 }
 
 function updatePresetBadge() {
-  const badge = document.getElementById('presetBadge');
-  if (!badge) return;
-  const count = getPresets().length;
-  badge.textContent = count;
-  badge.style.display = count > 0 ? '' : 'none';
+  updateAutofillBadge();
 }
 
 function collectPresetFields() {
@@ -6755,6 +6784,383 @@ function setupPresets() {
 }
 
 // ============================================================
+//  UNIFIED AUTOFILL DROPDOWN
+// ============================================================
+
+function updateAutofillBadge() {
+  const badge = document.getElementById('autofillBadge');
+  if (!badge) return;
+  const count = getProfiles().length + getPresets().length;
+  badge.textContent = count;
+  badge.style.display = count > 0 ? '' : 'none';
+}
+
+function toggleAutofillDropdown() {
+  const dd = document.getElementById('autofillDropdown');
+  if (dd.style.display !== 'none') {
+    hideAutofillDropdown();
+    return;
+  }
+  showAutofillDropdown();
+}
+
+function showAutofillDropdown() {
+  // Close field-level profile dropdown if open
+  hideProfileDropdown();
+
+  const dd = document.getElementById('autofillDropdown');
+  const profiles = getProfiles();
+  const presets = getPresets();
+
+  let html = '';
+
+  // --- Profiles section ---
+  html += `<div class="autofill-section-header">
+    <span>Profiles</span>
+    <button type="button" class="autofill-add-profile" title="New profile">
+      <svg width="12" height="12"><use href="#icon-plus"/></svg>
+    </button>
+  </div>`;
+  if (profiles.length === 0) {
+    html += '<div class="autofill-empty-hint">No saved profiles</div>';
+  } else {
+    profiles.forEach((p, i) => {
+      const name = getProfileDisplayName(p);
+      const preview = p.email || '';
+      html += `<div class="profile-dropdown-item" data-profile-index="${i}">
+        <div class="profile-dropdown-item-info">
+          <div class="profile-dropdown-item-name">${escapeHtml(name)}</div>
+          ${preview ? `<div class="profile-dropdown-item-preview">${escapeHtml(preview)}</div>` : ''}
+        </div>
+        <div class="profile-dropdown-item-actions">
+          <button type="button" class="profile-edit-btn" data-edit="${i}" title="Edit profile" aria-label="Edit profile">✎</button>
+          <button type="button" class="profile-delete-btn" data-delete="${i}" title="Delete profile" aria-label="Delete profile">&times;</button>
+        </div>
+      </div>`;
+    });
+  }
+
+  // --- Presets section ---
+  html += '<div class="autofill-section-divider"></div>';
+  html += `<div class="autofill-section-header">
+    <span>Presets</span>
+    <button type="button" class="autofill-add-preset" title="Save as preset">
+      <svg width="12" height="12"><use href="#icon-plus"/></svg>
+    </button>
+  </div>`;
+  if (presets.length === 0) {
+    html += '<div class="autofill-empty-hint">No saved presets</div>';
+  } else {
+    presets.forEach((p, i) => {
+      const preview = getPresetPreview(p);
+      html += `<div class="preset-dropdown-item" data-preset-index="${i}" tabindex="-1">
+        <div class="preset-dropdown-item-info">
+          <div class="preset-dropdown-item-name">${escapeHtml(p.name)}</div>
+          ${preview ? `<div class="preset-dropdown-item-preview">${escapeHtml(preview)}</div>` : ''}
+        </div>
+        <div class="preset-dropdown-item-actions">
+          <button type="button" class="preset-edit-btn" data-edit="${i}" title="Edit preset" aria-label="Edit preset">✎</button>
+          <button type="button" class="preset-delete-btn" data-delete="${i}" title="Delete preset" aria-label="Delete preset">&times;</button>
+        </div>
+      </div>`;
+    });
+  }
+
+  // --- Actions section ---
+  html += '<div class="autofill-section-divider"></div>';
+  html += `<div class="autofill-action-item" data-action="sample">
+    <svg width="14" height="14"><use href="#icon-file-text"/></svg>
+    Load Sample Data
+  </div>`;
+  html += `<div class="autofill-action-item" data-action="paste">
+    <svg width="14" height="14"><use href="#icon-clipboard"/></svg>
+    Paste Data\u2026
+  </div>`;
+  html += `<div class="autofill-action-item" data-action="file">
+    <svg width="14" height="14"><use href="#icon-upload"/></svg>
+    Load from File\u2026
+  </div>`;
+
+  dd.innerHTML = html;
+  dd.style.display = '';
+  dd.setAttribute('role', 'menu');
+  dd.setAttribute('aria-label', 'Autofill options');
+
+  const btn = document.getElementById('autofillNavBtn');
+  _positionDropdown(dd, btn);
+
+  // Delegated click handler (attach once)
+  if (!dd._clickDelegated) {
+    dd._clickDelegated = true;
+    dd.addEventListener('click', _handleAutofillClick);
+  }
+
+  // Keyboard navigation (attach once)
+  if (!dd._keyNavAttached) {
+    dd._keyNavAttached = true;
+    dd.addEventListener('keydown', (e) => {
+      const items = Array.from(dd.querySelectorAll('.profile-dropdown-item, .preset-dropdown-item, .autofill-action-item'));
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const focused = document.activeElement;
+        let idx = items.indexOf(focused);
+        if (e.key === 'ArrowDown') idx = idx < items.length - 1 ? idx + 1 : 0;
+        else idx = idx > 0 ? idx - 1 : items.length - 1;
+        if (items[idx]) items[idx].focus();
+      } else if (e.key === 'Enter') {
+        const focused = document.activeElement;
+        if (focused && items.includes(focused)) { e.preventDefault(); focused.click(); }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        hideAutofillDropdown();
+      }
+    });
+  }
+
+  // Make items focusable
+  dd.querySelectorAll('.profile-dropdown-item, .preset-dropdown-item, .autofill-action-item').forEach(item => {
+    item.setAttribute('tabindex', '-1');
+  });
+}
+
+function _handleAutofillClick(e) {
+  const dd = document.getElementById('autofillDropdown');
+  const anchorEl = document.getElementById('autofillNavBtn');
+
+  // Profile edit
+  const profileEditBtn = e.target.closest('.profile-edit-btn');
+  if (profileEditBtn) {
+    e.stopPropagation();
+    const idx = parseInt(profileEditBtn.dataset.edit);
+    // Use profileDropdown for editing (positioned at autofill button)
+    const pdd = document.getElementById('profileDropdown');
+    pdd.style.display = '';
+    hideAutofillDropdown();
+    showProfileEditor(idx, anchorEl, null, true);
+    return;
+  }
+
+  // Profile delete
+  const profileDeleteBtn = e.target.closest('.profile-delete-btn');
+  if (profileDeleteBtn) {
+    e.stopPropagation();
+    deleteProfile(parseInt(profileDeleteBtn.dataset.delete));
+    showAutofillDropdown();
+    showToast('Profile deleted');
+    return;
+  }
+
+  // Profile item click -> apply
+  const profileItem = e.target.closest('.profile-dropdown-item[data-profile-index]');
+  if (profileItem) {
+    const p = getProfiles()[parseInt(profileItem.dataset.profileIndex)];
+    if (p && currentSchema) {
+      applyProfileToForm(p, currentSchema);
+      hideAutofillDropdown();
+    }
+    return;
+  }
+
+  // Preset edit
+  const presetEditBtn = e.target.closest('.preset-edit-btn');
+  if (presetEditBtn) {
+    e.stopPropagation();
+    // Borrow the preset dropdown for the editor
+    const pdd = document.getElementById('profileDropdown');
+    pdd.style.display = '';
+    hideAutofillDropdown();
+    _showPresetEditorInDropdown(parseInt(presetEditBtn.dataset.edit), anchorEl);
+    return;
+  }
+
+  // Preset delete
+  const presetDeleteBtn = e.target.closest('.preset-delete-btn');
+  if (presetDeleteBtn) {
+    e.stopPropagation();
+    const idx = parseInt(presetDeleteBtn.dataset.delete);
+    const presets = getPresets();
+    const name = presets[idx] ? presets[idx].name : 'preset';
+    if (!confirm(`Delete preset "${name}"?`)) return;
+    deletePreset(idx);
+    showAutofillDropdown();
+    showToast('Preset deleted');
+    return;
+  }
+
+  // Preset item click -> apply
+  const presetItem = e.target.closest('.preset-dropdown-item[data-preset-index]');
+  if (presetItem) {
+    const p = getPresets()[parseInt(presetItem.dataset.presetIndex)];
+    if (p) applyPreset(p);
+    hideAutofillDropdown();
+    return;
+  }
+
+  // Add profile — open editor with pre-populated data (don't persist until user confirms)
+  if (e.target.closest('.autofill-add-profile')) {
+    e.stopPropagation();
+    const data = currentSchema ? collectProfileFromForm(currentSchema) : {};
+    const auto = _autoProfileName(data);
+    if (auto) data._profileName = auto;
+    const pdd = document.getElementById('profileDropdown');
+    pdd.style.display = '';
+    hideAutofillDropdown();
+    showProfileEditor(getProfiles().length, anchorEl, data, true);
+    return;
+  }
+
+  // Add preset
+  if (e.target.closest('.autofill-add-preset')) {
+    e.stopPropagation();
+    const pdd = document.getElementById('profileDropdown');
+    pdd.style.display = '';
+    hideAutofillDropdown();
+    _showPresetEditorInDropdown(null, anchorEl);
+    return;
+  }
+
+  // Action items
+  const actionItem = e.target.closest('.autofill-action-item');
+  if (actionItem) {
+    const action = actionItem.dataset.action;
+    hideAutofillDropdown();
+    if (action === 'sample') loadSampleData();
+    else if (action === 'paste') showPasteDataModal();
+    else if (action === 'file') document.getElementById('loadDataInput').click();
+    return;
+  }
+}
+
+function _showPresetEditorInDropdown(idx, anchorEl) {
+  // Render preset editor inside profileDropdown (repurposed as editor panel)
+  const dd = document.getElementById('profileDropdown');
+  const existing = idx !== null ? getPresets()[idx] : null;
+  const isEdit = existing !== null;
+
+  const currentFields = collectPresetFields();
+  const fieldEntries = Object.entries(isEdit ? existing.fields : currentFields);
+
+  if (!isEdit && fieldEntries.length === 0) {
+    showToast('Fill some fields first', 'error');
+    dd.style.display = 'none';
+    return;
+  }
+
+  const fieldLabels = {};
+  if (currentSchema && currentSchema.sections) {
+    for (const section of currentSchema.sections) {
+      for (const field of section.fields) {
+        fieldLabels[field.id] = field.label;
+      }
+    }
+  }
+
+  const availableFields = isEdit ? { ...currentFields, ...existing.fields } : currentFields;
+
+  let checkboxesHtml = '';
+  for (const id of Object.keys(availableFields)) {
+    const val = availableFields[id];
+    if (val === undefined || val === '') continue;
+    const checked = isEdit ? (id in existing.fields) : true;
+    const label = fieldLabels[id] || id;
+    const preview = String(val).length > 25 ? String(val).slice(0, 22) + '...' : String(val);
+    checkboxesHtml += `<label>
+      <input type="checkbox" value="${escapeHtml(id)}" ${checked ? 'checked' : ''}>
+      ${escapeHtml(label)}
+      <span class="preset-field-value">${escapeHtml(preview)}</span>
+    </label>`;
+  }
+
+  dd.innerHTML = `<div class="preset-editor">
+    <div class="preset-editor-title">${isEdit ? 'Edit Preset' : 'Save as Preset'}</div>
+    <div class="preset-editor-field">
+      <label for="presetNameInput">Preset Name</label>
+      <input type="text" id="presetNameInput" value="${isEdit ? escapeHtml(existing.name) : ''}" placeholder="e.g., Standard Weekly">
+    </div>
+    <div class="preset-editor-field">
+      <label>Fields to include</label>
+      <div class="preset-editor-checkboxes" id="presetFieldCheckboxes">
+        ${checkboxesHtml}
+      </div>
+    </div>
+    <div class="preset-editor-actions">
+      <button type="button" class="pe-cancel" id="presetEditorCancel">Cancel</button>
+      <button type="button" class="pe-save" id="presetEditorSave">${isEdit ? 'Update' : 'Save'}</button>
+    </div>
+  </div>`;
+
+  _positionDropdown(dd, anchorEl);
+
+  const nameInput = document.getElementById('presetNameInput');
+  if (nameInput) nameInput.focus();
+
+  document.getElementById('presetEditorSave').addEventListener('click', () => {
+    const name = (document.getElementById('presetNameInput').value || '').trim();
+    if (!name) { showToast('Enter a preset name', 'error'); return; }
+    const checkboxes = document.querySelectorAll('#presetFieldCheckboxes input[type="checkbox"]:checked');
+    const fields = {};
+    checkboxes.forEach(cb => { fields[cb.value] = availableFields[cb.value]; });
+    if (Object.keys(fields).length === 0) { showToast('Select at least one field', 'error'); return; }
+
+    const preset = { name, createdAt: new Date().toISOString(), fields };
+    if (isEdit) {
+      const presets = getPresets();
+      presets[idx] = preset;
+      savePresets(presets);
+      updateAutofillBadge();
+      showToast(`Preset "${name}" updated`);
+    } else {
+      addPreset(preset);
+      showToast(`Preset "${name}" saved`);
+    }
+    log(`Preset "${name}" ${isEdit ? 'updated' : 'saved'}`, 'success');
+    dd.style.display = 'none';
+    showAutofillDropdown();
+  });
+
+  document.getElementById('presetEditorCancel').addEventListener('click', () => {
+    dd.style.display = 'none';
+    showAutofillDropdown();
+  });
+
+  // Stop clicks inside editor from dismissing
+  dd.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('mousedown', e => e.stopPropagation());
+    inp.addEventListener('focus', e => e.stopPropagation());
+  });
+}
+
+function hideAutofillDropdown() {
+  const dd = document.getElementById('autofillDropdown');
+  if (dd) {
+    dd.style.display = 'none';
+    dd.style.position = '';
+    dd.style.top = '';
+    dd.style.left = '';
+    dd.removeAttribute('role');
+  }
+  const btn = document.getElementById('autofillNavBtn');
+  if (btn) btn.focus();
+}
+
+let _autofillDismissListenerAdded = false;
+
+function setupAutofill() {
+  updateAutofillBadge();
+
+  if (!_autofillDismissListenerAdded) {
+    _autofillDismissListenerAdded = true;
+    document.addEventListener('mousedown', (e) => {
+      const dd = document.getElementById('autofillDropdown');
+      if (dd.style.display === 'none') return;
+      if (dd.contains(e.target)) return;
+      if (e.target.closest('.autofill-btn')) return;
+      hideAutofillDropdown();
+    });
+  }
+}
+
+// ============================================================
 //  URL PARAMETER LOADING
 // ============================================================
 
@@ -6809,6 +7215,7 @@ function postLaunchHook() {
   }
   setupProfileDropdowns(currentSchema);
   setupPresets();
+  setupAutofill();
 }
 
 // ============================================================
@@ -6878,7 +7285,8 @@ function resetForm() {
   if (prompt) prompt.remove();
   // Clear profile-filled highlights
   document.querySelectorAll('.profile-filled').forEach(el => el.classList.remove('profile-filled'));
-  // Hide profile and preset dropdowns if visible
+  // Hide all dropdowns if visible
+  hideAutofillDropdown();
   hideProfileDropdown();
   hidePresetDropdown();
   formDirty = false;
@@ -9783,14 +10191,14 @@ function handleGlobalKeydown(e) {
 
   // Escape — dismiss dropdowns first, then back to picker with dirty guard
   if (e.key === 'Escape') {
+    const add = document.getElementById('autofillDropdown');
+    if (add && add.style.display !== 'none') {
+      hideAutofillDropdown();
+      return;
+    }
     const dd = document.getElementById('profileDropdown');
     if (dd && dd.style.display !== 'none') {
       hideProfileDropdown(true);
-      return;
-    }
-    const pdd = document.getElementById('presetDropdown');
-    if (pdd && pdd.style.display !== 'none') {
-      hidePresetDropdown();
       return;
     }
     if (formViewActive) {
