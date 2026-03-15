@@ -14,6 +14,25 @@
 
 ## Log
 
+### 2026-03-15 — Per-Schema Presets (#162)
+**Issues:** #162, #164, #165, #166
+
+Added per-schema preset system for saving and reusing recurring form field values. Mirrors the existing profile dropdown pattern.
+
+- Added "Presets" button with lightning bolt icon and count badge in `.form-nav`
+- Built preset dropdown with item list (name + 2-3 field value preview), edit/delete actions, and "Save as Preset" action
+- Implemented inline preset editor with name input and field checkboxes (file/signature types excluded)
+- Preset CRUD functions: `getPresetStorageKey()`, `getPresets()`, `savePresets()`, `addPreset()`, `deletePreset()`
+- Storage: `formforge_presets_{slug}` in localStorage, keyed per schema title
+- `applyPreset()` calls `populateForm()` with `skipFileFields: true`
+- Mutual exclusion: opening presets closes profiles and vice versa
+- Escape key and outside click close the dropdown
+- `setupPresets()` called from `postLaunchHook()`, `hidePresetDropdown()` called from `resetForm()`
+- Added 16 new tests covering button/badge/dropdown HTML structure, CSS classes, function existence, integration hooks, and mutual exclusion
+- All CSS uses design tokens (no hardcoded values)
+
+---
+
 ### 2026-03-15 — Clipboard Paste for Form Data (#161)
 **Issues:** #161
 

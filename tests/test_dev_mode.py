@@ -1941,3 +1941,138 @@ def test_paste_data_escape_listener(index_html: str) -> None:
     assert "pasteDataModal" in index_html
     # The event listener block references hidePasteDataModal on Escape
     assert "hidePasteDataModal()" in index_html
+
+
+# --- Per-Schema Presets Feature (#162) ---
+
+
+def test_preset_button_exists_in_form_nav(index_html: str) -> None:
+    """Preset button exists in .form-nav with lightning bolt icon."""
+    nav_match = re.search(
+        r'class="form-nav">(.*?)</div>\s*\n',
+        index_html,
+        re.DOTALL,
+    )
+    assert nav_match, "form-nav section not found"
+    nav = nav_match.group(1)
+    assert "presetNavBtn" in nav
+    assert "Presets" in nav
+    assert "#icon-bolt" in nav
+
+
+def test_preset_badge_exists(index_html: str) -> None:
+    """Preset count badge element exists on preset button."""
+    assert 'id="presetBadge"' in index_html
+    assert 'class="preset-badge"' in index_html
+
+
+def test_preset_dropdown_element_exists(index_html: str) -> None:
+    """Preset dropdown element exists in HTML."""
+    assert 'id="presetDropdown"' in index_html
+    assert 'class="preset-dropdown"' in index_html
+
+
+def test_preset_btn_css_exists(index_html: str) -> None:
+    """Preset button CSS classes follow .preset-* pattern."""
+    assert ".preset-btn" in index_html
+    assert ".preset-btn:hover" in index_html
+    assert ".preset-badge" in index_html
+
+
+def test_preset_dropdown_css_exists(index_html: str) -> None:
+    """Preset dropdown CSS classes follow .preset-* pattern."""
+    assert ".preset-dropdown" in index_html
+    assert ".preset-dropdown-item" in index_html
+    assert ".preset-dropdown-item-name" in index_html
+    assert ".preset-dropdown-item-preview" in index_html
+    assert ".preset-dropdown-action" in index_html
+    assert ".preset-dropdown-empty" in index_html
+
+
+def test_preset_editor_css_exists(index_html: str) -> None:
+    """Preset editor CSS classes exist."""
+    assert ".preset-editor" in index_html
+    assert ".preset-editor-title" in index_html
+    assert ".preset-editor-checkboxes" in index_html
+    assert ".preset-editor-actions" in index_html
+
+
+def test_preset_crud_functions_exist(index_html: str) -> None:
+    """All preset CRUD functions are defined."""
+    assert "function getPresetStorageKey()" in index_html
+    assert "function getPresets()" in index_html
+    assert "function savePresets(" in index_html
+    assert "function addPreset(" in index_html
+    assert "function deletePreset(" in index_html
+    assert "function updatePresetBadge()" in index_html
+
+
+def test_preset_dropdown_functions_exist(index_html: str) -> None:
+    """All preset dropdown functions are defined."""
+    assert "function togglePresetDropdown()" in index_html
+    assert "function showPresetDropdown()" in index_html
+    assert "function hidePresetDropdown()" in index_html
+    assert "function applyPreset(" in index_html
+    assert "function showPresetEditor(" in index_html
+    assert "function setupPresets()" in index_html
+
+
+def test_preset_apply_calls_populate_form(index_html: str) -> None:
+    """applyPreset uses populateForm to fill the form."""
+    body = _extract_func(index_html, "applyPreset")
+    assert "populateForm(" in body
+    assert "skipFileFields" in body
+
+
+def test_preset_storage_key_uses_slug(index_html: str) -> None:
+    """getPresetStorageKey generates key from schema title slug."""
+    body = _extract_func(index_html, "getPresetStorageKey")
+    assert "formforge_presets_" in body
+    assert "currentSchema" in body
+
+
+def test_preset_excludes_file_signature_types(index_html: str) -> None:
+    """File and signature field types are excluded from preset saves."""
+    assert "EXCLUDED_PRESET_TYPES" in index_html
+    body = _extract_func(index_html, "collectPresetFields")
+    assert "EXCLUDED_PRESET_TYPES" in body
+
+
+def test_preset_save_action_exists(index_html: str) -> None:
+    """'Save as Preset' action is rendered in dropdown."""
+    body = _extract_func(index_html, "showPresetDropdown")
+    assert "Save as Preset" in body
+    assert "presetSaveAction" in body
+
+
+def test_preset_setup_called_from_post_launch(index_html: str) -> None:
+    """setupPresets is called from postLaunchHook."""
+    body = _extract_func(index_html, "postLaunchHook")
+    assert "setupPresets()" in body
+
+
+def test_preset_hidden_on_reset(index_html: str) -> None:
+    """hidePresetDropdown is called from resetForm."""
+    body = _extract_func(index_html, "resetForm")
+    assert "hidePresetDropdown()" in body
+
+
+def test_preset_escape_closes_dropdown(index_html: str) -> None:
+    """Escape key handler closes preset dropdown."""
+    # handleGlobalKeydown is the last function, so use a broader search
+    match = re.search(
+        r"function handleGlobalKeydown\b([\s\S]*?)(?:</script>|$)",
+        index_html,
+    )
+    assert match, "handleGlobalKeydown not found"
+    body = match.group(1)
+    assert "presetDropdown" in body
+    assert "hidePresetDropdown()" in body
+
+
+def test_preset_mutual_exclusion_with_profile(index_html: str) -> None:
+    """Opening presets closes profile dropdown and vice versa."""
+    toggle_profile = _extract_func(index_html, "toggleProfileNav")
+    assert "hidePresetDropdown()" in toggle_profile
+    toggle_preset = _extract_func(index_html, "showPresetDropdown")
+    assert "hideProfileDropdown()" in toggle_preset
