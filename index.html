@@ -6091,8 +6091,8 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
       if (!showAll && !preview) return;
       html += `<div class="profile-dropdown-item" data-index="${i}">
         <div class="profile-dropdown-item-info">
-          <div class="profile-dropdown-item-name">${name}</div>
-          ${preview ? `<div class="profile-dropdown-item-preview">${preview}</div>` : ''}
+          <div class="profile-dropdown-item-name">${escapeHtml(name)}</div>
+          ${preview ? `<div class="profile-dropdown-item-preview">${escapeHtml(preview)}</div>` : ''}
         </div>
         <div class="profile-dropdown-item-actions">
           ${showAll ? `<button type="button" class="profile-edit-btn" data-edit="${i}" title="Edit profile" aria-label="Edit profile">✎</button>` : ''}
@@ -6147,7 +6147,7 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
         }
         return;
       }
-      // Save action — open editor for new profile
+      // Save action — open editor for new profile (don't persist until user confirms)
       if (e.target.closest('#profileSaveAction')) {
         if (!currentSchema) return;
         const data = collectProfileFromForm(currentSchema);
@@ -6155,12 +6155,10 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
           showToast('Fill in some fields first.', 'error');
           return;
         }
-        // Pre-populate a new profile from form data and open editor
-        const newIndex = getProfiles().length;
         const auto = _autoProfileName(data);
         if (auto) data._profileName = auto;
-        addProfile(data);
-        showProfileEditor(newIndex, anchorEl || document.getElementById('autofillNavBtn'));
+        // Pass index beyond array length + pre-populated data so editor treats it as "new"
+        showProfileEditor(getProfiles().length, anchorEl || document.getElementById('autofillNavBtn'), data);
       }
     });
   }
@@ -6228,10 +6226,10 @@ function hideProfileDropdown(dismissed) {
   if (prevFocus && typeof prevFocus.focus === 'function') prevFocus.focus();
 }
 
-function showProfileEditor(index, anchorEl) {
+function showProfileEditor(index, anchorEl, prefillData, returnToAutofill) {
   const dd = document.getElementById('profileDropdown');
   const profiles = getProfiles();
-  const p = profiles[index] || {};
+  const p = prefillData || profiles[index] || {};
   const addr = p.address || {};
   const autoName = _autoProfileName(p);
 
@@ -6313,11 +6311,16 @@ function showProfileEditor(index, anchorEl) {
       addProfile(updated);
     }
     showToast(`Profile "${getProfileDisplayName(updated)}" saved`);
-    showProfileDropdown(anchorEl, null, null, true);
+    dd.style.display = 'none';
+    if (returnToAutofill) showAutofillDropdown();
+    else showProfileDropdown(anchorEl, null, null, true);
   });
 
   dd.querySelector('#peEditorCancel').addEventListener('click', () => {
-    showProfileDropdown(anchorEl, null, null, true);
+    // If this was a new profile (not yet saved), nothing to clean up
+    dd.style.display = 'none';
+    if (returnToAutofill) showAutofillDropdown();
+    else showProfileDropdown(anchorEl, null, null, true);
   });
 
   // Stop clicks inside editor from dismissing
@@ -6933,7 +6936,7 @@ function _handleAutofillClick(e) {
     const pdd = document.getElementById('profileDropdown');
     pdd.style.display = '';
     hideAutofillDropdown();
-    showProfileEditor(idx, anchorEl);
+    showProfileEditor(idx, anchorEl, null, true);
     return;
   }
 
@@ -6993,20 +6996,16 @@ function _handleAutofillClick(e) {
     return;
   }
 
-  // Add profile
+  // Add profile — open editor with pre-populated data (don't persist until user confirms)
   if (e.target.closest('.autofill-add-profile')) {
     e.stopPropagation();
-    if (!currentSchema) return;
-    const data = collectProfileFromForm(currentSchema);
+    const data = currentSchema ? collectProfileFromForm(currentSchema) : {};
     const auto = _autoProfileName(data);
     if (auto) data._profileName = auto;
-    if (Object.keys(data).filter(k => k !== '_profileName').length > 0) {
-      addProfile(data);
-    }
     const pdd = document.getElementById('profileDropdown');
     pdd.style.display = '';
     hideAutofillDropdown();
-    showProfileEditor(getProfiles().length - 1, anchorEl);
+    showProfileEditor(getProfiles().length, anchorEl, data, true);
     return;
   }
 
@@ -7116,10 +7115,12 @@ function _showPresetEditorInDropdown(idx, anchorEl) {
     }
     log(`Preset "${name}" ${isEdit ? 'updated' : 'saved'}`, 'success');
     dd.style.display = 'none';
+    showAutofillDropdown();
   });
 
   document.getElementById('presetEditorCancel').addEventListener('click', () => {
     dd.style.display = 'none';
+    showAutofillDropdown();
   });
 
   // Stop clicks inside editor from dismissing
