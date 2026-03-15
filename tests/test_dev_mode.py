@@ -1867,18 +1867,11 @@ def test_paste_data_button_exists(index_html: str) -> None:
     assert "Paste Data" in index_html
 
 
-def test_paste_data_button_in_secondary_area(index_html: str) -> None:
-    """Paste Data button is inside submit-area-secondary alongside other data buttons."""
-    secondary_match = re.search(
-        r'class="submit-area-secondary">(.*?)</div>',
-        index_html,
-        re.DOTALL,
-    )
-    assert secondary_match, "submit-area-secondary section not found"
-    section = secondary_match.group(1)
-    assert "Paste Data" in section
-    assert "Save Data" in section
-    assert "Load Data" in section
+def test_paste_data_in_autofill_dropdown(index_html: str) -> None:
+    """Paste Data action is rendered via the unified autofill dropdown."""
+    body = _extract_func(index_html, "showAutofillDropdown")
+    assert "Paste Data" in body
+    assert 'data-action="paste"' in body
 
 
 def test_paste_data_modal_exists(index_html: str) -> None:
@@ -1946,8 +1939,8 @@ def test_paste_data_escape_listener(index_html: str) -> None:
 # --- Per-Schema Presets Feature (#162) ---
 
 
-def test_preset_button_exists_in_form_nav(index_html: str) -> None:
-    """Preset button exists in .form-nav with lightning bolt icon."""
+def test_autofill_button_exists_in_form_nav(index_html: str) -> None:
+    """Unified Autofill button exists in .form-nav with bolt icon."""
     nav_match = re.search(
         r'class="form-nav">(.*?)</div>\s*\n',
         index_html,
@@ -1955,28 +1948,28 @@ def test_preset_button_exists_in_form_nav(index_html: str) -> None:
     )
     assert nav_match, "form-nav section not found"
     nav = nav_match.group(1)
-    assert "presetNavBtn" in nav
-    assert "Presets" in nav
+    assert "autofillNavBtn" in nav
+    assert "Autofill" in nav
     assert "#icon-bolt" in nav
 
 
-def test_preset_badge_exists(index_html: str) -> None:
-    """Preset count badge element exists on preset button."""
-    assert 'id="presetBadge"' in index_html
-    assert 'class="preset-badge"' in index_html
+def test_autofill_badge_exists(index_html: str) -> None:
+    """Autofill combined count badge element exists."""
+    assert 'id="autofillBadge"' in index_html
+    assert 'class="autofill-badge"' in index_html
 
 
-def test_preset_dropdown_element_exists(index_html: str) -> None:
-    """Preset dropdown element exists in HTML."""
-    assert 'id="presetDropdown"' in index_html
-    assert 'class="preset-dropdown"' in index_html
+def test_autofill_dropdown_element_exists(index_html: str) -> None:
+    """Autofill dropdown element exists in HTML."""
+    assert 'id="autofillDropdown"' in index_html
+    assert 'class="autofill-dropdown"' in index_html
 
 
-def test_preset_btn_css_exists(index_html: str) -> None:
-    """Preset button CSS classes follow .preset-* pattern."""
-    assert ".preset-btn" in index_html
-    assert ".preset-btn:hover" in index_html
-    assert ".preset-badge" in index_html
+def test_autofill_btn_css_exists(index_html: str) -> None:
+    """Autofill button CSS classes exist."""
+    assert ".autofill-btn" in index_html
+    assert ".autofill-btn:hover" in index_html
+    assert ".autofill-badge" in index_html
 
 
 def test_preset_dropdown_css_exists(index_html: str) -> None:
@@ -2057,25 +2050,87 @@ def test_preset_hidden_on_reset(index_html: str) -> None:
     assert "hidePresetDropdown()" in body
 
 
-def test_preset_escape_closes_dropdown(index_html: str) -> None:
-    """Escape key handler closes preset dropdown."""
-    # handleGlobalKeydown is the last function, so use a broader search
+def test_autofill_escape_closes_dropdown(index_html: str) -> None:
+    """Escape key handler closes autofill dropdown."""
     match = re.search(
         r"function handleGlobalKeydown\b([\s\S]*?)(?:</script>|$)",
         index_html,
     )
     assert match, "handleGlobalKeydown not found"
     body = match.group(1)
-    assert "presetDropdown" in body
-    assert "hidePresetDropdown()" in body
+    assert "autofillDropdown" in body
+    assert "hideAutofillDropdown" in body
 
 
-def test_preset_mutual_exclusion_with_profile(index_html: str) -> None:
-    """Opening presets closes profile dropdown and vice versa."""
-    toggle_profile = _extract_func(index_html, "toggleProfileNav")
-    assert "hidePresetDropdown()" in toggle_profile
-    toggle_preset = _extract_func(index_html, "showPresetDropdown")
-    assert "hideProfileDropdown()" in toggle_preset
+def test_autofill_dropdown_functions_exist(index_html: str) -> None:
+    """Unified autofill dropdown functions are defined."""
+    assert "function toggleAutofillDropdown()" in index_html
+    assert "function showAutofillDropdown()" in index_html
+    assert "function hideAutofillDropdown()" in index_html
+    assert "function setupAutofill()" in index_html
+    assert "function updateAutofillBadge()" in index_html
+
+
+def test_autofill_dropdown_has_sections(index_html: str) -> None:
+    """Autofill dropdown renders profiles, presets, and action sections."""
+    body = _extract_func(index_html, "showAutofillDropdown")
+    assert "Profiles" in body
+    assert "Presets" in body
+    assert "Load Sample Data" in body
+    assert "Paste Data" in body
+    assert "Load from File" in body
+
+
+def test_autofill_dropdown_css_exists(index_html: str) -> None:
+    """Autofill dropdown CSS classes exist."""
+    assert ".autofill-dropdown" in index_html
+    assert ".autofill-section-header" in index_html
+    assert ".autofill-section-divider" in index_html
+    assert ".autofill-action-item" in index_html
+    assert ".autofill-empty-hint" in index_html
+
+
+def test_profile_name_field_in_editor(index_html: str) -> None:
+    """Profile editor includes a profile name field."""
+    body = _extract_func(index_html, "showProfileEditor")
+    assert "Profile Name" in body
+    assert "peProfileName" in body
+    assert "_profileName" in body
+
+
+def test_profile_name_migration(index_html: str) -> None:
+    """getProfiles migrates profiles without _profileName."""
+    body = _extract_func(index_html, "getProfiles")
+    assert "_profileName" in body
+    assert "_autoProfileName" in body
+
+
+def test_autofill_setup_called_from_post_launch(index_html: str) -> None:
+    """setupAutofill is called from postLaunchHook."""
+    body = _extract_func(index_html, "postLaunchHook")
+    assert "setupAutofill()" in body
+
+
+def test_autofill_hidden_on_reset(index_html: str) -> None:
+    """hideAutofillDropdown is called from resetForm."""
+    body = _extract_func(index_html, "resetForm")
+    assert "hideAutofillDropdown()" in body
+
+
+def test_submit_area_simplified(index_html: str) -> None:
+    """Submit area secondary only has Save Data and Reset (no Load/Paste/Sample)."""
+    secondary_match = re.search(
+        r'class="submit-area-secondary">(.*?)</div>',
+        index_html,
+        re.DOTALL,
+    )
+    assert secondary_match, "submit-area-secondary section not found"
+    section = secondary_match.group(1)
+    assert "Save Data" in section
+    assert "Reset" in section
+    assert "Paste Data" not in section
+    assert "Load Sample" not in section
+    assert "Load Data" not in section
 
 
 # --- Bundle Export/Import Feature (#163) ---
