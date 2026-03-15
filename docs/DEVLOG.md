@@ -16,11 +16,12 @@
 
 ### 2026-03-15 — Forms Tab UX Improvements (#185)
 
-Three UX improvements to the Forms tab picker experience:
+UX improvements to the Forms tab and connection management:
 
 - **Demo → Open swap** — "Try the demo form" button swaps to "Open Selected Form" in the same hero position when a source is connected. Restored on disconnect.
-- **Disconnect on source card** — The "Connect a Source" card transforms when connected: shows source name, form count, a "Change Source" button, and a "Disconnect" button in the upper-right corner.
+- **Disconnect moved to connect dialog** — When a source is connected, the connect dialog (opened via the status badge) shows a status banner with the connected source name, form count, and a Disconnect button. The source card on the Forms tab is hidden entirely when connected.
 - **Inline Open Form** — Each picker card shows an "Open Form" button when selected. Double-click and Enter on cards still work.
+- **Clean Forms tab** — When connected, the Forms tab shows only the hero area and picker grid. The "Connect a Source" empty state card reappears on disconnect.
 
 Refactored `devGhDisconnect()` into a unified `disconnectSource()` that handles both GitHub and local folder cleanup (clears file polling, workspace handle, and base module cache).
 
