@@ -10,7 +10,7 @@ FormForge is a **client-side-only** browser application that turns GitHub-hosted
 
 ## Architecture
 
-- **`index.html`** — The entire frontend: HTML + CSS + JS in one file (~8900 lines). Contains the form builder, GitHub API integration, Pyodide loader, validation, tab-based navigation (Forms, Schema, Template, Docs), and UI. Do not split this file.
+- **`index.html`** — The entire frontend: HTML + CSS + JS in one file (~8900 lines, changes frequently). Contains the form builder, GitHub API integration, Pyodide loader, validation, tab-based navigation (Forms, Schema, Template, Docs), and UI. Do not split this file.
 - **`schemas/_schema.spec.json`** — JSON Schema (draft 2020-12) that validates all form schemas. Enforces required fields, valid field types (23 enumerated), conditional constraints (e.g., `select` requires `options`, `repeater` requires `fields`), and `additionalProperties: false` at all levels.
 - **`schemas/*.json`** — Form definitions. Each schema has `title`, `description`, `icon`, `template` (path to .py), and `sections[]` containing `fields[]` with `id`, `label`, `type`, etc.
 - **`templates/stencils.py`** — Shared helper module for all templates. Provides `set_theme()`, `new_doc()`, `table_section()`, `longtext()`, `bullet_list()`, `signatures()`, `footer()`, `address()`, `image()`, `signature()`, `repeater_table()`, `format_time()`, `finalize()`, and a `DocTheme` system with built-in themes (`THEME_CLASSIC`, `THEME_MINIMAL`, `THEME_MODERN`). Loaded into Pyodide's virtual filesystem once via `loadBaseModule()` before any template runs.
@@ -109,11 +109,11 @@ ruff format templates/ tests/
 ### Test structure
 
 - `tests/conftest.py` — Shared session-scoped fixtures (`index_html`, `spec`)
-- `tests/test_stencils.py` — Unit tests for all `stencils.py` utilities (50 tests)
-- `tests/test_templates.py` — Integration tests that load each template with sample data and verify valid DOCX output (10 tests)
-- `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas, wizard, and visible_when (44 tests)
-- `tests/test_dev_mode.py` — UI structure and feature tests: HTML structure, CDN deps, starter schema/template validation, field snippets, CSS classes, context menu, tab navigation, source grid, bidirectional flow (313 tests)
-- `tests/test_context_menu.py` — Playwright e2e browser tests for context menu system (24 tests, marked `e2e`)
+- `tests/test_stencils.py` — Unit tests for all `stencils.py` utilities
+- `tests/test_templates.py` — Integration tests that load each template with sample data and verify valid DOCX output
+- `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas, wizard, and visible_when
+- `tests/test_dev_mode.py` — UI structure and feature tests: HTML structure, CDN deps, starter schema/template validation, field snippets, CSS classes, context menu, tab navigation, source grid, bidirectional flow
+- `tests/test_context_menu.py` — Playwright e2e browser tests for context menu system (marked `e2e`)
 - `tests/fixtures/*.json` — Sample form data matching each schema's field IDs
 - Templates are loaded via `importlib.util.spec_from_file_location()` with `sys.path` including `templates/` so `import stencils` resolves
 
@@ -157,7 +157,7 @@ All design values are centralized as CSS custom properties. When adding or modif
 
 | Category | Tokens | Notes |
 |----------|--------|-------|
-| **Colors** | `--bg`, `--surface`, `--surface-2`, `--border`, `--border-focus`, `--text`, `--text-muted`, `--text-on-accent`, `--accent`, `--accent-hover`, `--accent-glow`, `--accent-subtle`, `--accent-border`, `--accent-border-strong`, `--accent-overlay`, `--accent-hover-border`, `--success`, `--success-subtle`, `--warning`, `--error`, `--error-hover`, `--error-glow`, `--error-subtle`, `--syntax-number`, `--syntax-keyword`, `--syntax-function` | Three-tier surface hierarchy: bg → surface → surface-2. Use `--text-on-accent` for white text on accent/semantic backgrounds. Syntax tokens override Prism theme in Dev Mode editors. |
+| **Colors** | `--bg`, `--surface`, `--surface-2`, `--border`, `--border-focus`, `--text`, `--text-muted`, `--text-on-accent`, `--accent`, `--accent-hover`, `--accent-glow`, `--accent-subtle`, `--accent-border`, `--accent-border-strong`, `--accent-overlay`, `--accent-hover-border`, `--success`, `--success-subtle`, `--warning`, `--error`, `--error-hover`, `--error-glow`, `--error-subtle`, `--syntax-number`, `--syntax-keyword`, `--syntax-function` | Three-tier surface hierarchy: bg → surface → surface-2. Use `--text-on-accent` for white text on accent/semantic backgrounds. Syntax tokens override Prism theme in Schema/Template editors. |
 | **Fonts** | `--font-sans` (DM Sans), `--font-mono` (JetBrains Mono) | Use `--font-mono` for labels, badges, status, counters. Use `--font-sans` for everything else. |
 | **Type scale** | `--text-2xs` (10), `--text-xs` (11), `--text-sm` (12), `--text-sm-md` (13), `--text-base` (14), `--text-md` (15), `--text-lg` (16), `--text-lg-xl` (18), `--text-xl` (20), `--text-2xl` (28), `--text-3xl` (32) | Base is 14px. Mono-label pattern: `var(--text-sm)` + `var(--font-mono)` + `var(--text-muted)` |
 | **Radii** | `--radius-xs` (4), `--radius-sm` (6), `--radius-md` (8), `--radius` / `--radius-lg` (10), `--radius-pill` (20) | `--radius-md` (8px) is the default for inputs and buttons. `--radius` (10px) for cards/sections. |
