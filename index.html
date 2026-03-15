@@ -576,7 +576,54 @@
   }
   .btn-remove-row:hover { color: var(--error); border-color: var(--error); }
 
-  /* ===== 20. WIZARD ===== */
+  /* -- Repeater table display mode -- */
+  .repeater-table-scroll { overflow-x: auto; }
+  .repeater-table {
+    width: 100%; border-collapse: collapse;
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+  }
+  .repeater-table th {
+    background: var(--surface-2); color: var(--text-muted);
+    font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 500;
+    text-align: left; padding: 8px; border-bottom: 1px solid var(--border);
+  }
+  .repeater-table td {
+    padding: 4px 8px; vertical-align: middle; border-bottom: 1px solid var(--border);
+  }
+  .repeater-table tr:last-child td { border-bottom: none; }
+  .repeater-table td input,
+  .repeater-table td select {
+    border: none; background: transparent; width: 100%;
+    font-size: var(--text-sm); padding: 6px 4px; color: var(--text);
+    font-family: var(--font-sans);
+  }
+  .repeater-table td input:focus,
+  .repeater-table td select:focus { outline: none; box-shadow: inset 0 -2px 0 var(--accent); border-color: transparent; }
+  .repeater-table td input,
+  .repeater-table td select { border-radius: 0; }
+  .repeater-table td .currency-wrapper { border: none; background: transparent; gap: 2px; }
+  .repeater-table td .currency-wrapper input { padding: 6px 4px; }
+  .repeater-table .btn-remove-row { padding: 2px 6px; }
+  .repeater-table th:last-child,
+  .repeater-table td:last-child { width: 32px; text-align: center; }
+  .repeater-table tr.repeater-row {
+    display: table-row; padding: 0; border: none; border-radius: 0;
+    background: transparent; gap: 0;
+  }
+
+  /* ===== 20. INFO BLOCK ===== */
+  .info-block {
+    padding: 12px 16px; border-radius: var(--radius-md);
+    border-left: 3px solid var(--accent); font-family: var(--font-sans);
+    font-size: var(--text-sm); line-height: 1.5;
+  }
+  .info-block-info { background: var(--accent-subtle); border-left-color: var(--accent); }
+  .info-block-warning { background: color-mix(in srgb, var(--warning) 10%, transparent); border-left-color: var(--warning); }
+  .info-block-success { background: var(--success-subtle); border-left-color: var(--success); }
+  .info-block-title { font-weight: 600; margin-bottom: 4px; font-size: var(--text-sm-md); color: var(--text); }
+  .info-block-content { color: var(--text-muted); }
+
+  /* ===== 21. WIZARD ===== */
   .wizard-indicator {
     display: flex; align-items: center; justify-content: center; gap: 0;
     margin-bottom: 32px; padding: 0 16px;
@@ -2708,6 +2755,7 @@ function buildFallbackFieldTypes() {
     <tr><td><code>radio</code></td><td>Radio buttons</td><td><code>"Full-Time"</code></td><td>yes</td></tr>
     <tr><td><code>checkbox</code></td><td>Checkbox group</td><td><code>"A, B, C"</code> (comma-sep)</td><td>yes</td></tr>
     <tr><td><code>list</code></td><td>Dynamic rows + paste</td><td><code>"X\\nY\\nZ"</code> (newline-sep)</td><td>no</td></tr>
+    <tr><td><code>info</code></td><td>Read-only info/warning block</td><td><em>(skipped)</em></td><td>no</td></tr>
   </table>
   <p><strong>Layout:</strong> <code>text</code>, <code>email</code>, <code>tel</code>, <code>date</code>, <code>select</code> auto-pair into two-column rows. Everything else is full-width.</p>`;
 }
@@ -3704,7 +3752,7 @@ function findFieldGroup(fieldId) {
 function setupInlineValidation(schema) {
   for (const section of schema.sections) {
     for (const field of section.fields) {
-      if (field.type === 'heading' || field.type === 'hidden') continue;
+      if (field.type === 'heading' || field.type === 'hidden' || field.type === 'info') continue;
       const group = findFieldGroup(field.id);
       if (!group) continue;
 
@@ -3786,7 +3834,7 @@ function isFieldEmpty(field) {
 function validateSectionWithErrors(section) {
   const missing = [];
   for (const field of section.fields) {
-    if (field.type === 'heading' || field.type === 'hidden') continue;
+    if (field.type === 'heading' || field.type === 'hidden' || field.type === 'info') continue;
     const group = findFieldGroup(field.id);
     if (!field.required) { clearFieldError(group); continue; }
     if (isFieldConditionallyHidden(field.id)) { clearFieldError(group); continue; }
@@ -4241,15 +4289,84 @@ function createSignatureField(field, group) {
   group.appendChild(wrapper);
 }
 
+function createRepeaterSubInput(sf, subId, container) {
+  if (sf.type === 'select') {
+    const sel = document.createElement('select');
+    sel.id = subId; sel.name = subId;
+    for (const opt of (sf.options || [])) {
+      const o = document.createElement('option');
+      o.value = opt; o.textContent = opt || '— Select —';
+      sel.appendChild(o);
+    }
+    container.appendChild(sel);
+  } else if (sf.type === 'currency') {
+    const cw = document.createElement('div'); cw.className = 'currency-wrapper';
+    const pfx = document.createElement('span'); pfx.className = 'currency-prefix';
+    pfx.textContent = sf.currency_symbol || '$';
+    const inp = document.createElement('input');
+    inp.type = 'number'; inp.id = subId; inp.name = subId;
+    inp.step = '0.01'; inp.min = '0'; inp.placeholder = sf.placeholder || '0.00';
+    cw.appendChild(pfx); cw.appendChild(inp);
+    container.appendChild(cw);
+  } else if (sf.type === 'number') {
+    const inp = document.createElement('input');
+    inp.type = 'number'; inp.id = subId; inp.name = subId;
+    inp.placeholder = sf.placeholder || '';
+    if (sf.min !== undefined) inp.min = sf.min;
+    if (sf.max !== undefined) inp.max = sf.max;
+    if (sf.step !== undefined) inp.step = sf.step;
+    container.appendChild(inp);
+  } else if (sf.type === 'toggle') {
+    const lbl = document.createElement('label'); lbl.className = 'toggle-switch';
+    const inp = document.createElement('input');
+    inp.type = 'checkbox'; inp.id = subId; inp.name = subId;
+    const slider = document.createElement('span'); slider.className = 'toggle-slider';
+    lbl.appendChild(inp); lbl.appendChild(slider);
+    container.appendChild(lbl);
+  } else {
+    const inp = document.createElement('input');
+    inp.type = sf.type === 'email' ? 'email' : sf.type === 'tel' ? 'tel' : sf.type === 'url' ? 'url' : sf.type === 'time' ? 'time' : 'text';
+    inp.id = subId; inp.name = subId; inp.placeholder = sf.placeholder || '';
+    container.appendChild(inp);
+  }
+}
+
 function createRepeaterField(field, group) {
   const wrapper = document.createElement('div');
   wrapper.className = 'repeater-wrapper'; wrapper.id = `${field.id}_repeater`;
-  const rowsContainer = document.createElement('div');
-  rowsContainer.id = `${field.id}_rows`;
   const minRows = field.min_rows || 1;
   const maxRows = field.max_rows || DEFAULT_MAX_ROWS;
   const subFields = field.fields || [];
+  const isTable = field.display === 'table';
   let rowCount = 0;
+
+  // Table mode: build <table> with <thead>
+  let rowsContainer, tbody;
+  if (isTable) {
+    const scrollWrap = document.createElement('div');
+    scrollWrap.className = 'repeater-table-scroll';
+    const table = document.createElement('table');
+    table.className = 'repeater-table';
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    for (const sf of subFields) {
+      const th = document.createElement('th'); th.textContent = sf.label;
+      headerRow.appendChild(th);
+    }
+    const thAction = document.createElement('th'); thAction.textContent = '';
+    headerRow.appendChild(thAction);
+    thead.appendChild(headerRow);
+    tbody = document.createElement('tbody');
+    tbody.id = `${field.id}_rows`;
+    table.appendChild(thead); table.appendChild(tbody);
+    scrollWrap.appendChild(table);
+    rowsContainer = tbody;
+    wrapper.appendChild(scrollWrap);
+  } else {
+    rowsContainer = document.createElement('div');
+    rowsContainer.id = `${field.id}_rows`;
+    wrapper.appendChild(rowsContainer);
+  }
 
   // Delegated click handler for repeater row remove buttons
   rowsContainer.addEventListener('click', (e) => {
@@ -4259,78 +4376,62 @@ function createRepeaterField(field, group) {
     const row = removeBtn.closest('.repeater-row');
     const nextRow = row.nextElementSibling || row.previousElementSibling;
     row.remove();
-    updateRepeaterNumbers();
+    if (!isTable) updateRepeaterNumbers();
     updateAddBtn();
-    // Restore focus to the next/previous row's first input or the add button
     if (nextRow) {
       const input = nextRow.querySelector('input, select, textarea');
       if (input) input.focus();
     } else {
-      const addBtn = wrapper.querySelector('.btn-add-item');
-      if (addBtn) addBtn.focus();
+      const addBtnEl = wrapper.querySelector('.btn-add-item');
+      if (addBtnEl) addBtnEl.focus();
     }
   });
 
   function addRepeaterRow() {
     if (rowCount >= maxRows) return;
     const rowIdx = rowCount++;
-    const row = document.createElement('div');
-    row.className = 'repeater-row'; row.dataset.rowIdx = rowIdx;
-    const header = document.createElement('div');
-    header.className = 'repeater-row-header';
-    const rowLabel = document.createElement('span');
-    rowLabel.textContent = `#${rowIdx + 1}`;
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button'; removeBtn.className = 'btn-remove-row'; removeBtn.innerHTML = '&times;'; removeBtn.setAttribute('aria-label', 'Remove row');
-    // No individual click handler — handled via delegation on rowsContainer
-    header.appendChild(rowLabel); header.appendChild(removeBtn);
-    const fieldsDiv = document.createElement('div');
-    fieldsDiv.className = 'repeater-row-fields';
-    for (const sf of subFields) {
-      const subId = `${field.id}_r${rowIdx}_${sf.id}`;
-      const fg = document.createElement('div');
-      fg.className = 'field-group';
-      const lbl = document.createElement('label');
-      lbl.className = 'field-label'; lbl.setAttribute('for', subId);
-      lbl.textContent = sf.label;
-      fg.appendChild(lbl);
-      if (sf.type === 'select') {
-        const sel = document.createElement('select');
-        sel.id = subId; sel.name = subId;
-        for (const opt of (sf.options || [])) {
-          const o = document.createElement('option');
-          o.value = opt; o.textContent = opt || '— Select —';
-          sel.appendChild(o);
-        }
-        fg.appendChild(sel);
-      } else if (sf.type === 'currency') {
-        const cw = document.createElement('div'); cw.className = 'currency-wrapper';
-        const pfx = document.createElement('span'); pfx.className = 'currency-prefix';
-        pfx.textContent = sf.currency_symbol || '$';
-        const inp = document.createElement('input');
-        inp.type = 'number'; inp.id = subId; inp.name = subId;
-        inp.step = '0.01'; inp.min = '0'; inp.placeholder = sf.placeholder || '0.00';
-        cw.appendChild(pfx); cw.appendChild(inp);
-        fg.appendChild(cw);
-      } else if (sf.type === 'number') {
-        const inp = document.createElement('input');
-        inp.type = 'number'; inp.id = subId; inp.name = subId;
-        inp.placeholder = sf.placeholder || '';
-        if (sf.min !== undefined) inp.min = sf.min;
-        if (sf.max !== undefined) inp.max = sf.max;
-        if (sf.step !== undefined) inp.step = sf.step;
-        fg.appendChild(inp);
-      } else {
-        const inp = document.createElement('input');
-        inp.type = sf.type === 'email' ? 'email' : sf.type === 'tel' ? 'tel' : 'text';
-        inp.id = subId; inp.name = subId; inp.placeholder = sf.placeholder || '';
-        fg.appendChild(inp);
+    if (isTable) {
+      const tr = document.createElement('tr');
+      tr.className = 'repeater-row'; tr.dataset.rowIdx = rowIdx;
+      for (const sf of subFields) {
+        const td = document.createElement('td');
+        const subId = `${field.id}_r${rowIdx}_${sf.id}`;
+        createRepeaterSubInput(sf, subId, td);
+        tr.appendChild(td);
       }
-      fieldsDiv.appendChild(fg);
+      const tdAction = document.createElement('td');
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button'; removeBtn.className = 'btn-remove-row'; removeBtn.innerHTML = '&times;'; removeBtn.setAttribute('aria-label', 'Remove row');
+      tdAction.appendChild(removeBtn);
+      tr.appendChild(tdAction);
+      rowsContainer.appendChild(tr);
+    } else {
+      const row = document.createElement('div');
+      row.className = 'repeater-row'; row.dataset.rowIdx = rowIdx;
+      const header = document.createElement('div');
+      header.className = 'repeater-row-header';
+      const rowLabel = document.createElement('span');
+      rowLabel.textContent = `#${rowIdx + 1}`;
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button'; removeBtn.className = 'btn-remove-row'; removeBtn.innerHTML = '&times;'; removeBtn.setAttribute('aria-label', 'Remove row');
+      header.appendChild(rowLabel); header.appendChild(removeBtn);
+      const fieldsDiv = document.createElement('div');
+      fieldsDiv.className = 'repeater-row-fields';
+      for (const sf of subFields) {
+        const subId = `${field.id}_r${rowIdx}_${sf.id}`;
+        const fg = document.createElement('div');
+        fg.className = 'field-group';
+        const lbl = document.createElement('label');
+        lbl.className = 'field-label'; lbl.setAttribute('for', subId);
+        lbl.textContent = sf.label;
+        fg.appendChild(lbl);
+        createRepeaterSubInput(sf, subId, fg);
+        fieldsDiv.appendChild(fg);
+      }
+      row.appendChild(header);
+      row.appendChild(fieldsDiv);
+      rowsContainer.appendChild(row);
     }
-    row.appendChild(header);
-    row.appendChild(fieldsDiv);
-    rowsContainer.appendChild(row);
     updateAddBtn();
   }
 
@@ -4349,7 +4450,6 @@ function createRepeaterField(field, group) {
   addBtn.addEventListener('click', addRepeaterRow);
   function updateAddBtn() { addBtn.disabled = rowsContainer.children.length >= maxRows; }
 
-  wrapper.appendChild(rowsContainer);
   actionsDiv.appendChild(addBtn);
   wrapper.appendChild(actionsDiv);
   group.appendChild(wrapper);
@@ -4357,6 +4457,7 @@ function createRepeaterField(field, group) {
   // Store subFields config on wrapper for collectFormData
   wrapper.dataset.subFields = JSON.stringify(subFields);
   wrapper.dataset.fieldId = field.id;
+  wrapper.dataset.displayMode = isTable ? 'table' : 'cards';
 
   requestAnimationFrame(() => { for (let i = 0; i < minRows; i++) addRepeaterRow(); });
 }
@@ -4535,13 +4636,25 @@ function createMultiSelectField(field, group) {
   renderTags(); renderDropdown();
 }
 
+function createInfoField(field, group) {
+  const block = document.createElement('div');
+  block.className = `info-block info-block-${field.style || 'info'}`;
+  const title = document.createElement('div');
+  title.className = 'info-block-title'; title.textContent = field.label;
+  const content = document.createElement('div');
+  content.className = 'info-block-content'; content.textContent = field.content || '';
+  block.appendChild(title); block.appendChild(content);
+  group.appendChild(block);
+}
+
 // Field type → creator function map
 const fieldCreators = {
   text: createTextField, email: createTextField, tel: createTextField,
   date: createDateField, textarea: createTextareaField, longtext: createLongtextField,
   select: createSelectField, radio: createRadioField, checkbox: createCheckboxField,
   list: createListField, number: createNumberField, currency: createCurrencyField,
-  heading: createHeadingField, hidden: createHiddenField, address: createAddressField,
+  heading: createHeadingField, hidden: createHiddenField, info: createInfoField,
+  address: createAddressField,
   file: createFileField, signature: createSignatureField, repeater: createRepeaterField,
   time: createTimeField, url: createUrlField, toggle: createToggleField,
   datetime: createDatetimeField, multi_select: createMultiSelectField
@@ -4556,8 +4669,8 @@ function createField(field) {
   group.className = 'field-group';
   group.dataset.fieldId = field.id;
 
-  // Label (skip for heading and hidden — they handle their own rendering)
-  if (field.type === 'heading' || field.type === 'hidden') {
+  // Label (skip for heading, hidden, and info — they handle their own rendering)
+  if (field.type === 'heading' || field.type === 'hidden' || field.type === 'info') {
     // no label
   } else if (field.type !== 'checkbox' && field.type !== 'radio') {
     const label = document.createElement('label');
@@ -4576,8 +4689,8 @@ function createField(field) {
   const creator = fieldCreators[field.type];
   if (creator) creator(field, group);
 
-  // Heading handles its own hint inline
-  if (field.type === 'heading') return group;
+  // Heading and info handle their own rendering
+  if (field.type === 'heading' || field.type === 'info') return group;
 
   if (field.hint) {
     const hint = document.createElement('div');
@@ -4635,7 +4748,7 @@ function collectFormData() {
   if (!currentSchema || !currentSchema.sections) return data;
   for (const section of currentSchema.sections) {
     for (const field of section.fields) {
-      if (field.type === 'heading') continue; // non-input, skip
+      if (field.type === 'heading' || field.type === 'info') continue; // non-input, skip
       if (field.type === 'checkbox') {
         const checked = document.querySelectorAll(`input[name="${field.id}"]:checked`);
         data[field.id] = Array.from(checked).map(c => c.value).join(', ');
@@ -4708,7 +4821,7 @@ function populateForm(data, options = {}) {
 
   for (const section of currentSchema.sections) {
     for (const field of section.fields) {
-      if (field.type === 'heading') continue;
+      if (field.type === 'heading' || field.type === 'info') continue;
 
       const value = data[field.id];
       if (value === undefined || value === null) {
@@ -5249,7 +5362,7 @@ function applyProfileToForm(profile, schema) {
   let filled = 0;
   for (const section of schema.sections) {
     for (const field of section.fields) {
-      if (field.type === 'heading' || field.type === 'hidden') continue;
+      if (field.type === 'heading' || field.type === 'hidden' || field.type === 'info') continue;
       if (field.type === 'address' && profile.address) {
         const addr = profile.address;
         for (const sub of ['street', 'city', 'state', 'zip']) {
@@ -6839,6 +6952,7 @@ function devPreviewContextItems(sectionIdx) {
     { label: 'Complex Fields', children: [
       { label: 'Address',   action: insertField('address') },
       { label: 'Repeater',  action: insertField('repeater') },
+      { label: 'Repeater (Table)', action: () => devInsertSnippet('schema', { id: "items", label: "Items", type: "repeater", display: "table", fields: [{ id: "item_name", label: "Name", type: "text" }, { id: "item_qty", label: "Qty", type: "number" }] }, sectionIdx) },
       { label: 'File',      action: insertField('file') },
       { label: 'Signature', action: insertField('signature') },
       { label: 'List',      action: insertField('list') },
@@ -6846,6 +6960,7 @@ function devPreviewContextItems(sectionIdx) {
     { label: 'Layout', children: [
       { label: 'Heading', action: insertField('heading') },
       { label: 'Hidden',  action: insertField('hidden') },
+      { label: 'Info',    action: insertField('info') },
     ]},
   ];
 }
@@ -7353,6 +7468,7 @@ const FIELD_SNIPPETS = {
   list:     { id: "list_field", label: "Items List", type: "list", required: false },
   heading:  { id: "heading_1", label: "Section Heading", type: "heading" },
   hidden:   { id: "hidden_field", label: "", type: "hidden", default: "value" },
+  info:     { id: "info_1", label: "Important Notice", type: "info", content: "This is an informational message.", style: "info" },
   textarea: { id: "notes", label: "Notes", type: "textarea", required: false },
   longtext: { id: "description", label: "Description", type: "longtext", required: false }
 };
@@ -7385,6 +7501,7 @@ function devSchemaContextItems() {
     { label: 'Complex Fields', children: [
       { label: 'Address',   action: insertField('address') },
       { label: 'Repeater',  action: insertField('repeater') },
+      { label: 'Repeater (Table)', action: () => devInsertSnippet('schema', { id: "items", label: "Items", type: "repeater", display: "table", fields: [{ id: "item_name", label: "Name", type: "text" }, { id: "item_qty", label: "Qty", type: "number" }] }) },
       { label: 'File',      action: insertField('file') },
       { label: 'Signature', action: insertField('signature') },
       { label: 'List',      action: insertField('list') },
@@ -7392,6 +7509,7 @@ function devSchemaContextItems() {
     { label: 'Layout', children: [
       { label: 'Heading', action: insertField('heading') },
       { label: 'Hidden',  action: insertField('hidden') },
+      { label: 'Info',    action: insertField('info') },
     ]},
     { separator: true },
     { label: 'Add Section', action: () => devInsertSection() },
@@ -7540,7 +7658,7 @@ function devCountTemplateFieldRefs(schema, templateText) {
   let used = 0, total = 0;
   schema.sections.forEach(sec => {
     (sec.fields || []).forEach(f => {
-      if (f.type === 'heading') return;
+      if (f.type === 'heading' || f.type === 'info') return;
       total++;
       const patterns = [`data.get("${f.id}"`, `data["${f.id}"]`, `data['${f.id}']`];
       if (patterns.some(p => templateText.includes(p))) used++;
@@ -7558,7 +7676,7 @@ function devTemplateContextItems() {
     const fieldItems = [];
     devParsedSchema.sections.forEach(sec => {
       (sec.fields || []).forEach(f => {
-        if (f.type === 'heading') return;
+        if (f.type === 'heading' || f.type === 'info') return;
         const accessor = getFieldAccessor(f);
         fieldItems.push({
           label: `${f.id} (${f.type})`,
@@ -7683,6 +7801,7 @@ const SAMPLE_DATA_GENERATORS = {
   signature: () => '',
   hidden: (f) => f.default_value || f.default || 'hidden_value',
   heading: () => null,
+  info: () => null,
 };
 
 function devGenerateSampleData(schema) {

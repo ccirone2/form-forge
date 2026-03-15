@@ -19,11 +19,12 @@ Every field in a schema has a `type` that controls how it renders in the form an
 | `number` | Number input with min/max/step | `"42.5"` | none |
 | `currency` | Number input with currency prefix | `"1250.00"` | none |
 | `heading` | Non-input section divider | *(skipped)* | none |
+| `info` | Read-only info/warning/success block | *(skipped)* | `content`; optional: `style` |
 | `hidden` | Not rendered (passes static value) | `"1.0"` | `default_value` |
 | `address` | Multi-field group (street/city/state/zip) | JSON string | none |
 | `file` | File upload with preview | base64 data URI | none |
 | `signature` | Canvas drawing pad | base64 PNG data URI | none |
-| `repeater` | Dynamic group of rows | JSON array string | `fields` |
+| `repeater` | Dynamic group of rows | JSON array string | `fields`; optional: `display` |
 | `time` | Native time picker | `"09:30"` | none |
 | `url` | URL input with browser validation | `"https://example.com"` | none |
 | `toggle` | Boolean yes/no switch | `"true"` or `"false"` | none |
@@ -46,7 +47,7 @@ These apply to any field type unless noted otherwise in the type's section below
 Fields are automatically arranged in the form:
 
 - `text`, `email`, `tel`, `date`, `select`, `number`, `currency`, `time`, `url`, `toggle`, `datetime` — paired into **two-column rows** when consecutive
-- `textarea`, `longtext`, `list`, `radio`, `checkbox`, `heading`, `address`, `file`, `signature`, `repeater`, `multi_select` — always **full-width**, breaks any pairing
+- `textarea`, `longtext`, `list`, `radio`, `checkbox`, `heading`, `info`, `address`, `file`, `signature`, `repeater`, `multi_select` — always **full-width**, breaks any pairing
 - `hidden` — not rendered in the visible layout at all
 
 You control layout through field ordering. Two consecutive `text` fields pair up. A `text` followed by a `longtext` will not.
@@ -271,6 +272,28 @@ Non-input element that renders as a visual section divider within a form section
 
 **Note:** `heading` does not create an element with `id = field.id`, so it cannot be used as a `visible_when` target.
 
+## info
+
+Read-only display block for showing instructions, warnings, or policy text inline within a form section. Not an input — not collected in form data, not passed to templates. Distinct from `heading` which is a title/divider; `info` is a content block with styled variants.
+
+```json
+{ "id": "info_privacy", "label": "Privacy Notice", "type": "info", "content": "All data stays in your browser. Nothing is sent to any server.", "style": "info" }
+```
+
+**Schema properties:**
+- `content` (string, required) — the text to display in the block
+- `style` (optional string, defaults to `"info"`) — visual variant: `"info"` (indigo accent), `"warning"` (yellow accent), or `"success"` (green accent)
+
+**Examples with all three styles:**
+
+```json
+{ "id": "info_1", "label": "Note", "type": "info", "content": "Please complete all required fields.", "style": "info" }
+{ "id": "warn_1", "label": "Warning", "type": "info", "content": "Changes cannot be undone after submission.", "style": "warning" }
+{ "id": "ok_1", "label": "Approved", "type": "info", "content": "Your application has been pre-approved.", "style": "success" }
+```
+
+**Template:** Not passed — info fields are skipped during `collectFormData()`.
+
 ## hidden
 
 Invisible field that passes a static value to the template. Use for metadata like form version numbers, form IDs, or other values that should appear in the DOCX but not be edited by the user.
@@ -383,6 +406,25 @@ Dynamic field group — users can add N copies of a set of sub-fields. Each row 
 - `fields` — required array of sub-field definitions. Permitted sub-field types: `text`, `email`, `tel`, `number`, `currency`, `select`, `time`, `url`, `toggle`. No other types (including `heading`, `hidden`, `address`, `repeater`) are allowed inside a repeater.
 - `min_rows` — minimum rows; remove button is disabled when at the minimum (defaults to `1`)
 - `max_rows` — maximum rows; add button is disabled when at the maximum (defaults to `10`)
+- `display` — optional display mode: `"cards"` (default) renders each row as a stacked card with numbered header; `"table"` renders rows as a compact HTML table with column headers from sub-field labels. The data format is identical regardless of display mode.
+
+**Table display mode example:**
+
+```json
+{
+  "id": "line_items",
+  "label": "Expense Line Items",
+  "type": "repeater",
+  "display": "table",
+  "fields": [
+    { "id": "description", "label": "Description", "type": "text" },
+    { "id": "amount", "label": "Amount", "type": "currency" },
+    { "id": "category", "label": "Category", "type": "select", "options": ["", "Travel", "Meals", "Supplies"] }
+  ]
+}
+```
+
+Use `"table"` when sub-fields are short and data-dense (e.g., expense line items, schedules). Use default `"cards"` when sub-fields are complex or benefit from more visual separation.
 
 Sub-field IDs within `fields` must be unique within the repeater but do not need to be globally unique. They are keyed by sub-field `id` in each row's data object.
 
@@ -547,6 +589,7 @@ Does **not** reliably work as a target for: `checkbox`, `radio`, `list`, `addres
 | A numeric value with constraints | `number` |
 | A dollar/currency amount | `currency` |
 | A visual divider between fields | `heading` |
+| Instructions, warnings, or policy text inline | `info` |
 | Metadata not shown to the user | `hidden` |
 | A mailing/physical address | `address` |
 | An uploaded image or document | `file` |
