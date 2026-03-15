@@ -1856,3 +1856,88 @@ def test_disconnect_updates_git_toolbar(index_html: str) -> None:
     """devGhDisconnect calls updateGitToolbar after disconnecting."""
     body = _extract_func(index_html, "devGhDisconnect")
     assert "updateGitToolbar()" in body
+
+
+# --- Paste Data Feature (#161) ---
+
+
+def test_paste_data_button_exists(index_html: str) -> None:
+    """Paste Data button exists in submit-area-secondary."""
+    assert "showPasteDataModal()" in index_html
+    assert "Paste Data" in index_html
+
+
+def test_paste_data_button_in_secondary_area(index_html: str) -> None:
+    """Paste Data button is inside submit-area-secondary alongside other data buttons."""
+    secondary_match = re.search(
+        r'class="submit-area-secondary">(.*?)</div>',
+        index_html,
+        re.DOTALL,
+    )
+    assert secondary_match, "submit-area-secondary section not found"
+    section = secondary_match.group(1)
+    assert "Paste Data" in section
+    assert "Save Data" in section
+    assert "Load Data" in section
+
+
+def test_paste_data_modal_exists(index_html: str) -> None:
+    """Paste Data modal exists in HTML with correct structure."""
+    assert 'id="pasteDataModal"' in index_html
+    assert 'id="pasteDataTextarea"' in index_html
+
+
+def test_paste_data_modal_has_apply_and_cancel(index_html: str) -> None:
+    """Modal has Apply and Cancel buttons."""
+    assert 'id="btnPasteApply"' in index_html
+    assert "applyPastedData()" in index_html
+    assert "hidePasteDataModal()" in index_html
+
+
+def test_paste_data_status_element_exists(index_html: str) -> None:
+    """Status line element exists for live field match feedback."""
+    assert 'id="pasteDataStatus"' in index_html
+    assert 'class="paste-data-status"' in index_html
+
+
+def test_paste_data_modal_css(index_html: str) -> None:
+    """Paste modal CSS follows gh-connect-modal pattern."""
+    assert ".paste-data-modal" in index_html
+    assert ".paste-data-modal.open" in index_html
+    assert ".paste-data-status.error" in index_html
+    assert ".paste-data-status.success" in index_html
+
+
+def test_paste_data_modal_is_dialog(index_html: str) -> None:
+    """Paste modal has proper ARIA dialog attributes."""
+    assert 'role="dialog"' in index_html
+    assert 'aria-labelledby="pasteDataTitle"' in index_html
+    assert 'aria-modal="true"' in index_html
+
+
+def test_paste_data_functions_exist(index_html: str) -> None:
+    """All four paste data functions are defined."""
+    assert "function showPasteDataModal()" in index_html
+    assert "function hidePasteDataModal()" in index_html
+    assert "function pasteDataPreview(" in index_html
+    assert "function applyPastedData()" in index_html
+
+
+def test_paste_data_apply_calls_populate_form(index_html: str) -> None:
+    """applyPastedData uses populateForm to fill the form."""
+    body = _extract_func(index_html, "applyPastedData")
+    assert "populateForm(" in body
+
+
+def test_paste_data_preview_validates_json(index_html: str) -> None:
+    """pasteDataPreview checks for invalid JSON and array-instead-of-object."""
+    body = _extract_func(index_html, "pasteDataPreview")
+    assert "JSON.parse" in body
+    assert "Array.isArray" in body
+
+
+def test_paste_data_escape_listener(index_html: str) -> None:
+    """Escape key listener is set up for the paste modal."""
+    assert "pasteDataModal" in index_html
+    # The event listener block references hidePasteDataModal on Escape
+    assert "hidePasteDataModal()" in index_html
