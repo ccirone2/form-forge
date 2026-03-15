@@ -2324,18 +2324,16 @@ def test_demo_button_has_wrapper_id(index_html: str) -> None:
     assert 'id="demoBtnWrapper"' in index_html
 
 
-def test_demo_button_swapped_when_connected(index_html: str) -> None:
-    """renderPicker hides the demo button and shows the open button."""
+def test_demo_button_hidden_when_connected(index_html: str) -> None:
+    """renderPicker hides the demo button when a source is connected."""
     body = _extract_func(index_html, "renderPicker")
     assert "demoBtnAction" in body
-    assert "launchBtn" in body
 
 
 def test_demo_button_restored_on_disconnect(index_html: str) -> None:
-    """disconnectSource restores demo button and hides open button."""
+    """disconnectSource restores demo button."""
     body = _extract_func(index_html, "disconnectSource")
     assert "demoBtnAction" in body
-    assert "launchBtn" in body
 
 
 def test_empty_state_hidden_when_connected(index_html: str) -> None:
@@ -2378,7 +2376,7 @@ def test_open_button_visible_only_when_selected(index_html: str) -> None:
     assert ".picker-card.selected .btn-card-open { display: inline-flex" in index_html
 
 
-def test_open_selected_form_replaces_demo(index_html: str) -> None:
-    """Open Selected Form button lives in the demo-btn-wrapper alongside the demo button."""
-    assert 'id="launchBtn"' in index_html
+def test_launch_btn_removed(index_html: str) -> None:
+    """Open Selected Form hero button removed — Open Form is on each card (#190)."""
+    assert 'id="launchBtn"' not in index_html
     assert 'id="demoBtnAction"' in index_html
