@@ -14,6 +14,18 @@
 
 ## Log
 
+### 2026-03-15 — Eliminate ghToolbar (#190)
+
+Removed the global `#ghToolbar` bar and merged its branch controls into the per-editor source toolbars:
+
+- **Removed** `#ghToolbar` HTML block, its CSS (`.gh-toolbar` rules), and the `updateGitToolbar()` function + all call sites
+- **Added** branch select (`schemaBranchSelect` / `templateBranchSelect`), create-branch, and refresh buttons to both `#schemaSourceToolbar` and `#templateSourceToolbar`
+- **Updated** `updateSourceToolbar()` to show/hide the new branch controls based on `contentSourceType`
+- **Updated** `devGhFetchBranches()` to populate both editor branch selects instead of the old single toolbar one
+- **Updated** tests to verify the toolbar is gone and branch controls exist in source toolbars
+
+---
+
 ### 2026-03-15 — Forms Tab UX Improvements (#185)
 
 UX improvements to the Forms tab and connection management:
