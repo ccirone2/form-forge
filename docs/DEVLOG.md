@@ -14,6 +14,23 @@
 
 ## Log
 
+### 2026-03-15 — Bundle Export/Import (#163)
+**Issues:** #163, #167, #168
+
+Added form package export/import for sharing complete form definitions (schema + template + sample data) as a single JSON artifact.
+
+- Added "Copy Package" and "Import Package" buttons to both Schema and Template toolbars
+- `bundleExport()` constructs `formforge_package` JSON, copies to clipboard with toast + download action link
+- `bundleDownload()` saves as `{slug}.formforge.json` file; serves as clipboard fallback
+- Import modal with monospace textarea, file drop zone, and live preview status
+- Smart detection: auto-detects full packages (`formforge_package` key), bare schemas (`sections` array), bare Python templates (`import`/`def generate_docx`), and form data (`_formforge` — shows helpful redirect to Paste Data)
+- `bundleImport()` loads components into editor globals and CodeJar instances, calls `devUpdateSchemaPreview()` + `devSaveEditorState()`
+- Works even when CDN deps haven't loaded — stores in globals, applied when editors initialize
+- Added `.toast-action` CSS for download link in toast notifications
+- Added 15 new tests covering toolbar buttons, modal structure, ARIA, CSS, function existence, and smart detection
+
+---
+
 ### 2026-03-15 — Per-Schema Presets (#162)
 **Issues:** #162, #164, #165, #166
 

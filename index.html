@@ -1798,6 +1798,48 @@
   .paste-data-status.success { color: var(--success); }
   .paste-data-status.warning { color: var(--warning); }
 
+  /* Bundle Import Modal */
+  .bundle-import-modal {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 2000; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  }
+  .bundle-import-modal.open { display: flex; }
+  .bundle-import-modal textarea {
+    width: 100%; padding: 10px 12px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    color: var(--text); font-family: var(--font-mono); font-size: var(--text-sm);
+    outline: none; transition: border-color var(--transition-base);
+    box-sizing: border-box; resize: vertical; line-height: 1.5;
+  }
+  .bundle-import-modal textarea:focus {
+    border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+  .bundle-drop-zone {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px; margin-top: 6px; border: 1px dashed var(--border);
+    border-radius: var(--radius-sm); color: var(--text-muted);
+    font-size: var(--text-xs); font-family: var(--font-mono);
+    transition: all var(--transition-base); cursor: pointer;
+  }
+  .bundle-drop-zone.drag-over {
+    border-color: var(--accent); background: var(--accent-subtle);
+    color: var(--accent);
+  }
+  .bundle-import-status {
+    font-family: var(--font-mono); font-size: var(--text-xs);
+    color: var(--text-muted); min-height: 18px; margin-top: 6px;
+  }
+  .bundle-import-status.error { color: var(--error); }
+  .bundle-import-status.success { color: var(--success); }
+  .bundle-import-status.warning { color: var(--warning); }
+  .toast-action {
+    color: var(--accent); cursor: pointer; text-decoration: underline;
+    background: none; border: none; font-family: var(--font-sans);
+    font-size: var(--text-sm); padding: 0; margin-left: 4px;
+  }
+  .toast-action:hover { opacity: 0.8; }
+
   /* Git toolbar (below nav, visible when GitHub connected) */
   .gh-toolbar {
     display: none; align-items: center; gap: 8px; padding: 4px 24px;
@@ -2283,6 +2325,14 @@
           <svg width="12" height="12"><use href="#icon-save"/></svg>
           Save
         </button>
+        <button type="button" class="btn-secondary btn-sm" onclick="bundleExport()" title="Copy schema + template + sample data as one package">
+          <svg width="12" height="12"><use href="#icon-export"/></svg>
+          Copy Package
+        </button>
+        <button type="button" class="btn-secondary btn-sm" onclick="showBundleImportModal()" title="Import a form package">
+          <svg width="12" height="12"><use href="#icon-upload"/></svg>
+          Import Package
+        </button>
       </div>
     </div>
     <div class="dev-source-toolbar" id="schemaSourceToolbar" style="display:none">
@@ -2341,6 +2391,14 @@
         <button type="button" class="btn-secondary btn-sm" onclick="devSaveTemplate()" title="Save (Ctrl+S)">
           <svg width="12" height="12"><use href="#icon-save"/></svg>
           Save
+        </button>
+        <button type="button" class="btn-secondary btn-sm" onclick="bundleExport()" title="Copy schema + template + sample data as one package">
+          <svg width="12" height="12"><use href="#icon-export"/></svg>
+          Copy Package
+        </button>
+        <button type="button" class="btn-secondary btn-sm" onclick="showBundleImportModal()" title="Import a form package">
+          <svg width="12" height="12"><use href="#icon-upload"/></svg>
+          Import Package
         </button>
         <button type="button" class="btn-primary btn-sm" onclick="devRunPreview()" title="Preview DOCX (Shift+Enter / Ctrl+Enter)">
           <svg width="12" height="12"><use href="#icon-play"/></svg>
@@ -2517,6 +2575,29 @@
   </div>
 </div>
 
+<!-- Bundle Import Modal -->
+<div class="bundle-import-modal" id="bundleImportModal" role="dialog" aria-labelledby="bundleImportTitle" aria-modal="true">
+  <div class="gh-connect-panel" style="max-width:560px">
+    <h3 id="bundleImportTitle">Import Form Package</h3>
+    <p class="gh-connect-subtitle">Paste a form package, schema JSON, or Python template</p>
+    <div class="gh-connect-field">
+      <label for="bundleImportTextarea">Package Content</label>
+      <textarea id="bundleImportTextarea" rows="12" placeholder='Paste a .formforge.json package, schema JSON, or Python template...' spellcheck="false"></textarea>
+    </div>
+    <div class="bundle-drop-zone" id="bundleDropZone">
+      <svg width="16" height="16"><use href="#icon-upload"/></svg>
+      or drop a .formforge.json file
+    </div>
+    <div class="bundle-import-status" id="bundleImportStatus"></div>
+    <div class="gh-connect-actions">
+      <button type="button" class="btn-secondary btn-sm" onclick="hideBundleImportModal()">Cancel</button>
+      <button type="button" class="btn-primary btn-sm" id="btnBundleImport" onclick="bundleImportFromModal()" disabled>
+        Import
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Context Menu (shared, positioned dynamically) -->
 <div class="ctx-menu" id="ctxMenu" role="menu" aria-label="Context menu" style="display:none"></div>
 
@@ -2574,6 +2655,260 @@ function devSaveEditorState() {
     localStorage.setItem('formforge-dev-template', devTemplateText);
     localStorage.setItem('formforge-dev-sampledata', devSampleDataText);
   }, 1000);
+}
+
+// ============================================================
+//  FORM PACKAGE EXPORT / IMPORT
+// ============================================================
+
+function bundleExport() {
+  // Validate schema JSON
+  let schemaObj = null;
+  if (devSchemaText && devSchemaText.trim()) {
+    try {
+      schemaObj = JSON.parse(devSchemaText);
+    } catch (err) {
+      showToast('Schema has invalid JSON — fix before exporting', 'error');
+      return;
+    }
+  }
+
+  // Parse sample data
+  let sampleObj = null;
+  if (devSampleDataText && devSampleDataText.trim() && devSampleDataText.trim() !== '{}') {
+    try { sampleObj = JSON.parse(devSampleDataText); } catch (e) { /* keep null */ }
+  }
+
+  const pkg = {
+    formforge_package: {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      source: 'editor'
+    },
+    schema: schemaObj,
+    template: devTemplateText || null,
+    sampleData: sampleObj
+  };
+
+  const json = JSON.stringify(pkg, null, 2);
+
+  // Try clipboard first, fall back to download
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(json).then(() => {
+      bundleShowCopyToast(schemaObj);
+    }).catch(() => {
+      bundleDownload(json, schemaObj);
+    });
+  } else {
+    bundleDownload(json, schemaObj);
+  }
+}
+
+function bundleShowCopyToast(schemaObj) {
+  const toast = document.getElementById('toast');
+  clearTimeout(toastTimer);
+  toast.innerHTML = '';
+
+  const parts = [];
+  if (schemaObj) parts.push('schema');
+  if (devTemplateText && devTemplateText.trim()) parts.push('template');
+  if (devSampleDataText && devSampleDataText.trim() !== '{}') parts.push('sample data');
+  const summary = parts.length > 0 ? parts.join(' + ') : 'empty package';
+
+  const msgSpan = document.createElement('span');
+  msgSpan.className = 'toast-msg';
+  msgSpan.textContent = `Package copied — ${summary}`;
+
+  const actionBtn = document.createElement('button');
+  actionBtn.className = 'toast-action';
+  actionBtn.textContent = 'Download';
+  actionBtn.onclick = (e) => { e.preventDefault(); bundleDownload(null, schemaObj); };
+
+  const dismissBtn = document.createElement('button');
+  dismissBtn.className = 'toast-dismiss';
+  dismissBtn.setAttribute('aria-label', 'Dismiss');
+  dismissBtn.innerHTML = '&times;';
+  dismissBtn.onclick = () => toast.classList.remove('show');
+
+  toast.appendChild(msgSpan);
+  toast.appendChild(actionBtn);
+  toast.appendChild(dismissBtn);
+  toast.className = 'toast success show';
+  toastTimer = setTimeout(() => toast.classList.remove('show'), TOAST_DURATION_MS + 2000);
+}
+
+function bundleDownload(json, schemaObj) {
+  if (!json) {
+    // Reconstruct if called from toast action
+    let sampleObj = null;
+    try { sampleObj = JSON.parse(devSampleDataText); } catch (e) { /* null */ }
+    const pkg = {
+      formforge_package: { version: 1, exportedAt: new Date().toISOString(), source: 'editor' },
+      schema: schemaObj || (() => { try { return JSON.parse(devSchemaText); } catch (e) { return null; } })(),
+      template: devTemplateText || null,
+      sampleData: sampleObj
+    };
+    json = JSON.stringify(pkg, null, 2);
+  }
+
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  let slug = 'form-package';
+  if (schemaObj && schemaObj.title) {
+    slug = schemaObj.title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  }
+  a.href = url;
+  a.download = `${slug}.formforge.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`Downloaded ${slug}.formforge.json`);
+}
+
+function showBundleImportModal() {
+  const modal = document.getElementById('bundleImportModal');
+  const textarea = document.getElementById('bundleImportTextarea');
+  const status = document.getElementById('bundleImportStatus');
+  const importBtn = document.getElementById('btnBundleImport');
+  textarea.value = '';
+  status.textContent = '';
+  status.className = 'bundle-import-status';
+  importBtn.disabled = true;
+  _bundleParseResult = { type: null };
+  modal.classList.add('open');
+  textarea.focus();
+}
+
+function hideBundleImportModal() {
+  document.getElementById('bundleImportModal').classList.remove('open');
+}
+
+function bundleParsePreview(text) {
+  const status = document.getElementById('bundleImportStatus');
+  const importBtn = document.getElementById('btnBundleImport');
+
+  if (!text.trim()) {
+    status.textContent = '';
+    status.className = 'bundle-import-status';
+    importBtn.disabled = true;
+    return { type: null };
+  }
+
+  const trimmed = text.trim();
+
+  // Try JSON first; fall back to Python template detection
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (err) {
+    // Not valid JSON — check for bare Python template
+    if (/^(import |from |def generate_docx|#)/.test(trimmed)) {
+      const lines = trimmed.split('\n').length;
+      status.textContent = `Template detected — ${lines} lines of Python`;
+      status.className = 'bundle-import-status success';
+      importBtn.disabled = false;
+      return { type: 'template', template: text };
+    }
+    status.textContent = 'Invalid JSON — check syntax';
+    status.className = 'bundle-import-status error';
+    importBtn.disabled = true;
+    return { type: null };
+  }
+
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    status.textContent = 'Expected a JSON object';
+    status.className = 'bundle-import-status error';
+    importBtn.disabled = true;
+    return { type: null };
+  }
+
+  // Form data pasted by mistake
+  if (parsed._formforge) {
+    status.textContent = 'This is form data — use "Paste Data" on the Forms tab instead';
+    status.className = 'bundle-import-status warning';
+    importBtn.disabled = true;
+    return { type: null };
+  }
+
+  // Full package
+  if (parsed.formforge_package) {
+    const parts = [];
+    if (parsed.schema && parsed.schema.title) parts.push(`Schema: ${parsed.schema.title}`);
+    else if (parsed.schema) parts.push('Schema: untitled');
+    if (parsed.template && typeof parsed.template === 'string') parts.push(`Template: ${parsed.template.split('\n').length} lines`);
+    if (parsed.sampleData && typeof parsed.sampleData === 'object' && !Array.isArray(parsed.sampleData)) parts.push(`Sample Data: ${Object.keys(parsed.sampleData).length} fields`);
+    status.textContent = parts.length > 0 ? parts.join(' | ') : 'Empty package';
+    status.className = parts.length > 0 ? 'bundle-import-status success' : 'bundle-import-status warning';
+    importBtn.disabled = parts.length === 0;
+    return { type: 'package', data: parsed };
+  }
+
+  // Bare schema (has sections array)
+  if (parsed.sections && Array.isArray(parsed.sections)) {
+    const title = parsed.title || 'untitled';
+    const fieldCount = parsed.sections.reduce((n, s) => n + (s.fields ? s.fields.length : 0), 0);
+    status.textContent = `Schema detected — "${title}" with ${fieldCount} fields`;
+    status.className = 'bundle-import-status success';
+    importBtn.disabled = false;
+    return { type: 'schema', schema: parsed };
+  }
+
+  status.textContent = 'Unrecognized format — expected a form package, schema, or template';
+  status.className = 'bundle-import-status error';
+  importBtn.disabled = true;
+  return { type: null };
+}
+
+let _bundleParseResult = { type: null };
+
+function bundleImportFromModal() {
+  bundleImport(_bundleParseResult);
+}
+
+function bundleImport(parseResult) {
+  if (!parseResult || !parseResult.type) return;
+
+  const parts = [];
+
+  if (parseResult.type === 'package') {
+    const pkg = parseResult.data;
+    if (pkg.schema) {
+      const schemaStr = JSON.stringify(pkg.schema, null, 2);
+      devSchemaText = schemaStr;
+      if (schemaJar) schemaJar.updateCode(schemaStr);
+      parts.push('schema');
+    }
+    if (pkg.template) {
+      devTemplateText = pkg.template;
+      if (templateJar) templateJar.updateCode(pkg.template);
+      parts.push('template');
+    }
+    if (pkg.sampleData) {
+      const sampleStr = JSON.stringify(pkg.sampleData, null, 2);
+      devSampleDataText = sampleStr;
+      if (sampleJar) sampleJar.updateCode(sampleStr);
+      parts.push('sample data');
+    }
+  } else if (parseResult.type === 'schema') {
+    const schemaStr = JSON.stringify(parseResult.schema, null, 2);
+    devSchemaText = schemaStr;
+    if (schemaJar) schemaJar.updateCode(schemaStr);
+    parts.push('schema');
+  } else if (parseResult.type === 'template') {
+    devTemplateText = parseResult.template;
+    if (templateJar) templateJar.updateCode(parseResult.template);
+    parts.push('template');
+  }
+
+  if (parts.length === 0) return;
+
+  // Update preview and persist
+  if (typeof devUpdateSchemaPreview === 'function') devUpdateSchemaPreview();
+  devSaveEditorState();
+
+  hideBundleImportModal();
+  showToast(`Imported ${parts.join(' + ')}`);
+  log(`Bundle import: loaded ${parts.join(', ')}`, 'success');
 }
 
 // Workspace state
@@ -9563,6 +9898,65 @@ document.addEventListener('DOMContentLoaded', () => {
     const pasteTextarea = document.getElementById('pasteDataTextarea');
     if (pasteTextarea) {
       pasteTextarea.addEventListener('input', () => pasteDataPreview(pasteTextarea.value));
+    }
+  }
+
+  // Bundle Import modal — close on click outside or Escape, live preview on input, file drop
+  const bundleModal = document.getElementById('bundleImportModal');
+  if (bundleModal) {
+    bundleModal.addEventListener('click', (e) => {
+      if (e.target === bundleModal) hideBundleImportModal();
+    });
+    bundleModal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hideBundleImportModal();
+    });
+    const bundleTextarea = document.getElementById('bundleImportTextarea');
+    if (bundleTextarea) {
+      bundleTextarea.addEventListener('input', () => {
+        _bundleParseResult = bundleParsePreview(bundleTextarea.value);
+      });
+    }
+    const dropZone = document.getElementById('bundleDropZone');
+    if (dropZone) {
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+      });
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+      });
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const textarea = document.getElementById('bundleImportTextarea');
+          textarea.value = ev.target.result;
+          _bundleParseResult = bundleParsePreview(ev.target.result);
+        };
+        reader.onerror = () => showToast('Failed to read file', 'error');
+        reader.readAsText(file);
+      });
+      dropZone.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json,.formforge.json';
+        input.onchange = (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const textarea = document.getElementById('bundleImportTextarea');
+            textarea.value = ev.target.result;
+            _bundleParseResult = bundleParsePreview(ev.target.result);
+          };
+          reader.onerror = () => showToast('Failed to read file', 'error');
+          reader.readAsText(file);
+        };
+        input.click();
+      });
     }
   }
 });
