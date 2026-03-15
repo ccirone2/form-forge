@@ -2,7 +2,7 @@
 
 A template is a Python script that generates a DOCX file from form data. It runs entirely in the browser via Pyodide — no server required.
 
-> **Tip:** You can also create and edit templates using **Dev Mode's Template Builder** — toggle Dev Mode from the header, then use the Python editor with DOCX preview and right-click context menu to insert stencils helper snippets.
+> **Tip:** You can also create and edit templates using the **Template tab** — use the Python editor with DOCX preview and right-click context menu to insert stencils helper snippets.
 
 ## File Location
 
