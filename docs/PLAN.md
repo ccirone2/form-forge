@@ -17,6 +17,14 @@ TODO: Schema context menu improvements — add option to add base scaffold (e.g.
 
 ## Completed Plans
 
+### Issues #192–#196 — UI/UX Audit Fixes ✅
+
+**Branch:** `feature/192-ui-ux-audit`
+**Issues:** #192, #193, #194, #195, #196
+**Plan:** `~/.claude/plans/ui-ux-audit-192.md`
+
+Fixed 55 UI/UX audit findings across 4 priority tiers: P0 critical a11y gaps, P1 design token normalization + modal a11y, P2 editor performance + responsive design, P3 design system refinements.
+
 ### Issue #198 — Embed Full Documentation in Docs Tab ✅
 
 **Branch:** `feature/198-embed-docs`

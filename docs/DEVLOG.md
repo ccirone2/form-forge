@@ -14,6 +14,55 @@
 
 ## Log
 
+### 2026-03-16 — UI/UX Audit Fixes (#192, #193, #194, #195, #196)
+
+Implemented all 4 priority tiers of the UI/UX audit across accessibility, design tokens, performance, and responsive design.
+
+**P0 — Critical Accessibility (#193):**
+- Made `token-toggle` divs keyboard-accessible with `tabindex`, `role="button"`, and Enter/Space handlers
+- Added `:focus-visible` style on `.dev-nav-tab` navigation buttons
+- Added `aria-label` to all icon-only toolbar buttons and profile field indicator
+- Added `role="tabpanel" aria-labelledby` to `view-form`
+- Added `:focus` styles matching `:hover` on dropdown items (autofill, profile, preset)
+- Added `alt` attribute to file preview `<img>` elements
+
+**P1 — Design Tokens & Modal Accessibility (#194):**
+- Replaced all 33 raw transition values with `var(--transition-*)` tokens
+- Added `--overlay-scrim`, `--warning-subtle` tokens; unified 6 modal backdrop values
+- Improved `--text-muted` contrast from `#8b8da0` to `#9496a8` (WCAG AA compliant)
+- Added `for` attributes linking labels to inputs in connect dialog and profile editor
+- Added focus trapping to connect dialog (Tab cycles, Shift+Tab wraps, focus restored on close)
+- Wrapped 3 editor scroll-sync handlers in `requestAnimationFrame`
+- Added `aria-modal`, tab ARIA semantics, `aria-label` on status badge and autofill dropdown
+- Added Space key support to profile/preset dropdown keyboard navigation
+- Added `aria-label` on bulk list textarea, `role="group"` on preset field checkboxes
+
+**P2 — Editor Performance & Responsive (#195):**
+- Eliminated gutter DOM thrashing: event delegation (one handler vs per-element), diff-based skip when line count/folds unchanged
+- Changed mobile gate from hiding entire nav to hiding only Schema/Template tabs (Docs tab remains accessible)
+- Added 44px touch target expansion for `.autofill-btn`, `.btn-card-edit`, `.btn-clear-sig`, `.btn-sm`
+- Added bottom-sheet behavior for preset dropdown on mobile (matching profile/autofill)
+- Added `beforeunload` cleanup for workspace file poller
+- Added canvas-based image resize (max 1200px) before base64 encoding in file fields
+- Added `--radius-circle` token, replaced 9 `border-radius: 50%` occurrences
+
+**P3 — Design System Refinements (#196):**
+- Replaced `aria-label` with `aria-labelledby` on connect dialog (points to visible `<h3>`)
+- Added `aria-label` to autofill badge for screen reader context
+- Added arrow-key navigation between connect dialog tabs
+- Changed skip-link from `top` animation to `transform: translateY()` (avoids layout)
+- Added `--focus-ring` token, replaced 3 `box-shadow: 0 0 0 3px var(--accent-glow)` patterns
+- Added `@media (pointer: coarse)` to disable `backdrop-filter: blur()` on touch devices
+- Documented breakpoint strategy and aligned 767px → 768px
+
+**Decisions:**
+- Kept Docs tab visible on narrow viewports (read-only, no split-pane needed)
+- Used `var(--transition-fast)` for `0.1s` values (no new `--transition-fastest` token)
+- Image resize uses `toDataURL` with quality 0.85 for JPEG compression
+- M5 (picker card restructuring) skipped — high-risk for low benefit
+
+---
+
 ### 2026-03-16 — Embed Full Documentation in Docs Tab (#198)
 
 Embedded the full markdown docs (`SCHEMA_GUIDE.md`, `TEMPLATE_GUIDE.md`, `FIELD_TYPES.md`) directly in `index.html` as JS template-literal constants, replacing the abbreviated fallback content (which only covered 11 of 24 field types).

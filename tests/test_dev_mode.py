@@ -182,9 +182,11 @@ def test_css_section_37_mobile_gate(index_html: str) -> None:
 
 
 def test_mobile_gate_hides_dev_nav(index_html: str) -> None:
-    """The dev nav must be hidden on narrow viewports."""
-    pattern = r"@media\s*\(max-width:\s*768px\)\s*\{[^}]*\.dev-nav\s*\{"
-    assert re.search(pattern, index_html), "dev-nav must be hidden at <=768px"
+    """Editor tabs (Schema/Template) must be hidden on narrow viewports."""
+    pattern = r'@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.dev-nav-tab\[data-tab="dev-schema"\]'
+    assert re.search(pattern, index_html), (
+        "Schema/Template tabs must be hidden at <=768px"
+    )
 
 
 # --- JavaScript Functions ---
@@ -889,11 +891,11 @@ def test_workspace_poll_auto_reloads_editor(index_html: str) -> None:
 
 
 def test_mobile_gate_hides_dev_nav_display_none(index_html: str) -> None:
-    """Dev nav is hidden at max-width 768px via CSS."""
-    # The @media block contains multiple rules; use [\s\S] to span across them
-    pattern = r"@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.dev-nav\s*\{\s*display:\s*none\s*!important"
+    """Schema/Template tabs are hidden at max-width 768px via CSS."""
+    # Individual editor tabs are hidden rather than the entire nav bar
+    pattern = r'@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.dev-nav-tab\[data-tab="dev-schema"\][\s\S]*?display:\s*none'
     assert re.search(pattern, index_html), (
-        "dev-nav must be display:none!important at <=768px"
+        "Schema/Template tabs must be hidden at <=768px"
     )
 
 
