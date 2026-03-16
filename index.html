@@ -2500,9 +2500,6 @@
       <button type="button" class="btn-secondary btn-sm" id="schemaCommitBtn" onclick="devGhShowCommitPanel()" style="display:none">
         <svg width="12" height="12"><use href="#icon-git-commit"/></svg> Commit
       </button>
-      <button type="button" class="btn-secondary btn-sm" id="schemaSaveLocalBtn" onclick="devSaveToWorkspace('schema')" style="display:none">
-        <svg width="12" height="12"><use href="#icon-save"/></svg> Save to Disk
-      </button>
     </div>
     <div class="dev-split" id="schemaSplit">
       <div class="dev-pane dev-pane-editor" id="schemaEditorPane">
@@ -2577,9 +2574,6 @@
       </button>
       <button type="button" class="btn-secondary btn-sm" id="templateCommitBtn" onclick="devGhShowCommitPanel()" style="display:none">
         <svg width="12" height="12"><use href="#icon-git-commit"/></svg> Commit
-      </button>
-      <button type="button" class="btn-secondary btn-sm" id="templateSaveLocalBtn" onclick="devSaveToWorkspace('template')" style="display:none">
-        <svg width="12" height="12"><use href="#icon-save"/></svg> Save to Disk
       </button>
     </div>
     <div class="dev-split" id="templateSplit">
@@ -3080,7 +3074,8 @@ function bundleImport(parseResult) {
 let workspaceHandle = null;      // FileSystemDirectoryHandle (FSAA)
 let workspaceFiles = { schemas: [], templates: [] };
 let devWorkspacePoller = null;   // setInterval ID for FSAA change polling
-let currentWorkspaceFile = null;
+let currentSchemaFile = null;    // { index } into workspaceFiles.schemas
+let currentTemplateFile = null;  // { index } into workspaceFiles.templates
 
 // Unified content source (single GitHub connection for both filling and editing)
 let contentSourceType = null;         // 'github' | 'local' | 'demo' | null
@@ -9366,6 +9361,33 @@ async function showTab(tabName) {
 //  BIDIRECTIONAL FORM <-> EDITOR FLOW
 // ============================================================
 
+async function loadPairedTemplate(entry) {
+  // Load the template paired with a schema entry into the template editor
+  let templateCode = '';
+  const tmplName = (entry.templatePath || '').replace('templates/', '');
+  if (contentSourceType === 'local') {
+    const tmplFile = workspaceFiles.templates.find(t => t.name === tmplName);
+    if (tmplFile) templateCode = tmplFile.text;
+  } else if (contentSourceType === 'github') {
+    try { templateCode = await ghFetchRaw(entry.templatePath); } catch (e) { /* use starter */ }
+  }
+  if (!templateCode) templateCode = DEV_STARTER_TEMPLATE;
+  devTemplateText = templateCode;
+  if (templateJar) templateJar.updateCode(templateCode);
+  const wsIdx = workspaceFiles.templates.findIndex(t => t.name === tmplName);
+  currentTemplateFile = wsIdx >= 0 ? { index: wsIdx } : null;
+}
+
+async function loadPairedSchema(entry) {
+  // Load the schema paired with a template entry into the schema editor
+  const schemaJSON = JSON.stringify(entry.schema, null, 2);
+  devSchemaText = schemaJSON;
+  if (schemaJar) schemaJar.updateCode(schemaJSON);
+  const wsIdx = workspaceFiles.schemas.findIndex(s => 'schemas/' + s.name === entry.schemaPath);
+  currentSchemaFile = wsIdx >= 0 ? { index: wsIdx } : null;
+  devUpdateSchemaPreview();
+}
+
 async function loadSchemaIntoEditor(schemaIdx) {
   const entry = repoSchemas[schemaIdx];
   if (!entry) return;
@@ -9375,7 +9397,9 @@ async function loadSchemaIntoEditor(schemaIdx) {
   if (schemaJar) schemaJar.updateCode(schemaJSON);
   // Track which workspace file is being edited
   const wsIdx = workspaceFiles.schemas.findIndex(s => 'schemas/' + s.name === entry.schemaPath);
-  if (wsIdx >= 0) currentWorkspaceFile = { type: 'schema', index: wsIdx };
+  currentSchemaFile = wsIdx >= 0 ? { index: wsIdx } : null;
+  // Also load paired template so it's ready when switching tabs
+  await loadPairedTemplate(entry);
   updateSourceToolbar();
   showTab('dev-schema');
 }
@@ -9386,21 +9410,24 @@ async function loadTemplateIntoEditor(schemaIdx) {
   await loadDevModeDeps();
 
   let templateCode = '';
+  const tmplName = (entry.templatePath || '').replace('templates/', '');
   if (contentSourceType === 'local') {
-    const tmplName = (entry.templatePath || '').replace('templates/', '');
     const tmplFile = workspaceFiles.templates.find(t => t.name === tmplName);
     if (tmplFile) templateCode = tmplFile.text;
-    else { showToast(`Template not found: ${tmplName}`, 'error'); return; }
+    else { showToast(`Template not found: ${tmplName}`, 'error'); templateCode = DEV_STARTER_TEMPLATE; }
   } else if (contentSourceType === 'github') {
     try {
       templateCode = await ghFetchRaw(entry.templatePath);
-    } catch (e) { showToast(`Failed to fetch template: ${e.message}`, 'error'); return; }
+    } catch (e) { showToast(`Failed to fetch template: ${e.message}`, 'error'); templateCode = DEV_STARTER_TEMPLATE; }
   }
+  if (!templateCode) templateCode = DEV_STARTER_TEMPLATE;
 
   devTemplateText = templateCode;
   if (templateJar) templateJar.updateCode(templateCode);
-  const wsIdx = workspaceFiles.templates.findIndex(t => 'templates/' + t.name === entry.templatePath);
-  if (wsIdx >= 0) currentWorkspaceFile = { type: 'template', index: wsIdx };
+  const wsIdx = workspaceFiles.templates.findIndex(t => t.name === tmplName);
+  currentTemplateFile = wsIdx >= 0 ? { index: wsIdx } : null;
+  // Also load paired schema so it's ready when switching tabs
+  await loadPairedSchema(entry);
   updateSourceToolbar();
   showTab('dev-template');
 }
@@ -9463,9 +9490,9 @@ function updateSourceToolbar() {
   // Helper: configure one source toolbar
   function configureToolbar(toolbar, prefix, fileType) {
     if (!toolbar) return;
-    const hasFile = currentWorkspaceFile && currentWorkspaceFile.type === fileType;
+    const cwf = fileType === 'schema' ? currentSchemaFile : currentTemplateFile;
     const files = fileType === 'schema' ? workspaceFiles.schemas : workspaceFiles.templates;
-    const f = hasFile ? files[currentWorkspaceFile.index] : null;
+    const f = cwf ? files[cwf.index] : null;
     const isGh = contentSourceType === 'github';
     const isLocal = contentSourceType === 'local';
 
@@ -9473,8 +9500,8 @@ function updateSourceToolbar() {
     const editorContent = fileType === 'schema' ? devSchemaText : devTemplateText;
     const hasEditorContent = editorContent && editorContent.trim();
 
-    // Show toolbar if a file is loaded OR if GitHub is connected (branch controls)
-    if (f || isGh) {
+    // Show toolbar when a source is connected (GitHub or local folder) or a file is loaded
+    if (f || isGh || isLocal) {
       toolbar.style.display = 'flex';
       document.getElementById(prefix + 'SourceFile').textContent = f ? (f.ghPath || f.name) : (hasEditorContent ? 'new file (unsaved)' : '');
       document.getElementById(prefix + 'SourceBranch').textContent = isGh ? `@ ${ghBranch}` : '';
@@ -9483,16 +9510,6 @@ function updateSourceToolbar() {
       document.getElementById(prefix + 'RefreshBtn').style.display = isGh ? 'inline-flex' : 'none';
       // Show commit button for tracked files OR for new unsaved content when GitHub connected
       document.getElementById(prefix + 'CommitBtn').style.display = (isGh && (f || hasEditorContent)) ? 'inline-flex' : 'none';
-      document.getElementById(prefix + 'SaveLocalBtn').style.display = (f && isLocal) ? 'inline-flex' : 'none';
-    } else if (isLocal && f) {
-      toolbar.style.display = 'flex';
-      document.getElementById(prefix + 'SourceFile').textContent = f.name;
-      document.getElementById(prefix + 'SourceBranch').textContent = '';
-      document.getElementById(prefix + 'BranchSelect').style.display = 'none';
-      document.getElementById(prefix + 'NewBranchBtn').style.display = 'none';
-      document.getElementById(prefix + 'RefreshBtn').style.display = 'none';
-      document.getElementById(prefix + 'CommitBtn').style.display = 'none';
-      document.getElementById(prefix + 'SaveLocalBtn').style.display = 'inline-flex';
     } else {
       toolbar.style.display = 'none';
     }
@@ -9936,8 +9953,8 @@ function initSchemaEditor() {
     clearTimeout(devPreviewDebounce);
     devPreviewDebounce = setTimeout(devUpdateSchemaPreview, 300);
     devSaveEditorState();
-    if (contentSourceType === 'github' && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
-      devGhTrackModification('schema', currentWorkspaceFile.index);
+    if (contentSourceType === 'github' && currentSchemaFile) {
+      devGhTrackModification('schema', currentSchemaFile.index);
     }
   });
 
@@ -10397,7 +10414,7 @@ function devEnablePreviewDragDrop() {
 function devNewSchema() {
   devSchemaText = JSON.stringify(DEV_STARTER_SCHEMA, null, 2);
   if (schemaJar) schemaJar.updateCode(devSchemaText);
-  currentWorkspaceFile = null;
+  currentSchemaFile = null;
   updateSourceToolbar();
   devUpdateSchemaPreview();
   showToast('New schema created');
@@ -10429,7 +10446,7 @@ function devFormatSchema() {
 }
 
 function devSaveSchema() {
-  if (workspaceHandle && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
+  if (workspaceHandle && currentSchemaFile) {
     devSaveToWorkspace('schema');
     return;
   }
@@ -10438,12 +10455,12 @@ function devSaveSchema() {
     return;
   }
   // GitHub connected with tracked file — show commit panel
-  if (contentSourceType === 'github' && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
+  if (contentSourceType === 'github' && currentSchemaFile) {
     devGhShowCommitPanel();
     return;
   }
   // GitHub connected but no workspace file — register as new file and show commit panel
-  if (contentSourceType === 'github' && (!currentWorkspaceFile || currentWorkspaceFile.type !== 'schema')) {
+  if (contentSourceType === 'github' && !currentSchemaFile) {
     if (devGhRegisterNewFile('schema')) {
       devGhShowCommitPanel();
     }
@@ -10915,8 +10932,10 @@ function initTemplateEditor() {
     devTemplateText = code;
     devUpdateLineNumbers(el, tplGutter);
     devSaveEditorState();
-    if (contentSourceType === 'github' && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
-      devGhTrackModification('template', currentWorkspaceFile.index);
+    clearTimeout(devTemplateValidDebounce);
+    devTemplateValidDebounce = setTimeout(devUpdateTemplateValidation, 300);
+    if (contentSourceType === 'github' && currentTemplateFile) {
+      devGhTrackModification('template', currentTemplateFile.index);
     }
   });
 
@@ -10953,6 +10972,7 @@ function initTemplateEditor() {
 
   devUpdateLineNumbers(el, tplGutter);
   initDevResizer('templateResizer', 'templateEditorPane', 'templatePreviewPane', 'template');
+  devUpdateTemplateValidation();
 }
 
 function devToggleSampleData() {
@@ -11042,6 +11062,37 @@ function devAutoFillSampleData() {
   showToast('Sample data generated from schema');
 }
 
+let devTemplateValidDebounce = null;
+
+function devUpdateTemplateValidation() {
+  const badge = document.getElementById('templateStatusBadge');
+  const badgeText = document.getElementById('templateStatusText');
+  if (!badge || !badgeText) return;
+
+  const code = devTemplateText || '';
+  if (!code.trim()) {
+    badge.className = 'dev-validation-badge';
+    badgeText.textContent = 'empty';
+    return;
+  }
+
+  const errors = [];
+  if (!/def\s+generate_docx\s*\(/.test(code)) {
+    errors.push('missing generate_docx(data) function');
+  }
+  if (!/import\s+stencils|from\s+stencils\s+import/.test(code)) {
+    errors.push('missing import stencils');
+  }
+
+  if (errors.length > 0) {
+    badge.className = 'dev-validation-badge invalid';
+    badgeText.textContent = errors.join(', ');
+  } else {
+    badge.className = 'dev-validation-badge valid';
+    badgeText.textContent = 'ready';
+  }
+}
+
 async function devRunPreview() {
   const badge = document.getElementById('templateStatusBadge');
   const badgeText = document.getElementById('templateStatusText');
@@ -11117,8 +11168,9 @@ bytes(_result) if isinstance(_result, (bytes, bytearray)) else _result
 function devNewTemplate() {
   devTemplateText = DEV_STARTER_TEMPLATE;
   if (templateJar) templateJar.updateCode(devTemplateText);
-  currentWorkspaceFile = null;
+  currentTemplateFile = null;
   updateSourceToolbar();
+  devUpdateTemplateValidation();
   showToast('New template created');
 }
 
@@ -11136,7 +11188,7 @@ function devLoadTemplateFile(event) {
 }
 
 function devSaveTemplate() {
-  if (workspaceHandle && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
+  if (workspaceHandle && currentTemplateFile) {
     devSaveToWorkspace('template');
     return;
   }
@@ -11145,12 +11197,12 @@ function devSaveTemplate() {
     return;
   }
   // GitHub connected with tracked file — show commit panel
-  if (contentSourceType === 'github' && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
+  if (contentSourceType === 'github' && currentTemplateFile) {
     devGhShowCommitPanel();
     return;
   }
   // GitHub connected but no workspace file — register as new file and show commit panel
-  if (contentSourceType === 'github' && (!currentWorkspaceFile || currentWorkspaceFile.type !== 'template')) {
+  if (contentSourceType === 'github' && !currentTemplateFile) {
     if (devGhRegisterNewFile('template')) {
       devGhShowCommitPanel();
     }
@@ -11287,6 +11339,151 @@ function initDevResizer(resizerId, leftPaneId, rightPaneId, storageKey) {
 //  DEV MODE: WORKSPACE
 // ============================================================
 
+// IndexedDB helpers for persisting FileSystemDirectoryHandle across page refresh
+function openLocalFolderDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('formforge-local', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('handles');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveLocalFolderHandle(handle) {
+  const db = await openLocalFolderDB();
+  const tx = db.transaction('handles', 'readwrite');
+  tx.objectStore('handles').put(handle, 'workspaceHandle');
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadLocalFolderHandle() {
+  try {
+    const db = await openLocalFolderDB();
+    const tx = db.transaction('handles', 'readonly');
+    const req = tx.objectStore('handles').get('workspaceHandle');
+    return new Promise((resolve) => {
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  } catch (e) { return null; }
+}
+
+async function clearLocalFolderHandle() {
+  try {
+    const db = await openLocalFolderDB();
+    const tx = db.transaction('handles', 'readwrite');
+    tx.objectStore('handles').delete('workspaceHandle');
+  } catch (e) { /* ignore */ }
+}
+
+function populateRepoSchemasFromWorkspace() {
+  repoSchemas = [];
+  for (const sf of workspaceFiles.schemas) {
+    try {
+      const schema = JSON.parse(sf.text);
+      const baseName = sf.name.replace('.json', '');
+      repoSchemas.push({
+        name: schema.title || baseName,
+        description: schema.description || '',
+        icon: schema.icon || '📄',
+        schemaPath: `schemas/${sf.name}`,
+        templatePath: schema.template || `templates/${baseName}.py`,
+        schema: schema,
+        localSchema: sf
+      });
+    } catch (e) {
+      log(`Skipped ${sf.name}: ${e.message}`, 'error');
+    }
+  }
+}
+
+function finalizeLocalConnection(handle) {
+  contentSourceType = 'local';
+  document.getElementById('statusBadge').className = 'status-badge ready';
+  document.getElementById('statusText').textContent = `local: ${handle.name}`;
+  renderPicker();
+}
+
+async function restoreLocalFolder(folderName) {
+  try {
+    const handle = await loadLocalFolderHandle();
+    if (!handle) {
+      localStorage.removeItem('formforge-source');
+      return;
+    }
+
+    // Check if we still have permission (or can get it without a gesture)
+    const perm = await handle.queryPermission({ mode: 'readwrite' });
+    if (perm === 'granted') {
+      // Permission still active — reconnect silently
+      workspaceHandle = handle;
+      await devReadWorkspaceFromHandle();
+      populateRepoSchemasFromWorkspace();
+      finalizeLocalConnection(handle);
+      log(`Restored local folder: ${handle.name}`, 'success');
+    } else {
+      // Permission not granted — show a reconnect prompt in the picker area
+      const displayName = folderName || 'folder';
+      contentSourceType = null;
+      const section = document.getElementById('pickerSection');
+      const grid = document.getElementById('pickerGrid');
+      section.style.display = 'block';
+      document.getElementById('setupEmptyState').style.display = 'none';
+      document.getElementById('demoBtnAction').style.display = 'none';
+      grid.innerHTML = '';
+      const card = document.createElement('div');
+      card.className = 'picker-card picker-card-create';
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-label', `Reconnect to ${displayName}`);
+      card.innerHTML = `
+        <div class="card-icon"><svg width="28" height="28" style="color: var(--accent)"><use href="#icon-folder"/></svg></div>
+        <h4>Reconnect Local Folder</h4>
+        <p>Click to restore access to <strong>${escapeHtml(displayName)}</strong></p>
+      `;
+      card.addEventListener('click', async () => {
+        try {
+          const reqPerm = await handle.requestPermission({ mode: 'readwrite' });
+          if (reqPerm === 'granted') {
+            workspaceHandle = handle;
+            await devReadWorkspaceFromHandle();
+            populateRepoSchemasFromWorkspace();
+            finalizeLocalConnection(handle);
+            log(`Restored local folder: ${handle.name}`, 'success');
+          } else {
+            showToast('Permission denied — please reconnect the folder manually', 'error');
+            localStorage.removeItem('formforge-source');
+            clearLocalFolderHandle();
+            section.style.display = 'none';
+            document.getElementById('setupEmptyState').style.display = '';
+            document.getElementById('demoBtnAction').style.display = '';
+          }
+        } catch (e) {
+          showToast('Could not restore folder access: ' + e.message, 'error');
+          localStorage.removeItem('formforge-source');
+          clearLocalFolderHandle();
+          section.style.display = 'none';
+          document.getElementById('setupEmptyState').style.display = '';
+          document.getElementById('demoBtnAction').style.display = '';
+        }
+      });
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+      });
+      grid.appendChild(card);
+      document.getElementById('statusBadge').className = 'status-badge';
+      document.getElementById('statusText').textContent = `local: ${displayName} (reconnect needed)`;
+    }
+  } catch (e) {
+    log('Could not restore local folder: ' + e.message, 'error');
+    localStorage.removeItem('formforge-source');
+    clearLocalFolderHandle();
+  }
+}
+
 async function connectLocalFolder() {
   if (!window.showDirectoryPicker) {
     showToast('Your browser does not support folder access. Use the individual file drop zones instead.', 'error');
@@ -11296,27 +11493,11 @@ async function connectLocalFolder() {
     workspaceHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
     await devReadWorkspaceFromHandle();
 
-    // Populate repoSchemas from discovered workspace files for the picker
-    repoSchemas = [];
-    for (const sf of workspaceFiles.schemas) {
-      try {
-        const schema = JSON.parse(sf.text);
-        const baseName = sf.name.replace('.json', '');
-        repoSchemas.push({
-          name: schema.title || baseName,
-          description: schema.description || '',
-          icon: schema.icon || '📄',
-          schemaPath: `schemas/${sf.name}`,
-          templatePath: schema.template || `templates/${baseName}.py`,
-          schema: schema,
-          localSchema: sf
-        });
-      } catch (e) {
-        log(`Skipped ${sf.name}: ${e.message}`, 'error');
-      }
-    }
+    populateRepoSchemasFromWorkspace();
 
-    contentSourceType = 'local';
+    // Persist handle in IndexedDB for page refresh survival
+    saveLocalFolderHandle(workspaceHandle).catch(() => {});
+    localStorage.setItem('formforge-source', JSON.stringify({ type: 'local', folderName: workspaceHandle.name }));
 
     // Update status
     const statusEl = document.getElementById('localFolderStatus');
@@ -11324,16 +11505,10 @@ async function connectLocalFolder() {
       statusEl.className = 'local-folder-status success';
       statusEl.textContent = `${workspaceFiles.schemas.length} schema(s), ${workspaceFiles.templates.length} template(s) loaded`;
     }
-    document.getElementById('statusBadge').className = 'status-badge ready';
-    document.getElementById('statusText').textContent = `local: ${workspaceHandle.name}`;
 
     hideConnectDialog();
-    if (repoSchemas.length > 0) {
-      renderPicker();
-      document.getElementById('pickerSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } else {
-      showToast('No schemas found in the selected folder. Expected: schemas/*.json', 'info');
-    }
+    finalizeLocalConnection(workspaceHandle);
+    document.getElementById('pickerSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     if (e.name !== 'AbortError') {
       showToast('Failed to open folder: ' + e.message, 'error');
@@ -11380,7 +11555,7 @@ function devLoadWorkspaceFile(type, index) {
   if (type === 'schema') {
     const f = workspaceFiles.schemas[index];
     devSchemaText = f.text;
-    currentWorkspaceFile = { type: 'schema', index };
+    currentSchemaFile = { index };
     if (schemaJar) schemaJar.updateCode(devSchemaText);
     updateSourceToolbar();
     showTab('dev-schema');
@@ -11389,7 +11564,7 @@ function devLoadWorkspaceFile(type, index) {
   } else {
     const f = workspaceFiles.templates[index];
     devTemplateText = f.text;
-    currentWorkspaceFile = { type: 'template', index };
+    currentTemplateFile = { index };
     if (templateJar) templateJar.updateCode(devTemplateText);
     updateSourceToolbar();
     showTab('dev-template');
@@ -11398,20 +11573,21 @@ function devLoadWorkspaceFile(type, index) {
 }
 
 async function devSaveToWorkspace(type) {
-  if (!workspaceHandle || !currentWorkspaceFile) {
+  const cwf = type === 'schema' ? currentSchemaFile : currentTemplateFile;
+  if (!workspaceHandle || !cwf) {
     showToast('No workspace file active — use Save to download instead', 'info');
     return;
   }
   try {
-    if (type === 'schema' && currentWorkspaceFile.type === 'schema') {
-      const f = workspaceFiles.schemas[currentWorkspaceFile.index];
+    if (type === 'schema') {
+      const f = workspaceFiles.schemas[cwf.index];
       const writable = await f.handle.createWritable();
       await writable.write(devSchemaText);
       await writable.close();
       f.text = devSchemaText;
       showToast(`Saved ${f.name} to workspace`);
-    } else if (type === 'template' && currentWorkspaceFile.type === 'template') {
-      const f = workspaceFiles.templates[currentWorkspaceFile.index];
+    } else if (type === 'template') {
+      const f = workspaceFiles.templates[cwf.index];
       const writable = await f.handle.createWritable();
       await writable.write(devTemplateText);
       await writable.close();
@@ -11465,10 +11641,10 @@ async function devCreateWorkspaceFile(type) {
     const entry = { name: finalName, text: content, handle: fileHandle, dirHandle };
     if (type === 'schema') {
       workspaceFiles.schemas.push(entry);
-      currentWorkspaceFile = { type: 'schema', index: workspaceFiles.schemas.length - 1 };
+      currentSchemaFile = { index: workspaceFiles.schemas.length - 1 };
     } else {
       workspaceFiles.templates.push(entry);
-      currentWorkspaceFile = { type: 'template', index: workspaceFiles.templates.length - 1 };
+      currentTemplateFile = { index: workspaceFiles.templates.length - 1 };
     }
 
     showToast(`Saved ${finalName} to workspace`);
@@ -11490,8 +11666,8 @@ async function devPollWorkspace() {
       if (text !== f.text) {
         f.text = text;
         // If this file is currently being edited, refresh the editor
-        if (currentWorkspaceFile && currentWorkspaceFile.type === 'schema' &&
-            workspaceFiles.schemas[currentWorkspaceFile.index] === f) {
+        if (currentSchemaFile &&
+            workspaceFiles.schemas[currentSchemaFile.index] === f) {
           devSchemaText = text;
           if (schemaJar) schemaJar.updateCode(devSchemaText);
           devUpdateSchemaPreview();
@@ -11503,8 +11679,8 @@ async function devPollWorkspace() {
       const text = await file.text();
       if (text !== f.text) {
         f.text = text;
-        if (currentWorkspaceFile && currentWorkspaceFile.type === 'template' &&
-            workspaceFiles.templates[currentWorkspaceFile.index] === f) {
+        if (currentTemplateFile &&
+            workspaceFiles.templates[currentTemplateFile.index] === f) {
           devTemplateText = text;
           if (templateJar) templateJar.updateCode(devTemplateText);
         }
@@ -11727,7 +11903,8 @@ function devGhRegisterNewFile(type) {
   const entry = { name: finalName, text: '', handle: null, ghPath, ghSha: null };
   files.push(entry);
   const index = files.length - 1;
-  currentWorkspaceFile = { type, index };
+  if (type === 'schema') currentSchemaFile = { index };
+  else currentTemplateFile = { index };
 
   // Register in ghOriginalContents with empty original and null sha (signals new file)
   ghOriginalContents[ghPath] = { content: '', sha: null };
@@ -11867,9 +12044,9 @@ function devGhShowCommitPanel() {
     // Check if current tab has unregistered content that needs to be registered first
     const activeView = document.querySelector('.view.active');
     const viewId = activeView ? activeView.id : '';
-    if (viewId === 'view-dev-schema' && devSchemaText && devSchemaText.trim() && !currentWorkspaceFile) {
+    if (viewId === 'view-dev-schema' && devSchemaText && devSchemaText.trim() && !currentSchemaFile) {
       registered = devGhRegisterNewFile('schema');
-    } else if (viewId === 'view-dev-template' && devTemplateText && devTemplateText.trim() && !currentWorkspaceFile) {
+    } else if (viewId === 'view-dev-template' && devTemplateText && devTemplateText.trim() && !currentTemplateFile) {
       registered = devGhRegisterNewFile('template');
     }
     if (!registered && ghModifiedFiles.size === 0) {
@@ -11902,8 +12079,8 @@ function devGhGetCurrentContent(path) {
   for (const f of workspaceFiles.schemas) {
     if (f.ghPath === path) {
       // If this file is currently being edited, use the editor content
-      if (currentWorkspaceFile && currentWorkspaceFile.type === 'schema' &&
-          workspaceFiles.schemas[currentWorkspaceFile.index] === f) {
+      if (currentSchemaFile &&
+          workspaceFiles.schemas[currentSchemaFile.index] === f) {
         return devSchemaText;
       }
       return f.text;
@@ -11911,8 +12088,8 @@ function devGhGetCurrentContent(path) {
   }
   for (const f of workspaceFiles.templates) {
     if (f.ghPath === path) {
-      if (currentWorkspaceFile && currentWorkspaceFile.type === 'template' &&
-          workspaceFiles.templates[currentWorkspaceFile.index] === f) {
+      if (currentTemplateFile &&
+          workspaceFiles.templates[currentTemplateFile.index] === f) {
         return devTemplateText;
       }
       return f.text;
@@ -12077,23 +12254,19 @@ async function devGhCommitAndPush() {
     // Refresh files to get new SHAs and re-link current workspace file
     devGhHideCommitPanel();
     const hadNewSchemas = modifiedPaths.some(p => p.startsWith('schemas/'));
-    // Remember the file path being edited so we can re-link after refresh
-    const editingPath = currentWorkspaceFile
-      ? (currentWorkspaceFile.type === 'schema'
-          ? workspaceFiles.schemas[currentWorkspaceFile.index]?.ghPath
-          : workspaceFiles.templates[currentWorkspaceFile.index]?.ghPath)
-      : null;
+    // Remember file paths being edited so we can re-link after refresh
+    const editingSchemaPath = currentSchemaFile ? workspaceFiles.schemas[currentSchemaFile.index]?.ghPath : null;
+    const editingTemplatePath = currentTemplateFile ? workspaceFiles.templates[currentTemplateFile.index]?.ghPath : null;
     try {
       await devGhFetchFiles();
-      // Re-link currentWorkspaceFile to the refreshed entry
-      if (editingPath) {
-        const schemaIdx = workspaceFiles.schemas.findIndex(f => f.ghPath === editingPath);
-        if (schemaIdx >= 0) {
-          currentWorkspaceFile = { type: 'schema', index: schemaIdx };
-        } else {
-          const tmplIdx = workspaceFiles.templates.findIndex(f => f.ghPath === editingPath);
-          if (tmplIdx >= 0) currentWorkspaceFile = { type: 'template', index: tmplIdx };
-        }
+      // Re-link workspace files to the refreshed entries
+      if (editingSchemaPath) {
+        const idx = workspaceFiles.schemas.findIndex(f => f.ghPath === editingSchemaPath);
+        currentSchemaFile = idx >= 0 ? { index: idx } : null;
+      }
+      if (editingTemplatePath) {
+        const idx = workspaceFiles.templates.findIndex(f => f.ghPath === editingTemplatePath);
+        currentTemplateFile = idx >= 0 ? { index: idx } : null;
       }
       // Refresh picker if new schemas were committed
       if (hadNewSchemas) {
@@ -12171,7 +12344,8 @@ function disconnectSource() {
   ghModifiedFiles = new Set();
   workspaceFiles = { schemas: [], templates: [] };
   repoSchemas = [];
-  currentWorkspaceFile = null;
+  currentSchemaFile = null;
+  currentTemplateFile = null;
   workspaceHandle = null;
   if (devWorkspacePoller) { clearInterval(devWorkspacePoller); devWorkspacePoller = null; }
   baseModuleLoaded = false;
@@ -12179,6 +12353,7 @@ function disconnectSource() {
   // Clear stored connection info
   localStorage.removeItem('formforge-dev-github-repo');
   localStorage.removeItem('formforge-source');
+  clearLocalFolderHandle();
 
   // Reset status badge and picker
   document.getElementById('statusBadge').className = 'status-badge';
@@ -12396,7 +12571,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load embedded docs (always uses built-in reference, independent of content source)
   loadDocs();
 
-  // Restore saved GitHub connection from previous session
+  // Restore saved connection from previous session
   const savedSource = localStorage.getItem('formforge-source');
   if (savedSource) {
     try {
@@ -12410,6 +12585,9 @@ document.addEventListener('DOMContentLoaded', () => {
           log('Auto-reconnect failed: ' + e.message, 'error');
           localStorage.removeItem('formforge-source');
         });
+      } else if (src.type === 'local') {
+        // Restore local folder connection via IndexedDB handle
+        restoreLocalFolder(src.folderName);
       }
     } catch (e) { /* ignore corrupt data */ }
   }

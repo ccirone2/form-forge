@@ -254,7 +254,8 @@ _REQUIRED_STATE_VARS = [
     "workspaceHandle",
     "workspaceFiles",
     "devWorkspacePoller",
-    "currentWorkspaceFile",
+    "currentSchemaFile",
+    "currentTemplateFile",
     "devParsedSchema",
 ]
 
@@ -1236,7 +1237,7 @@ class TestGitHubWorkspaceJavaScript:
         assert "ghOriginalContents" in body, "should register in originals"
         assert "ghModifiedFiles" in body, "should mark file as modified"
         assert "workspaceFiles" in body, "should add to workspace files"
-        assert "currentWorkspaceFile" in body, "should set as current file"
+        assert "currentSchemaFile" in body or "currentTemplateFile" in body, "should set as current file"
         assert "prompt(" in body, "should prompt for filename"
 
     def test_register_new_file_derives_schema_filename(self, index_html: str) -> None:
@@ -1292,14 +1293,14 @@ class TestGitHubWorkspaceJavaScript:
         assert "new file" in body, "should show 'new file' indicator"
 
     def test_new_schema_clears_workspace_file(self, index_html: str) -> None:
-        """devNewSchema resets currentWorkspaceFile."""
+        """devNewSchema resets currentSchemaFile."""
         body = _extract_func(index_html, "devNewSchema")
-        assert "currentWorkspaceFile = null" in body
+        assert "currentSchemaFile = null" in body
 
     def test_new_template_clears_workspace_file(self, index_html: str) -> None:
-        """devNewTemplate resets currentWorkspaceFile."""
+        """devNewTemplate resets currentTemplateFile."""
         body = _extract_func(index_html, "devNewTemplate")
-        assert "currentWorkspaceFile = null" in body
+        assert "currentTemplateFile = null" in body
 
     def test_commit_refreshes_picker_for_new_schemas(self, index_html: str) -> None:
         """After committing new schemas, the picker is refreshed."""
@@ -1313,9 +1314,9 @@ class TestGitHubWorkspaceJavaScript:
         assert "repoSchemas" in body, "should update repoSchemas"
 
     def test_commit_relinks_workspace_file(self, index_html: str) -> None:
-        """After commit, currentWorkspaceFile is re-linked to refreshed entry."""
+        """After commit, workspace files are re-linked to refreshed entries."""
         body = _extract_func(index_html, "devGhCommitAndPush")
-        assert "editingPath" in body, "should remember editing path"
+        assert "editingSchemaPath" in body or "editingTemplatePath" in body, "should remember editing paths"
         assert "findIndex" in body, "should find file in refreshed workspace"
 
     def test_connect_repo_tolerates_empty_schemas(self, index_html: str) -> None:
@@ -1619,14 +1620,14 @@ def test_save_schema_checks_workspace(index_html: str) -> None:
     """devSaveSchema checks workspaceHandle before downloading."""
     body = _extract_func(index_html, "devSaveSchema")
     assert "workspaceHandle" in body
-    assert "currentWorkspaceFile" in body
+    assert "currentSchemaFile" in body
 
 
 def test_save_template_checks_workspace(index_html: str) -> None:
     """devSaveTemplate checks workspaceHandle before downloading."""
     body = _extract_func(index_html, "devSaveTemplate")
     assert "workspaceHandle" in body
-    assert "currentWorkspaceFile" in body
+    assert "currentTemplateFile" in body
 
 
 # --- Custom Scrollbars (#139) ---
@@ -2046,7 +2047,6 @@ def test_template_source_toolbar_exists(index_html: str) -> None:
     """Template editor has a source toolbar like the schema editor."""
     assert 'id="templateSourceToolbar"' in index_html
     assert 'id="templateCommitBtn"' in index_html
-    assert 'id="templateSaveLocalBtn"' in index_html
 
 
 def test_update_source_toolbar_shows_branch_controls(index_html: str) -> None:
