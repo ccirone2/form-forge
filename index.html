@@ -2265,7 +2265,7 @@
       <div class="config-row">
         <div class="field-grow">
           <label for="repoInput">Repository</label>
-          <input type="text" id="repoInput" placeholder="myorg/form-templates" spellcheck="false" autocomplete="off">
+          <input type="text" id="repoInput" placeholder="myorg/form-templates" spellcheck="false" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();connectRepo()}">
         </div>
         <button type="button" class="btn-connect" id="connectBtn" onclick="connectRepo()">
           <svg width="16" height="16"><use href="#icon-github"/></svg>
