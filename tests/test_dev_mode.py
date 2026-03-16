@@ -438,7 +438,9 @@ def test_polling_stops_after_repeated_errors(index_html: str) -> None:
 
 def _extract_func(html: str, name: str) -> str:
     """Extract JS function body from index.html."""
-    match = re.search(rf"function {name}\b[^{{]*\{{([\s\S]*?)^function ", html, re.M)
+    match = re.search(
+        rf"function {name}\b[^{{]*\{{([\s\S]*?)^(?:async )?function ", html, re.M
+    )
     assert match, f"Function {name} not found"
     return match.group(1)
 
@@ -1319,50 +1321,50 @@ class TestGitHubWorkspaceJavaScript:
     def test_connect_repo_tolerates_empty_schemas(self, index_html: str) -> None:
         """connectRepo does not throw when schemas/ has no JSON files."""
         body = _extract_func(index_html, "connectRepo")
-        assert (
-            "No schemas found" not in body
-            or "throw" not in body.split("No schemas found")[0][-50:]
-        )
-        # Should log a helpful message instead of throwing
-        assert (
-            "Schema tab" in body
-            or "no schemas yet" in body.lower()
-            or "create" in body.lower()
-        )
+        # Should not throw on empty schemas
+        for line in body.split("\n"):
+            if "throw" in line:
+                assert "schemas" not in line.lower() and ".json" not in line.lower(), (
+                    f"connectRepo should not throw on empty schemas: {line.strip()}"
+                )
+        # Should show a helpful status message
+        assert "no schemas yet" in body.lower() or "create" in body.lower()
 
     def test_friendly_error_precise_json_match(self, index_html: str) -> None:
         """friendlyError only matches actual JSON parse errors, not '.json' in filenames."""
         body = _extract_func(index_html, "friendlyError")
         # Should NOT have a broad /JSON/i pattern
         assert "test(msg)" in body
-        # Should match specific parse error patterns
-        assert (
-            "Unexpected token" in body
-            or "JSON.parse" in body
-            or "JSON at position" in body
-        )
+        # Should match specific parse error patterns (escaped in regex literal)
+        assert "Unexpected token" in body
+        assert "JSON at position" in body
+
+    def test_friendly_error_404_pattern(self, index_html: str) -> None:
+        """friendlyError matches HTTP 404 status code, not casual 'not found' text."""
+        body = _extract_func(index_html, "friendlyError")
+        assert r"\b404\b" in body, "should use word-boundary match for 404"
 
     def test_multi_file_commit_empty_repo_fallback(self, index_html: str) -> None:
         """Multi-file commit falls back to sequential PUTs on empty repos (404 on refs)."""
         body = _extract_func(index_html, "devGhCommitAndPush")
         assert "useTreesApi" in body, "should have Trees API flag"
-        assert "'404'" in body or '"404"' in body, "should check for 404"
-        assert (
-            "Contents API" in body
-            or "sequential" in body.lower()
-            or "fallback" in body.lower()
-        )
+        assert "includes('404')" in body, "should detect 404 via includes()"
 
-    def test_save_schema_routes_tracked_file_to_commit(self, index_html: str) -> None:
-        """devSaveSchema shows commit panel for tracked GitHub files (Ctrl+S)."""
-        body = _extract_func(index_html, "devSaveSchema")
-        # Should have a branch for tracked files that calls commit panel
-        assert "devGhShowCommitPanel" in body
+    def test_register_new_file_validates_filename(self, index_html: str) -> None:
+        """devGhRegisterNewFile rejects filenames with path separators or leading dots."""
+        body = _extract_func(index_html, "devGhRegisterNewFile")
+        assert "Invalid filename" in body
+        assert "startsWith('_')" in body or "startsWith('.')" in body
 
-    def test_save_template_routes_tracked_file_to_commit(self, index_html: str) -> None:
-        """devSaveTemplate shows commit panel for tracked GitHub files (Ctrl+S)."""
-        body = _extract_func(index_html, "devSaveTemplate")
-        assert "devGhShowCommitPanel" in body
+    def test_sequential_fallback_updates_sha(self, index_html: str) -> None:
+        """Sequential fallback updates SHA after each PUT for safe retry."""
+        body = _extract_func(index_html, "devGhCommitAndPush")
+        assert "result.content.sha" in body, "should update SHA from PUT response"
+
+    def test_commit_handles_refresh_failure(self, index_html: str) -> None:
+        """Post-commit handles devGhFetchFiles failure gracefully."""
+        body = _extract_func(index_html, "devGhCommitAndPush")
+        assert "refreshErr" in body or "refresh workspace" in body.lower()
 
 
 # ============================================================

@@ -413,11 +413,13 @@
     color: var(--text-muted); font-size: var(--text-base);
   }
   .picker-card-create {
-    border-style: dashed; border-color: var(--border);
+    border: 1px dashed var(--border);
     display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
   }
   .picker-card-create h4 { color: var(--text-muted); }
-  .picker-card-create:hover, .picker-card-create:focus-visible { border-color: var(--accent); }
+  .picker-card-create:hover, .picker-card-create:focus-visible {
+    border-color: var(--accent); transform: none; box-shadow: none;
+  }
   .picker-card-create:hover h4, .picker-card-create:focus-visible h4 { color: var(--text); }
 
   .picker-card .btn-card-open {
@@ -11705,6 +11707,12 @@ function devGhRegisterNewFile(type) {
   if (type === 'schema' && !finalName.endsWith('.json')) finalName += '.json';
   if (type === 'template' && !finalName.endsWith('.py')) finalName += '.py';
 
+  // Validate filename — no path separators, no leading dots/underscores
+  if (/[\/\\]/.test(finalName) || finalName.startsWith('_') || finalName.startsWith('.')) {
+    showToast('Invalid filename — avoid path separators and leading _ or . characters', 'error');
+    return false;
+  }
+
   const dir = type === 'schema' ? 'schemas' : 'templates';
   const ghPath = `${dir}/${finalName}`;
 
@@ -11748,6 +11756,10 @@ function devGhTrackModification(type, index) {
 
   const original = ghOriginalContents[path];
   if (!original) return;
+
+  // Keep workspace entry text in sync with editor content
+  const f = type === 'schema' ? workspaceFiles.schemas[index] : workspaceFiles.templates[index];
+  if (f) f.text = currentContent;
 
   // For new files (sha === null), always mark as modified if there's content
   if (original.sha === null) {
@@ -11855,11 +11867,9 @@ function devGhShowCommitPanel() {
     // Check if current tab has unregistered content that needs to be registered first
     const activeView = document.querySelector('.view.active');
     const viewId = activeView ? activeView.id : '';
-    if (viewId === 'view-dev-schema' && devSchemaText && devSchemaText.trim() &&
-        (!currentWorkspaceFile || currentWorkspaceFile.type !== 'schema')) {
+    if (viewId === 'view-dev-schema' && devSchemaText && devSchemaText.trim() && !currentWorkspaceFile) {
       registered = devGhRegisterNewFile('schema');
-    } else if (viewId === 'view-dev-template' && devTemplateText && devTemplateText.trim() &&
-        (!currentWorkspaceFile || currentWorkspaceFile.type !== 'template')) {
+    } else if (viewId === 'view-dev-template' && devTemplateText && devTemplateText.trim() && !currentWorkspaceFile) {
       registered = devGhRegisterNewFile('template');
     }
     if (!registered && ghModifiedFiles.size === 0) {
@@ -12056,6 +12066,9 @@ async function devGhCommitAndPush() {
           );
           const result = await resp.json();
           lastCommitSha = result.commit.sha.slice(0, 7);
+          // Update SHA so retry after partial failure doesn't 422
+          if (ghOriginalContents[path]) ghOriginalContents[path].sha = result.content.sha;
+          ghModifiedFiles.delete(path);
         }
         showToast(`Committed ${lastCommitSha} to ${ghBranch} (${modifiedPaths.length} files)`);
       }
@@ -12070,20 +12083,24 @@ async function devGhCommitAndPush() {
           ? workspaceFiles.schemas[currentWorkspaceFile.index]?.ghPath
           : workspaceFiles.templates[currentWorkspaceFile.index]?.ghPath)
       : null;
-    await devGhFetchFiles();
-    // Re-link currentWorkspaceFile to the refreshed entry
-    if (editingPath) {
-      const schemaIdx = workspaceFiles.schemas.findIndex(f => f.ghPath === editingPath);
-      if (schemaIdx >= 0) {
-        currentWorkspaceFile = { type: 'schema', index: schemaIdx };
-      } else {
-        const tmplIdx = workspaceFiles.templates.findIndex(f => f.ghPath === editingPath);
-        if (tmplIdx >= 0) currentWorkspaceFile = { type: 'template', index: tmplIdx };
+    try {
+      await devGhFetchFiles();
+      // Re-link currentWorkspaceFile to the refreshed entry
+      if (editingPath) {
+        const schemaIdx = workspaceFiles.schemas.findIndex(f => f.ghPath === editingPath);
+        if (schemaIdx >= 0) {
+          currentWorkspaceFile = { type: 'schema', index: schemaIdx };
+        } else {
+          const tmplIdx = workspaceFiles.templates.findIndex(f => f.ghPath === editingPath);
+          if (tmplIdx >= 0) currentWorkspaceFile = { type: 'template', index: tmplIdx };
+        }
       }
-    }
-    // Refresh picker if new schemas were committed
-    if (hadNewSchemas) {
-      await devGhRefreshPicker();
+      // Refresh picker if new schemas were committed
+      if (hadNewSchemas) {
+        await devGhRefreshPicker();
+      }
+    } catch (refreshErr) {
+      showToast('Committed successfully, but failed to refresh workspace. Reload the page to sync.', 'info');
     }
     updateSourceToolbar();
   } catch (e) {
@@ -12136,7 +12153,7 @@ async function devGhRefreshPicker() {
     repoSchemas = results.filter(s => s !== null);
     renderPicker();
   } catch (e) {
-    // Non-critical — picker just won't update
+    log('Could not refresh picker: ' + e.message, 'error');
   }
 }
 
