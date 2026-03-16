@@ -17,6 +17,13 @@ TODO: Schema context menu improvements — add option to add base scaffold (e.g.
 
 ## Completed Plans
 
+### Issue #202 — Commit New Files from Editors to GitHub ✅
+
+**Branch:** `feature/202-commit-new-files`
+**Issue:** #202
+
+Added `devGhRegisterNewFile()` to register editor content as new workspace files, updated save/commit/toolbar flows to support creating files in GitHub repos (including empty repos), with post-commit picker refresh.
+
 ### Issues #192–#196 — UI/UX Audit Fixes ✅
 
 **Branch:** `feature/192-ui-ux-audit`

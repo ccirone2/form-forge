@@ -438,7 +438,9 @@ def test_polling_stops_after_repeated_errors(index_html: str) -> None:
 
 def _extract_func(html: str, name: str) -> str:
     """Extract JS function body from index.html."""
-    match = re.search(rf"function {name}\b[^{{]*\{{([\s\S]*?)^function ", html, re.M)
+    match = re.search(
+        rf"function {name}\b[^{{]*\{{([\s\S]*?)^(?:async )?function ", html, re.M
+    )
     assert match, f"Function {name} not found"
     return match.group(1)
 
@@ -1227,6 +1229,143 @@ class TestGitHubWorkspaceJavaScript:
         # Check for regex validation of branch name
         assert "test(name)" in body or "test(" in body
 
+    def test_register_new_file_function_exists(self, index_html: str) -> None:
+        """devGhRegisterNewFile function is defined for committing new files."""
+        body = _extract_func(index_html, "devGhRegisterNewFile")
+        assert "ghToken" in body, "should check for auth token"
+        assert "ghOriginalContents" in body, "should register in originals"
+        assert "ghModifiedFiles" in body, "should mark file as modified"
+        assert "workspaceFiles" in body, "should add to workspace files"
+        assert "currentWorkspaceFile" in body, "should set as current file"
+        assert "prompt(" in body, "should prompt for filename"
+
+    def test_register_new_file_derives_schema_filename(self, index_html: str) -> None:
+        """devGhRegisterNewFile derives filename from schema title."""
+        body = _extract_func(index_html, "devGhRegisterNewFile")
+        assert "obj.title" in body, "should use schema title for default name"
+        assert ".json" in body, "should enforce .json extension for schemas"
+        assert ".py" in body, "should enforce .py extension for templates"
+
+    def test_register_new_file_sets_sha_null(self, index_html: str) -> None:
+        """New files are registered with sha: null to signal creation."""
+        body = _extract_func(index_html, "devGhRegisterNewFile")
+        assert "sha: null" in body, "should set sha to null for new files"
+
+    def test_register_new_file_prevents_duplicates(self, index_html: str) -> None:
+        """devGhRegisterNewFile rejects files that already exist in workspace."""
+        body = _extract_func(index_html, "devGhRegisterNewFile")
+        assert "already exists" in body, "should prevent duplicate file registration"
+
+    def test_commit_omits_sha_for_new_files(self, index_html: str) -> None:
+        """devGhCommitAndPush omits sha from PUT body for new files."""
+        body = _extract_func(index_html, "devGhCommitAndPush")
+        assert "original.sha" in body or "original && original.sha" in body
+        # The PUT body should conditionally include sha
+        assert "putBody" in body, "should build PUT body conditionally"
+
+    def test_track_modification_handles_new_files(self, index_html: str) -> None:
+        """devGhTrackModification handles new files with sha === null."""
+        body = _extract_func(index_html, "devGhTrackModification")
+        assert "sha === null" in body, "should check for null sha (new file)"
+
+    def test_commit_panel_labels_new_files(self, index_html: str) -> None:
+        """Commit panel shows (new) indicator for untracked files."""
+        body = _extract_func(index_html, "devGhShowCommitPanel")
+        assert "(new)" in body, "should label new files in commit panel"
+
+    def test_save_schema_github_path(self, index_html: str) -> None:
+        """devSaveSchema routes to register flow when GitHub connected."""
+        body = _extract_func(index_html, "devSaveSchema")
+        assert "devGhRegisterNewFile" in body, "should call register for GitHub"
+        assert "devGhShowCommitPanel" in body, "should show commit panel"
+
+    def test_save_template_github_path(self, index_html: str) -> None:
+        """devSaveTemplate routes to register flow when GitHub connected."""
+        body = _extract_func(index_html, "devSaveTemplate")
+        assert "devGhRegisterNewFile" in body, "should call register for GitHub"
+        assert "devGhShowCommitPanel" in body, "should show commit panel"
+
+    def test_source_toolbar_shows_commit_for_new_content(self, index_html: str) -> None:
+        """updateSourceToolbar shows commit button for new unregistered content."""
+        body = _extract_func(index_html, "updateSourceToolbar")
+        assert "hasEditorContent" in body, "should check for editor content"
+        assert "new file" in body, "should show 'new file' indicator"
+
+    def test_new_schema_clears_workspace_file(self, index_html: str) -> None:
+        """devNewSchema resets currentWorkspaceFile."""
+        body = _extract_func(index_html, "devNewSchema")
+        assert "currentWorkspaceFile = null" in body
+
+    def test_new_template_clears_workspace_file(self, index_html: str) -> None:
+        """devNewTemplate resets currentWorkspaceFile."""
+        body = _extract_func(index_html, "devNewTemplate")
+        assert "currentWorkspaceFile = null" in body
+
+    def test_commit_refreshes_picker_for_new_schemas(self, index_html: str) -> None:
+        """After committing new schemas, the picker is refreshed."""
+        body = _extract_func(index_html, "devGhCommitAndPush")
+        assert "devGhRefreshPicker" in body, "should refresh picker after schema commit"
+
+    def test_refresh_picker_function_exists(self, index_html: str) -> None:
+        """devGhRefreshPicker re-fetches schemas and updates the picker."""
+        body = _extract_func(index_html, "devGhRefreshPicker")
+        assert "renderPicker" in body, "should call renderPicker"
+        assert "repoSchemas" in body, "should update repoSchemas"
+
+    def test_commit_relinks_workspace_file(self, index_html: str) -> None:
+        """After commit, currentWorkspaceFile is re-linked to refreshed entry."""
+        body = _extract_func(index_html, "devGhCommitAndPush")
+        assert "editingPath" in body, "should remember editing path"
+        assert "findIndex" in body, "should find file in refreshed workspace"
+
+    def test_connect_repo_tolerates_empty_schemas(self, index_html: str) -> None:
+        """connectRepo does not throw when schemas/ has no JSON files."""
+        body = _extract_func(index_html, "connectRepo")
+        # Should not throw on empty schemas
+        for line in body.split("\n"):
+            if "throw" in line:
+                assert "schemas" not in line.lower() and ".json" not in line.lower(), (
+                    f"connectRepo should not throw on empty schemas: {line.strip()}"
+                )
+        # Should show a helpful status message
+        assert "no schemas yet" in body.lower() or "create" in body.lower()
+
+    def test_friendly_error_precise_json_match(self, index_html: str) -> None:
+        """friendlyError only matches actual JSON parse errors, not '.json' in filenames."""
+        body = _extract_func(index_html, "friendlyError")
+        # Should NOT have a broad /JSON/i pattern
+        assert "test(msg)" in body
+        # Should match specific parse error patterns (escaped in regex literal)
+        assert "Unexpected token" in body
+        assert "JSON at position" in body
+
+    def test_friendly_error_404_pattern(self, index_html: str) -> None:
+        """friendlyError matches HTTP 404 status code, not casual 'not found' text."""
+        body = _extract_func(index_html, "friendlyError")
+        assert r"\b404\b" in body, "should use word-boundary match for 404"
+
+    def test_multi_file_commit_empty_repo_fallback(self, index_html: str) -> None:
+        """Multi-file commit falls back to sequential PUTs on empty repos (404 on refs)."""
+        body = _extract_func(index_html, "devGhCommitAndPush")
+        assert "useTreesApi" in body, "should have Trees API flag"
+        assert "includes('404')" in body, "should detect 404 via includes()"
+
+    def test_register_new_file_validates_filename(self, index_html: str) -> None:
+        """devGhRegisterNewFile rejects filenames with path separators or leading dots."""
+        body = _extract_func(index_html, "devGhRegisterNewFile")
+        assert "Invalid filename" in body
+        assert "startsWith('_')" in body or "startsWith('.')" in body
+
+    def test_sequential_fallback_updates_sha(self, index_html: str) -> None:
+        """Sequential fallback updates SHA after each PUT for safe retry."""
+        body = _extract_func(index_html, "devGhCommitAndPush")
+        assert "result.content.sha" in body, "should update SHA from PUT response"
+
+    def test_commit_handles_refresh_failure(self, index_html: str) -> None:
+        """Post-commit handles devGhFetchFiles failure gracefully."""
+        body = _extract_func(index_html, "devGhCommitAndPush")
+        assert "refreshErr" in body or "refresh workspace" in body.lower()
+
 
 # ============================================================
 #  ISSUE #130 — Line Numbers in Editors
@@ -1569,6 +1708,20 @@ def test_how_it_works_removed_from_setup(index_html: str) -> None:
 def test_profile_empty_state_hint(index_html: str) -> None:
     """Profile dropdown should show a helpful hint when empty."""
     assert "Save a profile to autofill common fields" in index_html
+
+
+def test_picker_create_card_in_render(index_html: str) -> None:
+    """renderPicker always adds a 'Create a Form' card."""
+    body = _extract_func(index_html, "renderPicker")
+    assert "picker-card-create" in body
+    assert "Create a Form" in body
+    assert "devNewSchema" in body
+
+
+def test_picker_create_card_css(index_html: str) -> None:
+    """Create card has dashed border styling."""
+    assert ".picker-card-create" in index_html
+    assert "dashed" in index_html
 
 
 def test_picker_after_empty_state(index_html: str) -> None:

@@ -412,6 +412,15 @@
     grid-column: 1 / -1; text-align: center; padding: 40px;
     color: var(--text-muted); font-size: var(--text-base);
   }
+  .picker-card-create {
+    border: 1px dashed var(--border);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  }
+  .picker-card-create h4 { color: var(--text-muted); }
+  .picker-card-create:hover, .picker-card-create:focus-visible {
+    border-color: var(--accent); transform: none; box-shadow: none;
+  }
+  .picker-card-create:hover h4, .picker-card-create:focus-visible h4 { color: var(--text); }
 
   .picker-card .btn-card-open {
     display: none; width: 100%; margin-top: 10px; justify-content: center; align-items: center; gap: 6px;
@@ -3377,12 +3386,12 @@ function escapeHtml(str) {
 // Map raw error messages to user-friendly language
 function friendlyError(err) {
   const msg = (err && err.message) ? err.message : String(err);
-  if (/404|not found/i.test(msg)) return 'Repository not found. Check the owner/repo format.';
+  if (/\b404\b/.test(msg)) return 'Repository not found. Check the owner/repo format.';
   if (/401|403|unauthorized|forbidden|credentials/i.test(msg)) return 'Access denied. Your token may be invalid or expired.';
   if (/rate limit/i.test(msg)) return 'GitHub rate limit reached. Add a personal access token or try again in a few minutes.';
   if (/network|fetch|CORS|ERR_/i.test(msg)) return 'Network error. Check your connection and try again.';
   if (/timeout/i.test(msg)) return 'Request timed out. Try again.';
-  if (/JSON/i.test(msg)) return 'Invalid JSON — check file syntax.';
+  if (/\bJSON\.parse\b|Unexpected token|JSON at position/i.test(msg)) return 'Invalid JSON — check file syntax.';
   return msg;
 }
 
@@ -3653,51 +3662,59 @@ async function connectRepo() {
 
     // Fetch schemas/ directory
     log(`Fetching schemas from ${ghOwner}/${ghRepo}@${ghBranch}...`, 'info');
-    const schemaFiles = await ghFetch('schemas');
-
-    if (!Array.isArray(schemaFiles)) throw new Error('schemas/ directory not found or not a directory');
+    let schemaFiles = [];
+    try {
+      const schemaDirResult = await ghFetch('schemas');
+      if (Array.isArray(schemaDirResult)) schemaFiles = schemaDirResult;
+    } catch (e) {
+      log('schemas/ directory not found — you can create schemas in the Schema tab', 'info');
+    }
 
     const jsonFiles = schemaFiles.filter(f => f.name.endsWith('.json') && !f.name.startsWith('_'));
-    if (jsonFiles.length === 0) throw new Error('No .json files found in schemas/');
 
     // Fetch all schemas in parallel for metadata
-    log(`Fetching ${jsonFiles.length} schema(s) in parallel...`, 'info');
-    const schemaResults = await Promise.all(
-      jsonFiles.map(file =>
-        ghFetchRaw(file.path)
-          .then(raw => {
-            const schema = JSON.parse(raw);
-            const baseName = file.name.replace('.json', '');
-            log(`Found schema: ${schema.title || baseName}`, 'success');
-            return {
-              name: schema.title || baseName,
-              description: schema.description || '',
-              icon: schema.icon || '📄',
-              schemaPath: file.path,
-              templatePath: schema.template || `templates/${baseName}.py`,
-              schema: schema
-            };
-          })
-          .catch(e => {
-            log(`Skipped ${file.name}: ${e.message}`, 'error');
-            return null;
-          })
-      )
-    );
-    repoSchemas = schemaResults.filter(s => s !== null);
-
-    if (repoSchemas.length === 0) throw new Error('No valid schemas could be parsed');
+    if (jsonFiles.length > 0) {
+      log(`Fetching ${jsonFiles.length} schema(s) in parallel...`, 'info');
+      const schemaResults = await Promise.all(
+        jsonFiles.map(file =>
+          ghFetchRaw(file.path)
+            .then(raw => {
+              const schema = JSON.parse(raw);
+              const baseName = file.name.replace('.json', '');
+              log(`Found schema: ${schema.title || baseName}`, 'success');
+              return {
+                name: schema.title || baseName,
+                description: schema.description || '',
+                icon: schema.icon || '📄',
+                schemaPath: file.path,
+                templatePath: schema.template || `templates/${baseName}.py`,
+                schema: schema
+              };
+            })
+            .catch(e => {
+              log(`Skipped ${file.name}: ${e.message}`, 'error');
+              return null;
+            })
+        )
+      );
+      repoSchemas = schemaResults.filter(s => s !== null);
+    } else {
+      repoSchemas = [];
+      log('No schemas found — use the Schema tab to create one', 'info');
+    }
 
     // Check templates/ exists
     try {
       await ghFetch('templates');
       log('templates/ directory confirmed', 'success');
     } catch (e) {
-      log('Warning: templates/ directory not found — export may fail', 'error');
+      log('templates/ directory not found — you can create templates in the Template tab', 'info');
     }
 
     statusEl.className = 'repo-status success';
-    statusEl.textContent = `Connected — ${repoSchemas.length} schema${repoSchemas.length !== 1 ? 's' : ''} found`;
+    statusEl.textContent = repoSchemas.length > 0
+      ? `Connected — ${repoSchemas.length} schema${repoSchemas.length !== 1 ? 's' : ''} found`
+      : 'Connected — no schemas yet. Use Schema & Template tabs to create content.';
 
     // Update badge
     const badge = document.getElementById('statusBadge');
@@ -3776,8 +3793,24 @@ function renderPicker() {
   grid.innerHTML = '';
   selectedSchemaIdx = -1;
 
+  // Always show "Create a Form" card (at the end when forms exist, alone when empty)
+  const createCard = document.createElement('div');
+  createCard.className = 'picker-card picker-card-create';
+  createCard.setAttribute('tabindex', '0');
+  createCard.setAttribute('role', 'button');
+  createCard.setAttribute('aria-label', 'Create a new form');
+  createCard.innerHTML = `
+    <div class="card-icon"><svg width="28" height="28" style="color: var(--text-muted)"><use href="#icon-plus"/></svg></div>
+    <h4>Create a Form</h4>
+    <p>Open the Schema editor to build a new form</p>
+  `;
+  createCard.addEventListener('click', () => { devNewSchema(); showTab('dev-schema'); });
+  createCard.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); devNewSchema(); showTab('dev-schema'); }
+  });
+
   if (repoSchemas.length === 0) {
-    grid.innerHTML = '<div class="picker-empty">No schemas found in this repository.</div>';
+    grid.appendChild(createCard);
     return;
   }
 
@@ -3807,6 +3840,9 @@ function renderPicker() {
     `;
     grid.appendChild(card);
   });
+
+  // Append "Create a Form" card after all existing forms
+  grid.appendChild(createCard);
 
   // Abort previous listeners to prevent accumulation on repeated renderPicker() calls
   if (pickerAbortController) pickerAbortController.abort();
@@ -9433,15 +9469,20 @@ function updateSourceToolbar() {
     const isGh = contentSourceType === 'github';
     const isLocal = contentSourceType === 'local';
 
+    // Check if editor has content (for showing commit on unregistered new files)
+    const editorContent = fileType === 'schema' ? devSchemaText : devTemplateText;
+    const hasEditorContent = editorContent && editorContent.trim();
+
     // Show toolbar if a file is loaded OR if GitHub is connected (branch controls)
     if (f || isGh) {
       toolbar.style.display = 'flex';
-      document.getElementById(prefix + 'SourceFile').textContent = f ? (f.ghPath || f.name) : '';
+      document.getElementById(prefix + 'SourceFile').textContent = f ? (f.ghPath || f.name) : (hasEditorContent ? 'new file (unsaved)' : '');
       document.getElementById(prefix + 'SourceBranch').textContent = isGh ? `@ ${ghBranch}` : '';
       document.getElementById(prefix + 'BranchSelect').style.display = isGh ? '' : 'none';
       document.getElementById(prefix + 'NewBranchBtn').style.display = isGh ? 'inline-flex' : 'none';
       document.getElementById(prefix + 'RefreshBtn').style.display = isGh ? 'inline-flex' : 'none';
-      document.getElementById(prefix + 'CommitBtn').style.display = (f && isGh) ? 'inline-flex' : 'none';
+      // Show commit button for tracked files OR for new unsaved content when GitHub connected
+      document.getElementById(prefix + 'CommitBtn').style.display = (isGh && (f || hasEditorContent)) ? 'inline-flex' : 'none';
       document.getElementById(prefix + 'SaveLocalBtn').style.display = (f && isLocal) ? 'inline-flex' : 'none';
     } else if (isLocal && f) {
       toolbar.style.display = 'flex';
@@ -10356,6 +10397,8 @@ function devEnablePreviewDragDrop() {
 function devNewSchema() {
   devSchemaText = JSON.stringify(DEV_STARTER_SCHEMA, null, 2);
   if (schemaJar) schemaJar.updateCode(devSchemaText);
+  currentWorkspaceFile = null;
+  updateSourceToolbar();
   devUpdateSchemaPreview();
   showToast('New schema created');
 }
@@ -10392,6 +10435,18 @@ function devSaveSchema() {
   }
   if (workspaceHandle) {
     devCreateWorkspaceFile('schema');
+    return;
+  }
+  // GitHub connected with tracked file — show commit panel
+  if (contentSourceType === 'github' && currentWorkspaceFile && currentWorkspaceFile.type === 'schema') {
+    devGhShowCommitPanel();
+    return;
+  }
+  // GitHub connected but no workspace file — register as new file and show commit panel
+  if (contentSourceType === 'github' && (!currentWorkspaceFile || currentWorkspaceFile.type !== 'schema')) {
+    if (devGhRegisterNewFile('schema')) {
+      devGhShowCommitPanel();
+    }
     return;
   }
   const blob = new Blob([devSchemaText], { type: 'application/json' });
@@ -11062,6 +11117,8 @@ bytes(_result) if isinstance(_result, (bytes, bytearray)) else _result
 function devNewTemplate() {
   devTemplateText = DEV_STARTER_TEMPLATE;
   if (templateJar) templateJar.updateCode(devTemplateText);
+  currentWorkspaceFile = null;
+  updateSourceToolbar();
   showToast('New template created');
 }
 
@@ -11085,6 +11142,18 @@ function devSaveTemplate() {
   }
   if (workspaceHandle) {
     devCreateWorkspaceFile('template');
+    return;
+  }
+  // GitHub connected with tracked file — show commit panel
+  if (contentSourceType === 'github' && currentWorkspaceFile && currentWorkspaceFile.type === 'template') {
+    devGhShowCommitPanel();
+    return;
+  }
+  // GitHub connected but no workspace file — register as new file and show commit panel
+  if (contentSourceType === 'github' && (!currentWorkspaceFile || currentWorkspaceFile.type !== 'template')) {
+    if (devGhRegisterNewFile('template')) {
+      devGhShowCommitPanel();
+    }
     return;
   }
   const blob = new Blob([devTemplateText], { type: 'text/x-python' });
@@ -11604,6 +11673,72 @@ async function devGhFetchFiles() {
 }
 
 
+function devGhRegisterNewFile(type) {
+  // Register editor content as a new file in the workspace for committing to GitHub
+  if (!ghToken) {
+    showToast('A GitHub token is required to commit files. Add one in the connect dialog.', 'error');
+    return false;
+  }
+
+  const content = type === 'schema' ? devSchemaText : devTemplateText;
+  if (!content || !content.trim()) {
+    showToast('Editor is empty — nothing to commit', 'error');
+    return false;
+  }
+
+  // Derive a sensible default filename
+  let defaultName;
+  if (type === 'schema') {
+    defaultName = 'schema.json';
+    try {
+      const obj = JSON.parse(content);
+      if (obj.title) defaultName = obj.title.toLowerCase().replace(/[^a-z0-9]+/g, '_') + '.json';
+    } catch (e) { /* use default */ }
+  } else {
+    defaultName = 'template.py';
+    const match = content.match(/^#\s*(\S+\.py)/m);
+    if (match) defaultName = match[1];
+  }
+
+  const userFilename = prompt(`Filename for new ${type}:`, defaultName);
+  if (!userFilename) return false; // cancelled
+
+  let finalName = userFilename.trim();
+  if (type === 'schema' && !finalName.endsWith('.json')) finalName += '.json';
+  if (type === 'template' && !finalName.endsWith('.py')) finalName += '.py';
+
+  // Validate filename — no path separators, no leading dots/underscores
+  if (/[\/\\]/.test(finalName) || finalName.startsWith('_') || finalName.startsWith('.')) {
+    showToast('Invalid filename — avoid path separators and leading _ or . characters', 'error');
+    return false;
+  }
+
+  const dir = type === 'schema' ? 'schemas' : 'templates';
+  const ghPath = `${dir}/${finalName}`;
+
+  // Check if file already exists in workspace
+  const files = type === 'schema' ? workspaceFiles.schemas : workspaceFiles.templates;
+  if (files.some(f => f.ghPath === ghPath)) {
+    showToast(`${ghPath} already exists — edit it instead`, 'error');
+    return false;
+  }
+
+  // Register in workspace
+  const entry = { name: finalName, text: '', handle: null, ghPath, ghSha: null };
+  files.push(entry);
+  const index = files.length - 1;
+  currentWorkspaceFile = { type, index };
+
+  // Register in ghOriginalContents with empty original and null sha (signals new file)
+  ghOriginalContents[ghPath] = { content: '', sha: null };
+
+  // Mark as modified immediately (content differs from empty original)
+  ghModifiedFiles.add(ghPath);
+
+  updateSourceToolbar();
+  return true;
+}
+
 function devGhTrackModification(type, index) {
   // Called when a file is edited in the builder — compare current content with original
   let path, currentContent;
@@ -11622,7 +11757,18 @@ function devGhTrackModification(type, index) {
   const original = ghOriginalContents[path];
   if (!original) return;
 
-  if (currentContent !== original.content) {
+  // Keep workspace entry text in sync with editor content
+  const f = type === 'schema' ? workspaceFiles.schemas[index] : workspaceFiles.templates[index];
+  if (f) f.text = currentContent;
+
+  // For new files (sha === null), always mark as modified if there's content
+  if (original.sha === null) {
+    if (currentContent && currentContent.trim()) {
+      ghModifiedFiles.add(path);
+    } else {
+      ghModifiedFiles.delete(path);
+    }
+  } else if (currentContent !== original.content) {
     ghModifiedFiles.add(path);
   } else {
     ghModifiedFiles.delete(path);
@@ -11715,9 +11861,21 @@ async function devGhCreateBranch() {
 }
 
 function devGhShowCommitPanel() {
+  // If no files are modified yet, check if the editor has unregistered new content
   if (ghModifiedFiles.size === 0) {
-    showToast('No files modified', 'info');
-    return;
+    let registered = false;
+    // Check if current tab has unregistered content that needs to be registered first
+    const activeView = document.querySelector('.view.active');
+    const viewId = activeView ? activeView.id : '';
+    if (viewId === 'view-dev-schema' && devSchemaText && devSchemaText.trim() && !currentWorkspaceFile) {
+      registered = devGhRegisterNewFile('schema');
+    } else if (viewId === 'view-dev-template' && devTemplateText && devTemplateText.trim() && !currentWorkspaceFile) {
+      registered = devGhRegisterNewFile('template');
+    }
+    if (!registered && ghModifiedFiles.size === 0) {
+      showToast('No files modified', 'info');
+      return;
+    }
   }
 
   const fileList = document.getElementById('ghCommitFileList');
@@ -11725,7 +11883,8 @@ function devGhShowCommitPanel() {
   ghModifiedFiles.forEach(path => {
     const entry = document.createElement('div');
     entry.className = 'gh-commit-file-entry';
-    entry.textContent = path;
+    const isNew = ghOriginalContents[path] && ghOriginalContents[path].sha === null;
+    entry.textContent = path + (isNew ? ' (new)' : '');
     fileList.appendChild(entry);
   });
 
@@ -11784,95 +11943,166 @@ async function devGhCommitAndPush() {
       if (content === null) throw new Error('Could not read file content for ' + path);
       const original = ghOriginalContents[path];
 
+      const putBody = {
+        message,
+        content: btoa(unescape(encodeURIComponent(content))),
+        branch: ghBranch
+      };
+      // Include sha only for existing files — omitting it creates a new file
+      if (original && original.sha) putBody.sha = original.sha;
+
       const resp = await devGhApiFetch(
         `https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/${path}`,
         {
           method: 'PUT',
           headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message,
-            content: btoa(unescape(encodeURIComponent(content))),
-            sha: original.sha,
-            branch: ghBranch
-          })
+          body: JSON.stringify(putBody)
         }
       );
       const result = await resp.json();
       const commitSha = result.commit.sha.slice(0, 7);
       showToast(`Committed ${commitSha} to ${ghBranch}`);
     } else {
-      // Multi-file: use Git Trees + Commits API for atomic commit
-      // 1. Get current commit SHA for the branch
-      const refResp = await devGhApiFetch(
-        `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/refs/heads/${ghBranch}`
-      );
-      const refData = await refResp.json();
-      const baseCommitSha = refData.object.sha;
+      // Multi-file: try Git Trees + Commits API for atomic commit
+      // On empty repos (no commits yet), ref fetch returns 404 — fall back to sequential PUTs
+      let useTreesApi = true;
+      let baseCommitSha, baseTreeSha;
 
-      // 2. Get the base tree
-      const commitResp = await devGhApiFetch(
-        `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/commits/${baseCommitSha}`
-      );
-      const commitData = await commitResp.json();
-      const baseTreeSha = commitData.tree.sha;
+      try {
+        // 1. Get current commit SHA for the branch
+        const refResp = await devGhApiFetch(
+          `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/refs/heads/${ghBranch}`
+        );
+        const refData = await refResp.json();
+        baseCommitSha = refData.object.sha;
 
-      // 3. Create blobs for each modified file
-      const treeItems = [];
-      for (const path of modifiedPaths) {
-        const content = devGhGetCurrentContent(path);
-        if (content === null) throw new Error('Could not read file content for ' + path);
+        // 2. Get the base tree
+        const commitResp = await devGhApiFetch(
+          `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/commits/${baseCommitSha}`
+        );
+        const commitData = await commitResp.json();
+        baseTreeSha = commitData.tree.sha;
+      } catch (refErr) {
+        if (refErr.message.includes('404')) {
+          useTreesApi = false; // Empty repo — no commits yet
+        } else {
+          throw refErr;
+        }
+      }
 
-        const blobResp = await devGhApiFetch(
-          `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/blobs`,
+      if (useTreesApi) {
+        // 3. Create blobs for each modified file
+        const treeItems = [];
+        for (const path of modifiedPaths) {
+          const content = devGhGetCurrentContent(path);
+          if (content === null) throw new Error('Could not read file content for ' + path);
+
+          const blobResp = await devGhApiFetch(
+            `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/blobs`,
+            {
+              method: 'POST',
+              headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+              body: JSON.stringify({ content, encoding: 'utf-8' })
+            }
+          );
+          const blobData = await blobResp.json();
+          treeItems.push({ path, mode: '100644', type: 'blob', sha: blobData.sha });
+        }
+
+        // 4. Create a new tree
+        const treeResp = await devGhApiFetch(
+          `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/trees`,
           {
             method: 'POST',
             headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content, encoding: 'utf-8' })
+            body: JSON.stringify({ base_tree: baseTreeSha, tree: treeItems })
           }
         );
-        const blobData = await blobResp.json();
-        treeItems.push({ path, mode: '100644', type: 'blob', sha: blobData.sha });
+        const treeData = await treeResp.json();
+
+        // 5. Create a new commit
+        const newCommitResp = await devGhApiFetch(
+          `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/commits`,
+          {
+            method: 'POST',
+            headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, tree: treeData.sha, parents: [baseCommitSha] })
+          }
+        );
+        const newCommitData = await newCommitResp.json();
+
+        // 6. Update the branch ref
+        await devGhApiFetch(
+          `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/refs/heads/${ghBranch}`,
+          {
+            method: 'PATCH',
+            headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sha: newCommitData.sha })
+          }
+        );
+
+        const commitSha = newCommitData.sha.slice(0, 7);
+        showToast(`Committed ${commitSha} to ${ghBranch} (${modifiedPaths.length} files)`);
+      } else {
+        // Empty repo fallback: commit files sequentially via Contents API
+        let lastCommitSha = '';
+        for (const path of modifiedPaths) {
+          const content = devGhGetCurrentContent(path);
+          if (content === null) throw new Error('Could not read file content for ' + path);
+          const original = ghOriginalContents[path];
+          const putBody = {
+            message: modifiedPaths.indexOf(path) === 0 ? message : `${message} (${path})`,
+            content: btoa(unescape(encodeURIComponent(content))),
+            branch: ghBranch
+          };
+          if (original && original.sha) putBody.sha = original.sha;
+          const resp = await devGhApiFetch(
+            `https://api.github.com/repos/${ghOwner}/${ghRepo}/contents/${path}`,
+            {
+              method: 'PUT',
+              headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
+              body: JSON.stringify(putBody)
+            }
+          );
+          const result = await resp.json();
+          lastCommitSha = result.commit.sha.slice(0, 7);
+          // Update SHA so retry after partial failure doesn't 422
+          if (ghOriginalContents[path]) ghOriginalContents[path].sha = result.content.sha;
+          ghModifiedFiles.delete(path);
+        }
+        showToast(`Committed ${lastCommitSha} to ${ghBranch} (${modifiedPaths.length} files)`);
       }
-
-      // 4. Create a new tree
-      const treeResp = await devGhApiFetch(
-        `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/trees`,
-        {
-          method: 'POST',
-          headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ base_tree: baseTreeSha, tree: treeItems })
-        }
-      );
-      const treeData = await treeResp.json();
-
-      // 5. Create a new commit
-      const newCommitResp = await devGhApiFetch(
-        `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/commits`,
-        {
-          method: 'POST',
-          headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, tree: treeData.sha, parents: [baseCommitSha] })
-        }
-      );
-      const newCommitData = await newCommitResp.json();
-
-      // 6. Update the branch ref
-      await devGhApiFetch(
-        `https://api.github.com/repos/${ghOwner}/${ghRepo}/git/refs/heads/${ghBranch}`,
-        {
-          method: 'PATCH',
-          headers: { ...ghHeaders(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sha: newCommitData.sha })
-        }
-      );
-
-      const commitSha = newCommitData.sha.slice(0, 7);
-      showToast(`Committed ${commitSha} to ${ghBranch} (${modifiedPaths.length} files)`);
     }
 
-    // Refresh files to get new SHAs
+    // Refresh files to get new SHAs and re-link current workspace file
     devGhHideCommitPanel();
-    await devGhFetchFiles();
+    const hadNewSchemas = modifiedPaths.some(p => p.startsWith('schemas/'));
+    // Remember the file path being edited so we can re-link after refresh
+    const editingPath = currentWorkspaceFile
+      ? (currentWorkspaceFile.type === 'schema'
+          ? workspaceFiles.schemas[currentWorkspaceFile.index]?.ghPath
+          : workspaceFiles.templates[currentWorkspaceFile.index]?.ghPath)
+      : null;
+    try {
+      await devGhFetchFiles();
+      // Re-link currentWorkspaceFile to the refreshed entry
+      if (editingPath) {
+        const schemaIdx = workspaceFiles.schemas.findIndex(f => f.ghPath === editingPath);
+        if (schemaIdx >= 0) {
+          currentWorkspaceFile = { type: 'schema', index: schemaIdx };
+        } else {
+          const tmplIdx = workspaceFiles.templates.findIndex(f => f.ghPath === editingPath);
+          if (tmplIdx >= 0) currentWorkspaceFile = { type: 'template', index: tmplIdx };
+        }
+      }
+      // Refresh picker if new schemas were committed
+      if (hadNewSchemas) {
+        await devGhRefreshPicker();
+      }
+    } catch (refreshErr) {
+      showToast('Committed successfully, but failed to refresh workspace. Reload the page to sync.', 'info');
+    }
+    updateSourceToolbar();
   } catch (e) {
     if (e.message.includes('409')) {
       showToast('Conflict: file changed on remote. Refresh and try again.', 'error');
@@ -11892,6 +12122,38 @@ async function devGhRefreshFiles() {
     showToast('Files refreshed from GitHub');
   } catch (e) {
     showToast('Failed to refresh: ' + e.message, 'error');
+  }
+}
+
+async function devGhRefreshPicker() {
+  // Re-fetch schemas from the repo and update the picker after new files are committed
+  try {
+    const schemaFiles = await ghFetch('schemas');
+    if (!Array.isArray(schemaFiles)) return;
+    const jsonFiles = schemaFiles.filter(f => f.name.endsWith('.json') && !f.name.startsWith('_'));
+    if (jsonFiles.length === 0) { repoSchemas = []; renderPicker(); return; }
+    const results = await Promise.all(
+      jsonFiles.map(file =>
+        ghFetchRaw(file.path)
+          .then(raw => {
+            const schema = JSON.parse(raw);
+            const baseName = file.name.replace('.json', '');
+            return {
+              name: schema.title || baseName,
+              description: schema.description || '',
+              icon: schema.icon || '\u{1F4C4}',
+              schemaPath: file.path,
+              templatePath: schema.template || `templates/${baseName}.py`,
+              schema
+            };
+          })
+          .catch(() => null)
+      )
+    );
+    repoSchemas = results.filter(s => s !== null);
+    renderPicker();
+  } catch (e) {
+    log('Could not refresh picker: ' + e.message, 'error');
   }
 }
 
