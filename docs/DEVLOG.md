@@ -14,6 +14,25 @@
 
 ## Log
 
+### 2026-03-16 — LLM Context Export (#205)
+
+Implemented LLM context export to help users leverage AI assistants when building schemas and templates.
+
+**Docs Tab — Copy & Download per Guide:**
+- Added Copy and Download .md buttons to all 4 docs panels (Schema Guide, Template Guide, Field Types, Example)
+- `getDocRawContent(panelId)` maps panel IDs to embedded doc constants; example panel assembles schema + template
+- `copyDocContent()` copies to clipboard with toast; `downloadDocContent()` triggers `.md` file download
+
+**Editor Toolbars — Smart "Copy AI Context":**
+- Added sparkle icon SVG symbol and "Copy AI Context" buttons to both Schema and Template editor toolbars
+- `buildSchemaAIContext()` assembles: task framing, schema structure rules, 24-type field table, validation rules, layout rules, DEMO_SCHEMA example, current WIP (if editing), workspace file list (if connected)
+- `buildTemplateAIContext()` assembles: task framing, template contract, stencils API reference (15 helpers with signatures), field data formats, DEMO_TEMPLATE example, paired schema, sample data, current WIP, workspace context
+- Both context bundles are markdown-formatted and LLM-optimized for direct pasting into chat
+
+**Tests:** 13 new tests in `test_dev_mode.py` covering button existence, function references, and context assembly.
+
+---
+
 ### 2026-03-16 — Commit New Files from Editors (#202)
 
 Implemented support for committing new files created in the Schema and Template editors to a connected GitHub repository. Previously, the Commit button only appeared for files loaded from the repo, and Save downloaded locally.
