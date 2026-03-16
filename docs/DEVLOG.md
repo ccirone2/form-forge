@@ -14,6 +14,34 @@
 
 ## Log
 
+### 2026-03-16 — Commit New Files from Editors (#202)
+
+Implemented support for committing new files created in the Schema and Template editors to a connected GitHub repository. Previously, the Commit button only appeared for files loaded from the repo, and Save downloaded locally.
+
+**New function — `devGhRegisterNewFile(type)`:**
+- Prompts for filename with sensible defaults (derived from schema title or template comment header)
+- Creates entries in `workspaceFiles` and `ghOriginalContents` with `sha: null` (signals new file)
+- Marks file as modified immediately so it appears in the commit panel
+- Validates: requires auth token, non-empty content, no duplicate filenames
+
+**Updated flows:**
+- `devSaveSchema()` / `devSaveTemplate()` — When GitHub connected, routes to register + commit panel instead of downloading. Also handles Ctrl+S on already-tracked files by showing the commit panel directly.
+- `updateSourceToolbar()` — Shows Commit button and "new file (unsaved)" label when GitHub is connected and the editor has content, even without a workspace file entry
+- `devGhTrackModification()` — Handles new files with `sha === null` (always marked modified if content is non-empty)
+- `devGhCommitAndPush()` — Single-file PUT omits `sha` for new files (GitHub creates the file). Multi-file path falls back to sequential PUTs when Git refs return 404 (empty repos with no commits)
+- `devGhShowCommitPanel()` — Auto-registers untracked editor content and labels new files with "(new)" in the file list
+- `devNewSchema()` / `devNewTemplate()` — Reset `currentWorkspaceFile` so toolbar shows new-file state
+
+**Post-commit:**
+- `devGhRefreshPicker()` re-fetches schemas and updates the Forms tab picker after new schemas are committed
+- `currentWorkspaceFile` is re-linked to the refreshed workspace entry so the user can continue editing
+
+**Also fixed:**
+- `friendlyError()` regex tightened from `/JSON/i` to `/JSON\.parse|Unexpected token|JSON at position/i` to avoid misclassifying "No .json files found" as a parse error
+- `connectRepo()` tolerates empty `schemas/` and `templates/` directories with helpful guidance messages
+
+---
+
 ### 2026-03-16 — UI/UX Audit Fixes (#192, #193, #194, #195, #196)
 
 Implemented all 4 priority tiers of the UI/UX audit across accessibility, design tokens, performance, and responsive design.
