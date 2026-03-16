@@ -2372,7 +2372,7 @@
 <main class="view active" id="view-setup" role="tabpanel" aria-labelledby="tab-forms">
   <div class="main-container">
     <div class="setup-hero">
-      <h2>Your documents, finally consistent — and easier</h2>
+      <h2>Forms that build documents</h2>
       <p>Fill out a form, get a formatted DOCX — all in your browser. No servers, no accounts.</p>
       <div class="demo-btn-wrapper" id="demoBtnWrapper">
         <button type="button" class="btn-primary btn-demo-primary" id="demoBtnAction" onclick="launchDemo()">
@@ -2673,32 +2673,32 @@
         <div class="docs-tab-panel active" id="schemaGuide" role="tabpanel" aria-labelledby="docsTabSchemaGuide">
           <div class="docs-source-badge" id="schemaGuideSource"></div>
           <div class="docs-panel-actions">
-            <button class="btn-secondary btn-sm" onclick="copyDocContent('schemaGuide')">Copy</button>
-            <button class="btn-secondary btn-sm" onclick="downloadDocContent('schemaGuide')">Download .md</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="copyDocContent('schemaGuide')">Copy</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="downloadDocContent('schemaGuide')">Download .md</button>
           </div>
           <div id="schemaGuideContent" class="docs-rendered-md"><p>Loading...</p></div>
         </div>
         <div class="docs-tab-panel" id="templateGuide" role="tabpanel" aria-labelledby="docsTabTemplateGuide">
           <div class="docs-source-badge" id="templateGuideSource"></div>
           <div class="docs-panel-actions">
-            <button class="btn-secondary btn-sm" onclick="copyDocContent('templateGuide')">Copy</button>
-            <button class="btn-secondary btn-sm" onclick="downloadDocContent('templateGuide')">Download .md</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="copyDocContent('templateGuide')">Copy</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="downloadDocContent('templateGuide')">Download .md</button>
           </div>
           <div id="templateGuideContent" class="docs-rendered-md"><p>Loading...</p></div>
         </div>
         <div class="docs-tab-panel" id="fieldTypes" role="tabpanel" aria-labelledby="docsTabFieldTypes">
           <div class="docs-source-badge" id="fieldTypesSource"></div>
           <div class="docs-panel-actions">
-            <button class="btn-secondary btn-sm" onclick="copyDocContent('fieldTypes')">Copy</button>
-            <button class="btn-secondary btn-sm" onclick="downloadDocContent('fieldTypes')">Download .md</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="copyDocContent('fieldTypes')">Copy</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="downloadDocContent('fieldTypes')">Download .md</button>
           </div>
           <div id="fieldTypesContent" class="docs-rendered-md"><p>Loading...</p></div>
         </div>
         <div class="docs-tab-panel" id="exampleSchema" role="tabpanel" aria-labelledby="docsTabExampleSchema">
           <div class="docs-source-badge" id="exampleSchemaSource"></div>
           <div class="docs-panel-actions">
-            <button class="btn-secondary btn-sm" onclick="copyDocContent('exampleSchema')">Copy</button>
-            <button class="btn-secondary btn-sm" onclick="downloadDocContent('exampleSchema')">Download .md</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="copyDocContent('exampleSchema')">Copy</button>
+            <button type="button" class="btn-secondary btn-sm" onclick="downloadDocContent('exampleSchema')">Download .md</button>
           </div>
           <div id="exampleSchemaContent" class="docs-rendered-md"><p>Loading...</p></div>
         </div>
@@ -3275,6 +3275,7 @@ function getDocRawContent(panelId) {
     templateGuide: () => typeof DOCS_TEMPLATE_GUIDE !== 'undefined' ? DOCS_TEMPLATE_GUIDE : '',
     fieldTypes: () => typeof DOCS_FIELD_TYPES !== 'undefined' ? DOCS_FIELD_TYPES : '',
     exampleSchema: () => {
+      if (typeof DEMO_SCHEMA === 'undefined' || typeof DEMO_TEMPLATE === 'undefined') return '';
       const parts = [];
       parts.push('# Example Schema\n\n```json\n' + JSON.stringify(DEMO_SCHEMA, null, 2) + '\n```');
       parts.push('\n\n# Example Template\n\n```python\n' + DEMO_TEMPLATE.trim() + '\n```');
@@ -3288,6 +3289,7 @@ function getDocRawContent(panelId) {
 function copyDocContent(panelId) {
   const content = getDocRawContent(panelId);
   if (!content) { showToast('No content available', 'error'); return; }
+  if (!navigator.clipboard || !navigator.clipboard.writeText) { showToast('Clipboard not available', 'error'); return; }
   navigator.clipboard.writeText(content).then(() => {
     showToast('Copied to clipboard', 'success');
   }).catch(() => {
@@ -10910,6 +10912,7 @@ function buildSchemaAIContext() {
 
 function copySchemaAIContext() {
   const ctx = buildSchemaAIContext();
+  if (!navigator.clipboard || !navigator.clipboard.writeText) { showToast('Clipboard not available', 'error'); return; }
   navigator.clipboard.writeText(ctx).then(() => {
     showToast('Schema AI context copied to clipboard', 'success');
   }).catch(() => {
@@ -11201,7 +11204,8 @@ function buildTemplateAIContext() {
   lines.push('- address: JSON string `{"street":"...","city":"...","state":"...","zip":"..."}`');
   lines.push('- repeater: JSON string `[{"sub_id":"val",...},...]` — parse with `json.loads()`');
   lines.push('- file/signature: base64 data URI — use `stencils.image()` or `stencils.signature()`');
-  lines.push('- heading/info/hidden: no user data (hidden has a default value)');
+  lines.push('- heading/info: not present in data dict (display-only)');
+  lines.push('- hidden: present in data dict with its configured `default` value; user cannot change it');
   lines.push('');
 
   // Complete example
@@ -11268,6 +11272,7 @@ function buildTemplateAIContext() {
 
 function copyTemplateAIContext() {
   const ctx = buildTemplateAIContext();
+  if (!navigator.clipboard || !navigator.clipboard.writeText) { showToast('Clipboard not available', 'error'); return; }
   navigator.clipboard.writeText(ctx).then(() => {
     showToast('Template AI context copied to clipboard', 'success');
   }).catch(() => {
