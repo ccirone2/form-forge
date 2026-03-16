@@ -2,6 +2,8 @@
 
 A schema is a JSON file that defines the structure of a form. It controls what fields appear, how they're grouped, validation rules, and which template generates the final document.
 
+> **Tip:** You can also create and edit schemas visually using the **Schema tab** — use the JSON editor with live form preview, real-time validation, and right-click context menu to insert field snippets.
+
 ## File Location
 
 Place schema files in the `schemas/` directory of your repo:
@@ -51,7 +53,7 @@ for p in pathlib.Path('schemas').glob('*.json'):
 | `title` | yes | string | Displayed as the form heading. Minimum 1 character. |
 | `description` | no | string | Subheading shown below the title and on the picker card. |
 | `icon` | no | string | Emoji displayed on the picker card. Defaults to 📄 if omitted. |
-| `template` | no | string | Path to the Python template file relative to repo root. Must match `^templates/.+\.py$`. Defaults to `templates/{schema-filename}.py`. |
+| `template` | no | string | Path to the Python template file relative to repo root. Must match `^templates/.+\.py$`. Defaults to `templates/{schema-filename}.py`. **Note:** The Schema tab's live validator treats `template` as required and shows a validation error badge if omitted — always include it in practice. |
 | `wizard` | no | boolean | When `true`, sections render as sequential steps with Next/Back navigation. See [Wizard Mode](#wizard-mode). |
 | `sections` | yes | array | Array of section objects. Minimum 1. |
 | `sampleData` | no | object | Inline sample form data (field ID to string value). Used by the **Load Sample Data** button when no fixture file exists. See [Sample Data](#sample-data). |
@@ -108,18 +110,21 @@ Each field defines a single input in the form. The `id` becomes the key in the `
 | `required` | no | boolean | When `true`, prevents export until the field is filled. |
 | `placeholder` | no | string | Ghost text shown inside empty inputs. |
 | `hint` | no | string | Help text displayed below the field in smaller text. |
-| `options` | conditional | array | Array of strings. Required for `select`, `radio`, and `checkbox`. Forbidden on all other types. |
+| `options` | conditional | array | Array of strings. Required for `select`, `radio`, `checkbox`, and `multi_select`. Forbidden on all other types. |
 | `default_value` | conditional | string | Static value to inject. Required for `hidden`. Forbidden on all other types. |
 | `fields` | conditional | array | Sub-field definitions. Required for `repeater`. Forbidden on all other types. |
-| `maxLength` | no | integer | Maximum character count. Minimum 1. Allowed on `text` and `longtext` only. On `longtext`, displays a live counter (defaults to 5000). On `text`, schema validation only — no counter in the browser. |
-| `min` | no | integer | Minimum value. Allowed on `number` only. |
-| `max` | no | integer | Maximum value. Allowed on `number` only. |
+| `maxLength` | no | integer | Maximum character count. Minimum 1. Allowed on `text` and `longtext`. On `longtext`, displays a live counter (defaults to 5000 if omitted) that colors red when exceeded. On `text`, accepted by the schema spec but not enforced in the browser (no counter, no truncation). |
+| `min` | no | number | Minimum value. Allowed on `number` only. |
+| `max` | no | number | Maximum value. Allowed on `number` only. |
 | `step` | no | number | Step increment. Allowed on `number` only. |
 | `currency_symbol` | no | string | Currency prefix. Allowed on `currency` only. Defaults to `$`. |
 | `accept` | no | string | File type filter (e.g. `"image/*"`). Allowed on `file` only. |
 | `max_size_mb` | no | integer | Maximum file size in MB. Minimum 1. Allowed on `file` only. |
+| `content` | conditional | string | Display text for `info` blocks. Required for `info`. Forbidden on all other types. |
+| `style` | no | string | Visual variant for `info` blocks: `"info"`, `"warning"`, or `"success"`. Defaults to `"info"`. Allowed on `info` only. |
 | `min_rows` | no | integer | Minimum rows shown initially. Minimum 1. Allowed on `repeater` only. |
 | `max_rows` | no | integer | Maximum rows allowed. Minimum 1. Allowed on `repeater` only. |
+| `display` | no | string | Display mode for `repeater`: `"cards"` (default) or `"table"`. Allowed on `repeater` only. |
 | `visible_when` | no | object | Conditional visibility rule. See [Conditional Visibility](#conditional-visibility). |
 
 No other field properties are allowed.
@@ -142,7 +147,7 @@ Examples:
 
 ## Field Types
 
-18 types are supported. The `type` value must be exactly one of these strings.
+24 types are supported. The `type` value must be exactly one of these strings.
 
 | Type | Renders As | `options` needed? | Special properties |
 |------|-----------|-------------------|--------------------|
@@ -150,26 +155,32 @@ Examples:
 | `email` | Email input with browser validation | no | — |
 | `tel` | Phone number input | no | — |
 | `date` | Native date picker (value: `YYYY-MM-DD`) | no | — |
+| `time` | Native time picker (value: `HH:MM`) | no | — |
+| `url` | URL input with browser validation | no | — |
+| `datetime` | Combined date and time picker | no | — |
 | `textarea` | Multi-line text (3 rows) | no | — |
 | `longtext` | Large textarea with character counter (6 rows) | no | `maxLength` |
 | `select` | Dropdown menu | yes | — |
 | `radio` | Radio button group | yes | — |
 | `checkbox` | Multi-select checkbox group | yes | — |
+| `multi_select` | Searchable multi-select with tags | yes | — |
+| `toggle` | Boolean yes/no switch | no | — |
 | `list` | Dynamic add/remove rows with bulk paste | no | — |
 | `number` | Numeric input | no | `min`, `max`, `step` |
 | `currency` | Numeric input with currency prefix | no | `currency_symbol` |
 | `heading` | Non-input visual divider | no | — |
+| `info` | Read-only info/warning/success block | no | `content` (required), `style` |
 | `hidden` | Not rendered; passes static value | no | `default_value` (required) |
 | `address` | Street / city / state / ZIP group | no | — |
 | `file` | File upload with preview | no | `accept`, `max_size_mb` |
 | `signature` | Canvas drawing pad | no | — |
-| `repeater` | Dynamic rows of sub-fields | no | `fields` (required), `min_rows`, `max_rows` |
+| `repeater` | Dynamic rows of sub-fields | no | `fields` (required), `min_rows`, `max_rows`, `display` |
 
 See `docs/FIELD_TYPES.md` for detailed examples, template handling code, and layout rules for each type.
 
 ## Options Arrays
 
-For `select`, `radio`, and `checkbox` fields, the `options` array defines the available choices:
+For `select`, `radio`, `checkbox`, and `multi_select` fields, the `options` array defines the available choices:
 
 ```json
 {
@@ -186,7 +197,7 @@ For `radio` and `checkbox`, do not include an empty string.
 
 ## Repeater Sub-Fields
 
-The `repeater` type requires a nested `fields` array. Sub-fields support a restricted set of types: `text`, `email`, `tel`, `number`, `currency`, and `select`. Sub-field IDs follow the same pattern (`^[a-z][a-z0-9_]*$`) and must be unique within the repeater (they do not need to be unique across the whole schema).
+The `repeater` type requires a nested `fields` array. Sub-fields support a restricted set of types: `text`, `email`, `tel`, `number`, `currency`, `select`, `time`, `url`, and `toggle`. Sub-field IDs follow the same pattern (`^[a-z][a-z0-9_]*$`) and must be unique within the repeater (they do not need to be unique across the whole schema).
 
 ```json
 {
@@ -266,7 +277,7 @@ Behavior:
 - The field is hidden by default and shown only when the referenced field's current value matches `equals`.
 - Visibility is evaluated on every `change`/`input` event of the source field.
 - Hidden conditional fields are skipped by `required` validation — a hidden field will never block export.
-- `collectFormData()` always collects all fields regardless of visibility. Hidden fields contribute an empty string to the data dict.
+- `collectFormData()` always collects all fields regardless of visibility. Hidden conditional fields contribute their current DOM value — this is an empty string if the field was never shown, but may retain a previously entered value if the user filled the field before hiding it.
 - The source field can appear anywhere in the schema — before or after the conditional field.
 - Multiple fields can each depend on the same source field.
 
@@ -274,8 +285,8 @@ Behavior:
 
 FormForge automatically arranges fields in the form:
 
-- **Two-column rows:** `text`, `email`, `tel`, `date`, `select`, `number`, and `currency` fields are paired side-by-side when consecutive.
-- **Full-width:** `textarea`, `longtext`, `list`, `radio`, `checkbox`, `heading`, `address`, `file`, `signature`, and `repeater` fields always take the full width and break any two-column pairing.
+- **Two-column rows:** `text`, `email`, `tel`, `date`, `time`, `url`, `datetime`, `select`, `number`, `currency`, and `toggle` fields are paired side-by-side when consecutive.
+- **Full-width:** `textarea`, `longtext`, `list`, `radio`, `checkbox`, `multi_select`, `heading`, `info`, `address`, `file`, `signature`, and `repeater` fields always take the full width and break any two-column pairing.
 - **Not rendered:** `hidden` fields are completely invisible in the layout.
 
 Control layout by ordering fields intentionally. Two `text` fields in a row pair up. A `text` followed by a `textarea` does not.
@@ -287,6 +298,7 @@ The smallest valid schema:
 ```json
 {
   "title": "Quick Note",
+  "template": "templates/quick-note.py",
   "sections": [
     {
       "title": "Note",
@@ -304,7 +316,7 @@ The **Load Sample Data** button in the form UI lets users fill a form with repre
 
 ### Fixture files (preferred)
 
-Place a JSON file at `tests/fixtures/{schemaName}_sample.json` where `{schemaName}` matches the schema filename without the `.json` extension (e.g., `schemas/onboarding.json` uses `tests/fixtures/onboarding_sample.json`). The file should contain a flat `{fieldId: stringValue}` object with values for all fields. `file` and `signature` fields can use empty strings.
+Place a JSON file at `tests/fixtures/{schemaName}_sample.json` where `{schemaName}` matches the schema filename without the `.json` extension (e.g., `schemas/onboarding.json` uses `tests/fixtures/onboarding_sample.json`). The file should contain a flat `{fieldId: stringValue}` object with values for all fields. `file` and `signature` fields can use empty strings. **Note:** Fixture file lookup only works when the form is loaded from a GitHub-connected repo. Local folder sources skip fixture resolution and fall through directly to inline `sampleData`.
 
 ### Inline `sampleData` (fallback)
 

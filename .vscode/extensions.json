@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "anthropic.claude-code",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "charliermarsh.ruff",
+    "ecmel.vscode-html-css",
+    "redhat.vscode-json",
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    "ms-playwright.playwright",
+    "ritwickdey.LiveServer"
+  ]
+}

@@ -24,20 +24,26 @@ form-forge/
 ├── index.html                  ← single-file app (HTML + CSS + JS)
 ├── schemas/
 │   ├── _schema.spec.json       ← JSON Schema spec that validates all schemas
-│   └── *.json                  ← form definitions
+│   ├── onboarding.json         ← employee onboarding form
+│   ├── expense-report.json     ← expense report form
+│   └── field-type-demo.json    ← demo form showcasing all field types
 ├── templates/
 │   ├── stencils.py             ← shared helpers for all templates
-│   └── *.py                    ← Python DOCX generation scripts
+│   ├── onboarding.py           ← employee onboarding template
+│   ├── expense-report.py       ← expense report template
+│   └── field-type-demo.py      ← demo template showcasing all field types
 ├── tests/
 │   ├── fixtures/               ← sample data for template tests
-│   ├── test_stencils.py        ← unit tests for stencils.py utilities (27 tests)
-│   ├── test_templates.py       ← integration tests for templates (4 tests)
-│   └── test_schemas.py         ← schema validation tests (26 tests)
+│   ├── test_stencils.py        ← unit tests for stencils.py utilities (50 tests)
+│   ├── test_templates.py       ← integration tests for templates (10 tests)
+│   ├── test_schemas.py         ← schema validation tests (44 tests)
+│   └── test_dev_mode.py        ← UI structure and feature tests (320 tests)
 ├── docs/
 │   ├── DEVLOG.md               ← development journal
+│   ├── PLAN.md                 ← structured implementation plans
 │   ├── SCHEMA_GUIDE.md         ← guide for writing new schemas
 │   ├── TEMPLATE_GUIDE.md       ← guide for writing new templates
-│   └── FIELD_TYPES.md          ← reference for all 18 field types
+│   └── FIELD_TYPES.md          ← reference for all 23 field types
 └── .github/workflows/
     └── validate.yml            ← CI: schema validation + pytest
 ```
@@ -99,11 +105,16 @@ See `docs/TEMPLATE_GUIDE.md` for the full `stencils` API.
 | `email` | Email input | `str` |
 | `tel` | Phone input | `str` |
 | `date` | Date picker | `str` (`YYYY-MM-DD`) |
+| `time` | Time picker | `str` (`HH:MM`) |
+| `url` | URL input | `str` |
+| `datetime` | Combined date and time picker | `str` (`YYYY-MM-DDTHH:MM`) |
 | `textarea` | Multi-line text | `str` |
 | `longtext` | Large textarea with character counter | `str` (may contain `\n`) |
 | `select` | Dropdown | `str` |
 | `radio` | Radio buttons | `str` |
 | `checkbox` | Checkboxes | `str` (comma-separated) |
+| `multi_select` | Searchable multi-select with tags | `str` (comma-separated) |
+| `toggle` | Boolean yes/no switch | `str` (`true`/`false`) |
 | `list` | Dynamic add/remove rows | `str` (newline-separated) |
 | `number` | Number input with min/max/step | `str` |
 | `currency` | Number input with currency prefix | `str` |
@@ -115,6 +126,21 @@ See `docs/TEMPLATE_GUIDE.md` for the full `stencils` API.
 | `repeater` | Dynamic rows of sub-fields | JSON array string |
 
 See `docs/FIELD_TYPES.md` for full details on each type, including schema properties and template handling.
+
+## Built-in Tools
+
+FormForge includes always-available tabs for creating and editing forms alongside the form-filling experience. No mode toggle — all tools are accessible from the tab navigation bar.
+
+```
+[FormForge]  [Forms] [Schema] [Template] [Docs]     [source badge]
+```
+
+- **Forms** — Connect a content source (GitHub repo or local folder), browse available forms, fill them, and export DOCX
+- **Schema** — JSON editor with syntax highlighting, live form preview, real-time validation, and right-click context menu with field type snippets
+- **Template** — Python editor with DOCX preview powered by Pyodide + mammoth.js, and stencils helper snippets
+- **Docs** — Embedded documentation for Schema Guide, Template Guide, Field Types, and example schema/template
+
+Picker cards include "Edit Schema" and "Edit Template" actions for seamless navigation between filling and editing. Editor dependencies (Prism.js, CodeJar, mammoth.js, DOMPurify) are lazy-loaded from CDN on first Schema/Template tab click.
 
 ## Schema Features
 
@@ -152,8 +178,8 @@ Hidden fields are excluded from validation but are always included in `data` pas
 
 GitHub Actions runs on every push and pull request to `develop` and `main`:
 
-- **Schema validation** — validates all `schemas/*.json` against `schemas/_schema.spec.json`
-- **Tests** — runs `PYTHONPATH=. pytest tests/ -v` (44 tests)
+- **Lint** — runs `ruff check templates/ tests/`
+- **Tests** — runs `PYTHONPATH=. pytest tests/ -v` (436 tests)
 
 See `.github/workflows/validate.yml`.
 
@@ -163,7 +189,7 @@ See `.github/workflows/validate.yml`.
 # Run locally
 python -m http.server 8000
 
-# Run all tests (44 tests)
+# Run all tests (436 tests)
 PYTHONPATH=. python -m pytest tests/ -v
 
 # Lint

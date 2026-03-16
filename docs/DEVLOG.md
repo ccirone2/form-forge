@@ -14,6 +14,851 @@
 
 ## Log
 
+### 2026-03-16 — UI/UX Audit Fixes (#192, #193, #194, #195, #196)
+
+Implemented all 4 priority tiers of the UI/UX audit across accessibility, design tokens, performance, and responsive design.
+
+**P0 — Critical Accessibility (#193):**
+- Made `token-toggle` divs keyboard-accessible with `tabindex`, `role="button"`, and Enter/Space handlers
+- Added `:focus-visible` style on `.dev-nav-tab` navigation buttons
+- Added `aria-label` to all icon-only toolbar buttons and profile field indicator
+- Added `role="tabpanel" aria-labelledby` to `view-form`
+- Added `:focus` styles matching `:hover` on dropdown items (autofill, profile, preset)
+- Added `alt` attribute to file preview `<img>` elements
+
+**P1 — Design Tokens & Modal Accessibility (#194):**
+- Replaced all 33 raw transition values with `var(--transition-*)` tokens
+- Added `--overlay-scrim`, `--warning-subtle` tokens; unified 6 modal backdrop values
+- Improved `--text-muted` contrast from `#8b8da0` to `#9496a8` (WCAG AA compliant)
+- Added `for` attributes linking labels to inputs in connect dialog and profile editor
+- Added focus trapping to connect dialog (Tab cycles, Shift+Tab wraps, focus restored on close)
+- Wrapped 3 editor scroll-sync handlers in `requestAnimationFrame`
+- Added `aria-modal`, tab ARIA semantics, `aria-label` on status badge and autofill dropdown
+- Added Space key support to profile/preset dropdown keyboard navigation
+- Added `aria-label` on bulk list textarea, `role="group"` on preset field checkboxes
+
+**P2 — Editor Performance & Responsive (#195):**
+- Eliminated gutter DOM thrashing: event delegation (one handler vs per-element), diff-based skip when line count/folds unchanged
+- Changed mobile gate from hiding entire nav to hiding only Schema/Template tabs (Docs tab remains accessible)
+- Added 44px touch target expansion for `.autofill-btn`, `.btn-card-edit`, `.btn-clear-sig`, `.btn-sm`
+- Added bottom-sheet behavior for preset dropdown on mobile (matching profile/autofill)
+- Added `beforeunload` cleanup for workspace file poller
+- Added canvas-based image resize (max 1200px) before base64 encoding in file fields
+- Added `--radius-circle` token, replaced 9 `border-radius: 50%` occurrences
+
+**P3 — Design System Refinements (#196):**
+- Replaced `aria-label` with `aria-labelledby` on connect dialog (points to visible `<h3>`)
+- Added `aria-label` to autofill badge for screen reader context
+- Added arrow-key navigation between connect dialog tabs
+- Changed skip-link from `top` animation to `transform: translateY()` (avoids layout)
+- Added `--focus-ring` token, replaced 3 `box-shadow: 0 0 0 3px var(--accent-glow)` patterns
+- Added `@media (pointer: coarse)` to disable `backdrop-filter: blur()` on touch devices
+- Documented breakpoint strategy and aligned 767px → 768px
+
+**Decisions:**
+- Kept Docs tab visible on narrow viewports (read-only, no split-pane needed)
+- Used `var(--transition-fast)` for `0.1s` values (no new `--transition-fastest` token)
+- Image resize uses `toDataURL` with quality 0.85 for JPEG compression
+- M5 (picker card restructuring) skipped — high-risk for low benefit
+
+---
+
+### 2026-03-16 — Embed Full Documentation in Docs Tab (#198)
+
+Embedded the full markdown docs (`SCHEMA_GUIDE.md`, `TEMPLATE_GUIDE.md`, `FIELD_TYPES.md`) directly in `index.html` as JS template-literal constants, replacing the abbreviated fallback content (which only covered 11 of 24 field types).
+
+**Changes:**
+- Added `DOCS_SCHEMA_GUIDE`, `DOCS_TEMPLATE_GUIDE`, `DOCS_FIELD_TYPES` constants with `// EMBEDDED-DOC:*:START/END` marker comments
+- Rewrote `loadDocs()` to render embedded markdown via `renderMarkdown()` — no longer async, no GitHub fetch
+- Simplified `DOCS_CONFIG` (removed `ghPath`, `fallbackTitle`)
+- Removed `buildFallbackSchemaGuide()`, `buildFallbackTemplateGuide()`, `buildFallbackFieldTypes()` — no longer needed
+- Removed `.from-github` / `.from-fallback` CSS classes
+- Removed `loadDocs()` calls from `connectRepo()` and `disconnectSource()` — docs are static now
+- Created `scripts/sync-embedded-docs.py` with `--check` mode for CI validation
+- Added sync check step to `.github/workflows/validate.yml`
+
+**Decisions:**
+- Used marker comments for reliable find-and-replace by the sync script
+- Kept `buildFallbackExamples()` for the Examples tab (uses DEMO_SCHEMA/DEMO_TEMPLATE, not doc files)
+- Docs are now always the same regardless of connected source — no more fetch-or-fallback distinction
+
+---
+
+### 2026-03-15 — UI/UX Audit (#192)
+
+Conducted a comprehensive UI/UX audit covering accessibility, performance, theming/design tokens, and responsive design. Identified 55 issues (1 critical, 13 high, 20 medium, 21 low).
+
+**Key findings:**
+- **Critical:** `devUpdateLineNumbers` rebuilds entire gutter DOM on every keypress — severe DOM thrashing in code editors
+- **High:** Keyboard-inaccessible `token-toggle` divs, missing focus indicators on nav tabs, icon-only buttons without `aria-label`, 33 transition declarations bypassing design tokens, inconsistent modal overlay colors
+- **Positive:** Excellent ARIA on primary widgets, well-structured token system (85%+ adoption), no layout-triggering animations, smart lazy loading, good mobile touch target expansion
+
+**Created sub-issues by priority:**
+- #193 — P0: Fix critical a11y gaps (keyboard access, focus indicators, ARIA)
+- #194 — P1: Normalize design tokens and fix modal accessibility
+- #195 — P2: Optimize editor performance and improve responsive design
+- #196 — P3: Design system refinements and long-term backlog
+
+---
+
+### 2026-03-15 — Eliminate ghToolbar (#190)
+
+Removed the global `#ghToolbar` bar and merged its branch controls into the per-editor source toolbars:
+
+- **Removed** `#ghToolbar` HTML block, its CSS (`.gh-toolbar` rules), and the `updateGitToolbar()` function + all call sites
+- **Added** branch select (`schemaBranchSelect` / `templateBranchSelect`), create-branch, and refresh buttons to both `#schemaSourceToolbar` and `#templateSourceToolbar`
+- **Updated** `updateSourceToolbar()` to show/hide the new branch controls based on `contentSourceType`
+- **Updated** `devGhFetchBranches()` to populate both editor branch selects instead of the old single toolbar one
+- **Updated** tests to verify the toolbar is gone and branch controls exist in source toolbars
+
+---
+
+### 2026-03-15 — Forms Tab UX Improvements (#185)
+
+UX improvements to the Forms tab and connection management:
+
+- **Demo → Open swap** — "Try the demo form" button swaps to "Open Selected Form" in the same hero position when a source is connected. Restored on disconnect.
+- **Disconnect moved to connect dialog** — When a source is connected, the connect dialog (opened via the status badge) shows a status banner with the connected source name, form count, and a Disconnect button. The source card on the Forms tab is hidden entirely when connected.
+- **Inline Open Form** — Each picker card shows an "Open Form" button when selected. Double-click and Enter on cards still work.
+- **Clean Forms tab** — When connected, the Forms tab shows only the hero area and picker grid. The "Connect a Source" empty state card reappears on disconnect.
+
+Refactored `devGhDisconnect()` into a unified `disconnectSource()` that handles both GitHub and local folder cleanup (clears file polling, workspace handle, and base module cache).
+
+---
+
+### 2026-03-15 — Bug Fixes: Button Icon, Source Persistence, Docs Refresh (#181, #182, #183)
+
+Three UI bug fixes:
+
+- **#181** — Added missing `icon-link` SVG symbol so the "Connect a Source" button icon renders. Added `justify-content: center` to `.btn-connect` for proper text centering.
+- **#182** — GitHub connection info now persists to `localStorage` (`formforge-source` key). On page load, saved connections auto-reconnect. Cleared on disconnect.
+- **#183** — `loadDocs()` now fetches documentation from the connected GitHub repo (via `ghFetchRaw`) when available, falling back to built-in reference. Called after `connectRepo()` and on disconnect to keep docs in sync.
+
+---
+
+### 2026-03-15 — Connection UX Moved to Dialog (#179)
+
+Moved the GitHub Repository and Local Folder connection cards from the Forms tab into a modal dialog triggered by clicking the header status badge. The Forms tab now shows a clean empty state when not connected and goes straight to the form picker when connected.
+
+- Status badge (`#statusBadge`) changed from `<div>` to `<button>` with chevron indicator
+- New `connect-dialog-overlay` with two-tab switcher (GitHub / Local Folder)
+- Existing connection HTML moved (not duplicated) — all element IDs preserved
+- Empty state card (`#setupEmptyState`) with "Connect a Source" CTA replaces the source-grid
+- Dialog auto-closes on successful connection via `hideConnectDialog()`
+- `devGhDisconnect()` restores the empty state
+- Escape key and backdrop click dismiss the dialog
+- Mobile responsive: bottom-sheet layout on narrow viewports
+- Updated 2 existing tests, added 6 new tests for dialog, tabs, empty state, and status badge
+
+**Decisions:**
+- Moved HTML rather than duplicating to avoid maintaining two copies of input elements
+- Kept `source-grid` and `source-card` CSS classes for potential future reuse
+- Dialog is always available via status badge regardless of current connection state
+
+---
+
+### 2026-03-15 — Code Review Fixes — XSS, Mobile, ARIA (#172, #178)
+
+Security and polish fixes from unified Autofill code review:
+
+- Fixed XSS vulnerability in profile dropdown: `_profileName` values now escaped via `_escapeHtml()` before being inserted into innerHTML
+- Fixed orphan profile on cancel: profile editor "Cancel" now deletes the just-created profile if cancelling a new profile creation
+- Fixed editor return flow: returning from profile/preset editor re-opens the correct parent dropdown
+- Fixed TypeError when Autofill dropdown opened before any profiles/presets exist
+- Mobile layout improvements for Autofill dropdown
+- ARIA attribute updates for dropdown accessibility
+- All CSS hardcoded values replaced with design tokens
+
+---
+
+### 2026-03-15 — Stale Reference & Test Cleanup
+
+Post-merge cleanup after unified tabs and autofill changes:
+
+- Removed stale Dev Mode references from CLAUDE.md and code
+- Removed dead CSS classes no longer referenced in HTML
+- Optimized test architecture: added `e2e` marker for Playwright browser tests, extracted shared fixtures to `conftest.py`
+- Fixed duplicate test function names (`ruff` F811 lint error)
+
+---
+
+### 2026-03-15 — Unified Autofill Dropdown (#172)
+**Issues:** #172, #173, #174, #175, #176
+
+Consolidated Profiles, Presets, and data-loading actions (Load Sample, Paste Data, Load from File) into a single unified **Autofill** dropdown button in the form nav toolbar.
+
+- Replaced separate `[Profiles]` and `[Presets]` buttons with single `[Autofill ▾]` button
+- Dropdown has three sections: Profiles, Presets, and Actions (Load Sample Data, Paste Data, Load from File)
+- Combined badge shows total count of profiles + presets
+- Profiles now have an explicit `_profileName` field — user-editable in the profile editor, with auto-detected name as placeholder/default
+- Migration: existing profiles without `_profileName` get it auto-populated from field values on first load
+- "Save current form as profile" now opens the editor (instead of quick-saving) so users can name their profile
+- Moved Load Sample, Paste Data, and Load from File from bottom submit toolbar into dropdown action items
+- Bottom toolbar simplified from 5 buttons to 2: `[Save Data]` `[Reset]`
+- Added shared `_positionDropdown()` helper to reduce duplicate positioning logic
+- Field-level profile indicators remain unchanged (they open the profile dropdown independently)
+- Preset editor now renders inside the shared `profileDropdown` element via `_showPresetEditorInDropdown()`
+- Updated 6 existing tests and added 9 new tests for the unified UI
+
+---
+
+### 2026-03-15 — Markdown Rendering Improvements
+
+Improved the `renderMarkdown()` function used in the Docs tab:
+
+- Added support for h1–h6 headings (previously only h2–h3)
+- Added nested list support (indented `- ` items render as nested `<ul>`)
+- Added multi-line blockquote handling (consecutive `> ` lines merge into a single `<blockquote>`)
+- Added `docs-rendered-md` class to all four doc content containers for consistent styling
+- Fixed repo status string not clearing on disconnect in `disconnectSource()`
+
+---
+
+### 2026-03-15 — Bundle Export/Import (#163)
+**Issues:** #163, #167, #168
+
+Added form package export/import for sharing complete form definitions (schema + template + sample data) as a single JSON artifact.
+
+- Added "Copy Package" and "Import Package" buttons to both Schema and Template toolbars
+- `bundleExport()` constructs `formforge_package` JSON, copies to clipboard with toast + download action link
+- `bundleDownload()` saves as `{slug}.formforge.json` file; serves as clipboard fallback
+- Import modal with monospace textarea, file drop zone, and live preview status
+- Smart detection: auto-detects full packages (`formforge_package` key), bare schemas (`sections` array), bare Python templates (`import`/`def generate_docx`), and form data (`_formforge` — shows helpful redirect to Paste Data)
+- `bundleImport()` loads components into editor globals and CodeJar instances, calls `devUpdateSchemaPreview()` + `devSaveEditorState()`
+- Works even when CDN deps haven't loaded — stores in globals, applied when editors initialize
+- Added `.toast-action` CSS for download link in toast notifications
+- Added 15 new tests covering toolbar buttons, modal structure, ARIA, CSS, function existence, and smart detection
+
+---
+
+### 2026-03-14 — Per-Schema Presets (#162)
+**Issues:** #162, #164, #165, #166
+
+Added per-schema preset system for saving and reusing recurring form field values. Mirrors the existing profile dropdown pattern.
+
+- Added "Presets" button with lightning bolt icon and count badge in `.form-nav`
+- Built preset dropdown with item list (name + 2-3 field value preview), edit/delete actions, and "Save as Preset" action
+- Implemented inline preset editor with name input and field checkboxes (file/signature types excluded)
+- Preset CRUD functions: `getPresetStorageKey()`, `getPresets()`, `savePresets()`, `addPreset()`, `deletePreset()`
+- Storage: `formforge_presets_{slug}` in localStorage, keyed per schema title
+- `applyPreset()` calls `populateForm()` with `skipFileFields: true`
+- Mutual exclusion: opening presets closes profiles and vice versa
+- Escape key and outside click close the dropdown
+- `setupPresets()` called from `postLaunchHook()`, `hidePresetDropdown()` called from `resetForm()`
+- Added 16 new tests covering button/badge/dropdown HTML structure, CSS classes, function existence, integration hooks, and mutual exclusion
+- All CSS uses design tokens (no hardcoded values)
+
+---
+
+### 2026-03-14 — Clipboard Paste for Form Data (#161)
+**Issues:** #161
+
+Added "Paste Data" button and modal to the form view, enabling users to paste JSON data directly into forms without the save-file-then-upload round-trip.
+
+- Added clipboard SVG icon to sprite sheet
+- Added "Paste Data" button in `submit-area-secondary` (between Load Data and Load Sample)
+- Built paste modal following `gh-connect-modal` pattern with monospace textarea, live status line, Apply/Cancel buttons
+- Implemented 4 JS functions: `showPasteDataModal()`, `hidePasteDataModal()`, `pasteDataPreview()`, `applyPastedData()`
+- Live field match counter shows "X of Y fields matched" as user types/pastes
+- Handles invalid JSON, array-instead-of-object, schema mismatch (warning), and `_formforge` metadata stripping
+- Escape key and backdrop click close modal
+- Added 11 new tests covering button placement, modal structure, ARIA attributes, CSS classes, and function existence
+
+---
+
+### 2026-03-15 — Created Issues for Three New Features (#161, #162, #163)
+**Issues:** #161, #162, #163 (+ sub-issues #164–#168)
+
+Created GitHub issues for three new features planned to reduce friction in the form/template authoring loop:
+
+1. **#161 — Clipboard Paste for Form Data** — "Paste Data" button + modal for pasting JSON directly into forms. Branch: `feature/161-paste-data`
+2. **#162 — Per-Schema Presets** — Named presets per form stored in localStorage for recurring data. Sub-issues: #164 (HTML/CSS), #165 (CRUD/storage), #166 (dropdown/integration). Branch: `feature/162-per-schema-presets`
+3. **#163 — Bundle Export/Import** — Package schema + template + sample data as one JSON artifact for LLM workflows. Sub-issues: #167 (export), #168 (import). Branch: `feature/163-bundle-export-import`
+
+**Implementation order:** Paste Data → Presets → Bundle (smallest → largest scope)
+
+---
+
+### 2026-03-14 — Info Field Type & Repeater Table Display (#159)
+**Issues:** #159
+
+Added two enhancements to FormForge field types:
+
+1. **New `info` field type** — Read-only display block for inline instructions, warnings, or policy text within form sections. Supports three visual styles (`info`, `warning`, `success`). Not an input — skipped in data collection, validation, and population. Schema requires `content` property; `style` is optional (defaults to `info`).
+
+2. **Repeater table display mode** — Extended the existing `repeater` field with an optional `display` property (`"cards"` default, `"table"` for compact table layout). Table mode renders sub-fields as column headers with data rows in a `<table>`, with horizontal scroll on narrow viewports. Same data format and collection logic as card mode — no breaking changes.
+
+**Changes:**
+- `schemas/_schema.spec.json` — Added `info` to fieldType enum, `content`/`style`/`display` properties with conditional requirements and exclusion blocks
+- `index.html` — CSS for `.info-block*` and `.repeater-table*`, `createInfoField()` function, `createRepeaterSubInput()` helper extracted from repeater, table mode branch in `createRepeaterField()`, skip logic updates in 6 locations, snippets, context menu entries, sample data generator
+- `docs/FIELD_TYPES.md` — Added info type docs, updated repeater docs with display property
+- `tests/test_schemas.py` — 6 new tests for info and repeater display validation (positive + negative)
+
+**Decisions:**
+- Extended repeater with `display` property rather than creating a new `table` field type — avoids duplicating data model, collection, validation, and template handling
+- Extracted `createRepeaterSubInput()` helper to share input creation logic between card and table modes
+- Info field uses `label` as block title and `content` as body text, following the pattern of heading using `label` for its display text
+
+---
+
+### 2026-03-14 — Git Controls in Editor Tabs (#157)
+**Issues:** #157
+
+Restored git operations that became unreachable when the workspace view was removed in PR #151:
+
+1. **Git toolbar** — Added a compact toolbar below the nav bar, visible when `contentSourceType === 'github'`. Contains branch selector dropdown, new branch button, refresh button, and disconnect button. Managed by `updateGitToolbar()`.
+2. **Template source toolbar** — Added `templateSourceToolbar` with commit and save-to-disk buttons (matching the existing schema source toolbar). `updateSourceToolbar()` now handles both editors.
+3. **Branch switching** — `devGhSwitchBranch()` now rebuilds `repoSchemas` and re-renders the picker after switching branches.
+4. **Source toolbar on file load** — `loadSchemaIntoEditor()`, `loadTemplateIntoEditor()`, and `devLoadWorkspaceFile()` now call `updateSourceToolbar()`.
+5. **Tests** — Added 8 new tests for git toolbar, template source toolbar, and toolbar update functions. 417 tests pass.
+
+**Decisions:**
+- Git controls in nav-level toolbar (not per-editor) since branch/disconnect are repo-level operations
+- `connectRepo()` now calls `devGhFetchBranches()` to populate the branch selector on connect
+
+---
+
+### 2026-03-14 — A11y & Cleanup (#88, #152–#155)
+**Issues:** #88, #152, #153, #154, #155
+
+Post-merge cleanup and accessibility improvements:
+
+1. **Focus trap on loading overlay (#88)** — `showOverlay()` now sets `inert` on all body children except the overlay; `hideOverlay()` removes it. Prevents keyboard users from tabbing to obscured content.
+2. **`prefers-reduced-motion` (#88)** — Added CSS media query that disables all animations and transitions for users with vestibular sensitivity.
+3. **Sample data `aria-expanded` (#88)** — Added `aria-expanded` and `aria-controls` to the sample data toggle button; `devToggleSampleData()` updates it.
+4. **Forms tab ARIA role (#154)** — Added `role="tabpanel"` and `aria-labelledby="tab-forms"` to `view-setup`.
+5. **Demo content source type (#153)** — `launchDemo()` now sets `contentSourceType = 'demo'`, completing the state machine.
+6. **Picker listener accumulation (#155)** — `renderPicker()` now uses `AbortController` to remove previous event listeners before attaching new ones.
+7. **Removed orphaned workspace view (#152)** — Deleted the unreachable `view-dev-workspace` HTML block (~65 lines), its CSS (~55 lines), and dead JS functions (`devOpenWorkspace`, `devRenderWorkspaceFiles`, `devRefreshWorkspace`, `initWorkspaceDropZone`). Moved git commit/branch panels to standalone elements. Cleaned up `devGhDisconnect()` and `devGhFetchFiles()`.
+8. **Tests updated** — Removed 24 dead-UI tests, added 9 new tests for a11y and cleanup. 409 tests pass.
+
+---
+
+### 2026-03-14 — UX: Unified Content Source & Tab-Based Navigation (#143)
+**Issues:** #143, #144, #145, #146, #147, #148, #149, #150
+
+Major UX overhaul to eliminate the Dev Mode toggle and unify the content source:
+
+1. **Always-on tab navigation** — Replaced binary Dev Mode toggle with permanent 4-tab nav bar (Forms | Schema | Template | Docs). No more mode switching, confirmation gate, or mobile viewport gate. All tools always accessible.
+2. **Unified content source** — Merged dual GitHub connection state (`ghOwner/ghRepo` and `devGhOwner/devGhRepoName`) into single set of globals. `connectRepo()` now populates both `repoSchemas[]` for the picker and `workspaceFiles` for editing.
+3. **Docs always embedded** — `loadDocs()` now always uses built-in fallbacks. No longer attempts to fetch docs from the connected repo (which would fail on user content repos).
+4. **Local folder as first-class source** — New `connectLocalFolder()` function on the Forms tab using File System Access API. Equal-weight source cards (GitHub + Local Folder) replace the old layout of a primary GitHub card and collapsed local files section.
+5. **Bidirectional form/editor flow** — Picker cards have "Edit Schema" and "Edit Template" actions. Form view has "Edit Schema" button. Schema preview has "Fill Form" button. Seamless navigation between filling and editing.
+6. **Test suite updated** — Removed 21 Dev Mode tests, updated 13, added 8 new tests for tab navigation and unified architecture. 424 tests pass.
+
+**Decisions:**
+- Eliminated Dev Mode entirely (user chose over lighter toggle or role-based approach)
+- Equal-weight source cards (user chose over GitHub-primary or local-primary)
+- Git operations in editor toolbar (user chose over dedicated panel in Forms tab)
+- Docs always use embedded fallbacks (FormForge project docs are independent of user's content repo)
+
+---
+
+### 2026-03-14 — UX: Audience Separation (#141)
+**Issues:** #141
+
+Improved separation between end-user and developer experiences across the interface:
+
+1. **Setup page reordered** — GitHub repository connection (primary end-user path) now appears first. Picker section ("Choose a Form") appears directly below the GitHub card for prominence. Local Files section moved below the divider with a collapsible toggle, collapsed by default.
+2. **Labels softened** — "owner / repo" → "Repository", "Schema JSON" → "Form Definition", "Template Python" → "Document Template". Branch input moved into "Advanced options" alongside access token.
+3. **"How It Works" card removed** — Removed the developer-oriented "How It Works" card entirely (directory trees, `generate_docx(data)`). The hero text already communicates the value prop; the card was redundant clutter.
+4. **Dev Mode entry gate** — First-time activation shows a confirmation tooltip explaining Dev Mode is for building forms, with Cancel/Enter buttons. Subsequent activations skip the gate (persisted in localStorage).
+5. **Console panel → Activity Log** — Renamed from "console output" to "Activity Log". Hidden by default, auto-shows when first log entry is added.
+6. **Page title updated** — "GitHub-Driven Form Builder" → "Fill Forms, Get Documents".
+7. **Picker heading updated** — "Available Forms" → "Choose a Form" (action-oriented).
+8. **Unused CSS cleaned up** — Removed `.how-it-works-card`, `.how-it-works-description`, `.how-it-works-pre` styles.
+
+**Decisions:**
+- Used localStorage flag `formforge-dev-confirmed` for the Dev Mode gate so it only appears once per browser
+- Local Files section expands on click rather than being removed entirely, since it's still a valid workflow for both audiences
+- Picker section placed between GitHub card and divider so connected forms appear prominently without scrolling past unrelated sections
+
+---
+
+### 2026-03-14 — UX: Custom Scrollbar Styling (#139)
+**Issues:** #139
+
+Added custom scrollbar styles to replace default browser scrollbars across all scrollable areas:
+
+1. **Global dark scrollbars** — 6px thin scrollbars with `var(--border)` thumb, `var(--text-muted)` on hover, transparent track. Both WebKit (`::-webkit-scrollbar`) and Firefox (`scrollbar-width: thin`, `scrollbar-color`) supported.
+2. **Dev Mode auto-fade** — Editor panes, preview panels, and error containers fade their scrollbar thumbs to transparent when not hovered, saving horizontal space in the split-pane layout.
+3. **DOCX preview light scrollbar** — White-background preview uses light-gray scrollbar (`#ccc` / `#f5f5f5`) instead of dark theme colors.
+
+Added 4 tests. Updated 1 existing test (`test_docx_preview_white_background_css`) to handle multiple CSS rule blocks.
+
+**Decisions:**
+- Used `var(--border)` for thumb (not accent) to keep scrollbars subtle and non-distracting
+- 6px width balances visibility with minimal space usage
+- Auto-fade only in Dev Mode panes where horizontal space is premium; other areas keep visible scrollbars
+
+---
+
+### 2026-03-14 — UX: Setup View Navigation & Organization (#137)
+**Issues:** #137
+
+Implemented five navigation and organization improvements from a design critique:
+
+1. **Docs moved to Dev Mode** — Relocated four documentation cards (Schema Guide, Template Guide, Field Types, Example) from the setup view into a new 4th Dev Mode tab ("Docs"). Form creators find reference docs right next to their editors; form fillers see a cleaner setup view.
+2. **Picker auto-scroll** — After successful GitHub connection, `pickerSection` scrolls into view smoothly so users see their forms immediately.
+3. **Back button rename** — Changed "Back to picker" → "Back" in form view for consistency across all launch paths (demo, local, GitHub).
+4. **Double-click launch** — Double-clicking a picker card now selects and launches the form directly, bypassing the two-step select-then-click flow.
+5. **Profile empty state** — Profile dropdown shows "Save a profile to autofill common fields" hint when no profiles exist.
+
+Added 12 new tests to `test_dev_mode.py` covering all changes. Cleaned up unused `.docs-source-divider` and docs accordion CSS.
+
+**Decisions:**
+- Docs live in Dev Mode (not setup) because they target form creators, who are the Dev Mode audience
+- "How It Works" card remains on setup since it's useful context for all users
+- Dev Mode now has 4 tabs: Schema Builder, Template Builder, Workspace, Docs
+
+---
+
+### 2026-03-14 — Docs Tab UI Refactor & Devcontainer Overhaul
+*(No dedicated issue — infrastructure work done alongside #143 and #152.)*
+
+Two infrastructure improvements:
+
+1. **Docs tab accordion → tabs** — Replaced the accordion-style documentation layout with horizontal sub-tabs for a cleaner navigation experience. Fixed a scrollbar-driven layout shift issue.
+2. **Devcontainer streamlining** — Removed duplicate Chromium installs and unused npm packages. Added `.vscode/tasks.json`, `.vscode/settings.json`, and `.vscode/extensions.json` for consistent editor setup.
+
+---
+
+### 2026-03-14 — Dev Mode: Editor Enhancements (#130-#135)
+**Issues:** #130, #131, #132, #133, #134, #135
+
+Six enhancements to Dev Mode editors, improving the schema-to-template development workflow:
+
+**Line Numbers & Code Folding (#130):**
+- Added synchronized line-number gutters to all three editors (schema, template, sample data)
+- Line numbers update on edit, scroll-synced with editor content
+- Code folding for JSON `{}`/`[]` blocks and Python indented blocks (def, class, if, for, etc.)
+- Fold indicators (▶/▼) in gutter, click to collapse/expand regions
+
+**Keyboard Shortcuts (#131):**
+- `Ctrl/Cmd+/` toggles `# ` comment prefix in Python editor (toast in JSON editors)
+- `Alt+Up/Down` moves current line up or down
+- `Ctrl+S` saves schema/template (workspace-aware, see #134)
+- `Ctrl+Enter` runs DOCX preview in template builder
+- Toolbar buttons show shortcut hints in title attributes
+
+**Auto-Generated Sample Data (#132):**
+- `SAMPLE_DATA_GENERATORS` maps all 23 field types to realistic placeholder values
+- "Auto-fill" button in sample data panel generates JSON from current schema
+- Auto-syncs on first use: when sample data is still `{}`, auto-fills on valid schema parse
+- Repeater fields generate 2 sample rows recursively
+
+**Schema-Template Cross-Awareness (#133):**
+- Shared `devParsedSchema` state variable kept in sync with schema validation
+- Template editor right-click menu gains "Schema Fields" submenu listing all fields with type-appropriate Python accessors (`data.get()`, `json.loads()`)
+- Schema preview header shows coverage badge: "N/M fields used in template"
+
+**Smart Save (#134):**
+- `devSaveSchema()` and `devSaveTemplate()` check for active workspace before downloading
+- If workspace connected and active file matches, saves to workspace via File System Access API
+- Falls back to browser download otherwise
+
+**Tests (#135):**
+- 39 new tests covering all features (302 total in test_dev_mode.py, 430 total)
+
+---
+
+### 2026-03-14 — Dev Mode: GitHub Repo Integration in Workspace (#125)
+**Issue:** #125
+
+Added GitHub repository integration to the Dev Mode Workspace tab, completing the development loop: edit in Dev Mode, commit, push, forms are live.
+
+**Connect Repo:**
+- "Connect Repo" button in workspace toolbar alongside "Open Folder"
+- Modal dialog with owner/repo input (accepts full GitHub URLs), PAT input (masked), and optional branch field
+- Token stored in localStorage (`formforge-dev-github-token`) with clear button
+- Security warning about token scope displayed in modal
+- Fetches `schemas/*.json` and `templates/*.py` from connected repo via GitHub API
+- Excludes `_schema.spec.json` and `stencils.py` as with local workspace
+- Badge shows `owner/repo @ branch` with file count
+
+**Commit & Push:**
+- Commit button appears when files are modified in the builders
+- Commit panel shows changed files summary and commit message textarea
+- Single-file commits use GitHub Contents API (`PUT /repos/{owner}/{repo}/contents/{path}`)
+- Multi-file commits use Git Trees + Commits API for atomic operations (blobs, tree, commit, ref update)
+- 409 conflict detection with user-friendly error message
+- Success toast with abbreviated commit SHA
+
+**Branch Support:**
+- Branch selector dropdown populated from GitHub API after connecting
+- "New Branch" button creates a branch from current via `POST /repos/{owner}/{repo}/git/refs`
+- Branch name validation (alphanumeric, dots, dashes, slashes)
+- Switching branches re-fetches all files
+
+**File Modification Tracking:**
+- Original content stored on fetch for diff comparison
+- Modified files tracked in `devGhModifiedFiles` Set
+- Visual indicator (warning-colored dot) on modified files in file list
+- Schema and template editor `onUpdate` hooks trigger modification tracking
+
+**Other:**
+- Disconnect button clears all GitHub workspace state and returns to empty workspace
+- 3 new SVG icons: git-branch, git-commit, unlink
+- All new CSS uses design tokens (no hard-coded values)
+- 56 new tests covering HTML structure, CSS classes, SVG icons, JS functions, API patterns, and security
+
+---
+
+### 2026-03-14 — Dev Mode: Context menu end-to-end browser tests (#124)
+**Issue:** #124
+
+Added 24 Playwright-based end-to-end browser tests covering the right-click context menu in both the Schema Builder and Template Builder editors. These tests exercise runtime behavior that the existing static HTML tests in `test_dev_mode.py` cannot cover:
+
+- **Schema Builder context menu:** menu appearance on right-click, 4 grouped submenus (Input/Choice/Complex/Layout), separator and action items (Add Section, Wrap in Wizard), field snippet insertion, unique ID generation on duplicate inserts, invalid JSON error toast, close on Escape and click-outside, live preview and validation badge updates.
+- **Template Builder context menu:** menu appearance, stencils helper snippet items, snippet insertion into editor, close on Escape and click-outside.
+
+Tests use a local HTTP server with OS-assigned port and a shared browser instance for efficiency. CodeJar loads as an ES module via dynamic `import()` in the app.
+
+---
+
+### 2026-03-13 — Fix DOCX Preview Hang on Stencils Load (#128)
+**Issues:** #128
+
+Fixed a bug where the Dev Mode DOCX preview would hang indefinitely when `stencils.py` was loaded for the first time. The `loadBaseModule()` call was not awaited in the preview path, causing `pyodide.runPythonAsync()` to fail silently when `import stencils` hadn't completed yet.
+
+---
+
+### 2026-03-13 — Dev Mode: Schema Builder, Template Builder & Local Workspace (#115)
+**Issues:** #115 (#116, #117, #118, #119, #120, #121, #122)
+
+Added a full Dev Mode with three tools for in-app form development:
+
+**Schema Builder:**
+- Split-pane editor with CodeJar + Prism.js JSON syntax highlighting
+- Live form preview updates on 300ms debounce as schema is edited
+- Real-time validation badge (valid/invalid/parse error) with error panel
+- Right-click context menu with grouped field type snippets (Input/Choice/Complex/Layout)
+- Insert section, wrap in wizard mode via context menu
+- New/Load/Save/Format toolbar buttons
+
+**Template Builder:**
+- CodeJar + Prism.js Python syntax highlighting
+- Collapsible sample data JSON editor
+- "Preview DOCX" button runs template through Pyodide → mammoth.js HTML preview
+- Right-click context menu with stencils helper snippets
+- New/Load/Save toolbar buttons
+
+**Local Workspace:**
+- File System Access API for native folder picker with live 5s polling for external changes
+- Drag-and-drop folder fallback via webkitGetAsEntry for cross-browser support
+- Auto-discovers schemas/*.json and templates/*.py (excludes _schema.spec.json and stencils.py)
+- Click-to-edit opens files in the appropriate builder tab
+
+**Infrastructure:**
+- Mode toggle button in header, persisted in localStorage
+- Three-tab dev navigation (Schema Builder / Template Builder / Workspace)
+- Draggable split-pane resizer with localStorage-persisted ratio
+- Modified buildForm() to accept optional targetForm parameter for preview rendering
+- Mobile gate: dev mode hidden on <768px, auto-exits on resize with toast
+
+**CDN Dependencies:**
+- Prism.js 1.29.0 (syntax highlighting, ~15KB)
+- CodeJar 4.2.0 (lightweight code editor, ~5KB)
+- mammoth.js 1.6.0 (DOCX to HTML conversion, ~70KB)
+- DOMPurify 3.2.4 (HTML sanitization for mammoth output, ~7KB)
+
+**Decisions:**
+- All changes in index.html — no build step, no file splits
+- CodeJar chosen over Monaco/CodeMirror for minimal footprint
+- Prism theme overrides use existing design tokens for visual consistency
+- Context menu inserts at schema level (appends to last section) rather than cursor position for reliability
+
+---
+
+### 2026-03-13 — Design Critique: UX, Microcopy, and Visual Polish (#109, #110, #111)
+**Issues:** #109, #110, #111
+
+Design critique and remediation focused on user experience, error messaging, feature discoverability, and visual consistency.
+
+**Error Messages & Loading (#109):**
+- Added `friendlyError()` helper mapping GitHub API errors (404, 401, rate limits) to human language
+- Replaced all raw `err.message` toasts with contextual, actionable messages
+- Replaced "Pyodide not ready" with "Export engine still loading — try again in a moment"
+- Loading overlay now shows "may take 30–60 seconds on first load"
+- Progress step labels renamed to user-friendly names
+- Standardized toast punctuation (! for success, . for errors)
+- Validation toast now shows count: "Missing 5 required fields: A, B, C and 2 more"
+
+**Feature Discoverability (#110):**
+- Profiles button tooltip explains autofill capability
+- "Auto-saving" indicator with save icon added to form nav bar
+- "Step X of Y" label added to wizard navigation
+- Conditional fields now fade in with animation when revealed
+
+**Visual Polish (#111):**
+- Schema info banner text changed from accent to muted (reduced accent-on-accent noise)
+- Added `--disabled-opacity` token replacing hard-coded opacity on disabled buttons
+- Docs card h4 increased from 13px to 14px for better hierarchy
+- List item removal now has exit animation (fade + slide)
+- "Sample Data" button renamed to "Load Sample" for clarity
+
+---
+
+### 2026-03-13 — UI Audit: Design Tokens, Accessibility, and Polish (#103, #104, #105)
+**Issues:** #103, #104, #105
+
+Comprehensive UI audit and remediation across accessibility, theming, responsive design, and performance.
+
+**Design Token Extraction (#103):**
+- Expanded `:root` from 14 to 35+ CSS custom properties
+- Added font families (`--font-sans`, `--font-mono`), type scale (`--text-2xs` through `--text-3xl`), radii (`--radius-xs` through `--radius-pill`), shadows, transitions
+- Migrated all 47 font-family, ~110 font-size, ~45 border-radius, 4 box-shadow declarations to tokens
+- Added `--text-on-accent`, 6 accent opacity variants, `--error-hover`, `--error-subtle`, `--success-subtle`
+- Eliminated all hard-coded `rgba()` color values outside `:root`
+
+**High-Impact Accessibility (#103):**
+- Multi-select: ARIA combobox/listbox/option roles, keyboard nav (arrow keys, Enter, Escape)
+- Form errors: `aria-invalid` + `aria-describedby` on inputs
+- Address fields: proper `<label>` elements for all sub-inputs
+- Profile dropdown: focus trap, `role="menu"`, Escape key, focus restoration
+- Signature canvas: responsive CSS width + DPI-aware JS sizing
+- Replaced `getImageData()` blank check with `hasDrawn` boolean flag
+
+**Medium-Impact Accessibility (#104):**
+- Views wrapped in `<main>` landmarks
+- Loading overlay: `role="status"`, `aria-live`, `aria-busy`
+- Autosave prompt: `role="alert"` + `aria-live="polite"`
+- Wizard: full tablist/tab/tabpanel ARIA pattern
+- Field errors: warning icon (⚠) via `::before` — not color-only
+- Focus-visible rings on picker cards, wizard steps, docs headers
+- Focus restoration after repeater row removal
+- Address grid: 768px breakpoint for tablets
+
+**Low-Impact Polish (#105):**
+- Removed contrast-reducing opacity on longtext counter and list divider
+- Added `aria-hidden` to decorative elements (status-dot, currency prefix)
+- Refactored `<h1 role="button">` to semantic `<h1><button>`
+- Branch input responsive fix for tablets
+- `setTimeout(0)` → `requestAnimationFrame` for initial row creation
+
+**Decisions:**
+- SVG select chevron kept as data URI with sync comment (CSS-only approach too invasive)
+- Responsive breakpoint sizes (26px, 22px, 17px) intentionally left as raw values (one-off overrides)
+
+---
+
+### 2026-03-11 — Add new field types: time, url, toggle, datetime, multi_select (#101)
+**Issue:** #101
+
+Added 5 new field types bringing the total from 18 to 23.
+
+- **`time`** — Native time picker (`<input type="time">`), outputs `HH:MM` string. Column-pair type. Allowed in repeaters.
+- **`url`** — URL input with browser validation (`<input type="url">`), outputs URL string. Column-pair type. Allowed in repeaters.
+- **`toggle`** — Boolean yes/no switch, outputs `"true"`/`"false"`. Distinct from `checkbox` (multi-select). Column-pair type. Allowed in repeaters.
+- **`datetime`** — Combined date+time picker (`<input type="datetime-local">`), outputs ISO-like string. Column-pair type.
+- **`multi_select`** — Searchable multi-select dropdown with tag/chip UI, requires `options`. Outputs comma-separated string. Full-width type.
+
+**Files changed:**
+- `schemas/_schema.spec.json` — Updated `fieldType` and `repeaterFieldType` enums, all `allOf` constraint blocks
+- `index.html` — CSS for toggle switch and multi-select; 5 new creator functions; `collectFormData`, `populateForm`, `isFieldEmpty`, column-pairing updates
+- `schemas/field-type-demo.json` — Added all 5 new types to the demo schema
+- `templates/field-type-demo.py` — Handle new types in DOCX generation
+- `tests/fixtures/field-type-demo_sample.json` — Sample data for new fields
+- `tests/test_schemas.py` — 9 new tests (positive + negative validation for new types, repeater eligibility)
+- `docs/FIELD_TYPES.md`, `docs/SCHEMA_GUIDE.md`, `docs/TEMPLATE_GUIDE.md` — Documented all 5 types
+
+**Decisions:**
+- `time`, `url`, `toggle` allowed as repeater sub-fields (simple inputs); `datetime` and `multi_select` excluded (too wide/complex for repeater rows)
+- `toggle` always has a value (`true`/`false`), so `isFieldEmpty` returns false — a required toggle always passes validation
+- `multi_select` uses same comma-separated output format as `checkbox` for template compatibility
+
+---
+
+### 2026-03-11 — Responsive design polish for mobile and tablet (#89)
+**Issue:** #89
+
+Systematic responsive pass across all UI components for mobile and tablet viewports.
+
+- **Tablet breakpoint (768px)** — Reduced header/container padding, form section and config card padding from 28px to 20px
+- **Header (600px)** — Tighter padding (10px 12px), smaller title font, status badge shows dot only (text hidden)
+- **Config cards** — `.config-row` stacks vertically on mobile; Connect button goes full-width
+- **Form sections** — Padding reduced to 16px on mobile
+- **Submit area** — All buttons stack vertically at full-width: export on top, secondary actions below, reset at bottom
+- **Touch targets** — Remove-item, remove-row, profile delete/edit buttons, and token toggle all get 44x44px minimum tap targets on mobile
+- **Profile dropdown** — Converts to bottom-sheet drawer on mobile (≤600px) with slide-up animation, full width, 70vh max height; JS positioning skipped in favor of CSS
+- **Picker grid** — Single column on mobile
+- **Local upload row** — Stacks vertically on mobile
+
+**Decisions:**
+- Used 768px for tablet, 600px for mobile, 400px for very narrow — consistent with existing breakpoints
+- Profile delete/edit buttons always visible on mobile (no hover-to-reveal) for touch accessibility
+
+---
+
+### 2026-03-10 — Code quality: SVG icon reuse, event delegation, CSS organization (#92)
+**Issue:** #92
+
+Internal refactoring for maintainability — no user-facing behavior changes.
+
+- **SVG sprite sheet** — Created a hidden `<svg>` sprite block at the top of `<body>` with 22 reusable `<symbol>` definitions. Replaced all inline SVG duplicates in HTML and JS `innerHTML` assignments with `<svg><use href="#icon-name"/></svg>` references.
+- **Event delegation** — Replaced per-element event listeners with delegated handlers on parent containers for picker cards, list items, repeater row removes, and profile dropdown items.
+- **CSS table of contents** — Added a 30-section numbered ToC at the top of `<style>` with corresponding section markers throughout.
+- **Named constants** — Replaced magic numbers with `AUTOSAVE_SIZE_LIMIT`, `AUTOSAVE_DEBOUNCE_MS`, `TOAST_DURATION_MS`, and `DEFAULT_MAX_ROWS`.
+
+---
+
+### 2026-03-10 — Inline form validation with field-level error states (#84)
+**Issue:** #84
+
+Added inline validation with field-level error states to replace toast-only feedback.
+
+- **Field-level error styling** — Invalid `.field-group` elements receive a `.field-error` class with red border, error glow, and inline error message.
+- **Scroll to first error** — On validation failure, the first invalid field scrolls into view smoothly.
+- **Validate on blur** — Required fields validate on blur for immediate feedback; errors clear on input/change.
+- **Wizard validation gates** — `wizardNext()` and `wizardStepClick()` block forward navigation on validation failure.
+- **ARIA** — Error messages have `role="alert"` for screen reader announcements.
+
+---
+
+### 2026-03-10 — Profile dropdown auto-focus refinement (#87)
+**Issue:** #87
+
+Refined profile dropdown UX to reduce friction when tabbing through form fields.
+
+- **Guard on focus** — Dropdown only auto-shows when field is empty and profiles exist.
+- **300ms debounce** — Quick tab-throughs no longer trigger the dropdown.
+- **Dismissal tracking** — Dismissed fields (Escape/click-outside) won't reshow until page reload.
+- **Profile icon indicator** — Added subtle person icon button at right edge of matching inputs as a manual trigger.
+- **Listener guard** — Prevented accumulated mousedown listeners across form launches.
+
+---
+
+### 2026-03-10 — Loading states, error recovery, and progress feedback (#91)
+**Issues:** #91
+
+Improved UX around loading, errors, and progress feedback across the app:
+
+- **Multi-step Pyodide progress indicator** — `initPyodide()` now shows a 3-step progress indicator (Pyodide runtime, Python runtime, python-docx) with numbered circles that light up as each phase completes, replacing the single static message.
+- **Retry on failure** — Pyodide load failures now show a "Retry Loading Pyodide" button in the overlay instead of just a toast error. GitHub connect failures show an inline "Retry" button next to the error message.
+- **Lazy Pyodide preloading** — `preloadPyodide()` fires silently in the background after DOMContentLoaded, so Pyodide is often already loaded by the time the user launches a form. Launch functions await the preload promise if one is running, showing "Preparing export engine..." in the overlay.
+- **Parallel schema fetching** — `connectRepo()` now uses `Promise.all()` to fetch all schemas in parallel instead of sequentially in a for-loop.
+- **Export progress feedback** — `handleExport()` now logs detailed progress to the console panel in real-time: field serialization, template execution timing (with `performance.now()`), and download preparation.
+
+---
+
+### 2026-03-10 — Keyboard shortcuts and navigation (#85)
+**Issues:** #85
+
+Added global keyboard shortcuts and improved keyboard accessibility for picker cards and the profile dropdown.
+
+**Changes:**
+- **Global keyboard shortcuts** (`index.html`): Added a `handleGlobalKeydown()` function registered in the BOOT section via `document.addEventListener('keydown', ...)`. Supports `Ctrl/Cmd+S` (save form data), `Ctrl/Cmd+Enter` (export to DOCX), and `Escape` (dismiss profile dropdown first, then navigate back to picker with a dirty guard confirmation). All shortcuts use `event.metaKey || event.ctrlKey` for cross-platform Mac/Windows support and call `event.preventDefault()` to override browser defaults.
+- **Picker card keyboard navigation** (`renderPicker()`): Added `tabindex="0"`, `role="button"`, and `aria-label` attributes to each picker card. Added `keydown` listener so Enter/Space selects the card (same as click).
+- **Profile dropdown keyboard navigation** (`showProfileDropdown()`): Added `tabindex="-1"` to each `.profile-dropdown-item` and a `keydown` listener on the dropdown container for ArrowUp/ArrowDown (cycle focus through items) and Enter (trigger click on focused item). Removed the standalone Escape keydown listener from `setupProfileDropdowns()` since the global handler now covers it.
+
+**Decisions:**
+- The Escape dirty guard uses `confirm()` to warn users about unsaved data before navigating back — checks both autosave storage and non-empty form fields
+- Profile dropdown Escape is handled first (higher priority) before the back-to-picker action
+- Dropdown items use `tabindex="-1"` (not `0`) so they are focusable programmatically via arrow keys but do not appear in the normal tab order
+
+---
+
+### 2026-03-10 — Quick UX wins: submit hierarchy, reset confirm, toast polish (#83)
+**Issue:** #83
+
+Batch of small, high-impact UX improvements in `index.html`:
+
+- **Submit area button hierarchy** — Restructured the 5-button flat row into a clear visual hierarchy: Export to DOCX sits alone as the dominant primary CTA (larger, full-width accent), Save/Load/Sample Data are grouped in a secondary row below with smaller sizing, and Reset is right-aligned with a muted danger style that only shows color on hover.
+- **Reset confirmation** — Added `confirm('Reset all fields? This cannot be undone.')` guard at the top of `resetForm()` to prevent accidental data loss.
+- **Toast improvements** — Added `role="alert"` and `aria-live="polite"` to the toast element for screen reader announcements. Added a dismiss button (x) so users don't have to wait 3.5s. Added mobile-responsive positioning (centered bottom bar on narrow screens via `@media (max-width: 600px)`). Added `warning` border-color style for warning toasts.
+- **Inline styles cleanup** — Extracted ~15 inline `style="..."` attributes into proper CSS classes: `.demo-btn-wrapper`, `.btn-demo`, `.section-label-muted`, `.config-card-description`, `.local-launch-row`, `.branch-input-wrapper`, `.docs-source-divider`, `.how-it-works-card`, `.how-it-works-description`, `.how-it-works-pre`, `.icon-inline`, `.hidden-input`, `.docs-rendered-md-link`. Only `style="display:none;"` on the JS-toggled pickerSection remains as inline.
+
+All 95 tests pass.
+
+---
+
+### 2026-03-10 — Navigation guards for unsaved form data (#86)
+**Issue:** #86
+
+Added dirty-state tracking and navigation guards to prevent accidental data loss:
+
+- **`formDirty` flag** — New state variable tracks whether the form has unsaved changes. Set `true` on any `input`/`change` event (via the existing autosave handler in `setupAutosave()`) and on `populateForm()` calls (load data, sample data, autosave restore). Reset to `false` after successful export, save data, form reset, and on fresh form launch (via `postLaunchHook()`).
+- **In-app navigation guard** — `showView()` now checks `formDirty` when navigating from the form view back to setup. Prompts the user with a confirm dialog before discarding changes. Protects both the "Back to picker" button and the FormForge logo click.
+- **Browser unload guard** — Added `beforeunload` handler that prevents browser close/refresh/back when the form has unsaved changes.
+- **Reset confirm** — `resetForm()` now prompts the user before clearing the form if there are unsaved changes.
+
+All 95 tests pass (frontend-only changes).
+
+---
+
+### 2026-03-10 — Improve test coverage: round-trip assertions, edge cases, visible_when paths (#40)
+**Issues:** #40
+
+Upgraded the test suite from smoke-only checks to meaningful content verification, added missing coverage paths, and modernized test patterns. Test count: 90 → 95.
+
+**Changes:**
+- **`tests/test_schemas.py`:** Refactored all 19 negative tests from `try/except` + `assert False` to idiomatic `pytest.raises`. Added `_collect_all_ids()` helper and `test_no_duplicate_field_ids` test that validates unique field IDs across all sections (including repeater sub-fields) in every schema.
+- **`tests/test_templates.py`:** Added `_full_text()` helper that reads DOCX bytes back via `python-docx` and extracts all paragraph + table cell text. Added 3 round-trip content tests (`test_onboarding_content_round_trip`, `test_expense_report_content_round_trip`, `test_field_type_demo_content_round_trip`) that verify actual field values appear in generated documents. Added `test_field_type_demo_virtual_path` that exercises the `visible_when` hidden-field path (Virtual attendance mode).
+- **`tests/fixtures/expense-report_sample.json`:** Added 1x1 PNG base64 data URI to `receipt_photo` and `employee_signature` fields.
+- **`tests/fixtures/field-type-demo_sample.json`:** Added 1x1 PNG base64 data URI to `applicant_signature` field.
+- **`tests/fixtures/field-type-demo_virtual_sample.json`:** New fixture with `attendance_mode=Virtual`, `virtual_platform=Zoom`, and empty strings for hidden fields (`venue_address`, `dietary_restrictions`).
+- **`docs/PLAN.md`:** Added implementation plan for issue #40.
+
+**Decisions:**
+- Used a minimal 1x1 PNG (~120 chars) for base64 fixtures to keep files small while exercising the image embed code path
+- Kept existing smoke tests (valid ZIP checks) alongside new content tests — they cover different failure modes
+- `_full_text()` scans both paragraphs and table cells since `table_section()` writes to table cells, not standalone paragraphs
+
+---
+
+### 2026-03-10 — User profile autofill: inline dropdown with multi-profile support (#73, #74, #75)
+**Issues:** #73, #74, #75
+
+Redesigned the user profile autofill from a modal+banner approach to an inline on-focus dropdown with multi-profile support. All management is done inline — no modal needed.
+
+**Changes (all in `index.html`):**
+- **CSS (~100 lines):** `.profile-btn` with badge counter, `.profile-dropdown` (fixed-positioned card with shadow), `.profile-dropdown-item` (hover-reveal edit/delete buttons), `.profile-filled` (subtle purple highlight for auto-filled fields), `.profile-editor` (inline editor within dropdown)
+- **HTML:** "Profiles" nav button with badge, single shared `<div class="profile-dropdown">` container
+- **JS (~350 lines):**
+  - **Multi-profile storage:** `getProfiles()` / `saveProfiles()` / `addProfile()` / `deleteProfile()` — array in localStorage under `formforge_user_profiles`, with migration from old single-profile format
+  - **Auto-naming:** `getProfileDisplayName()` derives name from `name`, `first_name`+`last_name`, or `email`
+  - **Field matching:** `PROFILE_MATCHERS` (type+label regex for 8 keys including job_title), `getMatchedProfileKey()` tests a single field
+  - **Dropdown:** `showProfileDropdown()` renders profile items with field-specific preview values, edit/delete buttons, and "Save current form as profile" action. Positioned via `getBoundingClientRect()` with viewport overflow correction
+  - **Profile editor:** `showProfileEditor()` renders inline editor within dropdown for viewing/editing all profile fields (name, email, phone, department, job title, address)
+  - **Apply:** `applyProfileToForm()` fills all matched empty fields, adds `.profile-filled` highlight class, attaches one-time input listener to clear highlight on user edit
+  - **Collect:** `collectProfileFromForm()` reverse-matches form fields to build a profile object
+  - **Nav button:** `toggleProfileNav()` opens dropdown showing all profiles with edit/delete actions
+  - **Field focus:** `setupProfileDropdowns()` attaches focus handlers to all matched fields
+  - **Dismiss:** Global mousedown + Escape key listeners
+
+**Profile fields (matched via type + label regex):**
+`first_name`, `last_name`, `name`, `email`, `phone`, `department`, `job_title`, `address`
+
+To add a new profile field: add entry to `PROFILE_MATCHERS` and `PROFILE_FIELD_LABELS` (~line 3040).
+
+**UX flow:**
+1. Fill form fields → click any matched field → dropdown appears with "Save current form as profile"
+2. On next visit, click any matched field → dropdown shows saved profiles with field-specific preview
+3. Click a profile → all matched empty fields are filled with purple highlight, toast shows count
+4. Highlight clears when the user manually edits a field
+5. Nav "Profiles" button shows all profiles for management (edit/delete)
+6. Edit button opens inline editor with all profile fields
+
+---
+
+### 2026-03-10 — Plan: User Profile Autofill (#73 → #74–#75)
+**Issues:** #73, #74, #75
+
+Planned a localStorage-based "My Profile" feature to reduce duplicate data entry across forms. Users save personal info (name, email, phone, address, department) once, and matching fields are auto-detected and offered for autofill on form load.
+
+**Tasks:**
+- **#74** — Profile modal UI and localStorage CRUD (CSS, HTML, JS for editor modal + persistence)
+- **#75** — Field matching engine and autofill prompt (type+label heuristics, banner UI, integration with postLaunchHook/resetForm)
+
+**Decisions:**
+- User Profile only (no schema-level `autofill_from` linking for now)
+- Match fields using dual criteria: field type + label regex — avoids false positives
+- Only fill empty fields — never overwrite autosave-restored or manually entered data
+- Profile banner appears after autosave restore to respect the restore flow
+- All changes in `index.html` only — no schema spec or test changes needed
+
+---
+
 ### 2026-03-10 — Refactor index.html for maintainability (#38 → #68–#71)
 **Issues:** #38, #68, #69, #70, #71
 
@@ -70,7 +915,7 @@ All tasks are independent with no ordering constraints.
 - **Touch-friendly** — Added `touch-action: manipulation` to prevent double-tap zoom delay, `padding: 6px 0` for larger hit area.
 - **Keyboard accessible** — Steps have `role="button"`, `tabindex="0"`, and respond to Enter/Space keys.
 
-### 2026-03-10 -- DOCX styling and layout polish
+### 2026-03-10 — DOCX styling and layout polish
 
 - **Title & Heading 1 horizontal rules** — Added bottom borders (`w:pBdr`) to Title and Heading 1 styles using `color_subtitle` for theme-matched lines.
 - **Heading spacing** — 6pt `space_after` on Heading 1, 4pt on Heading 2–6.
@@ -87,7 +932,7 @@ All tasks are independent with no ordering constraints.
 
 ---
 
-### 2026-03-10 -- Load Sample Data button + sampleData schema property (#55, #56, #57)
+### 2026-03-10 — Load Sample Data button + sampleData schema property (#55, #56, #57)
 **Issues:** #55, #56, #57
 
 - **Load Sample Data button** added to the submit area alongside Save Data / Load Data. Clicking it fetches `tests/fixtures/{schemaName}_sample.json` from the connected GitHub repo via `ghFetchRaw()`, then calls `populateForm(data, { skipFileFields: true })`.

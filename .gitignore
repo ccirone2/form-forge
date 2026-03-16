@@ -34,10 +34,21 @@ Desktop.ini
 
 # IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/settings.json
+!.vscode/extensions.json
 *.sublime-project
 *.sublime-workspace
 
 # Environment files
 .env
 .env.local
+
+# Playwright
+test-screenshot.png
+test-results/
+playwright-report/
+
+# Claude Code local config
+.claude/settings.local.json

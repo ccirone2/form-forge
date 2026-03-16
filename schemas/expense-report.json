@@ -62,9 +62,17 @@
           "hint": "Add each expense as a separate row below"
         },
         {
+          "id": "receipt_policy",
+          "label": "Receipt Policy",
+          "type": "info",
+          "content": "Receipts are required for all expenses over $25. Expenses without receipts may be denied.",
+          "style": "warning"
+        },
+        {
           "id": "line_items",
           "label": "Line Items",
           "type": "repeater",
+          "display": "table",
           "min_rows": 1,
           "max_rows": 20,
           "fields": [

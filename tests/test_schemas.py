@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import jsonschema
+import pytest
 
 SCHEMAS_DIR = Path(__file__).resolve().parent.parent / "schemas"
 SPEC_PATH = SCHEMAS_DIR / "_schema.spec.json"
@@ -51,10 +52,16 @@ def test_spec_enumerates_all_field_types():
         "currency",
         "heading",
         "hidden",
+        "info",
         "address",
         "file",
         "signature",
         "repeater",
+        "time",
+        "url",
+        "toggle",
+        "datetime",
+        "multi_select",
     }
     actual_types = set(spec["$defs"]["fieldType"]["enum"])
     assert actual_types == expected_types
@@ -94,21 +101,15 @@ def test_rejects_missing_title():
             {"title": "S", "fields": [{"id": "x", "label": "X", "type": "text"}]}
         ]
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_empty_sections():
     spec = _load_spec()
     bad = {"title": "T", "sections": []}
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_invalid_field_id():
@@ -122,11 +123,8 @@ def test_rejects_invalid_field_id():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_unknown_field_type():
@@ -140,11 +138,8 @@ def test_rejects_unknown_field_type():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_select_without_options():
@@ -158,11 +153,8 @@ def test_rejects_select_without_options():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_hidden_without_default_value():
@@ -176,11 +168,8 @@ def test_rejects_hidden_without_default_value():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_repeater_without_fields():
@@ -194,11 +183,8 @@ def test_rejects_repeater_without_fields():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_options_on_text_field():
@@ -212,11 +198,8 @@ def test_rejects_options_on_text_field():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_min_on_text_field():
@@ -230,11 +213,8 @@ def test_rejects_min_on_text_field():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 # --- Wizard schema tests ---
@@ -306,11 +286,8 @@ def test_rejects_wizard_non_boolean():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_step_non_integer():
@@ -327,11 +304,8 @@ def test_rejects_step_non_integer():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_step_zero():
@@ -348,11 +322,8 @@ def test_rejects_step_zero():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 # --- visible_when tests ---
@@ -405,11 +376,8 @@ def test_rejects_visible_when_missing_field():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_visible_when_missing_equals():
@@ -431,11 +399,8 @@ def test_rejects_visible_when_missing_equals():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_visible_when_extra_property():
@@ -461,11 +426,8 @@ def test_rejects_visible_when_extra_property():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_existing_schemas_still_validate_after_visible_when():
@@ -515,11 +477,8 @@ def test_rejects_sample_data_non_object():
     spec = _load_spec()
     schema = _minimal_schema()
     schema["sampleData"] = "not an object"
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=schema, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 # ---------------------------------------------------------------------------
@@ -583,11 +542,8 @@ def test_rejects_min_on_select_repeater_field():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_currency_symbol_on_text_repeater_field():
@@ -616,11 +572,8 @@ def test_rejects_currency_symbol_on_text_repeater_field():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_rejects_max_length_on_number_repeater_field():
@@ -649,11 +602,8 @@ def test_rejects_max_length_on_number_repeater_field():
             }
         ],
     }
-    try:
+    with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=spec)
-        assert False, "Should have raised ValidationError"
-    except jsonschema.ValidationError:
-        pass
 
 
 def test_repeater_number_field_accepts_min_max():
@@ -685,3 +635,353 @@ def test_repeater_number_field_accepts_min_max():
         ],
     }
     jsonschema.validate(instance=schema, schema=spec)
+
+
+# ---------------------------------------------------------------------------
+#  Duplicate field ID check
+# ---------------------------------------------------------------------------
+
+
+def _collect_all_ids(schema):
+    """Collect all field IDs from a schema, including repeater sub-fields."""
+    ids = []
+    for section in schema.get("sections", []):
+        for field in section.get("fields", []):
+            ids.append(field["id"])
+            for sub in field.get("fields", []):
+                ids.append(sub["id"])
+    return ids
+
+
+# ---------------------------------------------------------------------------
+#  New field types: time, url, toggle, datetime, multi_select
+# ---------------------------------------------------------------------------
+
+
+def test_time_field_validates():
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [{"id": "start_time", "label": "Start Time", "type": "time"}],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_url_field_validates():
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "website",
+                        "label": "Website",
+                        "type": "url",
+                        "placeholder": "https://example.com",
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_toggle_field_validates():
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "agree",
+                        "label": "Agree?",
+                        "type": "toggle",
+                        "required": True,
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_datetime_field_validates():
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [{"id": "deadline", "label": "Deadline", "type": "datetime"}],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_multi_select_field_validates():
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "topics",
+                        "label": "Topics",
+                        "type": "multi_select",
+                        "options": ["AI", "Cloud", "Security"],
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_rejects_multi_select_without_options():
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [{"id": "topics", "label": "Topics", "type": "multi_select"}],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=bad, schema=spec)
+
+
+def test_rejects_options_on_toggle():
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "agree",
+                        "label": "Agree",
+                        "type": "toggle",
+                        "options": ["Yes", "No"],
+                    }
+                ],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=bad, schema=spec)
+
+
+def test_rejects_options_on_time():
+    spec = _load_spec()
+    bad = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "t",
+                        "label": "T",
+                        "type": "time",
+                        "options": ["09:00"],
+                    }
+                ],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=bad, schema=spec)
+
+
+def test_repeater_with_time_url_toggle():
+    """time, url, and toggle are valid repeater sub-field types."""
+    spec = _load_spec()
+    schema = {
+        "title": "T",
+        "sections": [
+            {
+                "title": "S",
+                "fields": [
+                    {
+                        "id": "items",
+                        "label": "Items",
+                        "type": "repeater",
+                        "fields": [
+                            {"id": "start", "label": "Start", "type": "time"},
+                            {"id": "link", "label": "Link", "type": "url"},
+                            {"id": "done", "label": "Done", "type": "toggle"},
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_no_duplicate_field_ids():
+    """Every schema must have unique field IDs across all sections."""
+    for path in _schema_files():
+        schema = json.loads(path.read_text(encoding="utf-8"))
+        ids = _collect_all_ids(schema)
+        dupes = [i for i in ids if ids.count(i) > 1]
+        assert len(ids) == len(set(ids)), f"Duplicate field IDs in {path.name}: {dupes}"
+
+
+# ------------------------------------------------------------------
+# Info field type tests
+# ------------------------------------------------------------------
+
+
+def test_info_field_validates():
+    """A schema with an info field (content + style) should validate."""
+    spec = _load_spec()
+    schema = {
+        "title": "Info Test",
+        "sections": [
+            {
+                "title": "Section",
+                "fields": [
+                    {
+                        "id": "notice",
+                        "label": "Notice",
+                        "type": "info",
+                        "content": "Please read carefully.",
+                        "style": "warning",
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_info_field_missing_content_fails():
+    """An info field without content should fail validation."""
+    spec = _load_spec()
+    schema = {
+        "title": "Info Test",
+        "sections": [
+            {
+                "title": "Section",
+                "fields": [{"id": "notice", "label": "Notice", "type": "info"}],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_non_info_field_with_content_fails():
+    """A non-info field with content property should fail validation."""
+    spec = _load_spec()
+    schema = {
+        "title": "Bad Content",
+        "sections": [
+            {
+                "title": "Section",
+                "fields": [
+                    {
+                        "id": "name",
+                        "label": "Name",
+                        "type": "text",
+                        "content": "Not allowed",
+                    }
+                ],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_non_info_field_with_style_fails():
+    """A non-info field with style property should fail validation."""
+    spec = _load_spec()
+    schema = {
+        "title": "Bad Style",
+        "sections": [
+            {
+                "title": "Section",
+                "fields": [
+                    {
+                        "id": "name",
+                        "label": "Name",
+                        "type": "text",
+                        "style": "warning",
+                    }
+                ],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=schema, schema=spec)
+
+
+# ------------------------------------------------------------------
+# Repeater display property tests
+# ------------------------------------------------------------------
+
+
+def test_repeater_table_display_validates():
+    """A repeater with display='table' should validate."""
+    spec = _load_spec()
+    schema = {
+        "title": "Table Repeater",
+        "sections": [
+            {
+                "title": "Items",
+                "fields": [
+                    {
+                        "id": "items",
+                        "label": "Items",
+                        "type": "repeater",
+                        "display": "table",
+                        "fields": [
+                            {"id": "name", "label": "Name", "type": "text"},
+                            {"id": "qty", "label": "Qty", "type": "number"},
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    jsonschema.validate(instance=schema, schema=spec)
+
+
+def test_non_repeater_with_display_fails():
+    """A non-repeater field with display property should fail validation."""
+    spec = _load_spec()
+    schema = {
+        "title": "Bad Display",
+        "sections": [
+            {
+                "title": "Section",
+                "fields": [
+                    {
+                        "id": "name",
+                        "label": "Name",
+                        "type": "text",
+                        "display": "table",
+                    }
+                ],
+            }
+        ],
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=schema, schema=spec)

@@ -1,6 +1,6 @@
 {
   "title": "Event Registration",
-  "description": "Register for an upcoming event. This demo exercises all 18 field types, wizard mode, and conditional visibility.",
+  "description": "Register for an upcoming event. This demo exercises all 23 field types, wizard mode, and conditional visibility.",
   "icon": "🎪",
   "template": "templates/field-type-demo.py",
   "wizard": true,
@@ -40,6 +40,17 @@
           "label": "Preferred Event Date",
           "type": "date",
           "required": true
+        },
+        {
+          "id": "event_time",
+          "label": "Preferred Start Time",
+          "type": "time"
+        },
+        {
+          "id": "website",
+          "label": "Website",
+          "type": "url",
+          "placeholder": "https://example.com"
         }
       ]
     },
@@ -52,6 +63,27 @@
           "label": "Tell Us About Your Event",
           "type": "heading",
           "hint": "Provide details so we can plan accordingly"
+        },
+        {
+          "id": "event_info_notice",
+          "label": "Event Guidelines",
+          "type": "info",
+          "content": "Events must be submitted at least 30 days in advance. All proposals are reviewed by the events committee.",
+          "style": "info"
+        },
+        {
+          "id": "event_capacity_warning",
+          "label": "Capacity Notice",
+          "type": "info",
+          "content": "In-person venues have a maximum capacity of 200 attendees. Requests exceeding this limit will require additional approval.",
+          "style": "warning"
+        },
+        {
+          "id": "event_funding_success",
+          "label": "Funding Available",
+          "type": "info",
+          "content": "This quarter's event budget has been approved. Eligible events may receive up to $5,000 in funding.",
+          "style": "success"
         },
         {
           "id": "event_type",
@@ -101,6 +133,13 @@
           "type": "text",
           "placeholder": "e.g., Zoom, Teams, Google Meet",
           "visible_when": { "field": "attendance_mode", "equals": "Virtual" }
+        },
+        {
+          "id": "session_topics",
+          "label": "Session Topics of Interest",
+          "type": "multi_select",
+          "options": ["AI/ML", "Cloud", "Security", "DevOps", "Frontend", "Backend", "Mobile", "Data Science"],
+          "hint": "Select all topics you'd like to see covered"
         }
       ]
     },
@@ -128,6 +167,7 @@
           "id": "expense_items",
           "label": "Budget Line Items",
           "type": "repeater",
+          "display": "table",
           "min_rows": 1,
           "max_rows": 10,
           "fields": [
@@ -142,6 +182,12 @@
           "label": "Special Requests",
           "type": "list",
           "hint": "One request per line"
+        },
+        {
+          "id": "submission_deadline",
+          "label": "Proposal Submission Deadline",
+          "type": "datetime",
+          "hint": "Date and time when proposals are due"
         }
       ]
     },
@@ -162,6 +208,12 @@
           "label": "Additional Notes",
           "type": "textarea",
           "placeholder": "Anything else we should know..."
+        },
+        {
+          "id": "agree_terms",
+          "label": "I agree to the terms and conditions",
+          "type": "toggle",
+          "required": true
         },
         {
           "id": "applicant_signature",

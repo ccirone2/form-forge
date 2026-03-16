@@ -1,0 +1,21 @@
+{
+  "form_version": "2.0",
+  "full_name": "John Smith",
+  "email": "john@example.com",
+  "phone": "(555) 987-6543",
+  "event_date": "2026-07-20",
+  "event_type": "Webinar",
+  "event_description": "A virtual workshop on remote collaboration tools and best practices.",
+  "detailed_proposal": "This webinar will cover modern remote work tools, async communication strategies, and virtual team-building exercises.",
+  "attendance_mode": "Virtual",
+  "venue_address": "",
+  "dietary_restrictions": "",
+  "virtual_platform": "Zoom",
+  "budget_amount": "5000.00",
+  "attendee_count": "200",
+  "expense_items": "[{\"item_name\":\"Platform license\",\"quantity\":\"1\",\"unit_cost\":\"2000.00\",\"category\":\"Software\"},{\"item_name\":\"Speaker honorarium\",\"quantity\":\"2\",\"unit_cost\":\"1500.00\",\"category\":\"Speakers\"}]",
+  "special_requests": "Live captioning\nRecording for on-demand access",
+  "supporting_doc": "",
+  "additional_notes": "Ensure breakout room support for interactive sessions.",
+  "applicant_signature": ""
+}

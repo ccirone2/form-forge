@@ -47,14 +47,16 @@
         "textarea", "longtext",
         "select", "radio", "checkbox",
         "list", "number", "currency",
-        "heading", "hidden",
+        "heading", "hidden", "info",
         "address", "file", "signature",
-        "repeater"
+        "repeater",
+        "time", "url", "toggle", "datetime",
+        "multi_select"
       ]
     },
     "repeaterFieldType": {
       "type": "string",
-      "enum": ["text", "email", "tel", "number", "currency", "select"]
+      "enum": ["text", "email", "tel", "number", "currency", "select", "time", "url", "toggle"]
     },
     "section": {
       "type": "object",
@@ -111,6 +113,21 @@
         "max_size_mb": { "type": "integer", "minimum": 1 },
         "min_rows": { "type": "integer", "minimum": 1 },
         "max_rows": { "type": "integer", "minimum": 1 },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Text content displayed in info blocks."
+        },
+        "style": {
+          "type": "string",
+          "enum": ["info", "warning", "success"],
+          "description": "Visual style for info blocks. Defaults to info."
+        },
+        "display": {
+          "type": "string",
+          "enum": ["cards", "table"],
+          "description": "Display mode for repeater fields. Defaults to cards."
+        },
         "visible_when": {
           "type": "object",
           "required": ["field", "equals"],
@@ -136,7 +153,7 @@
       "allOf": [
         {
           "if": {
-            "properties": { "type": { "enum": ["select", "radio", "checkbox"] } },
+            "properties": { "type": { "enum": ["select", "radio", "checkbox", "multi_select"] } },
             "required": ["type"]
           },
           "then": {
@@ -163,7 +180,16 @@
         },
         {
           "if": {
-            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "list", "number", "currency", "address", "file", "signature", "repeater", "heading", "hidden"] } },
+            "properties": { "type": { "const": "info" } },
+            "required": ["type"]
+          },
+          "then": {
+            "required": ["content"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "list", "number", "currency", "address", "file", "signature", "repeater", "heading", "hidden", "info", "time", "url", "toggle", "datetime"] } },
             "required": ["type"]
           },
           "then": {
@@ -172,7 +198,7 @@
         },
         {
           "if": {
-            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "currency", "heading", "hidden", "address", "file", "signature", "repeater"] } },
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "currency", "heading", "hidden", "info", "address", "file", "signature", "repeater", "time", "url", "toggle", "datetime", "multi_select"] } },
             "required": ["type"]
           },
           "then": {
@@ -185,7 +211,7 @@
         },
         {
           "if": {
-            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "heading", "hidden", "address", "file", "signature", "repeater"] } },
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "heading", "hidden", "info", "address", "file", "signature", "repeater", "time", "url", "toggle", "datetime", "multi_select"] } },
             "required": ["type"]
           },
           "then": {
@@ -196,7 +222,7 @@
         },
         {
           "if": {
-            "properties": { "type": { "enum": ["email", "tel", "date", "textarea", "select", "radio", "checkbox", "list", "number", "currency", "heading", "hidden", "address", "file", "signature", "repeater"] } },
+            "properties": { "type": { "enum": ["email", "tel", "date", "textarea", "select", "radio", "checkbox", "list", "number", "currency", "heading", "hidden", "info", "address", "file", "signature", "repeater", "time", "url", "toggle", "datetime", "multi_select"] } },
             "required": ["type"]
           },
           "then": {
@@ -207,7 +233,7 @@
         },
         {
           "if": {
-            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "currency", "heading", "hidden", "address", "signature", "repeater"] } },
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "currency", "heading", "hidden", "info", "address", "signature", "repeater", "time", "url", "toggle", "datetime", "multi_select"] } },
             "required": ["type"]
           },
           "then": {
@@ -219,25 +245,38 @@
         },
         {
           "if": {
-            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "currency", "heading", "hidden", "address", "file", "signature"] } },
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "currency", "heading", "hidden", "info", "address", "file", "signature", "time", "url", "toggle", "datetime", "multi_select"] } },
             "required": ["type"]
           },
           "then": {
             "properties": {
               "min_rows": false,
               "max_rows": false,
-              "fields": false
+              "fields": false,
+              "display": false
             }
           }
         },
         {
           "if": {
-            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "currency", "heading", "address", "file", "signature", "repeater"] } },
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "currency", "heading", "address", "file", "signature", "repeater", "time", "url", "toggle", "datetime", "multi_select"] } },
             "required": ["type"]
           },
           "then": {
             "properties": {
               "default_value": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "type": { "enum": ["text", "email", "tel", "date", "textarea", "longtext", "select", "radio", "checkbox", "list", "number", "currency", "heading", "hidden", "address", "file", "signature", "repeater", "time", "url", "toggle", "datetime", "multi_select"] } },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "content": false,
+              "style": false
             }
           }
         }
@@ -286,7 +325,7 @@
         },
         {
           "if": {
-            "properties": { "type": { "enum": ["text", "email", "tel", "number", "currency"] } },
+            "properties": { "type": { "enum": ["text", "email", "tel", "number", "currency", "time", "url", "toggle"] } },
             "required": ["type"]
           },
           "then": {
@@ -295,7 +334,7 @@
         },
         {
           "if": {
-            "properties": { "type": { "enum": ["text", "email", "tel", "currency", "select"] } },
+            "properties": { "type": { "enum": ["text", "email", "tel", "currency", "select", "time", "url", "toggle"] } },
             "required": ["type"]
           },
           "then": {
@@ -308,7 +347,7 @@
         },
         {
           "if": {
-            "properties": { "type": { "enum": ["text", "email", "tel", "number", "select"] } },
+            "properties": { "type": { "enum": ["text", "email", "tel", "number", "select", "time", "url", "toggle"] } },
             "required": ["type"]
           },
           "then": {
@@ -319,7 +358,7 @@
         },
         {
           "if": {
-            "properties": { "type": { "enum": ["email", "tel", "number", "currency", "select"] } },
+            "properties": { "type": { "enum": ["email", "tel", "number", "currency", "select", "time", "url", "toggle"] } },
             "required": ["type"]
           },
           "then": {

@@ -19,11 +19,17 @@ Every field in a schema has a `type` that controls how it renders in the form an
 | `number` | Number input with min/max/step | `"42.5"` | none |
 | `currency` | Number input with currency prefix | `"1250.00"` | none |
 | `heading` | Non-input section divider | *(skipped)* | none |
+| `info` | Read-only info/warning/success block | *(skipped)* | `content`; optional: `style` |
 | `hidden` | Not rendered (passes static value) | `"1.0"` | `default_value` |
 | `address` | Multi-field group (street/city/state/zip) | JSON string | none |
 | `file` | File upload with preview | base64 data URI | none |
 | `signature` | Canvas drawing pad | base64 PNG data URI | none |
-| `repeater` | Dynamic group of rows | JSON array string | `fields` |
+| `repeater` | Dynamic group of rows | JSON array string | `fields`; optional: `display` |
+| `time` | Native time picker | `"09:30"` | none |
+| `url` | URL input with browser validation | `"https://example.com"` | none |
+| `toggle` | Boolean yes/no switch | `"true"` or `"false"` | none |
+| `datetime` | Combined date and time picker | `"2026-06-15T14:30"` | none |
+| `multi_select` | Searchable multi-select dropdown with tags | `"A, B, C"` | `options` |
 
 ## Common Optional Properties
 
@@ -33,15 +39,15 @@ These apply to any field type unless noted otherwise in the type's section below
 |----------|------|-------------|
 | `required` | boolean | Fails validation if empty. For `address`, checks that `street` is non-empty. |
 | `placeholder` | string | Input placeholder text. Not applicable to `date`, `heading`, `hidden`, `address`, `file`, `signature`, `repeater`. |
-| `hint` | string | Helper text shown below the field label. Applicable to all types. |
+| `hint` | string | Helper text shown below the field label. Applicable to all types except `info` (where it is accepted by the schema but not rendered). |
 | `visible_when` | object | Conditionally show this field. See [Conditional Visibility](#conditional-visibility-visible_when). |
 
 ## Layout Rules
 
 Fields are automatically arranged in the form:
 
-- `text`, `email`, `tel`, `date`, `select`, `number`, `currency` — paired into **two-column rows** when consecutive
-- `textarea`, `longtext`, `list`, `radio`, `checkbox`, `heading`, `address`, `file`, `signature`, `repeater` — always **full-width**, breaks any pairing
+- `text`, `email`, `tel`, `date`, `select`, `number`, `currency`, `time`, `url`, `toggle`, `datetime` — paired into **two-column rows** when consecutive
+- `textarea`, `longtext`, `list`, `radio`, `checkbox`, `heading`, `info`, `address`, `file`, `signature`, `repeater`, `multi_select` — always **full-width**, breaks any pairing
 - `hidden` — not rendered in the visible layout at all
 
 You control layout through field ordering. Two consecutive `text` fields pair up. A `text` followed by a `longtext` will not.
@@ -56,7 +62,7 @@ Standard single-line input. Use for names, titles, short answers.
 { "id": "first_name", "label": "First Name", "type": "text", "required": true, "placeholder": "Jane" }
 ```
 
-**Schema properties:** `maxLength` (optional integer, no enforced limit in the browser — schema validation only).
+**Schema properties:** `maxLength` (optional integer — accepted by the schema spec but not enforced in the browser. No counter, no truncation. Use `longtext` if you need a visible character counter).
 
 **Template:** `data.get('first_name', '')` → `"Jane"`
 
@@ -229,7 +235,7 @@ Numeric input with optional `min`, `max`, and `step` constraints. Renders as `<i
 { "id": "quantity", "label": "Quantity", "type": "number", "min": 0, "max": 100, "step": 1 }
 ```
 
-**Schema properties:** `min` (integer), `max` (integer), `step` (number) — all optional. These are the only field types where `min`, `max`, and `step` are permitted; they are forbidden on all other types by the schema spec.
+**Schema properties:** `min` (number), `max` (number), `step` (number) — all optional. These properties are also available on `number` sub-fields within a `repeater`. They are forbidden on all other field types by the schema spec.
 
 **Template:** Value is a string — parse with `int()` or `float()` as needed.
 
@@ -265,6 +271,28 @@ Non-input element that renders as a visual section divider within a form section
 **Template:** Not passed — heading fields are skipped during `collectFormData()`.
 
 **Note:** `heading` does not create an element with `id = field.id`, so it cannot be used as a `visible_when` target.
+
+## info
+
+Read-only display block for showing instructions, warnings, or policy text inline within a form section. Not an input — not collected in form data, not passed to templates. Distinct from `heading` which is a title/divider; `info` is a content block with styled variants.
+
+```json
+{ "id": "info_privacy", "label": "Privacy Notice", "type": "info", "content": "All data stays in your browser. Nothing is sent to any server.", "style": "info" }
+```
+
+**Schema properties:**
+- `content` (string, required) — the text to display in the block
+- `style` (optional string, defaults to `"info"`) — visual variant: `"info"` (indigo accent), `"warning"` (yellow accent), or `"success"` (green accent)
+
+**Examples with all three styles:**
+
+```json
+{ "id": "info_1", "label": "Note", "type": "info", "content": "Please complete all required fields.", "style": "info" }
+{ "id": "warn_1", "label": "Warning", "type": "info", "content": "Changes cannot be undone after submission.", "style": "warning" }
+{ "id": "ok_1", "label": "Approved", "type": "info", "content": "Your application has been pre-approved.", "style": "success" }
+```
+
+**Template:** Not passed — info fields are skipped during `collectFormData()`.
 
 ## hidden
 
@@ -338,7 +366,7 @@ if receipt and ',' in receipt:
 
 ## signature
 
-Canvas-based drawing pad for capturing signatures. Supports both mouse and touch input. The canvas is 400x150 pixels internally. Exports as a base64 PNG data URI stored in a hidden input with `id = field.id`. Includes a "Clear" button to reset.
+Canvas-based drawing pad for capturing signatures. Supports both mouse and touch input. The canvas is full-width (CSS `width: 100%`) and 150px tall, with internal pixel dimensions scaled by the device pixel ratio for sharp rendering on high-DPI displays. Exports as a base64 PNG data URI stored in a hidden input with `id = field.id`. Includes a "Clear" button to reset.
 
 ```json
 { "id": "employee_signature", "label": "Employee Signature", "type": "signature", "required": true }
@@ -375,9 +403,28 @@ Dynamic field group — users can add N copies of a set of sub-fields. Each row 
 ```
 
 **Schema properties:**
-- `fields` — required array of sub-field definitions. Permitted sub-field types: `text`, `email`, `tel`, `number`, `currency`, `select`. No other types (including `heading`, `hidden`, `address`, `repeater`) are allowed inside a repeater.
+- `fields` — required array of sub-field definitions. Permitted sub-field types: `text`, `email`, `tel`, `number`, `currency`, `select`, `time`, `url`, `toggle`. No other types (including `heading`, `hidden`, `address`, `repeater`) are allowed inside a repeater. **Note:** `toggle` sub-fields within repeaters have a known limitation — data collection reads `.value` instead of `.checked`, so the collected value is always `"on"` rather than `"true"`/`"false"`. Avoid `toggle` in repeaters until this is fixed.
 - `min_rows` — minimum rows; remove button is disabled when at the minimum (defaults to `1`)
 - `max_rows` — maximum rows; add button is disabled when at the maximum (defaults to `10`)
+- `display` — optional display mode: `"cards"` (default) renders each row as a stacked card with numbered header; `"table"` renders rows as a compact HTML table with column headers from sub-field labels. The data format is identical regardless of display mode.
+
+**Table display mode example:**
+
+```json
+{
+  "id": "line_items",
+  "label": "Expense Line Items",
+  "type": "repeater",
+  "display": "table",
+  "fields": [
+    { "id": "description", "label": "Description", "type": "text" },
+    { "id": "amount", "label": "Amount", "type": "currency" },
+    { "id": "category", "label": "Category", "type": "select", "options": ["", "Travel", "Meals", "Supplies"] }
+  ]
+}
+```
+
+Use `"table"` when sub-fields are short and data-dense (e.g., expense line items, schedules). Use default `"cards"` when sub-fields are complex or benefit from more visual separation.
 
 Sub-field IDs within `fields` must be unique within the repeater but do not need to be globally unique. They are keyed by sub-field `id` in each row's data object.
 
@@ -390,6 +437,91 @@ for item in items:
     desc = item.get('description', '')
     amount = item.get('amount', '0')
     category = item.get('category', '')
+```
+
+## time
+
+Native browser time picker. Value is always in `HH:MM` format (24-hour).
+
+```json
+{ "id": "start_time", "label": "Start Time", "type": "time", "required": true }
+```
+
+**Template:** `data.get('start_time', '')` → `"09:30"`
+
+To reformat in your template:
+
+```python
+formatted = stencils.format_time(data.get('start_time', ''))
+# "09:30" → "9:30 AM", "14:30" → "2:30 PM"
+```
+
+## url
+
+URL input with browser-level URL format validation. Includes `https://` placeholder by default.
+
+```json
+{ "id": "website", "label": "Website", "type": "url", "placeholder": "https://example.com" }
+```
+
+**Template:** `data.get('website', '')` → `"https://example.com"`
+
+## toggle
+
+Boolean yes/no switch. Renders as a toggle switch UI element. Distinct from `checkbox` which is a multi-select group — `toggle` is a single on/off control.
+
+```json
+{ "id": "agree_terms", "label": "I agree to the terms", "type": "toggle", "required": true }
+```
+
+The toggle always has a value (`"true"` or `"false"`) — it can never be empty. A required toggle will always pass validation.
+
+**Template:** Value is `"true"` or `"false"`.
+
+```python
+agreed = data.get('agree_terms', 'false') == 'true'
+doc.add_paragraph(f"Terms accepted: {'Yes' if agreed else 'No'}")
+```
+
+## datetime
+
+Combined date and time picker. Renders as `<input type="datetime-local">`. Value is in ISO-like format `YYYY-MM-DDTHH:MM`.
+
+```json
+{ "id": "deadline", "label": "Submission Deadline", "type": "datetime" }
+```
+
+**Template:** `data.get('deadline', '')` → `"2026-06-15T14:30"`
+
+To reformat in your template:
+
+```python
+formatted = stencils.format_time(data.get('deadline', ''))
+# "2026-06-15T14:30" → "2026-06-15 at 2:30 PM"
+```
+
+## multi_select
+
+Searchable multi-select dropdown with tag/chip UI. Requires an `options` array. Users can select multiple items, which appear as removable tags. Includes a search/filter input.
+
+```json
+{
+  "id": "topics",
+  "label": "Topics of Interest",
+  "type": "multi_select",
+  "options": ["AI/ML", "Cloud", "Security", "DevOps", "Frontend", "Backend"],
+  "hint": "Select all that apply"
+}
+```
+
+Distinct from `checkbox`: `multi_select` is better for long option lists (5+ items) because it includes search filtering and takes less vertical space. Use `checkbox` for short lists (2-5 items) where all options should be visible at once.
+
+**Template:** Value is a comma-separated string of selected items, same format as `checkbox`.
+
+```python
+topics = data.get('topics', '')  # "AI/ML, Cloud, Security"
+if topics:
+    items = [t.strip() for t in topics.split(',') if t.strip()]
 ```
 
 ---
@@ -424,12 +556,16 @@ Any top-level field can include a `visible_when` object to make it appear only w
 - `select` — attaches a `change` listener on the `<select>` element
 - `radio` — attaches `change` listeners on all `<input type="radio">` elements for that name
 - `checkbox` — attaches `change` listeners; `equals` must match the full comma-separated string of checked values
-- `text`, `email`, `tel`, `date`, `textarea`, `longtext`, `number`, `currency` — attaches `input` and `change` listeners on the element
+- `text`, `email`, `tel`, `date`, `time`, `url`, `datetime`, `textarea`, `longtext`, `number`, `currency` — attaches `input` and `change` listeners on the element
+- `toggle` — attaches a `change` listener on the checkbox input
+- `multi_select` — renders a hidden input with `id = field.id` and technically works, but updates the hidden input programmatically without firing DOM events, so visibility changes may not trigger reliably
 
 **Supported target field types** (the field with `visible_when`):
-Works for any type that renders a direct element with `id = field.id`: `text`, `email`, `tel`, `date`, `textarea`, `longtext`, `select`, `number`, `currency`, `hidden`, `file`, `signature`.
+Works for any type that renders a direct element with `id = field.id`: `text`, `email`, `tel`, `date`, `time`, `url`, `datetime`, `textarea`, `longtext`, `select`, `number`, `currency`, `hidden`, `file`, `signature`, `toggle`.
 
 Does **not** reliably work as a target for: `checkbox`, `radio`, `list`, `address`, `repeater`, `heading` — these types do not render a single element with `id = field.id`, so the visibility logic cannot find their field group.
+
+**Note:** `multi_select` renders a hidden input with `id = field.id` and works as a `visible_when` target. However, as a `visible_when` *source*, `multi_select` may not trigger visibility updates reliably because its widget updates the hidden input programmatically without firing DOM events.
 
 `visible_when` is not supported inside `repeater` sub-fields.
 
@@ -442,15 +578,21 @@ Does **not** reliably work as a target for: `checkbox`, `radio`, `list`, `addres
 | A short answer (name, title, ID) | `text` |
 | An email address | `email` |
 | A phone number | `tel` |
+| A website or link | `url` |
 | A calendar date | `date` |
+| A clock time | `time` |
+| A date and time together | `datetime` |
 | A brief comment (1-3 lines) | `textarea` |
 | Extended writing (bio, description) | `longtext` |
 | One choice from a fixed list | `select` (5+ options) or `radio` (2-4 options) |
-| Multiple choices from a fixed list | `checkbox` |
+| Multiple choices from a short list | `checkbox` (2-5 options visible at once) |
+| Multiple choices from a long list | `multi_select` (5+ options, with search) |
+| A yes/no boolean answer | `toggle` |
 | A user-defined list of items | `list` |
 | A numeric value with constraints | `number` |
 | A dollar/currency amount | `currency` |
 | A visual divider between fields | `heading` |
+| Instructions, warnings, or policy text inline | `info` |
 | Metadata not shown to the user | `hidden` |
 | A mailing/physical address | `address` |
 | An uploaded image or document | `file` |

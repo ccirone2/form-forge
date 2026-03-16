@@ -10,15 +10,15 @@ FormForge is a **client-side-only** browser application that turns GitHub-hosted
 
 ## Architecture
 
-- **`index.html`** — The entire frontend: HTML + CSS + JS in one file (~3200 lines). Contains the form builder, GitHub API integration, Pyodide loader, validation, and UI. Do not split this file.
-- **`schemas/_schema.spec.json`** — JSON Schema (draft 2020-12) that validates all form schemas. Enforces required fields, valid field types (18 enumerated), conditional constraints (e.g., `select` requires `options`, `repeater` requires `fields`), and `additionalProperties: false` at all levels.
+- **`index.html`** — The entire frontend: HTML + CSS + JS in one file (~8900 lines, changes frequently). Contains the form builder, GitHub API integration, Pyodide loader, validation, tab-based navigation (Forms, Schema, Template, Docs), and UI. Do not split this file.
+- **`schemas/_schema.spec.json`** — JSON Schema (draft 2020-12) that validates all form schemas. Enforces required fields, valid field types (24 enumerated), conditional constraints (e.g., `select` requires `options`, `repeater` requires `fields`), and `additionalProperties: false` at all levels.
 - **`schemas/*.json`** — Form definitions. Each schema has `title`, `description`, `icon`, `template` (path to .py), and `sections[]` containing `fields[]` with `id`, `label`, `type`, etc.
-- **`templates/stencils.py`** — Shared helper module for all templates. Provides `set_theme()`, `new_doc()`, `table_section()`, `longtext()`, `bullet_list()`, `signatures()`, `footer()`, `address()`, `image()`, `signature()`, `repeater_table()`, `finalize()`, and a `DocTheme` system with built-in themes (`THEME_CLASSIC`, `THEME_MINIMAL`, `THEME_MODERN`). Loaded into Pyodide's virtual filesystem once via `loadBaseModule()` before any template runs.
+- **`templates/stencils.py`** — Shared helper module for all templates. Provides `set_theme()`, `new_doc()`, `table_section()`, `longtext()`, `bullet_list()`, `signatures()`, `footer()`, `address()`, `image()`, `signature()`, `repeater_table()`, `format_time()`, `finalize()`, and a `DocTheme` system with built-in themes (`THEME_CLASSIC`, `THEME_MINIMAL`, `THEME_MODERN`). Loaded into Pyodide's virtual filesystem once via `loadBaseModule()` before any template runs.
 - **`templates/*.py`** — Python scripts that export a `generate_docx(data)` function. Called by Pyodide with form data as a dict. Must return DOCX bytes. Uses `python-docx` and `import stencils`.
 - **`docs/DEVLOG.md`** — Running development journal. Add a dated entry when completing work on any issue.
 - **`docs/SCHEMA_GUIDE.md`** — Guide for writing new form schemas.
 - **`docs/TEMPLATE_GUIDE.md`** — Guide for writing new Python templates.
-- **`docs/FIELD_TYPES.md`** — Reference for all 18 supported field types, their JSON schema, and template handling.
+- **`docs/FIELD_TYPES.md`** — Reference for all 24 supported field types, their JSON schema, and template handling.
 - **`docs/PLAN.md`** — Structured implementation plans for upcoming features.
 
 ## Pyodide Integration
@@ -30,7 +30,7 @@ FormForge is a **client-side-only** browser application that turns GitHub-hosted
 3. `pyodide.runPythonAsync(templateCode)` — Loads the template
 4. `generate_docx(form_data)` — Called via `runPythonAsync` with serialized form data
 
-There are 3 template loading paths that all follow this pattern: `launchForm()` (GitHub), `launchLocal()` (local files), and `launchDemo()` (embedded demo).
+There are 3 template loading paths that all follow this pattern: `launchForm()` (GitHub or local folder), `launchLocal()` (individual local files), and `launchDemo()` (embedded demo). The Template tab's preview uses a 4th path: `devRunPreview()` which runs user-authored Python directly via Pyodide with data passed safely through `pyodide.toPy()`.
 
 ### Wizard Form Support
 
@@ -39,6 +39,27 @@ Schemas with `"wizard": true` render as multi-step forms instead of all-at-once.
 ### Conditional Field Visibility (`visible_when`)
 
 Fields can have an optional `visible_when` object: `{ "field": "<source_id>", "equals": "<value>" }`. When the source field's value doesn't match, the dependent field is hidden (CSS class `conditional-hidden`). `setupConditionalVisibility(schema)` builds the dependency map and attaches listeners. Hidden fields are skipped during validation but still collected as empty strings in `collectFormData()`.
+
+### Tab-Based Navigation
+
+The app uses a permanent 4-tab navigation bar (no Dev Mode toggle):
+
+```
+[FormForge]  [Forms] [Schema] [Template] [Docs]     [source badge]
+```
+
+- **Forms** — Connect a content source (GitHub repo or local folder), browse available forms, fill and export. Two equal-weight source cards: GitHub Repository and Local Folder. `connectRepo()` or `connectLocalFolder()` sets the unified `contentSourceType` global (`'github' | 'local' | 'demo' | null`).
+- **Schema** — Split-pane JSON editor (CodeJar + Prism.js) with live form preview on 300ms debounce, real-time validation badge, and right-click context menu with field type snippets for all 24 field types. Uses `buildForm(schema, targetForm)` to render previews. Has "Fill Form" button to test the schema as a fillable form.
+- **Template** — Split-pane Python editor with collapsible sample data panel. "Preview DOCX" runs the full Pyodide pipeline and renders output via mammoth.js → DOMPurify. Right-click context menu inserts stencils helper snippets.
+- **Docs** — Embedded documentation tabs for Schema Guide, Template Guide, Field Types, and Example schema/template. Always uses built-in reference (independent of connected source).
+
+**Unified content source:** A single set of GitHub globals (`ghOwner`, `ghRepo`, `ghBranch`, `ghToken`) serves both form-filling and editing. `connectRepo()` populates both `repoSchemas[]` (for the picker) and `workspaceFiles` (for editing in Schema/Template tabs). Git operations (commit, push, branch) are available in editor toolbars when editing GitHub-sourced files.
+
+**Local folder support:** `connectLocalFolder()` uses the File System Access API to open a folder, discover `schemas/*.json` and `templates/*.py`, populate the picker, and enable editing with 5s file polling. Falls back to individual file drag-and-drop when FSAA is unavailable.
+
+**Bidirectional flow:** Picker cards have "Edit Schema" and "Edit Template" actions. Form view has an "Edit Schema" button. Schema preview has a "Fill Form" button. Functions: `loadSchemaIntoEditor()`, `loadTemplateIntoEditor()`, `editCurrentSchema()`, `fillFormFromEditor()`.
+
+CDN dependencies (lazy-loaded on first Schema/Template tab click): Prism.js 1.29.0, CodeJar 4.2.0, mammoth.js 1.6.0, DOMPurify 3.2.4.
 
 ## Key Conventions
 
@@ -65,8 +86,14 @@ No build system or package manager. Pyodide and python-docx load from CDN at run
 # Run locally — open index.html directly or use HTTP server for CORS
 python -m http.server 8000
 
-# Run all tests (90 tests)
+# Run fast tests (excludes e2e browser tests)
 PYTHONPATH=. python -m pytest tests/ -v
+
+# Run ALL tests including Playwright e2e
+PYTHONPATH=. python -m pytest tests/ -v -m ''
+
+# Run only e2e browser tests (requires: pip install playwright)
+PYTHONPATH=. python -m pytest tests/ -v -m e2e
 
 # Run a single test file
 PYTHONPATH=. python -m pytest tests/test_stencils.py -v
@@ -81,18 +108,70 @@ ruff format templates/ tests/
 
 ### Test structure
 
-- `tests/test_stencils.py` — Unit tests for all `stencils.py` utilities (50 tests)
-- `tests/test_templates.py` — Integration tests that load each template with sample data and verify valid DOCX output (6 tests)
-- `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas, wizard, and visible_when (34 tests)
+- `tests/conftest.py` — Shared session-scoped fixtures (`index_html`, `spec`)
+- `tests/test_stencils.py` — Unit tests for all `stencils.py` utilities
+- `tests/test_templates.py` — Integration tests that load each template with sample data and verify valid DOCX output
+- `tests/test_schemas.py` — Schema validation tests: validates all schemas against `_schema.spec.json`, plus negative tests for invalid schemas, wizard, and visible_when
+- `tests/test_dev_mode.py` — UI structure and feature tests: HTML structure, CDN deps, starter schema/template validation, field snippets, CSS classes, context menu, tab navigation, source grid, bidirectional flow
+- `tests/test_context_menu.py` — Playwright e2e browser tests for context menu system (marked `e2e`)
 - `tests/fixtures/*.json` — Sample form data matching each schema's field IDs
 - Templates are loaded via `importlib.util.spec_from_file_location()` with `sys.path` including `templates/` so `import stencils` resolves
+
+### Test markers
+
+- `e2e` — Playwright browser tests (excluded by default via `pyproject.toml` `addopts`). Run with `-m e2e` or include all with `-m ''`.
 
 ## CI/CD
 
 `.github/workflows/validate.yml` runs on push/PR to `develop` and `main`:
-1. Schema validation — validates all `schemas/*.json` against `_schema.spec.json` using `jsonschema`
-2. Test execution — runs `PYTHONPATH=. pytest tests/ -v` on Python 3.12
+1. **test** job — Lint (`ruff check`) + fast tests (excludes e2e) on Python 3.12
+2. **e2e** job — Installs Playwright + Chromium, runs `pytest -m e2e` (depends on test job passing)
 
 ## GitHub Issues
 
 Each issue includes a journaling task to update `docs/DEVLOG.md`.
+
+## Design Context
+
+### Users
+Small business operations staff who need to fill out forms and generate professional documents (onboarding packets, expense reports, etc.) without IT overhead. They are non-technical, task-focused, and want to get in and out quickly. FormForge is a tool they reach for when they have a specific job to do — not something they explore for fun.
+
+### Brand Personality
+**Clean, precise, confident.** Professional tool feel — minimal decoration, everything intentional. The UI should communicate competence and reliability without being cold or intimidating.
+
+### Emotional Goals
+- **Confidence & trust** — Users should feel assured the tool works correctly and their data stays local
+- **Ease & calm** — Forms feel effortless, no friction or confusion
+- **Speed & efficiency** — Get in, fill the form, get the document
+
+### Aesthetic Direction
+- **Dark-mode only** with indigo accent (`#6366f1`) as the primary interactive color
+- **Typography:** DM Sans (UI text) + JetBrains Mono (technical labels, badges, status indicators)
+- **Spacing:** Consistent 10px radius, generous card padding (28px), 12-16px component gaps
+- **Surfaces:** Layered dark backgrounds (`#0f1117` → `#181a22` → `#1f2230`) with subtle 1px borders
+- **Interactions:** Smooth 0.2s transitions, subtle hover lifts on cards, indigo focus glow rings
+- **Anti-references:** Avoid playful/whimsical aesthetics, excessive color, or busy layouts. This is not a consumer app — it's a focused productivity tool.
+
+### Design Tokens (`:root` in `index.html`)
+All design values are centralized as CSS custom properties. When adding or modifying styles, always use tokens rather than hard-coded values.
+
+| Category | Tokens | Notes |
+|----------|--------|-------|
+| **Colors** | `--bg`, `--surface`, `--surface-2`, `--border`, `--border-focus`, `--text`, `--text-muted`, `--text-on-accent`, `--accent`, `--accent-hover`, `--accent-glow`, `--accent-subtle`, `--accent-border`, `--accent-border-strong`, `--accent-overlay`, `--accent-hover-border`, `--success`, `--success-subtle`, `--warning`, `--error`, `--error-hover`, `--error-glow`, `--error-subtle`, `--syntax-number`, `--syntax-keyword`, `--syntax-function` | Three-tier surface hierarchy: bg → surface → surface-2. Use `--text-on-accent` for white text on accent/semantic backgrounds. Syntax tokens override Prism theme in Schema/Template editors. |
+| **Fonts** | `--font-sans` (DM Sans), `--font-mono` (JetBrains Mono) | Use `--font-mono` for labels, badges, status, counters. Use `--font-sans` for everything else. |
+| **Type scale** | `--text-2xs` (10), `--text-xs` (11), `--text-sm` (12), `--text-sm-md` (13), `--text-base` (14), `--text-md` (15), `--text-lg` (16), `--text-lg-xl` (18), `--text-xl` (20), `--text-2xl` (28), `--text-3xl` (32) | Base is 14px. Mono-label pattern: `var(--text-sm)` + `var(--font-mono)` + `var(--text-muted)` |
+| **Radii** | `--radius-xs` (4), `--radius-sm` (6), `--radius-md` (8), `--radius` / `--radius-lg` (10), `--radius-pill` (20) | `--radius-md` (8px) is the default for inputs and buttons. `--radius` (10px) for cards/sections. |
+| **Shadows** | `--shadow-sm`, `--shadow-md`, `--shadow-lg`, `--shadow-xl` | Used sparingly — only on hover-lifts, dropdowns, toasts, and overlays. |
+| **Transitions** | `--transition-fast` (0.15s), `--transition-base` (0.2s), `--transition-slow` (0.3s) | Default to `--transition-base`. Use `--transition-fast` for micro-interactions. |
+
+### Reusable Patterns
+- **`.mono-label`** — Utility class for the mono-label pattern (12px JetBrains Mono, muted). Apply via class or replicate the three properties.
+- **Card surface** — `background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px` (used by `.config-card`, `.picker-card`, `.form-section`)
+- **Button base** — All buttons share: `display: inline-flex; align-items: center; gap: 8px; border-radius: var(--radius-md); font-family: var(--font-sans); cursor: pointer; transition: all var(--transition-base)`
+
+### Design Principles
+1. **Clarity over decoration** — Every element should serve a purpose. No ornamental flourishes.
+2. **Progressive disclosure** — Show only what's needed at each step. Wizard mode and conditional visibility reflect this at the feature level; design should reinforce it visually.
+3. **Quiet confidence** — The UI should feel solid and trustworthy. Subtle transitions, consistent spacing, and restrained color use build that feeling.
+4. **Keyboard-friendly, readable** — Ensure all interactive elements are keyboard-navigable. Maintain strong contrast for text readability. No formal WCAG target, but respect the basics.
+5. **Zero-friction flow** — Minimize clicks, reduce cognitive load, keep the user moving toward their document.

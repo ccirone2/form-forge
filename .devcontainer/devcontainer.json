@@ -1,0 +1,82 @@
+{
+  "name": "FormForge Dev",
+
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+
+  "features": {
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ecmel.vscode-html-css",
+        "redhat.vscode-json",
+        "eamodio.gitlens",
+        "mhutchie.git-graph",
+        "ms-playwright.playwright",
+        "ritwickdey.LiveServer"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests/", "-v"],
+        "python.testing.cwd": "${workspaceFolder}",
+        "python.envFile": "",
+        "ruff.path": ["/usr/local/bin/ruff"],
+        "editor.formatOnSave": true,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        },
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.env.linux": {
+          "PYTHONPATH": "${workspaceFolder}"
+        },
+        "liveServer.settings.port": 5500,
+        "liveServer.settings.root": "/",
+        "liveServer.settings.NoBrowser": true
+      }
+    }
+  },
+
+  "mounts": [
+    "source=${localEnv:HOME}/.claude,target=/home/dev/.claude,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/claude,target=/home/dev/.config/claude,type=bind,consistency=cached",
+    "source=${localEnv:HOME}/.config/gh,target=/home/dev/.config/gh,type=bind,consistency=cached"
+  ],
+
+  "containerEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/dev/.claude",
+    "PYTHONPATH": "/workspace",
+    "PLAYWRIGHT_BROWSERS_PATH": "/home/dev/.cache/ms-playwright"
+  },
+
+  "remoteUser": "dev",
+
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "workspaceFolder": "/workspace",
+
+  "forwardPorts": [5500, 8000],
+  "portsAttributes": {
+    "5500": {
+      "label": "Live Server",
+      "onAutoForward": "silent"
+    },
+    "8000": {
+      "label": "Python Dev Server",
+      "onAutoForward": "notify"
+    }
+  },
+
+  "initializeCommand": "mkdir -p ${localEnv:HOME}/.claude ${localEnv:HOME}/.config/claude ${localEnv:HOME}/.config/gh",
+
+  "postStartCommand": "echo '--- FormForge Dev Environment ---' && python --version && node --version && echo \"Playwright: $(npx playwright --version 2>/dev/null)\" && echo 'Ready. Open index.html → Go Live, or run: python -m http.server 8000'"
+}

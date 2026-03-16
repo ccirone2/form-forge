@@ -1,0 +1,68 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Test: Run All",
+      "type": "shell",
+      "command": "PYTHONPATH=. python -m pytest tests/ -v",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Test: Schemas",
+      "type": "shell",
+      "command": "PYTHONPATH=. python -m pytest tests/test_schemas.py -v",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Test: Templates",
+      "type": "shell",
+      "command": "PYTHONPATH=. python -m pytest tests/test_templates.py -v",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Test: Stencils",
+      "type": "shell",
+      "command": "PYTHONPATH=. python -m pytest tests/test_stencils.py -v",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Test: Dev Mode",
+      "type": "shell",
+      "command": "PYTHONPATH=. python -m pytest tests/test_dev_mode.py -v",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint: Check",
+      "type": "shell",
+      "command": "ruff check templates/ tests/",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint: Fix + Format",
+      "type": "shell",
+      "command": "ruff check templates/ tests/ --fix && ruff format templates/ tests/",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Server: Start",
+      "type": "shell",
+      "command": "python -m http.server 8000",
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

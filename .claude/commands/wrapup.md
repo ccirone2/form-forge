@@ -3,6 +3,7 @@
 Perform all end-of-session housekeeping:
 
 1. Run tests and report results: `PYTHONPATH=. python -m pytest tests/ -v`
+   (e2e browser tests excluded by default; use `-m ''` to include all)
 2. Run lint: `ruff check templates/ tests/`
 3. Append a dated entry to `docs/DEVLOG.md` with:
    - Date and session summary

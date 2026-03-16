@@ -7,6 +7,7 @@
 5. Implement the task, following conventions in CLAUDE.md
 6. Write or update tests for the changed code
 7. Run tests: `PYTHONPATH=. python -m pytest tests/ -v`
+   (e2e browser tests excluded by default; use `-m ''` to include all)
 8. Run lint: `ruff check templates/ tests/ --fix && ruff format templates/ tests/`
 9. Check the source GitHub issue acceptance criteria and ensure they are met
 10. Update the issue status to ✅ if all criteria are met

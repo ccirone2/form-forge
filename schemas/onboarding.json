@@ -8,6 +8,13 @@
       "title": "Personal Information",
       "fields": [
         {
+          "id": "welcome_info",
+          "label": "Welcome!",
+          "type": "info",
+          "content": "Please complete all sections of this form before your start date. Your information will be used to prepare your onboarding packet and set up your accounts.",
+          "style": "info"
+        },
+        {
           "id": "first_name",
           "label": "First Name",
           "type": "text",
@@ -95,6 +102,13 @@
     {
       "title": "Equipment & Access",
       "fields": [
+        {
+          "id": "equipment_info",
+          "label": "Equipment Processing",
+          "type": "info",
+          "content": "Equipment requests are processed by IT within 3 business days of your start date. Custom hardware requests may take longer.",
+          "style": "success"
+        },
         {
           "id": "laptop_preference",
           "label": "Laptop Preference",
