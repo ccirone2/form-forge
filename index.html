@@ -87,6 +87,7 @@
 
     /* Colors — overlays */
     --overlay-scrim: rgba(0, 0, 0, 0.6);
+    --overlay-heavy: rgba(15, 17, 23, 0.85);
     --warning-subtle: rgba(245, 158, 11, 0.1);
 
     /* Colors — syntax highlighting */
@@ -481,8 +482,8 @@
   textarea { resize: vertical; min-height: 80px; }
   select {
     appearance: none; cursor: pointer; padding-right: 36px;
-    /* Chevron color must match --text-muted (#8b8da0) — update both if token changes */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b8da0' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    /* Chevron color must match --text-muted (#9496a8) — update both if token changes */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239496a8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 12px center;
   }
   select option { background: var(--surface-2); color: var(--text); }
@@ -1297,7 +1298,7 @@
       border-radius: 16px 16px 0 0;
       max-height: 70vh;
       overflow-y: auto;
-      box-shadow: var(--shadow-lg);
+      box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
       animation: slideUpSheet 0.2s ease-out;
     }
   }
@@ -1314,7 +1315,7 @@
 
   /* ===== 23. LOADING OVERLAY ===== */
   .loading-overlay {
-    position: fixed; inset: 0; background: var(--overlay-scrim); backdrop-filter: blur(4px);
+    position: fixed; inset: 0; background: var(--overlay-heavy); backdrop-filter: blur(4px);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     z-index: 1000; gap: 16px;
   }
@@ -2386,7 +2387,7 @@
 </main>
 
 <!-- ==================== FORM VIEW ==================== -->
-<main class="view" id="view-form" role="tabpanel" aria-labelledby="tab-forms">
+<main class="view" id="view-form" role="region" aria-label="Form">
   <div class="main-container">
     <div class="form-nav">
       <button type="button" class="btn-back" onclick="showTab('forms')">
@@ -2403,7 +2404,7 @@
       </button>
       <button type="button" class="autofill-btn" id="autofillNavBtn" onclick="toggleAutofillDropdown()" title="Autofill — profiles, presets, and data loading">
         <svg width="14" height="14"><use href="#icon-bolt"/></svg>
-        Autofill <span class="autofill-badge" id="autofillBadge" aria-label="saved profiles" style="display:none">0</span>
+        Autofill <span class="autofill-badge" id="autofillBadge" aria-label="autofill items" style="display:none">0</span>
       </button>
     </div>
 
@@ -4860,8 +4861,9 @@ function createFileField(field, group) {
       showToast(`File too large (max ${maxMb}MB)`, 'error');
       fileInput.value = ''; hiddenInput.value = ''; return;
     }
-    if (file.type.startsWith('image/')) {
-      // Resize large images via canvas before encoding
+    const isRasterImage = file.type.startsWith('image/') && !['image/svg+xml', 'image/gif'].includes(file.type);
+    if (isRasterImage) {
+      // Resize large raster images via canvas before encoding
       const img = new Image();
       img.onload = () => {
         const MAX_DIM = 1200;
@@ -4872,19 +4874,24 @@ function createFileField(field, group) {
         }
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL(file.type || 'image/png', 0.85);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { URL.revokeObjectURL(img.src); showToast('Canvas not available', 'error'); fileInput.value = ''; return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        const outType = file.type === 'image/jpeg' || file.type === 'image/webp' ? file.type : 'image/png';
+        const dataUrl = canvas.toDataURL(outType, 0.85);
         hiddenInput.value = dataUrl;
         preview.src = dataUrl; preview.style.display = 'block';
         info.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
         URL.revokeObjectURL(img.src);
       };
+      img.onerror = () => { URL.revokeObjectURL(img.src); showToast('Could not read image file', 'error'); fileInput.value = ''; hiddenInput.value = ''; };
       img.src = URL.createObjectURL(file);
     } else {
       const reader = new FileReader();
       reader.onload = (e) => {
         hiddenInput.value = e.target.result;
-        preview.style.display = 'none';
+        if (file.type.startsWith('image/')) { preview.src = e.target.result; preview.style.display = 'block'; }
+        else { preview.style.display = 'none'; }
         info.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
       };
       reader.readAsDataURL(file);
@@ -6909,8 +6916,8 @@ function showPresetEditor(idx) {
       <input type="text" id="presetNameInput" value="${isEdit ? escapeHtml(existing.name) : ''}" placeholder="e.g., Standard Weekly">
     </div>
     <div class="preset-editor-field">
-      <label id="presetFieldsLabel">Fields to include</label>
-      <div class="preset-editor-checkboxes" id="presetFieldCheckboxes" role="group" aria-labelledby="presetFieldsLabel">
+      <label>Fields to include</label>
+      <div class="preset-editor-checkboxes" id="presetFieldCheckboxes" role="group" aria-label="Fields to include">
         ${checkboxesHtml}
       </div>
     </div>
@@ -7267,8 +7274,8 @@ function _showPresetEditorInDropdown(idx, anchorEl) {
       <input type="text" id="presetNameInput" value="${isEdit ? escapeHtml(existing.name) : ''}" placeholder="e.g., Standard Weekly">
     </div>
     <div class="preset-editor-field">
-      <label id="presetFieldsLabel">Fields to include</label>
-      <div class="preset-editor-checkboxes" id="presetFieldCheckboxes" role="group" aria-labelledby="presetFieldsLabel">
+      <label>Fields to include</label>
+      <div class="preset-editor-checkboxes" id="presetFieldCheckboxes" role="group" aria-label="Fields to include">
         ${checkboxesHtml}
       </div>
     </div>
@@ -12005,6 +12012,8 @@ function switchConnectTab(tab) {
   document.getElementById('connectTabBtnLocal').setAttribute('aria-selected', tab === 'local' ? 'true' : 'false');
   document.getElementById('connectTabGithub').classList.toggle('active', tab === 'github');
   document.getElementById('connectTabLocal').classList.toggle('active', tab === 'local');
+  document.getElementById('connectTabGithub').setAttribute('aria-hidden', tab !== 'github' ? 'true' : 'false');
+  document.getElementById('connectTabLocal').setAttribute('aria-hidden', tab !== 'local' ? 'true' : 'false');
 }
 
 // ============================================================
