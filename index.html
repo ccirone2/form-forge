@@ -3377,7 +3377,7 @@ function escapeHtml(str) {
 // Map raw error messages to user-friendly language
 function friendlyError(err) {
   const msg = (err && err.message) ? err.message : String(err);
-  if (/404|not found/i.test(msg)) return 'Repository not found. Check the owner/repo format.';
+  if (/\b404\b/.test(msg)) return 'Repository not found. Check the owner/repo format.';
   if (/401|403|unauthorized|forbidden|credentials/i.test(msg)) return 'Access denied. Your token may be invalid or expired.';
   if (/rate limit/i.test(msg)) return 'GitHub rate limit reached. Add a personal access token or try again in a few minutes.';
   if (/network|fetch|CORS|ERR_/i.test(msg)) return 'Network error. Check your connection and try again.';
