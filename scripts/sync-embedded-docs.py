@@ -7,6 +7,7 @@ Usage:
 """
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -19,12 +20,14 @@ DOCS = {
     "FIELD_TYPES": REPO_ROOT / "docs" / "FIELD_TYPES.md",
 }
 
+
 def escape_for_template_literal(text: str) -> str:
     """Escape a string for safe embedding inside JS backtick template literals."""
     return text.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
 
 
 def build_block(name: str, content: str) -> str:
+    """Build the full EMBEDDED-DOC marker block for a given doc constant."""
     escaped = escape_for_template_literal(content)
     return (
         f"// EMBEDDED-DOC:{name}:START\n"
@@ -34,7 +37,12 @@ def build_block(name: str, content: str) -> str:
 
 
 def main() -> int:
+    """Entry point: sync or check embedded doc constants in index.html."""
     check_mode = "--check" in sys.argv
+
+    if not INDEX_HTML.exists():
+        print(f"ERROR: {INDEX_HTML} not found", file=sys.stderr)
+        return 1
 
     html = INDEX_HTML.read_text(encoding="utf-8")
     new_html = html
@@ -58,11 +66,15 @@ def main() -> int:
             print(f"ERROR: marker block for {name} not found in index.html", file=sys.stderr)
             return 1
 
-        new_html = pattern.sub(replacement, new_html)
+        # Use lambda to avoid re.sub interpreting backslashes in replacement
+        new_html = pattern.sub(lambda _: replacement, new_html)
 
     if check_mode:
         if new_html != html:
-            print("ERROR: Embedded docs are out of sync. Run: python scripts/sync-embedded-docs.py")
+            print(
+                "ERROR: Embedded docs are out of sync. Run: python scripts/sync-embedded-docs.py",
+                file=sys.stderr,
+            )
             return 1
         print("OK: Embedded docs are in sync.")
         return 0

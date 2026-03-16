@@ -7669,7 +7669,7 @@ for p in pathlib.Path('schemas').glob('*.json'):
 | \`title\` | yes | string | Displayed as the form heading. Minimum 1 character. |
 | \`description\` | no | string | Subheading shown below the title and on the picker card. |
 | \`icon\` | no | string | Emoji displayed on the picker card. Defaults to 📄 if omitted. |
-| \`template\` | no | string | Path to the Python template file relative to repo root. Must match \`^templates/.+\.py$\`. Defaults to \`templates/{schema-filename}.py\`. **Note:** The Schema tab's live validator treats \`template\` as required and shows a validation error badge if omitted — always include it in practice. |
+| \`template\` | no | string | Path to the Python template file relative to repo root. Must match \`^templates/.+\\.py$\`. Defaults to \`templates/{schema-filename}.py\`. **Note:** The Schema tab's live validator treats \`template\` as required and shows a validation error badge if omitted — always include it in practice. |
 | \`wizard\` | no | boolean | When \`true\`, sections render as sequential steps with Next/Back navigation. See [Wizard Mode](#wizard-mode). |
 | \`sections\` | yes | array | Array of section objects. Minimum 1. |
 | \`sampleData\` | no | object | Inline sample form data (field ID to string value). Used by the **Load Sample Data** button when no fixture file exists. See [Sample Data](#sample-data). |
@@ -8042,7 +8042,7 @@ stencils.table_section(doc, "Personal Information", [
 
 ### \`stencils.longtext(doc, heading, text)\`
 
-Adds a level-2 heading followed by one or more paragraphs split on \`\n\`. If \`text\` is empty, renders "No information provided." in muted italic.
+Adds a level-2 heading followed by one or more paragraphs split on \`\\n\`. If \`text\` is empty, renders "No information provided." in muted italic.
 
 \`\`\`python
 stencils.longtext(doc, "Professional Bio", data.get("bio", ""))
@@ -8159,9 +8159,9 @@ Use this table to pick the right stencil helper for each field type. Types not l
 | \`url\` | \`table_section()\` | Plain string, no conversion needed |
 | \`toggle\` | \`table_section()\` | Convert first: \`"Yes" if val == "true" else "No"\` |
 | \`textarea\` | \`table_section()\` or \`longtext()\` | Short text fits in a table row; multi-line content can use \`stencils.longtext()\` or manual \`doc.add_paragraph()\` |
-| \`longtext\` | \`longtext()\` | Splits on \`\n\` into paragraphs automatically |
+| \`longtext\` | \`longtext()\` | Splits on \`\\n\` into paragraphs automatically |
 | \`list\` | \`bullet_list()\` | Values are already newline-separated |
-| \`checkbox\` | \`bullet_list()\` | Convert first: \`"\n".join(t.strip() for t in val.split(",") if t.strip())\` |
+| \`checkbox\` | \`bullet_list()\` | Convert first: \`"\\n".join(t.strip() for t in val.split(",") if t.strip())\` |
 | \`multi_select\` | \`bullet_list()\` | Same comma→newline conversion as \`checkbox\` |
 | \`address\` | \`address()\` | Pass the raw JSON string directly |
 | \`file\` | \`image()\` | Pass the base64 data URI string |
@@ -8267,11 +8267,11 @@ All values in \`data\` are strings, regardless of field type. \`heading\` and \`
 | \`select\` | Selected option string | \`"Engineering"\` |
 | \`radio\` | Selected option string | \`"Full-Time"\` |
 | \`textarea\` | Plain string | \`"Some notes here"\` |
-| \`longtext\` | String with \`\n\` paragraph breaks | \`"First paragraph.\nSecond paragraph."\` |
+| \`longtext\` | String with \`\\n\` paragraph breaks | \`"First paragraph.\\nSecond paragraph."\` |
 | \`checkbox\` | Comma-separated string | \`"GitHub, Jira, Figma"\` |
 | \`multi_select\` | Comma-separated string | \`"AI/ML, Cloud, Security"\` |
 | \`toggle\` | Boolean string | \`"true"\` or \`"false"\` |
-| \`list\` | Newline-separated string | \`"Python\nJavaScript\nRust"\` |
+| \`list\` | Newline-separated string | \`"Python\\nJavaScript\\nRust"\` |
 | \`number\` | Numeric string | \`"42.5"\` |
 | \`currency\` | Numeric string (no symbol) | \`"1250.00"\` |
 | \`hidden\` | Static string from \`default_value\` | \`"1.0"\` |
@@ -8417,7 +8417,7 @@ Use \`stencils.longtext()\` — it handles the split and the empty case. If you 
 
 \`\`\`python
 bio = data.get("bio", "")
-for paragraph in bio.split("\n"):
+for paragraph in bio.split("\\n"):
     if paragraph.strip():
         doc.add_paragraph(paragraph.strip())
 \`\`\`
@@ -8428,7 +8428,7 @@ Use \`stencils.bullet_list()\` — it handles the split and the empty case. If y
 
 \`\`\`python
 skills = data.get("skills", "")
-for item in skills.split("\n"):
+for item in skills.split("\\n"):
     if item.strip():
         doc.add_paragraph(item.strip(), style="List Bullet")
 \`\`\`
@@ -8532,7 +8532,7 @@ for label, value in [("Name", data.get("name", "")), ("Date", data.get("date", "
     lr = row.cells[0].paragraphs[0].add_run(label)
     lr.bold = True
     lr.font.size = Pt(10)
-    vr = row.cells[1].paragraphs[0].add_run(value or "\u2014")
+    vr = row.cells[1].paragraphs[0].add_run(value or "\\u2014")
     vr.font.size = Pt(10)
 \`\`\`
 
@@ -8592,11 +8592,11 @@ Every field in a schema has a \`type\` that controls how it renders in the form 
 | \`tel\` | Phone number input | \`"(555) 123-4567"\` | none |
 | \`date\` | Native date picker | \`"2025-03-15"\` | none |
 | \`textarea\` | Multi-line text (3 rows) | \`"Some notes..."\` | none |
-| \`longtext\` | Large textarea (6 rows) with character counter | \`"Para 1\nPara 2"\` | none |
+| \`longtext\` | Large textarea (6 rows) with character counter | \`"Para 1\\nPara 2"\` | none |
 | \`select\` | Dropdown menu | \`"Engineering"\` | \`options\` |
 | \`radio\` | Radio button group | \`"Full-Time"\` | \`options\` |
 | \`checkbox\` | Checkbox group (multi-select) | \`"A, B, C"\` | \`options\` |
-| \`list\` | Dynamic add/remove rows with bulk paste | \`"X\nY\nZ"\` | none |
+| \`list\` | Dynamic add/remove rows with bulk paste | \`"X\\nY\\nZ"\` | none |
 | \`number\` | Number input with min/max/step | \`"42.5"\` | none |
 | \`currency\` | Number input with currency prefix | \`"1250.00"\` | none |
 | \`heading\` | Non-input section divider | *(skipped)* | none |
@@ -8714,11 +8714,11 @@ Large text area (6 rows) with a live character counter. Use for bios, descriptio
 
 **Schema properties:** \`maxLength\` (optional integer, defaults to \`5000\` in the counter display — does not hard-truncate, only colors the counter red when exceeded).
 
-**Template:** Value may contain \`\n\` for paragraph breaks.
+**Template:** Value may contain \`\\n\` for paragraph breaks.
 
 \`\`\`python
 bio = data.get('bio', '')
-for paragraph in bio.split('\n'):
+for paragraph in bio.split('\\n'):
     if paragraph.strip():
         doc.add_paragraph(paragraph.strip())
 \`\`\`
@@ -8801,9 +8801,9 @@ One empty row is added automatically when the field renders.
 **Template:** Value is a newline-separated string. Empty list produces \`""\`.
 
 \`\`\`python
-skills = data.get('skills', '')  # "Python\nJavaScript\nRust"
+skills = data.get('skills', '')  # "Python\\nJavaScript\\nRust"
 if skills:
-    for item in skills.split('\n'):
+    for item in skills.split('\\n'):
         if item.strip():
             doc.add_paragraph(item.strip(), style='List Bullet')
 \`\`\`
@@ -8906,7 +8906,7 @@ street = addr.get('street', '')
 city = addr.get('city', '')
 state = addr.get('state', '')
 zip_code = addr.get('zip', '')
-formatted = f"{street}\n{city}, {state} {zip_code}"
+formatted = f"{street}\\n{city}, {state} {zip_code}"
 \`\`\`
 
 **Validation:** When \`required\`, checks that \`street\` is non-empty.

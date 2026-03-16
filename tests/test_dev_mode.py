@@ -10,10 +10,14 @@ Since the developer tools are client-side JavaScript, these tests validate:
 
 import json
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import jsonschema
 import pytest
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # --- CDN Dependencies ---
 
@@ -1644,12 +1648,13 @@ def test_embedded_docs_are_non_empty(index_html: str) -> None:
 
 def test_embedded_docs_in_sync() -> None:
     """Sync script --check should pass (embedded docs match source files)."""
-    import subprocess
-
+    script = PROJECT_ROOT / "scripts" / "sync-embedded-docs.py"
+    assert script.exists(), "scripts/sync-embedded-docs.py not found"
     result = subprocess.run(
-        ["python", "scripts/sync-embedded-docs.py", "--check"],
+        [sys.executable, str(script), "--check"],
         capture_output=True,
         text=True,
+        cwd=str(PROJECT_ROOT),
     )
     assert result.returncode == 0, (
         f"Embedded docs are out of sync: {result.stdout}{result.stderr}"
@@ -1665,10 +1670,23 @@ def test_load_docs_uses_embedded_constants(index_html: str) -> None:
     assert "from-fallback" not in body, "loadDocs should not use from-fallback badge"
 
 
+def test_load_docs_example_uses_fallback(index_html: str) -> None:
+    """loadDocs() should use buildFallbackExamples for the exampleSchema slot."""
+    body = _extract_func(index_html, "loadDocs")
+    assert "exampleSchema" in body
+    assert "buildFallbackExamples" in body
+
+
 def test_no_load_docs_on_disconnect(index_html: str) -> None:
     """disconnectSource() should not call loadDocs() since docs are static."""
     body = _extract_func(index_html, "disconnectSource")
     assert "loadDocs" not in body, "disconnectSource should not call loadDocs"
+
+
+def test_no_load_docs_on_connect(index_html: str) -> None:
+    """connectRepo() should not call loadDocs() since docs are static."""
+    body = _extract_func(index_html, "connectRepo")
+    assert "loadDocs" not in body, "connectRepo should not call loadDocs"
 
 
 def test_docs_not_on_setup_view(index_html: str) -> None:
