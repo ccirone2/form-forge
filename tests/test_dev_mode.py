@@ -1237,7 +1237,9 @@ class TestGitHubWorkspaceJavaScript:
         assert "ghOriginalContents" in body, "should register in originals"
         assert "ghModifiedFiles" in body, "should mark file as modified"
         assert "workspaceFiles" in body, "should add to workspace files"
-        assert "currentSchemaFile" in body or "currentTemplateFile" in body, "should set as current file"
+        assert "currentSchemaFile" in body or "currentTemplateFile" in body, (
+            "should set as current file"
+        )
         assert "prompt(" in body, "should prompt for filename"
 
     def test_register_new_file_derives_schema_filename(self, index_html: str) -> None:
@@ -1316,7 +1318,9 @@ class TestGitHubWorkspaceJavaScript:
     def test_commit_relinks_workspace_file(self, index_html: str) -> None:
         """After commit, workspace files are re-linked to refreshed entries."""
         body = _extract_func(index_html, "devGhCommitAndPush")
-        assert "editingSchemaPath" in body or "editingTemplatePath" in body, "should remember editing paths"
+        assert "editingSchemaPath" in body or "editingTemplatePath" in body, (
+            "should remember editing paths"
+        )
         assert "findIndex" in body, "should find file in refreshed workspace"
 
     def test_connect_repo_tolerates_empty_schemas(self, index_html: str) -> None:
@@ -2097,7 +2101,9 @@ def test_template_validation_function(index_html: str) -> None:
     body = _extract_func(index_html, "devUpdateTemplateValidation")
     assert "generate_docx" in body, "should check for generate_docx"
     assert "import" in body and "stencils" in body, "should check for stencils import"
-    assert "trimStart" in body or "startsWith('#')" in body, "should filter comment lines"
+    assert "trimStart" in body or "startsWith('#')" in body, (
+        "should filter comment lines"
+    )
 
 
 def test_restore_local_folder_exists(index_html: str) -> None:
@@ -2110,8 +2116,12 @@ def test_restore_local_folder_exists(index_html: str) -> None:
 
 def test_indexeddb_helpers_exist(index_html: str) -> None:
     """IndexedDB persistence helpers are defined."""
-    for fn in ["openLocalFolderDB", "saveLocalFolderHandle",
-               "loadLocalFolderHandle", "clearLocalFolderHandle"]:
+    for fn in [
+        "openLocalFolderDB",
+        "saveLocalFolderHandle",
+        "loadLocalFolderHandle",
+        "clearLocalFolderHandle",
+    ]:
         assert f"function {fn}" in index_html, f"{fn} should be defined"
 
 
@@ -2658,3 +2668,99 @@ def test_launch_btn_removed(index_html: str) -> None:
     """Open Selected Form hero button removed — Open Form is on each card (#190)."""
     assert 'id="launchBtn"' not in index_html
     assert 'id="demoBtnAction"' in index_html
+
+
+# --- LLM Context Export (#205) ---
+
+
+def test_icon_sparkle_svg(index_html: str) -> None:
+    """SVG sprite sheet includes sparkle icon for AI context buttons."""
+    assert 'id="icon-sparkle"' in index_html
+
+
+def test_docs_panel_actions_css(index_html: str) -> None:
+    """docs-panel-actions CSS class is defined."""
+    assert ".docs-panel-actions" in index_html
+
+
+def test_docs_panels_have_copy_and_download_buttons(index_html: str) -> None:
+    """Each docs panel has Copy and Download .md buttons."""
+    for panel_id in ("schemaGuide", "templateGuide", "fieldTypes", "exampleSchema"):
+        assert f"copyDocContent('{panel_id}')" in index_html
+        assert f"downloadDocContent('{panel_id}')" in index_html
+
+
+def test_get_doc_raw_content_function(index_html: str) -> None:
+    """getDocRawContent function maps panel IDs to doc constants."""
+    body = _extract_func(index_html, "getDocRawContent")
+    assert "DOCS_SCHEMA_GUIDE" in body
+    assert "DOCS_TEMPLATE_GUIDE" in body
+    assert "DOCS_FIELD_TYPES" in body
+    assert "DEMO_SCHEMA" in body
+    assert "DEMO_TEMPLATE" in body
+
+
+def test_copy_doc_content_function(index_html: str) -> None:
+    """copyDocContent copies to clipboard and shows toast."""
+    body = _extract_func(index_html, "copyDocContent")
+    assert "getDocRawContent" in body
+    assert "navigator.clipboard.writeText" in body
+    assert "showToast" in body
+
+
+def test_download_doc_content_function(index_html: str) -> None:
+    """downloadDocContent creates a blob and triggers download."""
+    body = _extract_func(index_html, "downloadDocContent")
+    assert "getDocRawContent" in body
+    assert "Blob" in body
+    assert "download" in body
+
+
+def test_schema_toolbar_has_ai_context_button(index_html: str) -> None:
+    """Schema editor toolbar has Copy AI Context button."""
+    assert 'onclick="copySchemaAIContext()"' in index_html
+    assert "#icon-sparkle" in index_html
+
+
+def test_template_toolbar_has_ai_context_button(index_html: str) -> None:
+    """Template editor toolbar has Copy AI Context button."""
+    assert 'onclick="copyTemplateAIContext()"' in index_html
+
+
+def test_build_schema_ai_context_function(index_html: str) -> None:
+    """buildSchemaAIContext assembles schema context bundle."""
+    body = _extract_func(index_html, "buildSchemaAIContext")
+    assert "Field Types" in body
+    assert "Validation Rules" in body
+    assert "DEMO_SCHEMA" in body
+    assert "DEV_STARTER_SCHEMA" in body
+    assert "devSchemaText" in body
+    assert "contentSourceType" in body
+    assert "workspaceFiles" in body
+
+
+def test_build_template_ai_context_function(index_html: str) -> None:
+    """buildTemplateAIContext assembles template context bundle."""
+    body = _extract_func(index_html, "buildTemplateAIContext")
+    assert "Stencils API" in body
+    assert "generate_docx" in body
+    assert "DEMO_TEMPLATE" in body
+    assert "DEV_STARTER_TEMPLATE" in body
+    assert "devTemplateText" in body
+    assert "devParsedSchema" in body
+    assert "devSampleDataText" in body
+    assert "contentSourceType" in body
+
+
+def test_copy_schema_ai_context_function(index_html: str) -> None:
+    """copySchemaAIContext copies buildSchemaAIContext to clipboard."""
+    body = _extract_func(index_html, "copySchemaAIContext")
+    assert "buildSchemaAIContext" in body
+    assert "navigator.clipboard.writeText" in body
+
+
+def test_copy_template_ai_context_function(index_html: str) -> None:
+    """copyTemplateAIContext copies buildTemplateAIContext to clipboard."""
+    body = _extract_func(index_html, "copyTemplateAIContext")
+    assert "buildTemplateAIContext" in body
+    assert "navigator.clipboard.writeText" in body
