@@ -63,7 +63,7 @@
 
     /* Colors — text */
     --text: #e8e8ed;
-    --text-muted: #8b8da0;
+    --text-muted: #9496a8;
 
     /* Colors — accent */
     --accent: #6366f1;
@@ -84,6 +84,10 @@
     --error-hover: #dc2626;
     --error-glow: rgba(239, 68, 68, 0.1);
     --error-subtle: rgba(239, 68, 68, 0.08);
+
+    /* Colors — overlays */
+    --overlay-scrim: rgba(0, 0, 0, 0.6);
+    --warning-subtle: rgba(245, 158, 11, 0.1);
 
     /* Colors — syntax highlighting */
     --syntax-number: #f59e0b;
@@ -117,12 +121,16 @@
     --radius-md: 8px;
     --radius-lg: 10px;
     --radius-pill: 20px;
+    --radius-circle: 50%;
 
     /* Shadows */
     --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.15);
     --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.35);
     --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+    /* Effects */
+    --focus-ring: 0 0 0 3px var(--accent-glow);
 
     /* Transitions */
     --transition-fast: 0.15s;
@@ -153,7 +161,7 @@
   .dev-preview-form::-webkit-scrollbar-thumb,
   .dev-errors::-webkit-scrollbar-thumb {
     background: transparent;
-    transition: background 0.2s;
+    transition: background var(--transition-base);
   }
   .dev-pane:hover::-webkit-scrollbar-thumb,
   .dev-editor:hover::-webkit-scrollbar-thumb,
@@ -221,7 +229,7 @@
   .status-badge.ready { border-color: var(--success); color: var(--success); }
   .status-badge.loading { border-color: var(--warning); color: var(--warning); }
   .status-badge.error { border-color: var(--error); color: var(--error); }
-  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .status-dot { width: 7px; height: 7px; border-radius: var(--radius-circle); background: currentColor; }
   .status-badge.loading .status-dot { animation: pulse 1.2s ease-in-out infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
   .status-badge { cursor: pointer; }
@@ -232,7 +240,7 @@
   /* ===== 3b. CONNECT DIALOG ===== */
   .connect-dialog-overlay {
     position: fixed; inset: 0; z-index: 1000;
-    background: rgba(0,0,0,0.5); display: none;
+    background: var(--overlay-scrim); display: none;
     align-items: flex-start; justify-content: center;
     padding-top: 80px;
   }
@@ -260,7 +268,7 @@
     background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md);
   }
   .connect-dialog-status.visible { display: flex; }
-  .connect-dialog-status .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+  .connect-dialog-status .status-dot { width: 8px; height: 8px; border-radius: var(--radius-circle); background: var(--success); flex-shrink: 0; }
   .connect-dialog-status-info { flex: 1; min-width: 0; }
   .connect-dialog-status-label {
     font-size: var(--text-sm); font-weight: 500; color: var(--text);
@@ -328,7 +336,7 @@
   .source-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;
   }
-  @media (max-width: 767px) {
+  @media (max-width: 768px) {
     .source-grid { grid-template-columns: 1fr; }
   }
   .config-card {
@@ -469,7 +477,7 @@
     font-family: var(--font-sans); font-size: var(--text-base);
     transition: border-color var(--transition-base), box-shadow var(--transition-base); outline: none;
   }
-  input:focus, textarea:focus, select:focus { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
+  input:focus, textarea:focus, select:focus { border-color: var(--border-focus); box-shadow: var(--focus-ring); }
   textarea { resize: vertical; min-height: 80px; }
   select {
     appearance: none; cursor: pointer; padding-right: 36px;
@@ -503,11 +511,11 @@
   .toggle-slider:before {
     position: absolute; content: ""; height: 20px; width: 20px;
     left: 2px; bottom: 2px; background: var(--text-muted);
-    border-radius: 50%; transition: var(--transition-base);
+    border-radius: var(--radius-circle); transition: var(--transition-base);
   }
   .toggle-switch input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
   .toggle-switch input:checked + .toggle-slider:before { transform: translateX(22px); background: var(--text-on-accent); }
-  .toggle-switch input:focus + .toggle-slider { box-shadow: 0 0 0 3px var(--accent-glow); }
+  .toggle-switch input:focus + .toggle-slider { box-shadow: var(--focus-ring); }
   .toggle-label-text { font-size: var(--text-base); user-select: none; color: var(--text-muted); }
 
   /* ===== 10c. MULTI-SELECT ===== */
@@ -518,7 +526,7 @@
     border: 1px solid var(--border); border-radius: var(--radius-md); cursor: pointer;
     transition: border-color var(--transition-base), box-shadow var(--transition-base); align-items: center;
   }
-  .multi-select-display:focus-within { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .multi-select-display:focus-within { border-color: var(--border-focus); box-shadow: var(--focus-ring); }
   .multi-select-tag {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 2px 8px; background: var(--accent); color: var(--text-on-accent);
@@ -540,7 +548,7 @@
   }
   .multi-select-dropdown.open { display: block; }
   .multi-select-option {
-    padding: 8px 12px; cursor: pointer; font-size: var(--text-base); transition: background 0.1s;
+    padding: 8px 12px; cursor: pointer; font-size: var(--text-base); transition: background var(--transition-fast);
   }
   .multi-select-option:hover, .multi-select-option.highlighted { background: var(--surface-2); }
   .multi-select-option.selected { background: var(--accent-overlay); }
@@ -567,14 +575,14 @@
   .list-item-row .btn-remove-item {
     background: none; border: 1px solid transparent; color: var(--text-muted);
     cursor: pointer; padding: 4px 6px; border-radius: var(--radius-sm); font-size: var(--text-lg); line-height: 1;
-    transition: all 0.15s; flex-shrink: 0;
+    transition: all var(--transition-fast); flex-shrink: 0;
   }
   .list-item-row .btn-remove-item:hover { color: var(--error); border-color: var(--error); background: var(--error-subtle); }
   .btn-add-item {
     display: inline-flex; align-items: center; gap: 6px;
     background: var(--surface-2); border: 1px dashed var(--border); color: var(--text-muted);
     padding: 8px 14px; border-radius: var(--radius-md); font-family: var(--font-sans);
-    font-size: var(--text-sm-md); cursor: pointer; transition: all 0.15s; align-self: flex-start;
+    font-size: var(--text-sm-md); cursor: pointer; transition: all var(--transition-fast); align-self: flex-start;
   }
   .btn-add-item:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
   .btn-add-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -633,7 +641,7 @@
   .btn-clear-sig {
     background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
     padding: 6px 12px; border-radius: var(--radius-sm); font-family: var(--font-sans);
-    font-size: var(--text-sm); cursor: pointer; transition: all 0.15s;
+    font-size: var(--text-sm); cursor: pointer; transition: all var(--transition-fast);
   }
   .btn-clear-sig:hover { border-color: var(--error); color: var(--error); }
   .btn-clear-sig:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -657,7 +665,7 @@
   .btn-remove-row {
     background: none; border: 1px solid transparent; color: var(--text-muted);
     cursor: pointer; padding: 2px 6px; border-radius: var(--radius-xs); font-size: var(--text-base);
-    transition: all 0.15s;
+    transition: all var(--transition-fast);
   }
   .btn-remove-row:hover { color: var(--error); border-color: var(--error); }
 
@@ -724,10 +732,10 @@
   .wizard-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-md); }
   .wizard-step.active:hover .wizard-step-circle { transform: none; }
   .wizard-step-circle {
-    width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
+    width: 32px; height: 32px; border-radius: var(--radius-circle); display: flex; align-items: center;
     justify-content: center; font-size: var(--text-sm-md); font-weight: 600; flex-shrink: 0;
     border: 2px solid var(--border); color: var(--text-muted); background: var(--surface);
-    transition: all 0.3s;
+    transition: all var(--transition-slow);
   }
   .wizard-step.active .wizard-step-circle {
     border-color: var(--accent); background: var(--accent); color: var(--text-on-accent);
@@ -737,13 +745,13 @@
   }
   .wizard-step-label {
     font-size: var(--text-sm); color: var(--text-muted); margin-left: 8px;
-    white-space: nowrap; transition: color 0.3s;
+    white-space: nowrap; transition: color var(--transition-slow);
   }
   .wizard-step.active .wizard-step-label { color: var(--text); font-weight: 500; }
   .wizard-step.completed .wizard-step-label { color: var(--accent-hover); }
   .wizard-step-connector {
     width: 40px; height: 2px; background: var(--border); margin: 0 8px; flex-shrink: 0;
-    transition: background 0.3s;
+    transition: background var(--transition-slow);
   }
   .wizard-step-connector.completed { background: var(--accent); }
   .wizard-step.dragging { opacity: 0.4; }
@@ -756,7 +764,7 @@
   .wizard-nav .btn-wizard {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 10px 24px; border-radius: var(--radius-md); font-family: var(--font-sans);
-    font-size: var(--text-base); font-weight: 600; cursor: pointer; transition: all 0.2s;
+    font-size: var(--text-base); font-weight: 600; cursor: pointer; transition: all var(--transition-base);
   }
   .wizard-step-count {
     font-size: var(--text-sm); font-family: var(--font-mono); color: var(--text-muted);
@@ -808,7 +816,7 @@
     display: inline-flex; align-items: center; gap: 6px;
     padding: 9px 18px; background: transparent; color: var(--text-muted);
     border: 1px solid transparent; border-radius: var(--radius-md); font-family: var(--font-sans);
-    font-size: var(--text-sm-md); font-weight: 500; cursor: pointer; transition: all 0.2s;
+    font-size: var(--text-sm-md); font-weight: 500; cursor: pointer; transition: all var(--transition-base);
     margin-left: auto; opacity: 0.7;
   }
   .btn-reset:hover { border-color: var(--error); color: var(--error); opacity: 1; }
@@ -817,7 +825,7 @@
     display: inline-flex; align-items: center; gap: 8px;
     padding: 12px 28px; background: var(--accent); color: var(--text-on-accent); border: none;
     border-radius: var(--radius-md); font-family: var(--font-sans); font-size: var(--text-base);
-    font-weight: 600; cursor: pointer; transition: background var(--transition-base), transform 0.1s;
+    font-weight: 600; cursor: pointer; transition: background var(--transition-base), transform var(--transition-fast);
   }
   .btn-primary:hover { background: var(--accent-hover); }
   .btn-primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -827,7 +835,7 @@
     display: inline-flex; align-items: center; gap: 8px;
     padding: 12px 28px; background: transparent; color: var(--text-muted);
     border: 1px solid var(--border); border-radius: var(--radius-md); font-family: var(--font-sans);
-    font-size: var(--text-base); font-weight: 500; cursor: pointer; transition: all 0.2s;
+    font-size: var(--text-base); font-weight: 500; cursor: pointer; transition: all var(--transition-base);
   }
   .btn-secondary:hover { border-color: var(--text-muted); color: var(--text); }
   .btn-secondary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -849,13 +857,13 @@
   .autosave-prompt .btn-restore {
     padding: 6px 16px; background: var(--accent); color: var(--text-on-accent); border: none;
     border-radius: var(--radius-sm); font-family: var(--font-sans); font-size: var(--text-sm-md);
-    font-weight: 600; cursor: pointer; transition: background 0.2s;
+    font-weight: 600; cursor: pointer; transition: background var(--transition-base);
   }
   .autosave-prompt .btn-restore:hover { background: var(--accent-hover); }
   .autosave-prompt .btn-discard {
     padding: 6px 16px; background: transparent; color: var(--text-muted); border: 1px solid var(--border);
     border-radius: var(--radius-sm); font-family: var(--font-sans); font-size: var(--text-sm-md);
-    font-weight: 500; cursor: pointer; transition: all 0.2s;
+    font-weight: 500; cursor: pointer; transition: all var(--transition-base);
   }
   .autosave-prompt .btn-discard:hover { border-color: var(--text-muted); color: var(--text); }
   @keyframes fadeInPrompt {
@@ -880,7 +888,7 @@
   }
   .local-toggle:hover { color: var(--accent-hover); }
   .local-toggle-arrow {
-    font-size: var(--text-xs); transition: transform 0.2s;
+    font-size: var(--text-xs); transition: transform var(--transition-base);
     display: inline-block;
   }
   .local-toggle-arrow.open { transform: rotate(90deg); }
@@ -892,13 +900,14 @@
   }
   .hidden-input { display: none; }
   .skip-link {
-    position: absolute; top: -40px; left: 0; z-index: 200;
+    position: absolute; top: 0; left: 0; z-index: 200;
     padding: 8px 16px; background: var(--accent); color: var(--text-on-accent);
     font-family: var(--font-sans); font-size: var(--text-sm); font-weight: 600;
     border-radius: 0 0 var(--radius-md) 0; text-decoration: none;
-    transition: top var(--transition-fast);
+    transform: translateY(-100%);
+    transition: transform var(--transition-fast);
   }
-  .skip-link:focus { top: 0; }
+  .skip-link:focus { transform: translateY(0); }
 
   /* ===== USER PROFILE ===== */
   /* ===== AUTOFILL BUTTON ===== */
@@ -943,7 +952,7 @@
     padding: 9px 14px; cursor: pointer; transition: background var(--transition-fast);
     font-size: var(--text-sm); color: var(--text); font-weight: 400;
   }
-  .autofill-action-item:hover { background: var(--surface-2); }
+  .autofill-action-item:hover, .autofill-action-item:focus { background: var(--surface-2); }
   .autofill-action-item svg { flex-shrink: 0; color: var(--text-muted); }
   .autofill-empty-hint {
     padding: 6px 14px 8px; font-size: var(--text-xs); color: var(--text-muted);
@@ -961,11 +970,11 @@
   }
   .profile-dropdown-item {
     display: flex; align-items: center; gap: 10px;
-    padding: 10px 14px; cursor: pointer; transition: background 0.15s;
+    padding: 10px 14px; cursor: pointer; transition: background var(--transition-fast);
     border-bottom: 1px solid var(--border);
   }
   .profile-dropdown-item:last-child { border-bottom: none; }
-  .profile-dropdown-item:hover { background: var(--surface-2); }
+  .profile-dropdown-item:hover, .profile-dropdown-item:focus { background: var(--surface-2); }
   .profile-dropdown-item-info { flex: 1; min-width: 0; }
   .profile-dropdown-item-name {
     font-size: var(--text-sm-md); font-weight: 600; color: var(--text);
@@ -978,13 +987,13 @@
   .profile-dropdown-item .profile-delete-btn {
     background: none; border: none; color: var(--text-muted); cursor: pointer;
     padding: 2px 4px; font-size: var(--text-base); line-height: 1; border-radius: var(--radius-xs);
-    transition: all 0.15s; flex-shrink: 0; opacity: 0;
+    transition: all var(--transition-fast); flex-shrink: 0; opacity: 0;
   }
   .profile-dropdown-item:hover .profile-delete-btn { opacity: 1; }
   .profile-dropdown-item .profile-delete-btn:hover { color: var(--error); background: var(--error-glow); }
   .profile-dropdown-action {
     display: flex; align-items: center; gap: 8px;
-    padding: 10px 14px; cursor: pointer; transition: background 0.15s;
+    padding: 10px 14px; cursor: pointer; transition: background var(--transition-fast);
     font-size: var(--text-sm); color: var(--accent); font-weight: 500;
     border-top: 1px solid var(--border);
   }
@@ -999,7 +1008,7 @@
   .profile-dropdown-item .profile-edit-btn {
     background: none; border: none; color: var(--text-muted); cursor: pointer;
     padding: 2px 4px; font-size: var(--text-sm); line-height: 1; border-radius: var(--radius-xs);
-    transition: all 0.15s; opacity: 0;
+    transition: all var(--transition-fast); opacity: 0;
   }
   .profile-dropdown-item:hover .profile-edit-btn { opacity: 1; }
   .profile-dropdown-item .profile-edit-btn:hover { color: var(--accent); background: var(--accent-overlay); }
@@ -1024,7 +1033,7 @@
   .profile-editor-actions button {
     flex: 1; padding: 6px 10px; font-size: var(--text-sm); font-weight: 500; border-radius: var(--radius-sm);
     cursor: pointer; font-family: var(--font-sans); border: 1px solid var(--border);
-    transition: all 0.15s;
+    transition: all var(--transition-fast);
   }
   .profile-editor-actions .pe-save {
     background: var(--accent); color: var(--text-on-accent); border-color: var(--accent);
@@ -1051,7 +1060,7 @@
     width: 22px; height: 22px; padding: 0;
     display: inline-flex; align-items: center; justify-content: center;
     background: none; border: 1px solid transparent; border-radius: var(--radius-xs);
-    color: var(--text-muted); cursor: pointer; transition: all 0.15s;
+    color: var(--text-muted); cursor: pointer; transition: all var(--transition-fast);
     opacity: 0.45; z-index: 2;
   }
   .profile-field-indicator:hover {
@@ -1070,11 +1079,11 @@
   }
   .preset-dropdown-item {
     display: flex; align-items: center; gap: 10px;
-    padding: 10px 14px; cursor: pointer; transition: background 0.15s;
+    padding: 10px 14px; cursor: pointer; transition: background var(--transition-fast);
     border-bottom: 1px solid var(--border);
   }
   .preset-dropdown-item:last-child { border-bottom: none; }
-  .preset-dropdown-item:hover { background: var(--surface-2); }
+  .preset-dropdown-item:hover, .preset-dropdown-item:focus { background: var(--surface-2); }
   .preset-dropdown-item-info { flex: 1; min-width: 0; }
   .preset-dropdown-item-name {
     font-size: var(--text-sm-md); font-weight: 600; color: var(--text);
@@ -1088,24 +1097,24 @@
   .preset-dropdown-item .preset-edit-btn {
     background: none; border: none; color: var(--text-muted); cursor: pointer;
     padding: 2px 4px; font-size: var(--text-sm); line-height: 1; border-radius: var(--radius-xs);
-    transition: all 0.15s; opacity: 0;
+    transition: all var(--transition-fast); opacity: 0;
   }
   .preset-dropdown-item:hover .preset-edit-btn { opacity: 1; }
   .preset-dropdown-item .preset-edit-btn:hover { color: var(--accent); background: var(--accent-overlay); }
   .preset-dropdown-item .preset-delete-btn {
     background: none; border: none; color: var(--text-muted); cursor: pointer;
     padding: 2px 4px; font-size: var(--text-base); line-height: 1; border-radius: var(--radius-xs);
-    transition: all 0.15s; flex-shrink: 0; opacity: 0;
+    transition: all var(--transition-fast); flex-shrink: 0; opacity: 0;
   }
   .preset-dropdown-item:hover .preset-delete-btn { opacity: 1; }
   .preset-dropdown-item .preset-delete-btn:hover { color: var(--error); background: var(--error-glow); }
   .preset-dropdown-action {
     display: flex; align-items: center; gap: 8px;
-    padding: 10px 14px; cursor: pointer; transition: background 0.15s;
+    padding: 10px 14px; cursor: pointer; transition: background var(--transition-fast);
     font-size: var(--text-sm); color: var(--accent); font-weight: 500;
     border-top: 1px solid var(--border);
   }
-  .preset-dropdown-action:hover { background: var(--surface-2); }
+  .preset-dropdown-action:hover, .preset-dropdown-action:focus { background: var(--surface-2); }
   .preset-dropdown-action svg { flex-shrink: 0; }
   .preset-dropdown-empty {
     padding: 14px; text-align: center; font-size: var(--text-sm); color: var(--text-muted);
@@ -1145,7 +1154,7 @@
   .preset-editor-actions button {
     flex: 1; padding: 6px 10px; font-size: var(--text-sm); font-weight: 500; border-radius: var(--radius-sm);
     cursor: pointer; font-family: var(--font-sans); border: 1px solid var(--border);
-    transition: all 0.15s;
+    transition: all var(--transition-fast);
   }
   .preset-editor-actions .pe-save {
     background: var(--accent); color: var(--text-on-accent); border-color: var(--accent);
@@ -1157,6 +1166,13 @@
   .preset-editor-actions .pe-cancel:hover { background: var(--surface); }
 
   /* ===== 30. RESPONSIVE / MEDIA QUERIES ===== */
+  /*
+   * Breakpoint strategy:
+   *   768px — Tablet: stack form layouts, hide editor tabs
+   *   600px — Mobile: bottom-sheet dropdowns, touch targets, stacked UI
+   *   500px — Small mobile: tighter picker cards
+   *   400px — Tiny: compact wizard steps
+   */
 
   /* --- Tablet (max 768px) --- */
   @media (max-width: 768px) {
@@ -1233,6 +1249,18 @@
       min-width: 44px; min-height: 44px;
     }
     .token-toggle { padding: 10px 0; min-height: 44px; display: inline-flex; align-items: center; }
+    .autofill-btn,
+    .btn-card-edit,
+    .btn-clear-sig,
+    .btn-sm { position: relative; }
+    .autofill-btn::after,
+    .btn-card-edit::after,
+    .btn-clear-sig::after,
+    .btn-sm::after {
+      content: ''; position: absolute;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      min-width: 44px; min-height: 44px;
+    }
 
     /* Autosave prompt */
     .autosave-prompt { flex-direction: column; align-items: flex-start; }
@@ -1255,8 +1283,9 @@
     /* Picker grid: single column on mobile */
     .picker-grid { grid-template-columns: 1fr; }
 
-    /* Profile dropdown: bottom-sheet on mobile */
-    .profile-dropdown {
+    /* Profile & preset dropdowns: bottom-sheet on mobile */
+    .profile-dropdown,
+    .preset-dropdown {
       position: fixed !important;
       top: auto !important;
       left: 0 !important;
@@ -1268,7 +1297,7 @@
       border-radius: 16px 16px 0 0;
       max-height: 70vh;
       overflow-y: auto;
-      box-shadow: 0 -4px 30px rgba(0,0,0,0.5);
+      box-shadow: var(--shadow-lg);
       animation: slideUpSheet 0.2s ease-out;
     }
   }
@@ -1285,14 +1314,14 @@
 
   /* ===== 23. LOADING OVERLAY ===== */
   .loading-overlay {
-    position: fixed; inset: 0; background: rgba(15, 17, 23, 0.85); backdrop-filter: blur(4px);
+    position: fixed; inset: 0; background: var(--overlay-scrim); backdrop-filter: blur(4px);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     z-index: 1000; gap: 16px;
   }
   .loading-overlay.hidden { display: none; }
   #overlaySpinner.hidden { display: none !important; }
   .progress-steps.hidden { display: none; }
-  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: var(--radius-circle); animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-text { font-size: var(--text-base); color: var(--text-muted); font-family: var(--font-mono); }
 
@@ -1301,17 +1330,17 @@
   .progress-step {
     display: flex; align-items: center; gap: 8px; padding: 6px 14px;
     font-size: var(--text-sm); font-family: var(--font-mono);
-    color: var(--text-muted); opacity: 0.4; transition: all 0.3s ease;
+    color: var(--text-muted); opacity: 0.4; transition: all var(--transition-slow) ease;
   }
   .progress-step .step-icon {
-    width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: var(--text-xs); font-weight: 700; border: 2px solid var(--border); color: var(--text-muted); transition: all 0.3s ease;
+    width: 22px; height: 22px; border-radius: var(--radius-circle); display: flex; align-items: center; justify-content: center;
+    font-size: var(--text-xs); font-weight: 700; border: 2px solid var(--border); color: var(--text-muted); transition: all var(--transition-slow) ease;
   }
   .progress-step.active { opacity: 1; color: var(--warning); }
   .progress-step.active .step-icon { border-color: var(--warning); color: var(--warning); animation: pulse 1.2s ease-in-out infinite; }
   .progress-step.done { opacity: 1; color: var(--success); }
   .progress-step.done .step-icon { border-color: var(--success); background: var(--success); color: var(--text-on-accent); }
-  .progress-connector { width: 24px; height: 2px; background: var(--border); transition: background 0.3s ease; }
+  .progress-connector { width: 24px; height: 2px; background: var(--border); transition: background var(--transition-slow) ease; }
   .progress-connector.done { background: var(--success); }
 
   /* Retry button in overlay */
@@ -1319,7 +1348,7 @@
     display: inline-flex; align-items: center; gap: 8px; margin-top: 8px;
     padding: 10px 20px; background: var(--error); color: var(--text-on-accent); border: none;
     border-radius: var(--radius-md); font-family: var(--font-sans); font-size: var(--text-base);
-    font-weight: 600; cursor: pointer; transition: background 0.2s;
+    font-weight: 600; cursor: pointer; transition: background var(--transition-base);
   }
   .btn-retry:hover { background: var(--error-hover); }
   .btn-retry:focus-visible { outline: 2px solid var(--error); outline-offset: 2px; }
@@ -1329,7 +1358,7 @@
     position: fixed; bottom: 24px; right: 24px; padding: 14px 20px; border-radius: var(--radius);
     font-size: var(--text-base); font-weight: 500; background: var(--surface); border: 1px solid var(--success);
     color: var(--success); box-shadow: var(--shadow-xl);
-    transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 2000;
+    transform: translateY(100px); opacity: 0; transition: all var(--transition-slow) ease; z-index: 2000;
     display: flex; align-items: center; gap: 12px;
   }
   .toast.show { transform: translateY(0); opacity: 1; }
@@ -1339,7 +1368,7 @@
   .toast-dismiss {
     background: none; border: none; color: inherit; cursor: pointer;
     font-size: var(--text-lg-xl); line-height: 1; padding: 0 2px; opacity: 0.6;
-    transition: opacity 0.15s; flex-shrink: 0;
+    transition: opacity var(--transition-fast); flex-shrink: 0;
   }
   .toast-dismiss:hover { opacity: 1; }
   .toast-dismiss:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: var(--radius-xs); }
@@ -1391,7 +1420,7 @@
   .drop-zone {
     border: 2px dashed var(--border); border-radius: var(--radius);
     padding: 24px 16px; text-align: center; cursor: pointer;
-    transition: all 0.2s; background: var(--surface-2); position: relative;
+    transition: all var(--transition-base); background: var(--surface-2); position: relative;
     outline: none;
   }
   .drop-zone:hover, .drop-zone:focus-visible {
@@ -1527,6 +1556,7 @@
     position: relative; bottom: -1px;
   }
   .dev-nav-tab:hover { color: var(--text); background: var(--surface-2); }
+  .dev-nav-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .dev-nav-tab.active {
     color: var(--text); background: var(--surface);
     border-color: var(--border);
@@ -1557,7 +1587,7 @@
   }
   .dev-source-modified {
     font-size: var(--text-2xs); font-family: var(--font-mono);
-    color: var(--warning); background: rgba(234,179,8,0.1);
+    color: var(--warning); background: var(--warning-subtle);
     padding: 1px 6px; border-radius: var(--radius-xs);
   }
   .dev-toolbar-right .btn-primary {
@@ -1682,7 +1712,7 @@
     transition: all var(--transition-fast);
   }
   .dev-badge-dot {
-    width: 6px; height: 6px; border-radius: 50%;
+    width: 6px; height: 6px; border-radius: var(--radius-circle);
     background: var(--text-muted);
   }
   .dev-validation-badge.valid { border-color: var(--success); color: var(--success); background: var(--success-subtle); }
@@ -1744,7 +1774,7 @@
   .dev-section-add-line { display: none; }
   .dev-section-add-btn {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 22px; height: 22px; border-radius: 50%;
+    width: 22px; height: 22px; border-radius: var(--radius-circle);
     background: var(--surface-2); border: 1px solid var(--accent-border);
     color: var(--accent); font-size: 16px; line-height: 1;
     flex-shrink: 0; transition: all var(--transition-fast);
@@ -1839,7 +1869,7 @@
   .gh-connect-modal {
     display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     z-index: 2000; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    background: var(--overlay-scrim); backdrop-filter: blur(4px);
   }
   .gh-connect-modal.open { display: flex; }
   .gh-connect-panel {
@@ -1890,7 +1920,7 @@
   .paste-data-modal {
     display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     z-index: 2000; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    background: var(--overlay-scrim); backdrop-filter: blur(4px);
   }
   .paste-data-modal.open { display: flex; }
   .paste-data-modal textarea {
@@ -1915,7 +1945,7 @@
   .bundle-import-modal {
     display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     z-index: 2000; align-items: center; justify-content: center;
-    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    background: var(--overlay-scrim); backdrop-filter: blur(4px);
   }
   .bundle-import-modal.open { display: flex; }
   .bundle-import-modal textarea {
@@ -1981,7 +2011,7 @@
     font-family: var(--font-mono); font-size: var(--text-xs); color: var(--text);
   }
   .gh-commit-file-entry::before {
-    content: ''; width: 6px; height: 6px; border-radius: 50%;
+    content: ''; width: 6px; height: 6px; border-radius: var(--radius-circle);
     background: var(--warning); flex-shrink: 0;
   }
   .gh-commit-msg {
@@ -2023,7 +2053,18 @@
 
   /* ===== 37. DEV MODE MOBILE GATE ===== */
   @media (max-width: 768px) {
-    .dev-nav { display: none !important; }
+    .dev-nav-tab[data-tab="dev-schema"],
+    .dev-nav-tab[data-tab="dev-template"] { display: none; }
+    .dev-split { flex-direction: column; }
+    .dev-pane-resizer { display: none; }
+  }
+
+  /* ===== 38. REDUCE GPU COST ON TOUCH DEVICES ===== */
+  @media (pointer: coarse) {
+    .loading-overlay,
+    .gh-connect-modal,
+    .paste-data-modal,
+    .bundle-import-modal { backdrop-filter: none; }
   }
 </style>
 </head>
@@ -2181,7 +2222,7 @@
 <header class="app-header">
   <h1><button type="button" class="h1-home-btn" onclick="showTab('forms')"><span>&#9632;</span> FormForge</button></h1>
   <div class="header-right">
-    <button type="button" class="status-badge" id="statusBadge" onclick="showConnectDialog()" title="Connection settings">
+    <button type="button" class="status-badge" id="statusBadge" onclick="showConnectDialog()" title="Connection settings" aria-label="Connection settings">
       <div class="status-dot" aria-hidden="true"></div>
       <span id="statusText">not connected</span>
       <span class="status-chevron" aria-hidden="true">&#9662;</span>
@@ -2191,9 +2232,9 @@
 
 <!-- ==================== CONNECT DIALOG ==================== -->
 <div class="connect-dialog-overlay" id="connectDialogOverlay" onclick="if(event.target===this)hideConnectDialog()">
-  <div class="connect-dialog" role="dialog" aria-label="Connect a source">
+  <div class="connect-dialog" role="dialog" aria-modal="true" aria-labelledby="connectDialogTitle">
     <div class="connect-dialog-header">
-      <h3>Connect a Source</h3>
+      <h3 id="connectDialogTitle">Connect a Source</h3>
       <button type="button" class="connect-dialog-close" onclick="hideConnectDialog()" aria-label="Close">&times;</button>
     </div>
     <div class="connect-dialog-status" id="connectDialogStatus">
@@ -2207,22 +2248,22 @@
         Disconnect
       </button>
     </div>
-    <div class="connect-tabs">
-      <button type="button" class="connect-tab active" id="connectTabBtnGithub" onclick="switchConnectTab('github')">
+    <div class="connect-tabs" role="tablist" aria-label="Connection type">
+      <button type="button" class="connect-tab active" id="connectTabBtnGithub" role="tab" aria-selected="true" aria-controls="connectTabGithub" onclick="switchConnectTab('github')">
         <svg width="14" height="14" class="icon-inline"><use href="#icon-github"/></svg>
         GitHub
       </button>
-      <button type="button" class="connect-tab" id="connectTabBtnLocal" onclick="switchConnectTab('local')">
+      <button type="button" class="connect-tab" id="connectTabBtnLocal" role="tab" aria-selected="false" aria-controls="connectTabLocal" onclick="switchConnectTab('local')">
         <svg width="14" height="14" class="icon-inline"><use href="#icon-folder"/></svg>
         Local Folder
       </button>
     </div>
     <!-- GitHub tab -->
-    <div class="connect-tab-content active" id="connectTabGithub">
+    <div class="connect-tab-content active" id="connectTabGithub" role="tabpanel" aria-labelledby="connectTabBtnGithub">
       <p class="config-card-description" style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:16px;line-height:1.5">Connect to a repo with <code style="font-family:var(--font-mono);font-size:var(--text-xs);background:var(--surface-2);padding:2px 5px;border-radius:var(--radius-xs)">schemas/</code> and <code style="font-family:var(--font-mono);font-size:var(--text-xs);background:var(--surface-2);padding:2px 5px;border-radius:var(--radius-xs)">templates/</code> directories.</p>
       <div class="config-row">
         <div class="field-grow">
-          <label>Repository</label>
+          <label for="repoInput">Repository</label>
           <input type="text" id="repoInput" placeholder="myorg/form-templates" spellcheck="false" autocomplete="off">
         </div>
         <button type="button" class="btn-connect" id="connectBtn" onclick="connectRepo()">
@@ -2231,17 +2272,17 @@
         </button>
       </div>
       <div class="repo-status" id="repoStatus"></div>
-      <div class="token-toggle" onclick="toggleToken()">&#9656; Advanced options (branch, access token)</div>
+      <div class="token-toggle" role="button" tabindex="0" onclick="toggleToken()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleToken()}">&#9656; Advanced options (branch, access token)</div>
       <div class="token-row hidden" id="tokenRow">
         <div class="config-row">
           <div class="field-grow branch-input-wrapper">
-            <label>branch (optional)</label>
+            <label for="branchInput">branch (optional)</label>
             <input type="text" id="branchInput" placeholder="main" spellcheck="false">
           </div>
         </div>
         <div class="config-row" style="margin-top:8px">
           <div class="field-grow">
-            <label>personal access token</label>
+            <label for="tokenInput">personal access token</label>
             <input type="password" id="tokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" spellcheck="false" autocomplete="off">
           </div>
         </div>
@@ -2249,14 +2290,14 @@
       </div>
     </div>
     <!-- Local Folder tab -->
-    <div class="connect-tab-content" id="connectTabLocal">
+    <div class="connect-tab-content" id="connectTabLocal" role="tabpanel" aria-labelledby="connectTabBtnLocal">
       <p class="config-card-description" style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:16px;line-height:1.5">Open a folder with <code style="font-family:var(--font-mono);font-size:var(--text-xs);background:var(--surface-2);padding:2px 5px;border-radius:var(--radius-xs)">schemas/</code> and <code style="font-family:var(--font-mono);font-size:var(--text-xs);background:var(--surface-2);padding:2px 5px;border-radius:var(--radius-xs)">templates/</code> directories.</p>
       <button type="button" class="btn-connect" id="btnOpenFolderSetup" onclick="connectLocalFolder()" style="margin-bottom:12px">
         <svg width="16" height="16"><use href="#icon-folder"/></svg>
         Open Folder
       </button>
       <div class="local-folder-status" id="localFolderStatus"></div>
-      <div class="token-toggle" onclick="toggleLocalCard()">&#9656; Or load individual files</div>
+      <div class="token-toggle" role="button" tabindex="0" onclick="toggleLocalCard()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleLocalCard()}">&#9656; Or load individual files</div>
       <div class="local-card-body" id="localCardBody" style="display:none">
         <div class="local-upload-row">
           <div class="drop-zone" id="schemaDropZone" tabindex="0">
@@ -2345,7 +2386,7 @@
 </main>
 
 <!-- ==================== FORM VIEW ==================== -->
-<main class="view" id="view-form">
+<main class="view" id="view-form" role="tabpanel" aria-labelledby="tab-forms">
   <div class="main-container">
     <div class="form-nav">
       <button type="button" class="btn-back" onclick="showTab('forms')">
@@ -2362,7 +2403,7 @@
       </button>
       <button type="button" class="autofill-btn" id="autofillNavBtn" onclick="toggleAutofillDropdown()" title="Autofill — profiles, presets, and data loading">
         <svg width="14" height="14"><use href="#icon-bolt"/></svg>
-        Autofill <span class="autofill-badge" id="autofillBadge" style="display:none">0</span>
+        Autofill <span class="autofill-badge" id="autofillBadge" aria-label="saved profiles" style="display:none">0</span>
       </button>
     </div>
 
@@ -2440,10 +2481,10 @@
       <span class="dev-source-modified" id="schemaSourceModified" style="display:none">modified</span>
       <span class="mono-label" id="schemaSourceBranch"></span>
       <select class="gh-branch-select" id="schemaBranchSelect" aria-label="Branch" onchange="devGhSwitchBranch(this.value)" style="display:none"></select>
-      <button type="button" class="btn-secondary btn-sm gh-branch-action" id="schemaNewBranchBtn" onclick="devGhShowNewBranch()" title="Create new branch" style="display:none">
+      <button type="button" class="btn-secondary btn-sm gh-branch-action" id="schemaNewBranchBtn" onclick="devGhShowNewBranch()" title="Create new branch" aria-label="Create new branch" style="display:none">
         <svg width="12" height="12"><use href="#icon-git-branch"/></svg>
       </button>
-      <button type="button" class="btn-secondary btn-sm gh-branch-action" id="schemaRefreshBtn" onclick="devGhRefreshFiles()" title="Refresh files" style="display:none">
+      <button type="button" class="btn-secondary btn-sm gh-branch-action" id="schemaRefreshBtn" onclick="devGhRefreshFiles()" title="Refresh files" aria-label="Refresh files" style="display:none">
         <svg width="12" height="12"><use href="#icon-refresh"/></svg>
       </button>
       <button type="button" class="btn-secondary btn-sm" id="schemaCommitBtn" onclick="devGhShowCommitPanel()" style="display:none">
@@ -2518,10 +2559,10 @@
       <span class="dev-source-modified" id="templateSourceModified" style="display:none">modified</span>
       <span class="mono-label" id="templateSourceBranch"></span>
       <select class="gh-branch-select" id="templateBranchSelect" aria-label="Branch" onchange="devGhSwitchBranch(this.value)" style="display:none"></select>
-      <button type="button" class="btn-secondary btn-sm gh-branch-action" id="templateNewBranchBtn" onclick="devGhShowNewBranch()" title="Create new branch" style="display:none">
+      <button type="button" class="btn-secondary btn-sm gh-branch-action" id="templateNewBranchBtn" onclick="devGhShowNewBranch()" title="Create new branch" aria-label="Create new branch" style="display:none">
         <svg width="12" height="12"><use href="#icon-git-branch"/></svg>
       </button>
-      <button type="button" class="btn-secondary btn-sm gh-branch-action" id="templateRefreshBtn" onclick="devGhRefreshFiles()" title="Refresh files" style="display:none">
+      <button type="button" class="btn-secondary btn-sm gh-branch-action" id="templateRefreshBtn" onclick="devGhRefreshFiles()" title="Refresh files" aria-label="Refresh files" style="display:none">
         <svg width="12" height="12"><use href="#icon-refresh"/></svg>
       </button>
       <button type="button" class="btn-secondary btn-sm" id="templateCommitBtn" onclick="devGhShowCommitPanel()" style="display:none">
@@ -2719,7 +2760,7 @@
 <div class="toast" id="toast" role="alert" aria-live="polite"></div>
 
 <!-- Autofill Dropdown (unified: profiles + presets + actions) -->
-<div class="autofill-dropdown" id="autofillDropdown" style="display:none"></div>
+<div class="autofill-dropdown" id="autofillDropdown" role="menu" aria-label="Autofill options" style="display:none"></div>
 
 <!-- Profile Dropdown (field-level indicators only) -->
 <div class="profile-dropdown" id="profileDropdown" style="display:none"></div>
@@ -4701,7 +4742,7 @@ function createListField(field, group) {
   divider.className = 'list-or-divider'; divider.textContent = 'or paste multiple lines';
 
   const bulkTa = document.createElement('textarea');
-  bulkTa.className = 'list-bulk-textarea'; bulkTa.id = `${field.id}_bulk`;
+  bulkTa.className = 'list-bulk-textarea'; bulkTa.id = `${field.id}_bulk`; bulkTa.setAttribute('aria-label', 'Bulk entry');
   bulkTa.placeholder = 'Paste items here, one per line...'; bulkTa.rows = 3;
   bulkTa.addEventListener('blur', () => {
     const lines = bulkTa.value.split('\n').map(l => l.trim()).filter(l => l);
@@ -4808,7 +4849,7 @@ function createFileField(field, group) {
   const hiddenInput = document.createElement('input');
   hiddenInput.type = 'hidden'; hiddenInput.id = field.id;
   const preview = document.createElement('img');
-  preview.className = 'file-preview'; preview.id = `${field.id}_preview`;
+  preview.className = 'file-preview'; preview.id = `${field.id}_preview`; preview.alt = '';
   const info = document.createElement('div');
   info.className = 'file-info'; info.id = `${field.id}_info`;
   const maxMb = field.max_size_mb || 5;
@@ -4819,14 +4860,35 @@ function createFileField(field, group) {
       showToast(`File too large (max ${maxMb}MB)`, 'error');
       fileInput.value = ''; hiddenInput.value = ''; return;
     }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      hiddenInput.value = e.target.result;
-      if (file.type.startsWith('image/')) { preview.src = e.target.result; preview.style.display = 'block'; }
-      else { preview.style.display = 'none'; }
-      info.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-    };
-    reader.readAsDataURL(file);
+    if (file.type.startsWith('image/')) {
+      // Resize large images via canvas before encoding
+      const img = new Image();
+      img.onload = () => {
+        const MAX_DIM = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX_DIM || h > MAX_DIM) {
+          const scale = Math.min(MAX_DIM / w, MAX_DIM / h);
+          w = Math.round(w * scale); h = Math.round(h * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL(file.type || 'image/png', 0.85);
+        hiddenInput.value = dataUrl;
+        preview.src = dataUrl; preview.style.display = 'block';
+        info.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        URL.revokeObjectURL(img.src);
+      };
+      img.src = URL.createObjectURL(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        hiddenInput.value = e.target.result;
+        preview.style.display = 'none';
+        info.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+      };
+      reader.readAsDataURL(file);
+    }
   });
   wrapper.appendChild(fileInput);
   wrapper.appendChild(preview);
@@ -6318,7 +6380,7 @@ function showProfileDropdown(anchorEl, profileKey, fieldDef, showAll) {
           idx = idx > 0 ? idx - 1 : items.length - 1;
         }
         items[idx].focus();
-      } else if (e.key === 'Enter') {
+      } else if (e.key === 'Enter' || e.key === ' ') {
         const focused = dd.querySelector('.profile-dropdown-item:focus');
         if (focused) {
           e.preventDefault();
@@ -6374,20 +6436,20 @@ function showProfileEditor(index, anchorEl, prefillData, returnToAutofill) {
   const autoName = _autoProfileName(p);
 
   const nameField = `<div class="profile-editor-field">
-    <label>Profile Name</label>
+    <label for="peProfileName">Profile Name</label>
     <input type="text" id="peProfileName" value="${(p._profileName || '').replace(/"/g, '&quot;')}" placeholder="${autoName ? escapeHtml(autoName) : 'e.g., Work Profile'}" />
   </div>`;
 
   const fields = Object.entries(PROFILE_FIELD_LABELS).map(([key, label]) =>
     `<div class="profile-editor-field">
-      <label>${label}</label>
-      <input type="text" data-key="${key}" value="${(p[key] || '').replace(/"/g, '&quot;')}" />
+      <label for="pe-field-${key}">${label}</label>
+      <input type="text" id="pe-field-${key}" data-key="${key}" value="${(p[key] || '').replace(/"/g, '&quot;')}" />
     </div>`
   ).join('');
 
   const addrFields = `<div class="profile-editor-field">
-    <label>Address</label>
-    <input type="text" data-addr="street" value="${(addr.street || '').replace(/"/g, '&quot;')}" placeholder="Street" />
+    <label for="pe-addr-street">Address</label>
+    <input type="text" id="pe-addr-street" data-addr="street" value="${(addr.street || '').replace(/"/g, '&quot;')}" placeholder="Street" />
   </div>
   <div class="profile-editor-row">
     <div class="profile-editor-field">
@@ -6499,6 +6561,7 @@ function _addProfileIndicator(el, profileKey, field) {
   btn.type = 'button';
   btn.className = 'profile-field-indicator';
   btn.title = 'Fill from profile';
+  btn.setAttribute('aria-label', 'Fill from profile');
   btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
   btn.addEventListener('click', (e) => {
     e.preventDefault();
@@ -6766,7 +6829,7 @@ function showPresetDropdown() {
         if (e.key === 'ArrowDown') idx = idx < items.length - 1 ? idx + 1 : 0;
         else idx = idx > 0 ? idx - 1 : items.length - 1;
         if (items[idx]) items[idx].focus();
-      } else if (e.key === 'Enter') {
+      } else if (e.key === 'Enter' || e.key === ' ') {
         const focused = dd.querySelector('.preset-dropdown-item:focus');
         if (focused) { e.preventDefault(); focused.click(); }
       } else if (e.key === 'Escape') {
@@ -6846,8 +6909,8 @@ function showPresetEditor(idx) {
       <input type="text" id="presetNameInput" value="${isEdit ? escapeHtml(existing.name) : ''}" placeholder="e.g., Standard Weekly">
     </div>
     <div class="preset-editor-field">
-      <label>Fields to include</label>
-      <div class="preset-editor-checkboxes" id="presetFieldCheckboxes">
+      <label id="presetFieldsLabel">Fields to include</label>
+      <div class="preset-editor-checkboxes" id="presetFieldCheckboxes" role="group" aria-labelledby="presetFieldsLabel">
         ${checkboxesHtml}
       </div>
     </div>
@@ -7033,7 +7096,7 @@ function showAutofillDropdown() {
         if (e.key === 'ArrowDown') idx = idx < items.length - 1 ? idx + 1 : 0;
         else idx = idx > 0 ? idx - 1 : items.length - 1;
         if (items[idx]) items[idx].focus();
-      } else if (e.key === 'Enter') {
+      } else if (e.key === 'Enter' || e.key === ' ') {
         const focused = document.activeElement;
         if (focused && items.includes(focused)) { e.preventDefault(); focused.click(); }
       } else if (e.key === 'Escape') {
@@ -7204,8 +7267,8 @@ function _showPresetEditorInDropdown(idx, anchorEl) {
       <input type="text" id="presetNameInput" value="${isEdit ? escapeHtml(existing.name) : ''}" placeholder="e.g., Standard Weekly">
     </div>
     <div class="preset-editor-field">
-      <label>Fields to include</label>
-      <div class="preset-editor-checkboxes" id="presetFieldCheckboxes">
+      <label id="presetFieldsLabel">Fields to include</label>
+      <div class="preset-editor-checkboxes" id="presetFieldCheckboxes" role="group" aria-labelledby="presetFieldsLabel">
         ${checkboxesHtml}
       </div>
     </div>
@@ -9761,6 +9824,27 @@ function devUpdateLineNumbers(editorEl, gutterEl) {
   const { hiddenLines, foldStarts, folded } = devGetFoldHiddenLines(text, lang, key);
   const lineCount = text.split('\n').length;
 
+  // Event delegation: attach one click handler on the gutter (once)
+  if (!gutterEl._foldDelegated) {
+    gutterEl.addEventListener('click', (e) => {
+      const toggle = e.target.closest('.dev-fold-toggle');
+      if (!toggle) return;
+      e.stopPropagation();
+      const li = parseInt(toggle.dataset.foldLine, 10);
+      devToggleFold(editorEl, gutterEl, li);
+    });
+    gutterEl._foldDelegated = true;
+  }
+
+  // Diff-based update: only rebuild if line count or fold state changed
+  const foldKey = Array.from(folded).sort().join(',') + '|' + Array.from(foldStarts).sort().join(',') + '|' + Array.from(hiddenLines).sort().join(',');
+  if (gutterEl._lastLineCount === lineCount && gutterEl._lastFoldKey === foldKey) {
+    gutterEl.scrollTop = editorEl.scrollTop;
+    return;
+  }
+  gutterEl._lastLineCount = lineCount;
+  gutterEl._lastFoldKey = foldKey;
+
   let html = '';
   for (let i = 0; i < lineCount; i++) {
     const isFoldable = foldStarts.has(i);
@@ -9773,15 +9857,6 @@ function devUpdateLineNumbers(editorEl, gutterEl) {
     html += `<div${cls}>${foldIcon}${i + 1}</div>`;
   }
   gutterEl.innerHTML = html;
-
-  // Attach fold click handlers
-  gutterEl.querySelectorAll('.dev-fold-toggle').forEach(toggle => {
-    toggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const li = parseInt(toggle.dataset.foldLine, 10);
-      devToggleFold(editorEl, gutterEl, li);
-    });
-  });
 
   gutterEl.scrollTop = editorEl.scrollTop;
 }
@@ -9818,7 +9893,8 @@ function initSchemaEditor() {
     }
   });
 
-  el.addEventListener('scroll', () => { gutterEl.scrollTop = el.scrollTop; });
+  let _schemaScrollRAF = false;
+  el.addEventListener('scroll', () => { if (!_schemaScrollRAF) { _schemaScrollRAF = true; requestAnimationFrame(() => { gutterEl.scrollTop = el.scrollTop; _schemaScrollRAF = false; }); } });
   el.addEventListener('keydown', (e) => devEditorKeydownHandler(e, schemaJar, 'json'));
 
   // Right-click context menu
@@ -10782,7 +10858,8 @@ function initTemplateEditor() {
     }
   });
 
-  el.addEventListener('scroll', () => { tplGutter.scrollTop = el.scrollTop; });
+  let _templateScrollRAF = false;
+  el.addEventListener('scroll', () => { if (!_templateScrollRAF) { _templateScrollRAF = true; requestAnimationFrame(() => { tplGutter.scrollTop = el.scrollTop; _templateScrollRAF = false; }); } });
   el.addEventListener('keydown', (e) => devEditorKeydownHandler(e, templateJar, 'python'));
 
   // Right-click context menu
@@ -10807,7 +10884,8 @@ function initTemplateEditor() {
       devUpdateLineNumbers(sdEl, sdGutter);
       devSaveEditorState();
     });
-    sdEl.addEventListener('scroll', () => { sdGutter.scrollTop = sdEl.scrollTop; });
+    let _sdScrollRAF = false;
+    sdEl.addEventListener('scroll', () => { if (!_sdScrollRAF) { _sdScrollRAF = true; requestAnimationFrame(() => { sdGutter.scrollTop = sdEl.scrollTop; _sdScrollRAF = false; }); } });
     devUpdateLineNumbers(sdEl, sdGutter);
   }
 
@@ -11862,19 +11940,45 @@ function devGhDisconnect() {
 // ============================================================
 //  CONNECT DIALOG
 // ============================================================
+let _connectDialogPreviousFocus = null;
+
 function showConnectDialog() {
   updateConnectDialogStatus();
+  _connectDialogPreviousFocus = document.activeElement;
   document.getElementById('connectDialogOverlay').classList.add('visible');
   document.addEventListener('keydown', connectDialogKeyHandler);
+  // Move focus into dialog
+  const dialog = document.querySelector('.connect-dialog');
+  const firstFocusable = dialog.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if (firstFocusable) firstFocusable.focus();
 }
 
 function hideConnectDialog() {
   document.getElementById('connectDialogOverlay').classList.remove('visible');
   document.removeEventListener('keydown', connectDialogKeyHandler);
+  if (_connectDialogPreviousFocus) { _connectDialogPreviousFocus.focus(); _connectDialogPreviousFocus = null; }
 }
 
 function connectDialogKeyHandler(e) {
-  if (e.key === 'Escape') { hideConnectDialog(); e.stopPropagation(); }
+  if (e.key === 'Escape') { hideConnectDialog(); e.stopPropagation(); return; }
+  // Arrow key navigation between connect dialog tabs
+  if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && document.activeElement?.getAttribute('role') === 'tab') {
+    e.preventDefault();
+    const tabs = [document.getElementById('connectTabBtnGithub'), document.getElementById('connectTabBtnLocal')];
+    const idx = tabs.indexOf(document.activeElement);
+    const next = e.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+    tabs[next].focus();
+    tabs[next].click();
+    return;
+  }
+  if (e.key === 'Tab') {
+    const dialog = document.querySelector('.connect-dialog');
+    const focusable = dialog.querySelectorAll('button, [href], input:not([type="hidden"]):not([hidden]), select, textarea, [tabindex]:not([tabindex="-1"])');
+    if (focusable.length === 0) return;
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+    else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
+  }
 }
 
 function updateConnectDialogStatus() {
@@ -11897,6 +12001,8 @@ function updateConnectDialogStatus() {
 function switchConnectTab(tab) {
   document.getElementById('connectTabBtnGithub').classList.toggle('active', tab === 'github');
   document.getElementById('connectTabBtnLocal').classList.toggle('active', tab === 'local');
+  document.getElementById('connectTabBtnGithub').setAttribute('aria-selected', tab === 'github' ? 'true' : 'false');
+  document.getElementById('connectTabBtnLocal').setAttribute('aria-selected', tab === 'local' ? 'true' : 'false');
   document.getElementById('connectTabGithub').classList.toggle('active', tab === 'github');
   document.getElementById('connectTabLocal').classList.toggle('active', tab === 'local');
 }
@@ -11970,6 +12076,7 @@ function handleGlobalKeydown(e) {
 //  BOOT
 // ============================================================
 window.addEventListener('beforeunload', (e) => {
+  if (devWorkspacePoller) { clearInterval(devWorkspacePoller); devWorkspacePoller = null; }
   if (formDirty) {
     e.preventDefault();
     e.returnValue = '';
