@@ -2067,6 +2067,62 @@ def test_fetch_branches_populates_both_selects(index_html: str) -> None:
     assert "templateBranchSelect" in body
 
 
+# --- Paired Editor Loading & Local Folder Persistence ---
+
+
+def test_load_paired_template_exists(index_html: str) -> None:
+    """loadPairedTemplate loads the companion template with starter fallback."""
+    body = _extract_func(index_html, "loadPairedTemplate")
+    assert "DEV_STARTER_TEMPLATE" in body, "should fall back to starter template"
+    assert "currentTemplateFile" in body, "should set currentTemplateFile"
+    assert "showToast" in body, "should toast on fetch error"
+
+
+def test_load_paired_schema_exists(index_html: str) -> None:
+    """loadPairedSchema loads the companion schema into the schema editor."""
+    body = _extract_func(index_html, "loadPairedSchema")
+    assert "currentSchemaFile" in body, "should set currentSchemaFile"
+    assert "devUpdateSchemaPreview" in body, "should update schema preview"
+
+
+def test_strip_template_prefix_exists(index_html: str) -> None:
+    """stripTemplatePrefix safely removes the templates/ prefix."""
+    body = _extract_func(index_html, "stripTemplatePrefix")
+    assert "startsWith" in body, "should use prefix-safe check"
+    assert "templates/" in body
+
+
+def test_template_validation_function(index_html: str) -> None:
+    """devUpdateTemplateValidation checks for generate_docx and import stencils."""
+    body = _extract_func(index_html, "devUpdateTemplateValidation")
+    assert "generate_docx" in body, "should check for generate_docx"
+    assert "import" in body and "stencils" in body, "should check for stencils import"
+    assert "trimStart" in body or "startsWith('#')" in body, "should filter comment lines"
+
+
+def test_restore_local_folder_exists(index_html: str) -> None:
+    """restoreLocalFolder uses permission APIs to reconnect a saved folder."""
+    body = _extract_func(index_html, "restoreLocalFolder")
+    assert "queryPermission" in body, "should check existing permission"
+    assert "requestPermission" in body, "should request permission on click"
+    assert "loadLocalFolderHandle" in body, "should load handle from IndexedDB"
+
+
+def test_indexeddb_helpers_exist(index_html: str) -> None:
+    """IndexedDB persistence helpers are defined."""
+    for fn in ["openLocalFolderDB", "saveLocalFolderHandle",
+               "loadLocalFolderHandle", "clearLocalFolderHandle"]:
+        assert f"function {fn}" in index_html, f"{fn} should be defined"
+
+
+def test_disconnect_clears_local_handle(index_html: str) -> None:
+    """disconnectSource calls clearLocalFolderHandle to clean up IndexedDB."""
+    body = _extract_func(index_html, "disconnectSource")
+    assert "clearLocalFolderHandle" in body, "should clear persisted handle"
+    assert "currentSchemaFile = null" in body, "should reset schema file"
+    assert "currentTemplateFile = null" in body, "should reset template file"
+
+
 # --- Paste Data Feature (#161) ---
 
 

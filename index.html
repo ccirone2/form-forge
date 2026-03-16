@@ -9361,21 +9361,30 @@ async function showTab(tabName) {
 //  BIDIRECTIONAL FORM <-> EDITOR FLOW
 // ============================================================
 
+function stripTemplatePrefix(path) {
+  const p = path || '';
+  return p.startsWith('templates/') ? p.slice('templates/'.length) : p;
+}
+
 async function loadPairedTemplate(entry) {
   // Load the template paired with a schema entry into the template editor
+  // Caller is responsible for calling updateSourceToolbar() afterwards
   let templateCode = '';
-  const tmplName = (entry.templatePath || '').replace('templates/', '');
+  const tmplName = stripTemplatePrefix(entry.templatePath);
   if (contentSourceType === 'local') {
     const tmplFile = workspaceFiles.templates.find(t => t.name === tmplName);
     if (tmplFile) templateCode = tmplFile.text;
   } else if (contentSourceType === 'github') {
-    try { templateCode = await ghFetchRaw(entry.templatePath); } catch (e) { /* use starter */ }
+    try { templateCode = await ghFetchRaw(entry.templatePath); } catch (e) {
+      showToast(`Could not load paired template: ${e.message}`, 'error');
+    }
   }
   if (!templateCode) templateCode = DEV_STARTER_TEMPLATE;
   devTemplateText = templateCode;
   if (templateJar) templateJar.updateCode(templateCode);
   const wsIdx = workspaceFiles.templates.findIndex(t => t.name === tmplName);
   currentTemplateFile = wsIdx >= 0 ? { index: wsIdx } : null;
+  devUpdateTemplateValidation();
 }
 
 async function loadPairedSchema(entry) {
@@ -9410,7 +9419,7 @@ async function loadTemplateIntoEditor(schemaIdx) {
   await loadDevModeDeps();
 
   let templateCode = '';
-  const tmplName = (entry.templatePath || '').replace('templates/', '');
+  const tmplName = stripTemplatePrefix(entry.templatePath);
   if (contentSourceType === 'local') {
     const tmplFile = workspaceFiles.templates.find(t => t.name === tmplName);
     if (tmplFile) templateCode = tmplFile.text;
@@ -11076,11 +11085,14 @@ function devUpdateTemplateValidation() {
     return;
   }
 
+  // Strip comment lines before checking structure
+  const activeCode = code.split('\n').filter(l => !l.trimStart().startsWith('#')).join('\n');
+
   const errors = [];
-  if (!/def\s+generate_docx\s*\(/.test(code)) {
+  if (!/def\s+generate_docx\s*\(/.test(activeCode)) {
     errors.push('missing generate_docx(data) function');
   }
-  if (!/import\s+stencils|from\s+stencils\s+import/.test(code)) {
+  if (!/import\s+stencils|from\s+stencils\s+import/.test(activeCode)) {
     errors.push('missing import stencils');
   }
 
@@ -11354,8 +11366,8 @@ async function saveLocalFolderHandle(handle) {
   const tx = db.transaction('handles', 'readwrite');
   tx.objectStore('handles').put(handle, 'workspaceHandle');
   return new Promise((resolve, reject) => {
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
+    tx.oncomplete = () => { db.close(); resolve(); };
+    tx.onerror = () => { db.close(); reject(tx.error); };
   });
 }
 
@@ -11365,8 +11377,8 @@ async function loadLocalFolderHandle() {
     const tx = db.transaction('handles', 'readonly');
     const req = tx.objectStore('handles').get('workspaceHandle');
     return new Promise((resolve) => {
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = () => resolve(null);
+      req.onsuccess = () => { db.close(); resolve(req.result || null); };
+      req.onerror = () => { db.close(); resolve(null); };
     });
   } catch (e) { return null; }
 }
@@ -11376,6 +11388,7 @@ async function clearLocalFolderHandle() {
     const db = await openLocalFolderDB();
     const tx = db.transaction('handles', 'readwrite');
     tx.objectStore('handles').delete('workspaceHandle');
+    tx.oncomplete = () => db.close();
   } catch (e) { /* ignore */ }
 }
 
@@ -11405,6 +11418,9 @@ function finalizeLocalConnection(handle) {
   document.getElementById('statusBadge').className = 'status-badge ready';
   document.getElementById('statusText').textContent = `local: ${handle.name}`;
   renderPicker();
+  if (repoSchemas.length === 0) {
+    showToast('No schemas found — use "Create a Form" to get started', 'info');
+  }
 }
 
 async function restoreLocalFolder(folderName) {
@@ -11496,7 +11512,7 @@ async function connectLocalFolder() {
     populateRepoSchemasFromWorkspace();
 
     // Persist handle in IndexedDB for page refresh survival
-    saveLocalFolderHandle(workspaceHandle).catch(() => {});
+    saveLocalFolderHandle(workspaceHandle).catch(e => log('Could not persist folder handle: ' + e.message, 'warn'));
     localStorage.setItem('formforge-source', JSON.stringify({ type: 'local', folderName: workspaceHandle.name }));
 
     // Update status
@@ -11568,6 +11584,7 @@ function devLoadWorkspaceFile(type, index) {
     if (templateJar) templateJar.updateCode(devTemplateText);
     updateSourceToolbar();
     showTab('dev-template');
+    devUpdateTemplateValidation();
     showToast(`Editing ${f.name}`);
   }
 }
