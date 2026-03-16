@@ -17,6 +17,14 @@ TODO: Schema context menu improvements — add option to add base scaffold (e.g.
 
 ## Completed Plans
 
+### Issue #198 — Embed Full Documentation in Docs Tab ✅
+
+**Branch:** `feature/198-embed-docs`
+**Issues:** #198
+**Plan:** `~/.claude/plans/breezy-hatching-sprout.md`
+
+Embedded full markdown docs in `index.html` as JS constants with sync script and CI check. Removed GitHub fetch path and abbreviated fallback functions.
+
 ### Issue #190 — Eliminate ghToolbar ✅
 
 **Branch:** `feature/190-eliminate-ghtoolbar`

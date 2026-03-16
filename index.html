@@ -1489,8 +1489,6 @@
     padding: 4px 10px; border-radius: var(--radius-sm); margin-bottom: 12px;
     background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
   }
-  .docs-source-badge.from-github { border-color: var(--success); color: var(--success); }
-  .docs-source-badge.from-fallback { border-color: var(--warning); color: var(--warning); }
   .docs-source-badge:empty { display: none; }
   .docs-rendered-md { line-height: 1.7; }
   .docs-rendered-md h1 { font-size: var(--text-lg-xl); font-weight: 700; margin: 20px 0 8px; color: var(--text); }
@@ -3181,15 +3179,15 @@ function switchDocsTab(id) {
 }
 
 // ============================================================
-//  DOCS: FETCH FROM GITHUB OR FALL BACK TO EMBEDDED
+//  DOCS: EMBEDDED REFERENCE
 // ============================================================
 
-// Mapping: doc slot → GitHub path to try
+// Mapping: doc slot → title (content comes from embedded constants or buildFallbackExamples)
 const DOCS_CONFIG = {
-  schemaGuide:   { ghPath: 'docs/SCHEMA_GUIDE.md',   title: 'Schema',      fallbackTitle: 'Schema' },
-  templateGuide: { ghPath: 'docs/TEMPLATE_GUIDE.md',  title: 'Template',    fallbackTitle: 'Template' },
-  fieldTypes:    { ghPath: 'docs/FIELD_TYPES.md',      title: 'Field Types', fallbackTitle: 'Field Types' },
-  exampleSchema: { ghPath: null,                       title: 'Examples',    fallbackTitle: 'Examples' },
+  schemaGuide:   { title: 'Schema' },
+  templateGuide: { title: 'Template' },
+  fieldTypes:    { title: 'Field Types' },
+  exampleSchema: { title: 'Examples' },
 };
 
 // Lightweight markdown → HTML (handles headers, code blocks, tables, lists, bold, inline code, links, hr, blockquotes)
@@ -3346,35 +3344,6 @@ function friendlyError(err) {
   return msg;
 }
 
-function buildFallbackSchemaGuide() {
-  const schema = JSON.stringify(DEMO_SCHEMA, null, 2);
-  return `<p>Below is the embedded demo schema. Use it as a starting point for your own <code>.json</code> files.</p>
-    <pre class="docs-code">${escapeHtml(schema)}</pre>`;
-}
-
-function buildFallbackTemplateGuide() {
-  return `<p>Below is the embedded demo template. Your <code>.py</code> file must export a <code>generate_docx(data)</code> function that returns bytes.</p>
-    <pre class="docs-code">${escapeHtml(DEMO_TEMPLATE.trim())}</pre>`;
-}
-
-function buildFallbackFieldTypes() {
-  return `<table class="docs-table">
-    <tr><th>Type</th><th>Renders As</th><th>Data Format</th><th>Needs options?</th></tr>
-    <tr><td><code>text</code></td><td>Single-line input</td><td><code>"Jane"</code></td><td>no</td></tr>
-    <tr><td><code>email</code></td><td>Email input</td><td><code>"jane@co.com"</code></td><td>no</td></tr>
-    <tr><td><code>tel</code></td><td>Phone input</td><td><code>"(555) 123-4567"</code></td><td>no</td></tr>
-    <tr><td><code>date</code></td><td>Date picker</td><td><code>"2025-03-15"</code></td><td>no</td></tr>
-    <tr><td><code>textarea</code></td><td>Multi-line (3 rows)</td><td><code>"Some notes..."</code></td><td>no</td></tr>
-    <tr><td><code>longtext</code></td><td>Large textarea + counter</td><td><code>"Para 1\\nPara 2"</code></td><td>no</td></tr>
-    <tr><td><code>select</code></td><td>Dropdown</td><td><code>"Engineering"</code></td><td>yes</td></tr>
-    <tr><td><code>radio</code></td><td>Radio buttons</td><td><code>"Full-Time"</code></td><td>yes</td></tr>
-    <tr><td><code>checkbox</code></td><td>Checkbox group</td><td><code>"A, B, C"</code> (comma-sep)</td><td>yes</td></tr>
-    <tr><td><code>list</code></td><td>Dynamic rows + paste</td><td><code>"X\\nY\\nZ"</code> (newline-sep)</td><td>no</td></tr>
-    <tr><td><code>info</code></td><td>Read-only info/warning block</td><td><em>(skipped)</em></td><td>no</td></tr>
-  </table>
-  <p><strong>Layout:</strong> <code>text</code>, <code>email</code>, <code>tel</code>, <code>date</code>, <code>select</code> auto-pair into two-column rows. Everything else is full-width.</p>`;
-}
-
 function buildFallbackExamples() {
   const schema = JSON.stringify(DEMO_SCHEMA, null, 2);
   return `<p>These are the embedded demo files. Save them as <code>.json</code> and <code>.py</code> to use as starting points.</p>
@@ -3384,36 +3353,26 @@ function buildFallbackExamples() {
     <pre class="docs-code">${escapeHtml(DEMO_TEMPLATE.trim())}</pre>`;
 }
 
-async function loadDocs() {
+const EMBEDDED_DOCS = {
+  schemaGuide:   () => DOCS_SCHEMA_GUIDE,
+  templateGuide: () => DOCS_TEMPLATE_GUIDE,
+  fieldTypes:    () => DOCS_FIELD_TYPES,
+};
+
+function loadDocs() {
   for (const [slotId, config] of Object.entries(DOCS_CONFIG)) {
     const contentEl = document.getElementById(slotId + 'Content');
-    const sourceEl = document.getElementById(slotId + 'Source');
-    const titleEl = document.getElementById(slotId + 'Title');
+    const sourceEl  = document.getElementById(slotId + 'Source');
+    const titleEl   = document.getElementById(slotId + 'Title');
 
-    // Try to fetch from connected GitHub source
-    if (contentSourceType === 'github' && config.ghPath) {
-      try {
-        const md = await ghFetchRaw(config.ghPath);
-        titleEl.textContent = config.title;
-        sourceEl.className = 'docs-source-badge from-github';
-        sourceEl.textContent = `${ghOwner}/${ghRepo}`;
-        contentEl.innerHTML = renderMarkdown(md);
-        continue;
-      } catch (e) {
-        // Fall through to built-in reference
-      }
-    }
+    titleEl.textContent = config.title;
+    sourceEl.className = 'docs-source-badge';
+    sourceEl.textContent = '';
 
-    // Fallback to built-in reference
-    titleEl.textContent = config.fallbackTitle;
-    sourceEl.className = 'docs-source-badge from-fallback';
-    sourceEl.textContent = 'built-in reference';
-
-    switch (slotId) {
-      case 'schemaGuide':   contentEl.innerHTML = buildFallbackSchemaGuide(); break;
-      case 'templateGuide': contentEl.innerHTML = buildFallbackTemplateGuide(); break;
-      case 'fieldTypes':    contentEl.innerHTML = buildFallbackFieldTypes(); break;
-      case 'exampleSchema': contentEl.innerHTML = buildFallbackExamples(); break;
+    if (EMBEDDED_DOCS[slotId]) {
+      contentEl.innerHTML = renderMarkdown(EMBEDDED_DOCS[slotId]());
+    } else if (slotId === 'exampleSchema') {
+      contentEl.innerHTML = buildFallbackExamples();
     }
   }
 }
@@ -3746,9 +3705,6 @@ async function connectRepo() {
     // Fetch branches and update source toolbars
     devGhFetchBranches();
     updateSourceToolbar();
-
-    // Refresh docs from connected source
-    loadDocs();
 
     hideConnectDialog();
     renderPicker();
@@ -7653,6 +7609,1580 @@ def generate_docx(data):
 `;
 
 // ============================================================
+//  EMBEDDED REFERENCE DOCS
+// ============================================================
+// Source of truth: docs/*.md — run `python scripts/sync-embedded-docs.py` to update.
+
+// EMBEDDED-DOC:SCHEMA_GUIDE:START
+const DOCS_SCHEMA_GUIDE = `# Schema Guide
+
+A schema is a JSON file that defines the structure of a form. It controls what fields appear, how they're grouped, validation rules, and which template generates the final document.
+
+> **Tip:** You can also create and edit schemas visually using the **Schema tab** — use the JSON editor with live form preview, real-time validation, and right-click context menu to insert field snippets.
+
+## File Location
+
+Place schema files in the \`schemas/\` directory of your repo:
+
+\`\`\`
+schemas/
+├── onboarding.json
+├── expense-report.json
+└── incident-report.json
+\`\`\`
+
+FormForge discovers schemas automatically when you connect a repo. Each \`.json\` file in \`schemas/\` appears as a selectable form in the picker. The file \`_schema.spec.json\` is reserved for the validator and is excluded from the picker.
+
+## Validation
+
+All schemas are validated against \`schemas/_schema.spec.json\` (JSON Schema draft 2020-12). The spec enforces \`additionalProperties: false\` at every level — unknown property names are rejected. CI runs this check automatically on every push.
+
+To validate locally:
+
+\`\`\`bash
+python -c "
+import json, jsonschema, pathlib
+spec = json.loads(pathlib.Path('schemas/_schema.spec.json').read_text())
+for p in pathlib.Path('schemas').glob('*.json'):
+    if p.name == '_schema.spec.json': continue
+    schema = json.loads(p.read_text())
+    jsonschema.validate(schema, spec)
+    print(f'OK: {p.name}')
+"
+\`\`\`
+
+## Top-Level Structure
+
+\`\`\`json
+{
+  "title": "My Form Title",
+  "description": "Explains the purpose of this form",
+  "icon": "📋",
+  "template": "templates/my-form.py",
+  "wizard": false,
+  "sections": []
+}
+\`\`\`
+
+| Property | Required | Type | Description |
+|----------|----------|------|-------------|
+| \`title\` | yes | string | Displayed as the form heading. Minimum 1 character. |
+| \`description\` | no | string | Subheading shown below the title and on the picker card. |
+| \`icon\` | no | string | Emoji displayed on the picker card. Defaults to 📄 if omitted. |
+| \`template\` | no | string | Path to the Python template file relative to repo root. Must match \`^templates/.+\.py$\`. Defaults to \`templates/{schema-filename}.py\`. **Note:** The Schema tab's live validator treats \`template\` as required and shows a validation error badge if omitted — always include it in practice. |
+| \`wizard\` | no | boolean | When \`true\`, sections render as sequential steps with Next/Back navigation. See [Wizard Mode](#wizard-mode). |
+| \`sections\` | yes | array | Array of section objects. Minimum 1. |
+| \`sampleData\` | no | object | Inline sample form data (field ID to string value). Used by the **Load Sample Data** button when no fixture file exists. See [Sample Data](#sample-data). |
+
+No other top-level properties are allowed.
+
+## Sections
+
+Sections group related fields together visually. Each section gets its own card in the form UI.
+
+\`\`\`json
+{
+  "sections": [
+    {
+      "title": "Personal Information",
+      "fields": [...]
+    },
+    {
+      "title": "Role & Department",
+      "fields": [...]
+    }
+  ]
+}
+\`\`\`
+
+| Property | Required | Type | Description |
+|----------|----------|------|-------------|
+| \`title\` | yes | string | Section heading displayed above the fields. Minimum 1 character. |
+| \`fields\` | yes | array | Array of field objects. Minimum 1. |
+| \`step\` | no | integer | Step number in wizard mode. Minimum 1. Defaults to section index + 1 if omitted. Only meaningful when \`"wizard": true\`. |
+
+No other section properties are allowed.
+
+## Fields
+
+Each field defines a single input in the form. The \`id\` becomes the key in the \`data\` dictionary passed to the template.
+
+\`\`\`json
+{
+  "id": "first_name",
+  "label": "First Name",
+  "type": "text",
+  "required": true,
+  "placeholder": "Jane",
+  "hint": "As it appears on official documents"
+}
+\`\`\`
+
+| Property | Required | Type | Description |
+|----------|----------|------|-------------|
+| \`id\` | yes | string | Unique identifier. Pattern: \`^[a-z][a-z0-9_]*$\`. Becomes \`data['first_name']\` in the template. |
+| \`label\` | yes | string | Human-readable label displayed above the input. Minimum 1 character. |
+| \`type\` | yes | string | Field type. See [Field Types](#field-types) below. |
+| \`required\` | no | boolean | When \`true\`, prevents export until the field is filled. |
+| \`placeholder\` | no | string | Ghost text shown inside empty inputs. |
+| \`hint\` | no | string | Help text displayed below the field in smaller text. |
+| \`options\` | conditional | array | Array of strings. Required for \`select\`, \`radio\`, \`checkbox\`, and \`multi_select\`. Forbidden on all other types. |
+| \`default_value\` | conditional | string | Static value to inject. Required for \`hidden\`. Forbidden on all other types. |
+| \`fields\` | conditional | array | Sub-field definitions. Required for \`repeater\`. Forbidden on all other types. |
+| \`maxLength\` | no | integer | Maximum character count. Minimum 1. Allowed on \`text\` and \`longtext\`. On \`longtext\`, displays a live counter (defaults to 5000 if omitted) that colors red when exceeded. On \`text\`, accepted by the schema spec but not enforced in the browser (no counter, no truncation). |
+| \`min\` | no | number | Minimum value. Allowed on \`number\` only. |
+| \`max\` | no | number | Maximum value. Allowed on \`number\` only. |
+| \`step\` | no | number | Step increment. Allowed on \`number\` only. |
+| \`currency_symbol\` | no | string | Currency prefix. Allowed on \`currency\` only. Defaults to \`$\`. |
+| \`accept\` | no | string | File type filter (e.g. \`"image/*"\`). Allowed on \`file\` only. |
+| \`max_size_mb\` | no | integer | Maximum file size in MB. Minimum 1. Allowed on \`file\` only. |
+| \`content\` | conditional | string | Display text for \`info\` blocks. Required for \`info\`. Forbidden on all other types. |
+| \`style\` | no | string | Visual variant for \`info\` blocks: \`"info"\`, \`"warning"\`, or \`"success"\`. Defaults to \`"info"\`. Allowed on \`info\` only. |
+| \`min_rows\` | no | integer | Minimum rows shown initially. Minimum 1. Allowed on \`repeater\` only. |
+| \`max_rows\` | no | integer | Maximum rows allowed. Minimum 1. Allowed on \`repeater\` only. |
+| \`display\` | no | string | Display mode for \`repeater\`: \`"cards"\` (default) or \`"table"\`. Allowed on \`repeater\` only. |
+| \`visible_when\` | no | object | Conditional visibility rule. See [Conditional Visibility](#conditional-visibility). |
+
+No other field properties are allowed.
+
+## Field IDs
+
+Field IDs must be unique across the entire schema (not just within a section). The pattern \`^[a-z][a-z0-9_]*$\` means:
+
+- Must start with a lowercase letter
+- May contain lowercase letters, digits, and underscores
+- No uppercase, no hyphens, no spaces
+
+Examples:
+
+- \`first_name\` — correct
+- \`fn\` — valid but too cryptic
+- \`firstName\` — rejected (uppercase)
+- \`first-name\` — rejected (hyphen)
+- \`1name\` — rejected (starts with digit)
+
+## Field Types
+
+24 types are supported. The \`type\` value must be exactly one of these strings.
+
+| Type | Renders As | \`options\` needed? | Special properties |
+|------|-----------|-------------------|--------------------|
+| \`text\` | Single-line input | no | \`maxLength\` |
+| \`email\` | Email input with browser validation | no | — |
+| \`tel\` | Phone number input | no | — |
+| \`date\` | Native date picker (value: \`YYYY-MM-DD\`) | no | — |
+| \`time\` | Native time picker (value: \`HH:MM\`) | no | — |
+| \`url\` | URL input with browser validation | no | — |
+| \`datetime\` | Combined date and time picker | no | — |
+| \`textarea\` | Multi-line text (3 rows) | no | — |
+| \`longtext\` | Large textarea with character counter (6 rows) | no | \`maxLength\` |
+| \`select\` | Dropdown menu | yes | — |
+| \`radio\` | Radio button group | yes | — |
+| \`checkbox\` | Multi-select checkbox group | yes | — |
+| \`multi_select\` | Searchable multi-select with tags | yes | — |
+| \`toggle\` | Boolean yes/no switch | no | — |
+| \`list\` | Dynamic add/remove rows with bulk paste | no | — |
+| \`number\` | Numeric input | no | \`min\`, \`max\`, \`step\` |
+| \`currency\` | Numeric input with currency prefix | no | \`currency_symbol\` |
+| \`heading\` | Non-input visual divider | no | — |
+| \`info\` | Read-only info/warning/success block | no | \`content\` (required), \`style\` |
+| \`hidden\` | Not rendered; passes static value | no | \`default_value\` (required) |
+| \`address\` | Street / city / state / ZIP group | no | — |
+| \`file\` | File upload with preview | no | \`accept\`, \`max_size_mb\` |
+| \`signature\` | Canvas drawing pad | no | — |
+| \`repeater\` | Dynamic rows of sub-fields | no | \`fields\` (required), \`min_rows\`, \`max_rows\`, \`display\` |
+
+See \`docs/FIELD_TYPES.md\` for detailed examples, template handling code, and layout rules for each type.
+
+## Options Arrays
+
+For \`select\`, \`radio\`, \`checkbox\`, and \`multi_select\` fields, the \`options\` array defines the available choices:
+
+\`\`\`json
+{
+  "id": "department",
+  "label": "Department",
+  "type": "select",
+  "options": ["", "Engineering", "Design", "Marketing", "Sales"]
+}
+\`\`\`
+
+For \`select\` fields, include an empty string \`""\` as the first option — it renders as "— Select —" and acts as the default unselected state. The empty string fails \`required\` validation, which prevents submitting without making a selection.
+
+For \`radio\` and \`checkbox\`, do not include an empty string.
+
+## Repeater Sub-Fields
+
+The \`repeater\` type requires a nested \`fields\` array. Sub-fields support a restricted set of types: \`text\`, \`email\`, \`tel\`, \`number\`, \`currency\`, \`select\`, \`time\`, \`url\`, and \`toggle\`. Sub-field IDs follow the same pattern (\`^[a-z][a-z0-9_]*$\`) and must be unique within the repeater (they do not need to be unique across the whole schema).
+
+\`\`\`json
+{
+  "id": "line_items",
+  "label": "Line Items",
+  "type": "repeater",
+  "min_rows": 1,
+  "max_rows": 20,
+  "fields": [
+    { "id": "description", "label": "Description", "type": "text", "placeholder": "Flight to NYC" },
+    { "id": "amount", "label": "Amount", "type": "currency" },
+    { "id": "category", "label": "Category", "type": "select", "options": ["", "Travel", "Meals", "Lodging", "Supplies", "Other"] }
+  ]
+}
+\`\`\`
+
+In the template, the repeater value arrives as a JSON array string. Parse with \`json.loads()\`.
+
+## Wizard Mode
+
+Setting \`"wizard": true\` at the top level turns sections into numbered steps with Next/Back navigation. Only one step is visible at a time. The submit area is hidden until the final step.
+
+\`\`\`json
+{
+  "title": "Multi-Step Application",
+  "wizard": true,
+  "sections": [
+    {
+      "title": "Personal Details",
+      "step": 1,
+      "fields": [...]
+    },
+    {
+      "title": "Experience",
+      "step": 2,
+      "fields": [...]
+    },
+    {
+      "title": "Review & Submit",
+      "step": 3,
+      "fields": [...]
+    }
+  ]
+}
+\`\`\`
+
+The \`step\` property on each section is optional. If omitted, the step number defaults to the section's position in the array (index + 1). Required field validation is enforced per-step — clicking Next validates only the current step's required fields before advancing.
+
+Non-wizard schemas (no \`"wizard"\` key, or \`"wizard": false\`) render all sections on one page as before.
+
+## Conditional Visibility
+
+A field can be hidden until another field has a specific value using \`visible_when\`:
+
+\`\`\`json
+{
+  "id": "other_reason",
+  "label": "Please specify",
+  "type": "textarea",
+  "visible_when": {
+    "field": "departure_reason",
+    "equals": "Other"
+  }
+}
+\`\`\`
+
+\`visible_when\` has two required properties:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| \`field\` | string | The \`id\` of the field whose value controls visibility. Must match \`^[a-z][a-z0-9_]*$\`. |
+| \`equals\` | string | The exact value that makes this field visible. Case-sensitive. |
+
+No other properties are allowed inside \`visible_when\`.
+
+Behavior:
+- The field is hidden by default and shown only when the referenced field's current value matches \`equals\`.
+- Visibility is evaluated on every \`change\`/\`input\` event of the source field.
+- Hidden conditional fields are skipped by \`required\` validation — a hidden field will never block export.
+- \`collectFormData()\` always collects all fields regardless of visibility. Hidden conditional fields contribute their current DOM value — this is an empty string if the field was never shown, but may retain a previously entered value if the user filled the field before hiding it.
+- The source field can appear anywhere in the schema — before or after the conditional field.
+- Multiple fields can each depend on the same source field.
+
+## Layout Behavior
+
+FormForge automatically arranges fields in the form:
+
+- **Two-column rows:** \`text\`, \`email\`, \`tel\`, \`date\`, \`time\`, \`url\`, \`datetime\`, \`select\`, \`number\`, \`currency\`, and \`toggle\` fields are paired side-by-side when consecutive.
+- **Full-width:** \`textarea\`, \`longtext\`, \`list\`, \`radio\`, \`checkbox\`, \`multi_select\`, \`heading\`, \`info\`, \`address\`, \`file\`, \`signature\`, and \`repeater\` fields always take the full width and break any two-column pairing.
+- **Not rendered:** \`hidden\` fields are completely invisible in the layout.
+
+Control layout by ordering fields intentionally. Two \`text\` fields in a row pair up. A \`text\` followed by a \`textarea\` does not.
+
+## Minimal Example
+
+The smallest valid schema:
+
+\`\`\`json
+{
+  "title": "Quick Note",
+  "template": "templates/quick-note.py",
+  "sections": [
+    {
+      "title": "Note",
+      "fields": [
+        { "id": "content", "label": "Your Note", "type": "textarea" }
+      ]
+    }
+  ]
+}
+\`\`\`
+
+## Sample Data
+
+The **Load Sample Data** button in the form UI lets users fill a form with representative data for quick preview and DOCX testing.
+
+### Fixture files (preferred)
+
+Place a JSON file at \`tests/fixtures/{schemaName}_sample.json\` where \`{schemaName}\` matches the schema filename without the \`.json\` extension (e.g., \`schemas/onboarding.json\` uses \`tests/fixtures/onboarding_sample.json\`). The file should contain a flat \`{fieldId: stringValue}\` object with values for all fields. \`file\` and \`signature\` fields can use empty strings. **Note:** Fixture file lookup only works when the form is loaded from a GitHub-connected repo. Local folder sources skip fixture resolution and fall through directly to inline \`sampleData\`.
+
+### Inline \`sampleData\` (fallback)
+
+If a fixture file is not available (e.g., the schema is hosted in a repo without \`tests/fixtures/\`), you can include sample data directly in the schema:
+
+\`\`\`json
+{
+  "title": "My Form",
+  "sampleData": {
+    "full_name": "Jane Doe",
+    "email": "jane@example.com"
+  },
+  "sections": [...]
+}
+\`\`\`
+
+The button tries the fixture file first, then falls back to \`sampleData\`.
+
+## Tips
+
+- Start by copying an existing schema (\`onboarding.json\` or \`expense-report.json\`) and modifying it.
+- Test locally by dropping the \`.json\` into FormForge's Local Files upload.
+- Keep section count reasonable — 3 to 6 sections works well for most forms. If using wizard mode, 3 to 5 steps is a good range.
+- Use \`hint\` generously to guide users, especially for \`list\`, \`longtext\`, \`repeater\`, and \`address\` fields.
+- The \`description\` field at the top level is worth filling in — it appears in both the picker card and the form header.
+- For \`select\` fields that are also a \`visible_when\` source, the empty string \`""\` option means the conditional field is hidden when nothing is selected. Keep this in mind when deciding whether to include the empty option.
+`;
+// EMBEDDED-DOC:SCHEMA_GUIDE:END
+
+// EMBEDDED-DOC:TEMPLATE_GUIDE:START
+const DOCS_TEMPLATE_GUIDE = `# Template Guide
+
+A template is a Python script that generates a DOCX file from form data. It runs entirely in the browser via Pyodide — no server required.
+
+> **Tip:** You can also create and edit templates using the **Template tab** — use the Python editor with DOCX preview and right-click context menu to insert stencils helper snippets.
+
+## File Location
+
+Place template files in the \`templates/\` directory of your repo:
+
+\`\`\`
+templates/
+├── onboarding.py
+├── expense-report.py
+└── stencils.py      ← shared helpers, auto-loaded by FormForge
+\`\`\`
+
+Each schema references its template via the \`template\` field (e.g. \`"template": "templates/onboarding.py"\`). If omitted, FormForge looks for \`templates/{schema-filename}.py\`.
+
+## Required Interface
+
+Every template must define a \`generate_docx\` function with this signature:
+
+\`\`\`python
+def generate_docx(data):
+    """
+    Args:
+        data: dict mapping field IDs to string values.
+
+    Returns:
+        bytes: The generated .docx file contents.
+    """
+\`\`\`
+
+The function receives a flat dictionary where keys are field \`id\` values from the schema and values are always strings. It must return the raw bytes of a valid \`.docx\` file.
+
+## The \`stencils\` Module
+
+FormForge provides a shared helper module at \`templates/stencils.py\`. It is loaded into Pyodide's virtual filesystem once per session (before any template runs) via \`loadBaseModule()\` in \`index.html\`. FormForge loads \`stencils.py\` from the connected repo's \`templates/stencils.py\` first, falling back to the canonical FormForge copy. If your repo ships a customized \`stencils.py\`, place it at \`templates/stencils.py\` and it will take precedence. All templates should import it:
+
+\`\`\`python
+import stencils
+\`\`\`
+
+This works identically in Pyodide and in standard Python (for local testing).
+
+### \`stencils.new_doc(title_text, subtitle_text="", font_name=None, font_size=None, theme=None)\`
+
+Creates a styled \`Document\` cloned from a pre-built template. The template has all heading styles, page margins, and base font configured from the active (or given) theme. Returns the \`Document\` instance.
+
+\`\`\`python
+doc = stencils.new_doc("Employee Onboarding Document", f"Prepared for {first} {last}")
+\`\`\`
+
+- Title uses the pre-configured "Title" style (heading font, title color, centered).
+- Subtitle (if provided) uses the "Subtitle" style where available, falling back to inline caption font, subtitle color, and center alignment.
+- An empty paragraph spacer follows each.
+- Pass \`font_name\` / \`font_size\` to override the base body font for this document.
+- Pass \`theme=\` to use a different theme for this document (see [Document themes](#document-themes)).
+
+### \`stencils.table_section(doc, heading, rows)\`
+
+Adds a level-1 heading followed by a two-column key/value table. An empty paragraph spacer is appended after.
+
+\`\`\`python
+stencils.table_section(doc, "Personal Information", [
+    ("First Name", data.get("first_name", "")),
+    ("Last Name", data.get("last_name", "")),
+    ("Email", data.get("email", "")),
+])
+\`\`\`
+
+- \`rows\` is a list of \`(label, value)\` tuples.
+- Empty/falsy values display as \`—\` (em dash).
+- Borderless table, centered. Labels use the heading font (semibold).
+- Both columns use the theme's \`size_table\` (default 10pt).
+
+### \`stencils.longtext(doc, heading, text)\`
+
+Adds a level-2 heading followed by one or more paragraphs split on \`\n\`. If \`text\` is empty, renders "No information provided." in muted italic.
+
+\`\`\`python
+stencils.longtext(doc, "Professional Bio", data.get("bio", ""))
+\`\`\`
+
+### \`stencils.bullet_list(doc, heading, items_str)\`
+
+Adds a level-2 heading followed by a \`List Bullet\` style paragraph for each newline-separated item. If \`items_str\` is empty, renders "No items listed." in muted italic.
+
+\`\`\`python
+stencils.bullet_list(doc, "Key Skills", data.get("skills", ""))
+\`\`\`
+
+### \`stencils.signatures(doc, labels)\`
+
+Adds a level-1 "Signatures" heading and a grid of signature blocks — two per row — each with an underline and a muted label.
+
+\`\`\`python
+stencils.signatures(doc, [
+    "Employee Signature", "Date",
+    "HR Representative", "Date",
+])
+\`\`\`
+
+Labels are paired into rows of two. If you need signature image embedding instead (e.g., for canvas \`signature\` fields), use \`stencils.signature()\` (see below) or handle it manually.
+
+### \`stencils.footer(doc)\`
+
+Adds a centered, italicized auto-generated disclaimer paragraph at the bottom of the document. Uses the active theme's caption font and footer color. The text reads: *"This document was auto-generated by FormForge. Please review all information for accuracy."*
+
+\`\`\`python
+stencils.footer(doc)
+\`\`\`
+
+### \`stencils.address(doc, heading, raw_json)\`
+
+Adds a level-2 heading followed by a formatted mailing address block. Parses a JSON string with keys \`street\`, \`city\`, \`state\`, \`zip\`. Handles missing/empty components gracefully, showing "No address provided." in muted italic if the street is empty.
+
+\`\`\`python
+stencils.address(doc, "Mailing Address", data.get("mailing_address", "{}"))
+\`\`\`
+
+### \`stencils.image(doc, b64_str, width_inches=3.0, placeholder="No image uploaded.")\`
+
+Embeds a base64 data-URI image in the document, or renders a muted italic placeholder if the string is empty or invalid.
+
+\`\`\`python
+stencils.image(doc, data.get("receipt_photo", ""))
+stencils.image(doc, data.get("logo", ""), width_inches=2.0, placeholder="No logo provided.")
+\`\`\`
+
+### \`stencils.signature(doc, b64_str, label, width_inches=2.5)\`
+
+Adds a signature image (from a canvas \`signature\` field) with a label beneath it. If no image data is provided, renders an underline placeholder instead.
+
+\`\`\`python
+stencils.signature(doc, data.get("employee_signature", ""), "Employee Signature")
+\`\`\`
+
+### \`stencils.repeater_table(doc, headers, items, field_keys, currency_keys=None)\`
+
+Renders a repeater field as a styled table with a shaded header row. Pass the parsed JSON items and the column configuration.
+
+\`\`\`python
+import json
+
+items = json.loads(data.get("line_items", "[]"))
+stencils.repeater_table(
+    doc,
+    headers=["Description", "Amount", "Category"],
+    items=items,
+    field_keys=["description", "amount", "category"],
+    currency_keys=["amount"],
+)
+\`\`\`
+
+- \`headers\` — display names for each column
+- \`items\` — list of dicts (the parsed repeater JSON array)
+- \`field_keys\` — dict keys corresponding to each column, in order
+- \`currency_keys\` — optional list of field keys to format as currency (\`$X,XXX.XX\`)
+
+### \`stencils.format_time(value)\`
+
+Converts 24-hour time strings (from \`<input type="time">\` and \`<input type="datetime-local">\`) to 12-hour format with AM/PM. Returns the original string unchanged if parsing fails.
+
+\`\`\`python
+stencils.format_time("09:00")               # → "9:00 AM"
+stencils.format_time("14:30")               # → "2:30 PM"
+stencils.format_time("2026-06-15T14:30")    # → "2026-06-15 at 2:30 PM"
+stencils.format_time("00:00")               # → "12:00 AM"
+stencils.format_time("")                     # → ""
+\`\`\`
+
+Always pass a string — use \`data.get('field_id', '')\` to guarantee a string default.
+
+### \`stencils.finalize(doc)\`
+
+Serializes the \`Document\` to bytes and returns them. Always call this as the last line of \`generate_docx\`.
+
+\`\`\`python
+return stencils.finalize(doc)
+\`\`\`
+
+### Field type → stencil mapping
+
+Use this table to pick the right stencil helper for each field type. Types not listed here need no special helper — just pass them as values in \`table_section()\` rows or handle inline.
+
+| Field Type | Recommended Stencil | Notes |
+|---|---|---|
+| \`text\`, \`email\`, \`tel\`, \`date\`, \`select\`, \`radio\`, \`number\`, \`hidden\` | \`table_section()\` | Pass as \`(label, value)\` tuples in a key/value table |
+| \`currency\` | \`table_section()\` | Format first: \`f"\${float(val):,.2f}"\` |
+| \`time\` | \`table_section()\` + \`format_time()\` | \`("Start", stencils.format_time(data.get("start_time", "")))\` |
+| \`datetime\` | \`table_section()\` + \`format_time()\` | \`("Deadline", stencils.format_time(data.get("deadline", "")))\` |
+| \`url\` | \`table_section()\` | Plain string, no conversion needed |
+| \`toggle\` | \`table_section()\` | Convert first: \`"Yes" if val == "true" else "No"\` |
+| \`textarea\` | \`table_section()\` or \`longtext()\` | Short text fits in a table row; multi-line content can use \`stencils.longtext()\` or manual \`doc.add_paragraph()\` |
+| \`longtext\` | \`longtext()\` | Splits on \`\n\` into paragraphs automatically |
+| \`list\` | \`bullet_list()\` | Values are already newline-separated |
+| \`checkbox\` | \`bullet_list()\` | Convert first: \`"\n".join(t.strip() for t in val.split(",") if t.strip())\` |
+| \`multi_select\` | \`bullet_list()\` | Same comma→newline conversion as \`checkbox\` |
+| \`address\` | \`address()\` | Pass the raw JSON string directly |
+| \`file\` | \`image()\` | Pass the base64 data URI string |
+| \`signature\` | \`signature()\` | Pass the base64 data URI string + a label |
+| \`repeater\` | \`repeater_table()\` | Parse JSON first with \`json.loads()\` |
+| \`heading\` | *(not in data)* | Skipped during data collection |
+| \`info\` | *(not in data)* | Skipped during data collection |
+
+### Document themes
+
+Stencils uses a \`DocTheme\` system that bundles colors, fonts, sizes, and page layout into a single frozen dataclass. A pre-built DOCX template is generated from the theme at import time and cached — \`new_doc()\` clones from it so heading styles, margins, and base fonts are automatic.
+
+#### Theme fields
+
+| Category | Fields | Defaults |
+|---|---|---|
+| **Colors** | \`color_title\`, \`color_subtitle\`, \`color_muted\`, \`color_footer\`, \`color_accent\` | Varies by theme |
+| **Fonts** | \`font_body\`, \`font_heading\`, \`font_caption\` | Segoe UI / Semibold / Semilight |
+| **Sizes (pt)** | \`size_body\`, \`size_title\`, \`size_heading1\`–\`size_heading6\`, \`size_subtitle\`, \`size_table\`, \`size_caption\`, \`size_footer\` | 11, 26, 16, 13, 12, 11, 11, 11, 12, 10, 9, 8 |
+| **Margins (in)** | \`margin_top\`, \`margin_bottom\`, \`margin_left\`, \`margin_right\` | 1.0, 0.75, 1.0, 1.0 |
+
+#### Built-in themes
+
+| Theme | Style | Title | Subtitle | Accent |
+|---|---|---|---|---|
+| \`THEME_CLASSIC\` | Bold navy/blue | \`#333366\` | \`#666699\` | \`#1A1A3E\` |
+| \`THEME_MINIMAL\` | Near-monochrome | \`#1A1A1A\` | \`#4A4A4A\` | \`#000000\` |
+| \`THEME_MODERN\` | Contemporary teal/slate | \`#1B5E6E\` | \`#3A7A8C\` | \`#0D3D4A\` |
+
+\`THEME_MODERN\` is the module-level default. All stencils helpers use it unless \`set_theme()\` is called first.
+
+#### Switching themes with \`set_theme()\`
+
+Call \`set_theme()\` at the top of your \`generate_docx()\` to configure all document styling. \`set_theme()\` writes a module-level global in \`stencils\`, so calling it inside \`generate_docx()\` ensures consistent styling regardless of which template ran previously in the same Pyodide session:
+
+\`\`\`python
+import stencils
+
+def generate_docx(data):
+    stencils.set_theme(stencils.THEME_MODERN)
+    doc = stencils.new_doc("My Document", "Subtitle")
+    stencils.table_section(doc, "Info", [("Name", data.get("name", ""))])
+    stencils.footer(doc)
+    return stencils.finalize(doc)
+\`\`\`
+
+#### Per-document override with \`new_doc(theme=)\`
+
+For a one-off theme on a single document without changing the module-level theme:
+
+\`\`\`python
+doc = stencils.new_doc("Title", "Subtitle", theme=stencils.THEME_MINIMAL)
+\`\`\`
+
+**Note:** The \`theme=\` parameter only affects the cloned document template (heading styles, margins). All stencils helper functions still use the active theme set by \`set_theme()\`. For fully consistent styling, call \`set_theme(X)\` before \`new_doc()\` rather than using the \`theme=\` parameter alone.
+
+#### Custom themes
+
+Define your own theme with all required fields:
+
+\`\`\`python
+from docx.shared import RGBColor
+import stencils
+
+custom = stencils.DocTheme(
+    color_title=RGBColor(0x8B, 0x00, 0x00),
+    color_subtitle=RGBColor(0xCD, 0x57, 0x00),
+    color_muted=RGBColor(0xAA, 0xAA, 0xAA),
+    color_footer=RGBColor(0xCC, 0xCC, 0xCC),
+    color_accent=RGBColor(0x5C, 0x00, 0x00),
+    font_body="Segoe UI",
+    font_heading="Segoe UI Semibold",
+    font_caption="Segoe UI Semilight",
+    size_body=11, size_title=26,
+    size_heading1=16, size_heading2=13, size_heading3=12,
+    size_heading4=11, size_heading5=11, size_heading6=11,
+    size_subtitle=12, size_table=10, size_caption=9, size_footer=8,
+    margin_top=1.0, margin_bottom=0.75, margin_left=1.0, margin_right=1.0,
+)
+stencils.set_theme(custom)
+\`\`\`
+
+#### Accessing theme values directly
+
+To use a theme's color or font in custom formatting:
+
+\`\`\`python
+run.font.color.rgb = stencils.THEME_CLASSIC.color_muted
+run.font.name = stencils.THEME_CLASSIC.font_heading
+\`\`\`
+
+## Understanding the Data Dictionary
+
+All values in \`data\` are strings, regardless of field type. \`heading\` and \`info\` fields are the only exceptions — they are skipped during data collection and never appear in \`data\`.
+
+| Field Type | Value Format | Example |
+|---|---|---|
+| \`text\`, \`email\`, \`tel\` | Plain string | \`"Jane Doe"\` |
+| \`date\` | ISO format (\`YYYY-MM-DD\`) | \`"2025-03-15"\` |
+| \`time\` | 24-hour format (\`HH:MM\`) | \`"09:30"\` |
+| \`url\` | URL string | \`"https://example.com"\` |
+| \`datetime\` | ISO-like format (\`YYYY-MM-DDTHH:MM\`) | \`"2026-06-15T14:30"\` |
+| \`select\` | Selected option string | \`"Engineering"\` |
+| \`radio\` | Selected option string | \`"Full-Time"\` |
+| \`textarea\` | Plain string | \`"Some notes here"\` |
+| \`longtext\` | String with \`\n\` paragraph breaks | \`"First paragraph.\nSecond paragraph."\` |
+| \`checkbox\` | Comma-separated string | \`"GitHub, Jira, Figma"\` |
+| \`multi_select\` | Comma-separated string | \`"AI/ML, Cloud, Security"\` |
+| \`toggle\` | Boolean string | \`"true"\` or \`"false"\` |
+| \`list\` | Newline-separated string | \`"Python\nJavaScript\nRust"\` |
+| \`number\` | Numeric string | \`"42.5"\` |
+| \`currency\` | Numeric string (no symbol) | \`"1250.00"\` |
+| \`hidden\` | Static string from \`default_value\` | \`"1.0"\` |
+| \`address\` | JSON object string | \`'{"street":"123 Main","city":"Springfield","state":"IL","zip":"62701"}'\` |
+| \`file\` | Base64 data URI string or \`""\` | \`"data:image/png;base64,iVBOR..."\` |
+| \`signature\` | Base64 PNG data URI string or \`""\` | \`"data:image/png;base64,iVBOR..."\` |
+| \`repeater\` | JSON array string | \`'[{"description":"Flight","amount":"250"}]'\` |
+| \`heading\` | *(not present in data)* | — |
+| \`info\` | *(not present in data)* | — |
+
+Empty or unfilled fields are empty strings \`""\`. Always use \`data.get('field_id', '')\` — never assume a key exists.
+
+## Conditional Fields (\`visible_when\`)
+
+Fields with \`visible_when\` are hidden or shown based on another field's value. The form always collects every field regardless of visibility — hidden conditional fields contribute their current DOM value (typically an empty string if never shown, but may retain a previously entered value if the user filled the field before hiding it).
+
+Templates do not need special handling for \`visible_when\`. Use the same \`data.get('field_id', '')\` pattern. An empty string from a hidden field behaves the same as an unfilled field — handle it with your normal empty-check guards.
+
+\`\`\`python
+# Works correctly whether the field was visible or hidden
+notes = data.get("notes", "")
+if notes and notes.strip():
+    stencils.longtext(doc, "Additional Notes", notes)
+\`\`\`
+
+## Wizard Forms
+
+When a schema uses \`"wizard": true\`, the form renders as a multi-step wizard UI with Next/Back navigation per section. The data contract for \`generate_docx(data)\` is identical to a non-wizard form — wizard mode is purely a UI concern. All field data from all steps is collected and flattened into the same dict before \`generate_docx\` is called.
+
+No template changes are needed to support wizard schemas.
+
+## Parsing Complex Field Types
+
+### \`address\` → dict
+
+\`\`\`python
+import json
+
+raw_addr = data.get("mailing_address", "{}")
+try:
+    addr = json.loads(raw_addr)
+except (json.JSONDecodeError, TypeError):
+    addr = {}
+
+street = addr.get("street", "")
+city = addr.get("city", "")
+state = addr.get("state", "")
+zip_code = addr.get("zip", "")
+\`\`\`
+
+If the field was hidden (via \`visible_when\`) or not filled, \`raw_addr\` will be \`""\` — the \`try/except\` will catch that and \`addr\` will default to \`{}\`.
+
+### \`repeater\` → list of dicts
+
+\`\`\`python
+import json
+
+raw_items = data.get("line_items", "[]")
+try:
+    items = json.loads(raw_items)
+except (json.JSONDecodeError, TypeError):
+    items = []
+
+for item in items:
+    desc = item.get("description", "")
+    amount = item.get("amount", "0")
+    category = item.get("category", "")
+\`\`\`
+
+Each element is a dict keyed by the sub-field \`id\` values defined in the repeater's \`fields\` array. All sub-field values are strings.
+
+### \`file\` / \`signature\` → embedded image
+
+\`\`\`python
+import base64, io
+from docx.shared import Inches
+
+receipt = data.get("receipt_photo", "")
+if receipt and "," in receipt:
+    try:
+        img_bytes = base64.b64decode(receipt.split(",")[1])
+        doc.add_picture(io.BytesIO(img_bytes), width=Inches(3))
+    except Exception:
+        p = doc.add_paragraph()
+        p.add_run("[Image could not be embedded]").italic = True
+else:
+    p = doc.add_paragraph()
+    p.add_run("No image uploaded.").italic = True
+\`\`\`
+
+For \`signature\` fields use \`width=Inches(2.5)\` to match the canvas proportions. The data URI format is \`data:image/png;base64,<data>\` — split on \`","\` to isolate the base64 payload.
+
+### \`number\` / \`currency\` → numeric
+
+\`\`\`python
+qty = data.get("quantity", "0")
+try:
+    qty_int = int(qty)
+except (ValueError, TypeError):
+    qty_int = 0
+
+amount = data.get("total_amount", "0")
+try:
+    amount_fmt = f"\${float(amount):,.2f}"
+except (ValueError, TypeError):
+    amount_fmt = f"\${amount}"
+\`\`\`
+
+Always wrap numeric conversions in \`try/except\` — the field may be empty if it was optional and unfilled.
+
+### \`checkbox\` / \`multi_select\` → list
+
+Both \`checkbox\` and \`multi_select\` output comma-separated strings. Parse them the same way:
+
+\`\`\`python
+tools = data.get("tools_used", "")
+tool_list = [t.strip() for t in tools.split(",") if t.strip()] if tools else []
+\`\`\`
+
+### \`toggle\` → boolean
+
+\`\`\`python
+agreed = data.get("agree_terms", "false") == "true"
+\`\`\`
+
+### \`time\` → formatted time
+
+\`\`\`python
+formatted = stencils.format_time(data.get("start_time", ""))
+# "09:00" → "9:00 AM", "14:30" → "2:30 PM"
+\`\`\`
+
+### \`datetime\` → formatted date and time
+
+\`\`\`python
+formatted = stencils.format_time(data.get("deadline", ""))
+# "2026-06-15T14:30" → "2026-06-15 at 2:30 PM"
+\`\`\`
+
+### \`longtext\` → paragraphs
+
+Use \`stencils.longtext()\` — it handles the split and the empty case. If you need inline control:
+
+\`\`\`python
+bio = data.get("bio", "")
+for paragraph in bio.split("\n"):
+    if paragraph.strip():
+        doc.add_paragraph(paragraph.strip())
+\`\`\`
+
+### \`list\` → bullets
+
+Use \`stencils.bullet_list()\` — it handles the split and the empty case. If you need inline control:
+
+\`\`\`python
+skills = data.get("skills", "")
+for item in skills.split("\n"):
+    if item.strip():
+        doc.add_paragraph(item.strip(), style="List Bullet")
+\`\`\`
+
+## Minimal Template
+
+\`\`\`python
+import stencils
+
+def generate_docx(data):
+    doc = stencils.new_doc("My Document", data.get("title", ""))
+
+    stencils.table_section(doc, "Details", [
+        ("Name", data.get("name", "")),
+        ("Date", data.get("date", "")),
+    ])
+
+    stencils.bullet_list(doc, "Action Items", data.get("actions", ""))
+
+    return stencils.finalize(doc)
+\`\`\`
+
+## Template Without \`stencils\` (Standalone)
+
+If you need a fully self-contained template without \`stencils\`:
+
+\`\`\`python
+import io
+from docx import Document
+
+def generate_docx(data):
+    doc = Document()
+    doc.add_heading("My Document", level=0)
+    doc.add_paragraph(f"Name: {data.get('name', '')}")
+
+    buf = io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+    return buf.getvalue()
+\`\`\`
+
+## Available Libraries
+
+| Library | Import | Purpose |
+|---|---|---|
+| python-docx | \`from docx import Document\` | DOCX generation |
+| Python stdlib | \`io\`, \`json\`, \`datetime\`, \`re\`, \`base64\`, \`math\` | General utilities |
+
+Additional pure-Python packages can be installed via \`micropip\` if needed. Packages with C extensions (numpy, pandas, etc.) will only work if they have pre-built Pyodide wheels — check the [Pyodide packages list](https://pyodide.org/en/stable/usage/packages-in-pyodide.html).
+
+## Common python-docx Patterns
+
+### Colored footer
+
+\`\`\`python
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
+
+fp = doc.add_paragraph()
+fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+fr = fp.add_run("Auto-generated by FormForge. Review all information for accuracy.")
+fr.font.size = Pt(8)
+fr.font.color.rgb = stencils.THEME_CLASSIC.color_footer
+fr.italic = True
+\`\`\`
+
+### Page break
+
+\`\`\`python
+doc.add_page_break()
+\`\`\`
+
+### Manual key-value table (without \`table_section\`)
+
+\`\`\`python
+from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.shared import Pt
+
+from docx.oxml.ns import nsdecls
+from docx.oxml import parse_xml
+
+table = doc.add_table(rows=0, cols=2)
+table.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+# Remove borders for a clean key-value look
+tblPr = table._tbl.tblPr
+borders = parse_xml(
+    f'<w:tblBorders {nsdecls("w")}>'
+    '<w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+    '<w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+    '<w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+    '<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+    '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+    '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>'
+    '</w:tblBorders>'
+)
+tblPr.append(borders)
+
+for label, value in [("Name", data.get("name", "")), ("Date", data.get("date", ""))]:
+    row = table.add_row()
+    lr = row.cells[0].paragraphs[0].add_run(label)
+    lr.bold = True
+    lr.font.size = Pt(10)
+    vr = row.cells[1].paragraphs[0].add_run(value or "\u2014")
+    vr.font.size = Pt(10)
+\`\`\`
+
+## Testing Locally
+
+Templates can be tested without a browser using standard Python:
+
+\`\`\`bash
+pip install python-docx
+PYTHONPATH=. python -m pytest tests/ -v
+\`\`\`
+
+The test suite in \`tests/test_templates.py\` runs \`generate_docx()\` for each template with sample and empty fixture data and verifies the output is valid DOCX bytes. Fixtures are in \`tests/fixtures/\`.
+
+To run a one-off manual test:
+
+\`\`\`python
+# From the repo root
+import sys
+sys.path.insert(0, "templates")
+import importlib.util, json
+
+spec = importlib.util.spec_from_file_location("tmpl", "templates/onboarding.py")
+tmpl = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(tmpl)
+
+data = json.load(open("tests/fixtures/onboarding_sample.json"))
+result = tmpl.generate_docx(data)
+open("test_output.docx", "wb").write(result)
+print(f"Generated {len(result)} bytes")
+\`\`\`
+
+Or use FormForge's Local Files feature to drop in your \`.json\` and \`.py\` and test interactively in the browser.
+
+## Tips
+
+- Always use \`data.get('field_id', '')\` — never assume a key exists.
+- Wrap \`json.loads()\` and numeric conversions in \`try/except\` — the value may be \`""\` if the field was optional, unfilled, or conditionally hidden.
+- Handle empty strings gracefully — show \`"—"\` or \`"Not provided"\` rather than blank cells.
+- Use \`doc.add_paragraph("")\` for vertical spacing between sections.
+- Test with both fully filled and mostly empty form data.
+- For signature image embedding, use \`stencils.signature()\` to embed a canvas signature with a label, or \`stencils.signatures()\` for blank underline blocks (e.g., for a printed sign-here area).
+`;
+// EMBEDDED-DOC:TEMPLATE_GUIDE:END
+
+// EMBEDDED-DOC:FIELD_TYPES:START
+const DOCS_FIELD_TYPES = `# Field Types Reference
+
+Every field in a schema has a \`type\` that controls how it renders in the form and how its value is passed to the template.
+
+## Quick Reference
+
+| Type | Renders As | Data Format | Required extra props |
+|------|-----------|-------------|----------------------|
+| \`text\` | Single-line text input | \`"Jane"\` | none |
+| \`email\` | Email input with browser validation | \`"jane@co.com"\` | none |
+| \`tel\` | Phone number input | \`"(555) 123-4567"\` | none |
+| \`date\` | Native date picker | \`"2025-03-15"\` | none |
+| \`textarea\` | Multi-line text (3 rows) | \`"Some notes..."\` | none |
+| \`longtext\` | Large textarea (6 rows) with character counter | \`"Para 1\nPara 2"\` | none |
+| \`select\` | Dropdown menu | \`"Engineering"\` | \`options\` |
+| \`radio\` | Radio button group | \`"Full-Time"\` | \`options\` |
+| \`checkbox\` | Checkbox group (multi-select) | \`"A, B, C"\` | \`options\` |
+| \`list\` | Dynamic add/remove rows with bulk paste | \`"X\nY\nZ"\` | none |
+| \`number\` | Number input with min/max/step | \`"42.5"\` | none |
+| \`currency\` | Number input with currency prefix | \`"1250.00"\` | none |
+| \`heading\` | Non-input section divider | *(skipped)* | none |
+| \`info\` | Read-only info/warning/success block | *(skipped)* | \`content\`; optional: \`style\` |
+| \`hidden\` | Not rendered (passes static value) | \`"1.0"\` | \`default_value\` |
+| \`address\` | Multi-field group (street/city/state/zip) | JSON string | none |
+| \`file\` | File upload with preview | base64 data URI | none |
+| \`signature\` | Canvas drawing pad | base64 PNG data URI | none |
+| \`repeater\` | Dynamic group of rows | JSON array string | \`fields\`; optional: \`display\` |
+| \`time\` | Native time picker | \`"09:30"\` | none |
+| \`url\` | URL input with browser validation | \`"https://example.com"\` | none |
+| \`toggle\` | Boolean yes/no switch | \`"true"\` or \`"false"\` | none |
+| \`datetime\` | Combined date and time picker | \`"2026-06-15T14:30"\` | none |
+| \`multi_select\` | Searchable multi-select dropdown with tags | \`"A, B, C"\` | \`options\` |
+
+## Common Optional Properties
+
+These apply to any field type unless noted otherwise in the type's section below:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| \`required\` | boolean | Fails validation if empty. For \`address\`, checks that \`street\` is non-empty. |
+| \`placeholder\` | string | Input placeholder text. Not applicable to \`date\`, \`heading\`, \`hidden\`, \`address\`, \`file\`, \`signature\`, \`repeater\`. |
+| \`hint\` | string | Helper text shown below the field label. Applicable to all types except \`info\` (where it is accepted by the schema but not rendered). |
+| \`visible_when\` | object | Conditionally show this field. See [Conditional Visibility](#conditional-visibility-visible_when). |
+
+## Layout Rules
+
+Fields are automatically arranged in the form:
+
+- \`text\`, \`email\`, \`tel\`, \`date\`, \`select\`, \`number\`, \`currency\`, \`time\`, \`url\`, \`toggle\`, \`datetime\` — paired into **two-column rows** when consecutive
+- \`textarea\`, \`longtext\`, \`list\`, \`radio\`, \`checkbox\`, \`heading\`, \`info\`, \`address\`, \`file\`, \`signature\`, \`repeater\`, \`multi_select\` — always **full-width**, breaks any pairing
+- \`hidden\` — not rendered in the visible layout at all
+
+You control layout through field ordering. Two consecutive \`text\` fields pair up. A \`text\` followed by a \`longtext\` will not.
+
+---
+
+## text
+
+Standard single-line input. Use for names, titles, short answers.
+
+\`\`\`json
+{ "id": "first_name", "label": "First Name", "type": "text", "required": true, "placeholder": "Jane" }
+\`\`\`
+
+**Schema properties:** \`maxLength\` (optional integer — accepted by the schema spec but not enforced in the browser. No counter, no truncation. Use \`longtext\` if you need a visible character counter).
+
+**Template:** \`data.get('first_name', '')\` → \`"Jane"\`
+
+## email
+
+Same as \`text\` but with browser-level email format validation.
+
+\`\`\`json
+{ "id": "email", "label": "Email Address", "type": "email", "required": true, "placeholder": "jane@company.com" }
+\`\`\`
+
+**Template:** \`data.get('email', '')\` → \`"jane@company.com"\`
+
+## tel
+
+Phone number input. No format enforcement — accepts any string.
+
+\`\`\`json
+{ "id": "phone", "label": "Phone", "type": "tel", "placeholder": "(555) 123-4567" }
+\`\`\`
+
+**Template:** \`data.get('phone', '')\` → \`"(555) 123-4567"\`
+
+## date
+
+Native browser date picker. Value is always in \`YYYY-MM-DD\` format.
+
+\`\`\`json
+{ "id": "start_date", "label": "Start Date", "type": "date", "required": true }
+\`\`\`
+
+**Template:** \`data.get('start_date', '')\` → \`"2025-03-15"\`
+
+To reformat in your template:
+
+\`\`\`python
+from datetime import datetime
+raw = data.get('start_date', '')
+if raw:
+    formatted = datetime.strptime(raw, '%Y-%m-%d').strftime('%B %d, %Y')
+    # "March 15, 2025"
+\`\`\`
+
+## textarea
+
+Multi-line text input, 3 rows tall. Good for short notes or comments.
+
+\`\`\`json
+{ "id": "notes", "label": "Notes", "type": "textarea", "placeholder": "Any additional info..." }
+\`\`\`
+
+**Template:** \`data.get('notes', '')\` → \`"Some notes here"\`
+
+## longtext
+
+Large text area (6 rows) with a live character counter. Use for bios, descriptions, or any extended prose.
+
+\`\`\`json
+{
+  "id": "bio",
+  "label": "Professional Bio",
+  "type": "longtext",
+  "placeholder": "Write a brief biography...",
+  "hint": "This appears as a full paragraph in the document",
+  "maxLength": 2000
+}
+\`\`\`
+
+**Schema properties:** \`maxLength\` (optional integer, defaults to \`5000\` in the counter display — does not hard-truncate, only colors the counter red when exceeded).
+
+**Template:** Value may contain \`\n\` for paragraph breaks.
+
+\`\`\`python
+bio = data.get('bio', '')
+for paragraph in bio.split('\n'):
+    if paragraph.strip():
+        doc.add_paragraph(paragraph.strip())
+\`\`\`
+
+## select
+
+Dropdown menu. Requires an \`options\` array.
+
+\`\`\`json
+{
+  "id": "department",
+  "label": "Department",
+  "type": "select",
+  "required": true,
+  "options": ["", "Engineering", "Design", "Marketing", "Sales"]
+}
+\`\`\`
+
+Include \`""\` as the first option — it renders as "— Select —" and serves as the unselected default. The empty string fails validation if \`required\` is \`true\`, which prevents submitting without choosing.
+
+**Template:** \`data.get('department', '')\` → \`"Engineering"\`
+
+## radio
+
+Single-choice radio button group. Requires an \`options\` array. Do not include an empty string.
+
+\`\`\`json
+{
+  "id": "employment_type",
+  "label": "Employment Type",
+  "type": "radio",
+  "required": true,
+  "options": ["Full-Time", "Part-Time", "Contract", "Intern"]
+}
+\`\`\`
+
+**Template:** \`data.get('employment_type', '')\` → \`"Full-Time"\`
+
+## checkbox
+
+Multi-select checkbox group. Requires an \`options\` array. Users can select zero or more items.
+
+\`\`\`json
+{
+  "id": "equipment_needs",
+  "label": "Additional Equipment",
+  "type": "checkbox",
+  "options": ["Monitor", "Keyboard", "Mouse", "Standing Desk", "Webcam"],
+  "hint": "Select all that apply"
+}
+\`\`\`
+
+**Template:** Value is a comma-separated string of selected items.
+
+\`\`\`python
+equipment = data.get('equipment_needs', '')  # "Monitor, Keyboard, Webcam"
+if equipment:
+    items = [e.strip() for e in equipment.split(',') if e.strip()]
+\`\`\`
+
+## list
+
+Dynamic list entry with two input modes:
+
+- **Individual rows** — click "Add item" or press Enter to add rows. Backspace on an empty row removes it. Each row has an x delete button.
+- **Bulk paste** — a textarea where users can paste multiple items separated by newlines, which auto-convert to individual rows on blur.
+
+One empty row is added automatically when the field renders.
+
+\`\`\`json
+{
+  "id": "skills",
+  "label": "Key Skills",
+  "type": "list",
+  "placeholder": "e.g. Python",
+  "hint": "Add skills one at a time or paste multiple"
+}
+\`\`\`
+
+**Template:** Value is a newline-separated string. Empty list produces \`""\`.
+
+\`\`\`python
+skills = data.get('skills', '')  # "Python\nJavaScript\nRust"
+if skills:
+    for item in skills.split('\n'):
+        if item.strip():
+            doc.add_paragraph(item.strip(), style='List Bullet')
+\`\`\`
+
+## number
+
+Numeric input with optional \`min\`, \`max\`, and \`step\` constraints. Renders as \`<input type="number">\`.
+
+\`\`\`json
+{ "id": "quantity", "label": "Quantity", "type": "number", "min": 0, "max": 100, "step": 1 }
+\`\`\`
+
+**Schema properties:** \`min\` (number), \`max\` (number), \`step\` (number) — all optional. These properties are also available on \`number\` sub-fields within a \`repeater\`. They are forbidden on all other field types by the schema spec.
+
+**Template:** Value is a string — parse with \`int()\` or \`float()\` as needed.
+
+\`\`\`python
+qty = int(data.get('quantity', '0'))
+\`\`\`
+
+## currency
+
+Number input with a currency symbol prefix. Renders as \`<input type="number">\` with \`step="0.01"\` and \`min="0"\` fixed in the browser.
+
+\`\`\`json
+{ "id": "total_amount", "label": "Total Amount", "type": "currency", "required": true, "placeholder": "0.00" }
+\`\`\`
+
+**Schema properties:** \`currency_symbol\` (optional string, defaults to \`"$"\`). This is the only field type where \`currency_symbol\` is permitted; it is forbidden on all other types by the schema spec.
+
+**Template:** Value is a string like \`"1250.00"\`. Format in the template:
+
+\`\`\`python
+amount = data.get('total_amount', '0')
+formatted = f"\${float(amount):,.2f}"  # "$1,250.00"
+\`\`\`
+
+## heading
+
+Non-input element that renders as a visual section divider within a form section. Not collected in form data, not passed to templates. Useful for grouping related fields without creating a new schema section.
+
+\`\`\`json
+{ "id": "emergency_heading", "label": "Emergency Contact Information", "type": "heading", "hint": "Provide at least one emergency contact" }
+\`\`\`
+
+**Template:** Not passed — heading fields are skipped during \`collectFormData()\`.
+
+**Note:** \`heading\` does not create an element with \`id = field.id\`, so it cannot be used as a \`visible_when\` target.
+
+## info
+
+Read-only display block for showing instructions, warnings, or policy text inline within a form section. Not an input — not collected in form data, not passed to templates. Distinct from \`heading\` which is a title/divider; \`info\` is a content block with styled variants.
+
+\`\`\`json
+{ "id": "info_privacy", "label": "Privacy Notice", "type": "info", "content": "All data stays in your browser. Nothing is sent to any server.", "style": "info" }
+\`\`\`
+
+**Schema properties:**
+- \`content\` (string, required) — the text to display in the block
+- \`style\` (optional string, defaults to \`"info"\`) — visual variant: \`"info"\` (indigo accent), \`"warning"\` (yellow accent), or \`"success"\` (green accent)
+
+**Examples with all three styles:**
+
+\`\`\`json
+{ "id": "info_1", "label": "Note", "type": "info", "content": "Please complete all required fields.", "style": "info" }
+{ "id": "warn_1", "label": "Warning", "type": "info", "content": "Changes cannot be undone after submission.", "style": "warning" }
+{ "id": "ok_1", "label": "Approved", "type": "info", "content": "Your application has been pre-approved.", "style": "success" }
+\`\`\`
+
+**Template:** Not passed — info fields are skipped during \`collectFormData()\`.
+
+## hidden
+
+Invisible field that passes a static value to the template. Use for metadata like form version numbers, form IDs, or other values that should appear in the DOCX but not be edited by the user.
+
+\`\`\`json
+{ "id": "form_version", "label": "Form Version", "type": "hidden", "default_value": "2.1" }
+\`\`\`
+
+**Schema properties:** \`default_value\` (string, required). This is the only field type where \`default_value\` is permitted; it is forbidden on all other types by the schema spec.
+
+The field group is rendered with \`display: none\` and the value is restored to \`default_value\` on form reset.
+
+**Template:** \`data.get('form_version', '')\` → \`"2.1"\`
+
+## address
+
+Compound field that renders as a group of 4 sub-inputs: street, city, state, and ZIP code. The sub-inputs use IDs \`{field.id}_street\`, \`{field.id}_city\`, \`{field.id}_state\`, \`{field.id}_zip\`. There is no single element with \`id = field.id\`.
+
+\`\`\`json
+{ "id": "mailing_address", "label": "Mailing Address", "type": "address", "hint": "Where should we send it?" }
+\`\`\`
+
+**Template:** Value is a JSON string. Parse it to access sub-fields:
+
+\`\`\`python
+import json
+addr = json.loads(data.get('mailing_address', '{}'))
+street = addr.get('street', '')
+city = addr.get('city', '')
+state = addr.get('state', '')
+zip_code = addr.get('zip', '')
+formatted = f"{street}\n{city}, {state} {zip_code}"
+\`\`\`
+
+**Validation:** When \`required\`, checks that \`street\` is non-empty.
+
+**Note:** Because there is no element with \`id = field.id\`, \`address\` fields cannot reliably be used as \`visible_when\` targets.
+
+## file
+
+File upload input with image preview. The file is read as a base64 data URI and stored in a hidden input with \`id = field.id\`.
+
+\`\`\`json
+{
+  "id": "receipt_photo",
+  "label": "Receipt Photo",
+  "type": "file",
+  "accept": "image/*",
+  "max_size_mb": 5,
+  "hint": "Upload a photo of your receipt"
+}
+\`\`\`
+
+**Schema properties:**
+- \`accept\` — file type filter passed to \`<input type="file" accept="...">\` (defaults to \`"image/*"\`)
+- \`max_size_mb\` — maximum file size in MB, enforced client-side (defaults to \`5\`)
+
+Non-image files are accepted (based on \`accept\`) but won't show a preview. Image files show a preview inline.
+
+**Template:** Value is a base64 data URI string (e.g., \`"data:image/png;base64,iVBOR..."\`) or empty string if no file was uploaded.
+
+\`\`\`python
+import base64, io
+receipt = data.get('receipt_photo', '')
+if receipt and ',' in receipt:
+    img_data = receipt.split(',')[1]
+    img_bytes = base64.b64decode(img_data)
+    doc.add_picture(io.BytesIO(img_bytes), width=Inches(3))
+\`\`\`
+
+## signature
+
+Canvas-based drawing pad for capturing signatures. Supports both mouse and touch input. The canvas is full-width (CSS \`width: 100%\`) and 150px tall, with internal pixel dimensions scaled by the device pixel ratio for sharp rendering on high-DPI displays. Exports as a base64 PNG data URI stored in a hidden input with \`id = field.id\`. Includes a "Clear" button to reset.
+
+\`\`\`json
+{ "id": "employee_signature", "label": "Employee Signature", "type": "signature", "required": true }
+\`\`\`
+
+**Template:** Value is a base64 PNG data URI string or empty string. Embed in DOCX:
+
+\`\`\`python
+import base64, io
+from docx.shared import Inches
+sig = data.get('employee_signature', '')
+if sig and ',' in sig:
+    sig_bytes = base64.b64decode(sig.split(',')[1])
+    doc.add_picture(io.BytesIO(sig_bytes), width=Inches(2.5))
+\`\`\`
+
+## repeater
+
+Dynamic field group — users can add N copies of a set of sub-fields. Each row is numbered and has a remove button. Ideal for line items, references, dependents, etc.
+
+\`\`\`json
+{
+  "id": "line_items",
+  "label": "Expense Line Items",
+  "type": "repeater",
+  "min_rows": 1,
+  "max_rows": 20,
+  "fields": [
+    { "id": "description", "label": "Description", "type": "text", "placeholder": "Flight to NYC" },
+    { "id": "amount", "label": "Amount", "type": "currency" },
+    { "id": "category", "label": "Category", "type": "select", "options": ["", "Travel", "Meals", "Supplies"] }
+  ]
+}
+\`\`\`
+
+**Schema properties:**
+- \`fields\` — required array of sub-field definitions. Permitted sub-field types: \`text\`, \`email\`, \`tel\`, \`number\`, \`currency\`, \`select\`, \`time\`, \`url\`, \`toggle\`. No other types (including \`heading\`, \`hidden\`, \`address\`, \`repeater\`) are allowed inside a repeater. **Note:** \`toggle\` sub-fields within repeaters have a known limitation — data collection reads \`.value\` instead of \`.checked\`, so the collected value is always \`"on"\` rather than \`"true"\`/\`"false"\`. Avoid \`toggle\` in repeaters until this is fixed.
+- \`min_rows\` — minimum rows; remove button is disabled when at the minimum (defaults to \`1\`)
+- \`max_rows\` — maximum rows; add button is disabled when at the maximum (defaults to \`10\`)
+- \`display\` — optional display mode: \`"cards"\` (default) renders each row as a stacked card with numbered header; \`"table"\` renders rows as a compact HTML table with column headers from sub-field labels. The data format is identical regardless of display mode.
+
+**Table display mode example:**
+
+\`\`\`json
+{
+  "id": "line_items",
+  "label": "Expense Line Items",
+  "type": "repeater",
+  "display": "table",
+  "fields": [
+    { "id": "description", "label": "Description", "type": "text" },
+    { "id": "amount", "label": "Amount", "type": "currency" },
+    { "id": "category", "label": "Category", "type": "select", "options": ["", "Travel", "Meals", "Supplies"] }
+  ]
+}
+\`\`\`
+
+Use \`"table"\` when sub-fields are short and data-dense (e.g., expense line items, schedules). Use default \`"cards"\` when sub-fields are complex or benefit from more visual separation.
+
+Sub-field IDs within \`fields\` must be unique within the repeater but do not need to be globally unique. They are keyed by sub-field \`id\` in each row's data object.
+
+**Template:** Value is a JSON array string. Parse and iterate:
+
+\`\`\`python
+import json
+items = json.loads(data.get('line_items', '[]'))
+for item in items:
+    desc = item.get('description', '')
+    amount = item.get('amount', '0')
+    category = item.get('category', '')
+\`\`\`
+
+## time
+
+Native browser time picker. Value is always in \`HH:MM\` format (24-hour).
+
+\`\`\`json
+{ "id": "start_time", "label": "Start Time", "type": "time", "required": true }
+\`\`\`
+
+**Template:** \`data.get('start_time', '')\` → \`"09:30"\`
+
+To reformat in your template:
+
+\`\`\`python
+formatted = stencils.format_time(data.get('start_time', ''))
+# "09:30" → "9:30 AM", "14:30" → "2:30 PM"
+\`\`\`
+
+## url
+
+URL input with browser-level URL format validation. Includes \`https://\` placeholder by default.
+
+\`\`\`json
+{ "id": "website", "label": "Website", "type": "url", "placeholder": "https://example.com" }
+\`\`\`
+
+**Template:** \`data.get('website', '')\` → \`"https://example.com"\`
+
+## toggle
+
+Boolean yes/no switch. Renders as a toggle switch UI element. Distinct from \`checkbox\` which is a multi-select group — \`toggle\` is a single on/off control.
+
+\`\`\`json
+{ "id": "agree_terms", "label": "I agree to the terms", "type": "toggle", "required": true }
+\`\`\`
+
+The toggle always has a value (\`"true"\` or \`"false"\`) — it can never be empty. A required toggle will always pass validation.
+
+**Template:** Value is \`"true"\` or \`"false"\`.
+
+\`\`\`python
+agreed = data.get('agree_terms', 'false') == 'true'
+doc.add_paragraph(f"Terms accepted: {'Yes' if agreed else 'No'}")
+\`\`\`
+
+## datetime
+
+Combined date and time picker. Renders as \`<input type="datetime-local">\`. Value is in ISO-like format \`YYYY-MM-DDTHH:MM\`.
+
+\`\`\`json
+{ "id": "deadline", "label": "Submission Deadline", "type": "datetime" }
+\`\`\`
+
+**Template:** \`data.get('deadline', '')\` → \`"2026-06-15T14:30"\`
+
+To reformat in your template:
+
+\`\`\`python
+formatted = stencils.format_time(data.get('deadline', ''))
+# "2026-06-15T14:30" → "2026-06-15 at 2:30 PM"
+\`\`\`
+
+## multi_select
+
+Searchable multi-select dropdown with tag/chip UI. Requires an \`options\` array. Users can select multiple items, which appear as removable tags. Includes a search/filter input.
+
+\`\`\`json
+{
+  "id": "topics",
+  "label": "Topics of Interest",
+  "type": "multi_select",
+  "options": ["AI/ML", "Cloud", "Security", "DevOps", "Frontend", "Backend"],
+  "hint": "Select all that apply"
+}
+\`\`\`
+
+Distinct from \`checkbox\`: \`multi_select\` is better for long option lists (5+ items) because it includes search filtering and takes less vertical space. Use \`checkbox\` for short lists (2-5 items) where all options should be visible at once.
+
+**Template:** Value is a comma-separated string of selected items, same format as \`checkbox\`.
+
+\`\`\`python
+topics = data.get('topics', '')  # "AI/ML, Cloud, Security"
+if topics:
+    items = [t.strip() for t in topics.split(',') if t.strip()]
+\`\`\`
+
+---
+
+## Conditional Visibility (\`visible_when\`)
+
+Any top-level field can include a \`visible_when\` object to make it appear only when another field has a specific value.
+
+\`\`\`json
+{
+  "id": "contract_end_date",
+  "label": "Contract End Date",
+  "type": "date",
+  "visible_when": { "field": "employment_type", "equals": "Contract" }
+}
+\`\`\`
+
+**Schema:**
+
+\`\`\`json
+"visible_when": {
+  "field": "employment_type",   // id of the controlling field
+  "equals": "Contract"          // value that makes this field visible
+}
+\`\`\`
+
+**Behavior:** Hidden fields start with CSS class \`conditional-hidden\` (display: none). When the controlling field's value matches \`equals\`, the class is removed. The comparison is a strict string equality check on the field's current value.
+
+**When required fields are hidden:** Validation skips them. \`isFieldConditionallyHidden()\` checks the field group's CSS class, so hidden-but-required fields do not block form submission.
+
+**Supported source field types** (the \`field\` being watched):
+- \`select\` — attaches a \`change\` listener on the \`<select>\` element
+- \`radio\` — attaches \`change\` listeners on all \`<input type="radio">\` elements for that name
+- \`checkbox\` — attaches \`change\` listeners; \`equals\` must match the full comma-separated string of checked values
+- \`text\`, \`email\`, \`tel\`, \`date\`, \`time\`, \`url\`, \`datetime\`, \`textarea\`, \`longtext\`, \`number\`, \`currency\` — attaches \`input\` and \`change\` listeners on the element
+- \`toggle\` — attaches a \`change\` listener on the checkbox input
+- \`multi_select\` — renders a hidden input with \`id = field.id\` and technically works, but updates the hidden input programmatically without firing DOM events, so visibility changes may not trigger reliably
+
+**Supported target field types** (the field with \`visible_when\`):
+Works for any type that renders a direct element with \`id = field.id\`: \`text\`, \`email\`, \`tel\`, \`date\`, \`time\`, \`url\`, \`datetime\`, \`textarea\`, \`longtext\`, \`select\`, \`number\`, \`currency\`, \`hidden\`, \`file\`, \`signature\`, \`toggle\`.
+
+Does **not** reliably work as a target for: \`checkbox\`, \`radio\`, \`list\`, \`address\`, \`repeater\`, \`heading\` — these types do not render a single element with \`id = field.id\`, so the visibility logic cannot find their field group.
+
+**Note:** \`multi_select\` renders a hidden input with \`id = field.id\` and works as a \`visible_when\` target. However, as a \`visible_when\` *source*, \`multi_select\` may not trigger visibility updates reliably because its widget updates the hidden input programmatically without firing DOM events.
+
+\`visible_when\` is not supported inside \`repeater\` sub-fields.
+
+---
+
+## Choosing the Right Type
+
+| If you need... | Use |
+|---------------|-----|
+| A short answer (name, title, ID) | \`text\` |
+| An email address | \`email\` |
+| A phone number | \`tel\` |
+| A website or link | \`url\` |
+| A calendar date | \`date\` |
+| A clock time | \`time\` |
+| A date and time together | \`datetime\` |
+| A brief comment (1-3 lines) | \`textarea\` |
+| Extended writing (bio, description) | \`longtext\` |
+| One choice from a fixed list | \`select\` (5+ options) or \`radio\` (2-4 options) |
+| Multiple choices from a short list | \`checkbox\` (2-5 options visible at once) |
+| Multiple choices from a long list | \`multi_select\` (5+ options, with search) |
+| A yes/no boolean answer | \`toggle\` |
+| A user-defined list of items | \`list\` |
+| A numeric value with constraints | \`number\` |
+| A dollar/currency amount | \`currency\` |
+| A visual divider between fields | \`heading\` |
+| Instructions, warnings, or policy text inline | \`info\` |
+| Metadata not shown to the user | \`hidden\` |
+| A mailing/physical address | \`address\` |
+| An uploaded image or document | \`file\` |
+| A hand-drawn signature | \`signature\` |
+| Repeated rows of fields (line items) | \`repeater\` |
+`;
+// EMBEDDED-DOC:FIELD_TYPES:END
+
+// ============================================================
 //  DEV MODE
 // ============================================================
 
@@ -10320,9 +11850,6 @@ function disconnectSource() {
   devGhHideCommitPanel();
   document.getElementById('ghNewBranchRow').style.display = 'none';
   updateSourceToolbar();
-
-  // Reset docs to built-in reference
-  loadDocs();
 
   const label = wasType === 'local' ? 'local folder' : 'source';
   showToast(`Disconnected from ${label}`);

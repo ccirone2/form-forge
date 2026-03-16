@@ -14,6 +14,27 @@
 
 ## Log
 
+### 2026-03-16 — Embed Full Documentation in Docs Tab (#198)
+
+Embedded the full markdown docs (`SCHEMA_GUIDE.md`, `TEMPLATE_GUIDE.md`, `FIELD_TYPES.md`) directly in `index.html` as JS template-literal constants, replacing the abbreviated fallback content (which only covered 11 of 24 field types).
+
+**Changes:**
+- Added `DOCS_SCHEMA_GUIDE`, `DOCS_TEMPLATE_GUIDE`, `DOCS_FIELD_TYPES` constants with `// EMBEDDED-DOC:*:START/END` marker comments
+- Rewrote `loadDocs()` to render embedded markdown via `renderMarkdown()` — no longer async, no GitHub fetch
+- Simplified `DOCS_CONFIG` (removed `ghPath`, `fallbackTitle`)
+- Removed `buildFallbackSchemaGuide()`, `buildFallbackTemplateGuide()`, `buildFallbackFieldTypes()` — no longer needed
+- Removed `.from-github` / `.from-fallback` CSS classes
+- Removed `loadDocs()` calls from `connectRepo()` and `disconnectSource()` — docs are static now
+- Created `scripts/sync-embedded-docs.py` with `--check` mode for CI validation
+- Added sync check step to `.github/workflows/validate.yml`
+
+**Decisions:**
+- Used marker comments for reliable find-and-replace by the sync script
+- Kept `buildFallbackExamples()` for the Examples tab (uses DEMO_SCHEMA/DEMO_TEMPLATE, not doc files)
+- Docs are now always the same regardless of connected source — no more fetch-or-fallback distinction
+
+---
+
 ### 2026-03-15 — UI/UX Audit (#192)
 
 Conducted a comprehensive UI/UX audit covering accessibility, performance, theming/design tokens, and responsive design. Identified 55 issues (1 critical, 13 high, 20 medium, 21 low).

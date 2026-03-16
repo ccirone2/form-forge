@@ -1622,6 +1622,55 @@ def test_picker_auto_scroll_on_connect(index_html: str) -> None:
     assert "scrollIntoView" in body, "connectRepo should scroll to picker"
 
 
+def test_embedded_doc_constants_exist(index_html: str) -> None:
+    """All three DOCS_* constants should be present with marker comments."""
+    for name in ("SCHEMA_GUIDE", "TEMPLATE_GUIDE", "FIELD_TYPES"):
+        assert f"// EMBEDDED-DOC:{name}:START" in index_html
+        assert f"const DOCS_{name} = `" in index_html
+        assert f"// EMBEDDED-DOC:{name}:END" in index_html
+
+
+def test_embedded_docs_are_non_empty(index_html: str) -> None:
+    """Embedded doc constants should contain substantial content, not empty strings."""
+    for name in ("SCHEMA_GUIDE", "TEMPLATE_GUIDE", "FIELD_TYPES"):
+        start_marker = f"// EMBEDDED-DOC:{name}:START"
+        end_marker = f"// EMBEDDED-DOC:{name}:END"
+        start = index_html.index(start_marker)
+        end = index_html.index(end_marker)
+        block = index_html[start:end]
+        # Each doc is 300+ lines; the block should be at least 1000 chars
+        assert len(block) > 1000, f"DOCS_{name} appears to be empty or too short"
+
+
+def test_embedded_docs_in_sync() -> None:
+    """Sync script --check should pass (embedded docs match source files)."""
+    import subprocess
+
+    result = subprocess.run(
+        ["python", "scripts/sync-embedded-docs.py", "--check"],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, (
+        f"Embedded docs are out of sync: {result.stdout}{result.stderr}"
+    )
+
+
+def test_load_docs_uses_embedded_constants(index_html: str) -> None:
+    """loadDocs() should use EMBEDDED_DOCS map, not fetch from GitHub."""
+    body = _extract_func(index_html, "loadDocs")
+    assert "EMBEDDED_DOCS" in body, "loadDocs should reference EMBEDDED_DOCS"
+    assert "ghFetchRaw" not in body, "loadDocs should not fetch from GitHub"
+    assert "from-github" not in body, "loadDocs should not use from-github badge"
+    assert "from-fallback" not in body, "loadDocs should not use from-fallback badge"
+
+
+def test_no_load_docs_on_disconnect(index_html: str) -> None:
+    """disconnectSource() should not call loadDocs() since docs are static."""
+    body = _extract_func(index_html, "disconnectSource")
+    assert "loadDocs" not in body, "disconnectSource should not call loadDocs"
+
+
 def test_docs_not_on_setup_view(index_html: str) -> None:
     """Documentation cards should not be on the setup view."""
     setup_start = index_html.index('id="view-setup"')
