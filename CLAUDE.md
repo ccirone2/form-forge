@@ -11,14 +11,14 @@ FormForge is a **client-side-only** browser application that turns GitHub-hosted
 ## Architecture
 
 - **`index.html`** — The entire frontend: HTML + CSS + JS in one file (~8900 lines, changes frequently). Contains the form builder, GitHub API integration, Pyodide loader, validation, tab-based navigation (Forms, Schema, Template, Docs), and UI. Do not split this file.
-- **`schemas/_schema.spec.json`** — JSON Schema (draft 2020-12) that validates all form schemas. Enforces required fields, valid field types (23 enumerated), conditional constraints (e.g., `select` requires `options`, `repeater` requires `fields`), and `additionalProperties: false` at all levels.
+- **`schemas/_schema.spec.json`** — JSON Schema (draft 2020-12) that validates all form schemas. Enforces required fields, valid field types (24 enumerated), conditional constraints (e.g., `select` requires `options`, `repeater` requires `fields`), and `additionalProperties: false` at all levels.
 - **`schemas/*.json`** — Form definitions. Each schema has `title`, `description`, `icon`, `template` (path to .py), and `sections[]` containing `fields[]` with `id`, `label`, `type`, etc.
 - **`templates/stencils.py`** — Shared helper module for all templates. Provides `set_theme()`, `new_doc()`, `table_section()`, `longtext()`, `bullet_list()`, `signatures()`, `footer()`, `address()`, `image()`, `signature()`, `repeater_table()`, `format_time()`, `finalize()`, and a `DocTheme` system with built-in themes (`THEME_CLASSIC`, `THEME_MINIMAL`, `THEME_MODERN`). Loaded into Pyodide's virtual filesystem once via `loadBaseModule()` before any template runs.
 - **`templates/*.py`** — Python scripts that export a `generate_docx(data)` function. Called by Pyodide with form data as a dict. Must return DOCX bytes. Uses `python-docx` and `import stencils`.
 - **`docs/DEVLOG.md`** — Running development journal. Add a dated entry when completing work on any issue.
 - **`docs/SCHEMA_GUIDE.md`** — Guide for writing new form schemas.
 - **`docs/TEMPLATE_GUIDE.md`** — Guide for writing new Python templates.
-- **`docs/FIELD_TYPES.md`** — Reference for all 23 supported field types, their JSON schema, and template handling.
+- **`docs/FIELD_TYPES.md`** — Reference for all 24 supported field types, their JSON schema, and template handling.
 - **`docs/PLAN.md`** — Structured implementation plans for upcoming features.
 
 ## Pyodide Integration
@@ -49,7 +49,7 @@ The app uses a permanent 4-tab navigation bar (no Dev Mode toggle):
 ```
 
 - **Forms** — Connect a content source (GitHub repo or local folder), browse available forms, fill and export. Two equal-weight source cards: GitHub Repository and Local Folder. `connectRepo()` or `connectLocalFolder()` sets the unified `contentSourceType` global (`'github' | 'local' | 'demo' | null`).
-- **Schema** — Split-pane JSON editor (CodeJar + Prism.js) with live form preview on 300ms debounce, real-time validation badge, and right-click context menu with field type snippets for all 23 field types. Uses `buildForm(schema, targetForm)` to render previews. Has "Fill Form" button to test the schema as a fillable form.
+- **Schema** — Split-pane JSON editor (CodeJar + Prism.js) with live form preview on 300ms debounce, real-time validation badge, and right-click context menu with field type snippets for all 24 field types. Uses `buildForm(schema, targetForm)` to render previews. Has "Fill Form" button to test the schema as a fillable form.
 - **Template** — Split-pane Python editor with collapsible sample data panel. "Preview DOCX" runs the full Pyodide pipeline and renders output via mammoth.js → DOMPurify. Right-click context menu inserts stencils helper snippets.
 - **Docs** — Embedded documentation tabs for Schema Guide, Template Guide, Field Types, and Example schema/template. Always uses built-in reference (independent of connected source).
 
