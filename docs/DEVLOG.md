@@ -127,19 +127,6 @@ Improved the `renderMarkdown()` function used in the Docs tab:
 
 ---
 
-### 2026-03-15 — Created Issues for Three New Features (#161, #162, #163)
-**Issues:** #161, #162, #163 (+ sub-issues #164–#168)
-
-Created GitHub issues for three new features planned to reduce friction in the form/template authoring loop:
-
-1. **#161 — Clipboard Paste for Form Data** — "Paste Data" button + modal for pasting JSON directly into forms. Branch: `feature/161-paste-data`
-2. **#162 — Per-Schema Presets** — Named presets per form stored in localStorage for recurring data. Sub-issues: #164 (HTML/CSS), #165 (CRUD/storage), #166 (dropdown/integration). Branch: `feature/162-per-schema-presets`
-3. **#163 — Bundle Export/Import** — Package schema + template + sample data as one JSON artifact for LLM workflows. Sub-issues: #167 (export), #168 (import). Branch: `feature/163-bundle-export-import`
-
-**Implementation order:** Paste Data → Presets → Bundle (smallest → largest scope)
-
----
-
 ### 2026-03-15 — Bundle Export/Import (#163)
 **Issues:** #163, #167, #168
 
@@ -189,6 +176,19 @@ Added "Paste Data" button and modal to the form view, enabling users to paste JS
 - Handles invalid JSON, array-instead-of-object, schema mismatch (warning), and `_formforge` metadata stripping
 - Escape key and backdrop click close modal
 - Added 11 new tests covering button placement, modal structure, ARIA attributes, CSS classes, and function existence
+
+---
+
+### 2026-03-15 — Created Issues for Three New Features (#161, #162, #163)
+**Issues:** #161, #162, #163 (+ sub-issues #164–#168)
+
+Created GitHub issues for three new features planned to reduce friction in the form/template authoring loop:
+
+1. **#161 — Clipboard Paste for Form Data** — "Paste Data" button + modal for pasting JSON directly into forms. Branch: `feature/161-paste-data`
+2. **#162 — Per-Schema Presets** — Named presets per form stored in localStorage for recurring data. Sub-issues: #164 (HTML/CSS), #165 (CRUD/storage), #166 (dropdown/integration). Branch: `feature/162-per-schema-presets`
+3. **#163 — Bundle Export/Import** — Package schema + template + sample data as one JSON artifact for LLM workflows. Sub-issues: #167 (export), #168 (import). Branch: `feature/163-bundle-export-import`
+
+**Implementation order:** Paste Data → Presets → Bundle (smallest → largest scope)
 
 ---
 
@@ -288,8 +288,8 @@ Improved separation between end-user and developer experiences across the interf
 
 ---
 
-### 2026-03-14 — UX: Custom Scrollbar Styling (#139, #140)
-**Issues:** #139, #140
+### 2026-03-14 — UX: Custom Scrollbar Styling (#139)
+**Issues:** #139
 
 Added custom scrollbar styles to replace default browser scrollbars across all scrollable areas:
 
@@ -327,6 +327,7 @@ Added 12 new tests to `test_dev_mode.py` covering all changes. Cleaned up unused
 ---
 
 ### 2026-03-14 — Docs Tab UI Refactor & Devcontainer Overhaul
+*(No dedicated issue — infrastructure work done alongside #143 and #152.)*
 
 Two infrastructure improvements:
 

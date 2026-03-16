@@ -113,7 +113,7 @@ Each field defines a single input in the form. The `id` becomes the key in the `
 | `options` | conditional | array | Array of strings. Required for `select`, `radio`, `checkbox`, and `multi_select`. Forbidden on all other types. |
 | `default_value` | conditional | string | Static value to inject. Required for `hidden`. Forbidden on all other types. |
 | `fields` | conditional | array | Sub-field definitions. Required for `repeater`. Forbidden on all other types. |
-| `maxLength` | no | integer | Maximum character count. Minimum 1. Allowed on `longtext` only. Displays a live counter (defaults to 5000 if omitted). Does not hard-truncate — only colors the counter red when exceeded. |
+| `maxLength` | no | integer | Maximum character count. Minimum 1. Allowed on `text` and `longtext`. On `longtext`, displays a live counter (defaults to 5000 if omitted) that colors red when exceeded. On `text`, accepted by the schema spec but not enforced in the browser (no counter, no truncation). |
 | `min` | no | number | Minimum value. Allowed on `number` only. |
 | `max` | no | number | Maximum value. Allowed on `number` only. |
 | `step` | no | number | Step increment. Allowed on `number` only. |
@@ -151,7 +151,7 @@ Examples:
 
 | Type | Renders As | `options` needed? | Special properties |
 |------|-----------|-------------------|--------------------|
-| `text` | Single-line input | no | — |
+| `text` | Single-line input | no | `maxLength` |
 | `email` | Email input with browser validation | no | — |
 | `tel` | Phone number input | no | — |
 | `date` | Native date picker (value: `YYYY-MM-DD`) | no | — |

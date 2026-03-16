@@ -321,7 +321,7 @@ Empty or unfilled fields are empty strings `""`. Always use `data.get('field_id'
 
 ## Conditional Fields (`visible_when`)
 
-Fields with `visible_when` are hidden or shown based on another field's value. The form always collects every field regardless of visibility — hidden conditional fields arrive as empty strings `""`.
+Fields with `visible_when` are hidden or shown based on another field's value. The form always collects every field regardless of visibility — hidden conditional fields contribute their current DOM value (typically an empty string if never shown, but may retain a previously entered value if the user filled the field before hiding it).
 
 Templates do not need special handling for `visible_when`. Use the same `data.get('field_id', '')` pattern. An empty string from a hidden field behaves the same as an unfilled field — handle it with your normal empty-check guards.
 

@@ -62,6 +62,8 @@ Standard single-line input. Use for names, titles, short answers.
 { "id": "first_name", "label": "First Name", "type": "text", "required": true, "placeholder": "Jane" }
 ```
 
+**Schema properties:** `maxLength` (optional integer — accepted by the schema spec but not enforced in the browser. No counter, no truncation. Use `longtext` if you need a visible character counter).
+
 **Template:** `data.get('first_name', '')` → `"Jane"`
 
 ## email
