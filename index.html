@@ -3887,6 +3887,13 @@ function renderPicker() {
       launchForm();
     }
   }, { signal: pickerSignal });
+  // Click anywhere outside a picker card deselects
+  document.addEventListener('click', (e) => {
+    if (selectedSchemaIdx >= 0 && !e.target.closest('.picker-card')) {
+      selectedSchemaIdx = -1;
+      document.querySelectorAll('.picker-card.selected').forEach(c => c.classList.remove('selected'));
+    }
+  }, { signal: pickerSignal });
   grid.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       const card = e.target.closest('.picker-card');
