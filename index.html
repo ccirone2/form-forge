@@ -3110,8 +3110,21 @@ function showView(name) {
   }
 
   // Lazy-init dev editors when first shown
-  if (name === 'dev-schema') initSchemaEditor();
-  if (name === 'dev-template') initTemplateEditor();
+  if (name === 'dev-schema') {
+    initSchemaEditor();
+    // Re-highlight after tab becomes visible (updateCode on hidden elements can lose highlighting)
+    if (schemaJar && typeof Prism !== 'undefined') {
+      const el = document.getElementById('schemaEditor');
+      if (el) devHighlightWithFolding(el, Prism.languages.json, 'json', 'schemaLineNumbers');
+    }
+  }
+  if (name === 'dev-template') {
+    initTemplateEditor();
+    if (templateJar && typeof Prism !== 'undefined') {
+      const el = document.getElementById('templateEditor');
+      if (el) devHighlightWithFolding(el, Prism.languages.python, 'python', 'templateLineNumbers');
+    }
+  }
 }
 
 // ============================================================
