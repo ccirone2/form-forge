@@ -412,6 +412,13 @@
     grid-column: 1 / -1; text-align: center; padding: 40px;
     color: var(--text-muted); font-size: var(--text-base);
   }
+  .picker-card-create {
+    border-style: dashed; border-color: var(--border);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  }
+  .picker-card-create h4 { color: var(--text-muted); }
+  .picker-card-create:hover, .picker-card-create:focus-visible { border-color: var(--accent); }
+  .picker-card-create:hover h4, .picker-card-create:focus-visible h4 { color: var(--text); }
 
   .picker-card .btn-card-open {
     display: none; width: 100%; margin-top: 10px; justify-content: center; align-items: center; gap: 6px;
@@ -3784,8 +3791,24 @@ function renderPicker() {
   grid.innerHTML = '';
   selectedSchemaIdx = -1;
 
+  // Always show "Create a Form" card (at the end when forms exist, alone when empty)
+  const createCard = document.createElement('div');
+  createCard.className = 'picker-card picker-card-create';
+  createCard.setAttribute('tabindex', '0');
+  createCard.setAttribute('role', 'button');
+  createCard.setAttribute('aria-label', 'Create a new form');
+  createCard.innerHTML = `
+    <div class="card-icon"><svg width="28" height="28" style="color: var(--text-muted)"><use href="#icon-plus"/></svg></div>
+    <h4>Create a Form</h4>
+    <p>Open the Schema editor to build a new form</p>
+  `;
+  createCard.addEventListener('click', () => { devNewSchema(); showTab('dev-schema'); });
+  createCard.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); devNewSchema(); showTab('dev-schema'); }
+  });
+
   if (repoSchemas.length === 0) {
-    grid.innerHTML = '<div class="picker-empty">No schemas yet. Use the Schema tab to create one, then commit it to your repo.</div>';
+    grid.appendChild(createCard);
     return;
   }
 
@@ -3815,6 +3838,9 @@ function renderPicker() {
     `;
     grid.appendChild(card);
   });
+
+  // Append "Create a Form" card after all existing forms
+  grid.appendChild(createCard);
 
   // Abort previous listeners to prevent accumulation on repeated renderPicker() calls
   if (pickerAbortController) pickerAbortController.abort();

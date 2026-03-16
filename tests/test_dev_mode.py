@@ -1708,6 +1708,20 @@ def test_profile_empty_state_hint(index_html: str) -> None:
     assert "Save a profile to autofill common fields" in index_html
 
 
+def test_picker_create_card_in_render(index_html: str) -> None:
+    """renderPicker always adds a 'Create a Form' card."""
+    body = _extract_func(index_html, "renderPicker")
+    assert "picker-card-create" in body
+    assert "Create a Form" in body
+    assert "devNewSchema" in body
+
+
+def test_picker_create_card_css(index_html: str) -> None:
+    """Create card has dashed border styling."""
+    assert ".picker-card-create" in index_html
+    assert "dashed" in index_html
+
+
 def test_picker_after_empty_state(index_html: str) -> None:
     """Picker section should appear after the empty state in setup view."""
     setup_start = index_html.index('id="view-setup"')
