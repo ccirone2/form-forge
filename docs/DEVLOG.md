@@ -115,6 +115,31 @@ Consolidated Profiles, Presets, and data-loading actions (Load Sample, Paste Dat
 
 ---
 
+### 2026-03-15 — Markdown Rendering Improvements
+
+Improved the `renderMarkdown()` function used in the Docs tab:
+
+- Added support for h1–h6 headings (previously only h2–h3)
+- Added nested list support (indented `- ` items render as nested `<ul>`)
+- Added multi-line blockquote handling (consecutive `> ` lines merge into a single `<blockquote>`)
+- Added `docs-rendered-md` class to all four doc content containers for consistent styling
+- Fixed repo status string not clearing on disconnect in `disconnectSource()`
+
+---
+
+### 2026-03-15 — Created Issues for Three New Features (#161, #162, #163)
+**Issues:** #161, #162, #163 (+ sub-issues #164–#168)
+
+Created GitHub issues for three new features planned to reduce friction in the form/template authoring loop:
+
+1. **#161 — Clipboard Paste for Form Data** — "Paste Data" button + modal for pasting JSON directly into forms. Branch: `feature/161-paste-data`
+2. **#162 — Per-Schema Presets** — Named presets per form stored in localStorage for recurring data. Sub-issues: #164 (HTML/CSS), #165 (CRUD/storage), #166 (dropdown/integration). Branch: `feature/162-per-schema-presets`
+3. **#163 — Bundle Export/Import** — Package schema + template + sample data as one JSON artifact for LLM workflows. Sub-issues: #167 (export), #168 (import). Branch: `feature/163-bundle-export-import`
+
+**Implementation order:** Paste Data → Presets → Bundle (smallest → largest scope)
+
+---
+
 ### 2026-03-15 — Bundle Export/Import (#163)
 **Issues:** #163, #167, #168
 
@@ -166,17 +191,6 @@ Added "Paste Data" button and modal to the form view, enabling users to paste JS
 - Added 11 new tests covering button placement, modal structure, ARIA attributes, CSS classes, and function existence
 
 ---
-
-### 2026-03-15 — Created Issues for Three New Features (#161, #162, #163)
-**Issues:** #161, #162, #163 (+ sub-issues #164–#168)
-
-Created GitHub issues for three new features planned to reduce friction in the form/template authoring loop:
-
-1. **#161 — Clipboard Paste for Form Data** — "Paste Data" button + modal for pasting JSON directly into forms. Branch: `feature/161-paste-data`
-2. **#162 — Per-Schema Presets** — Named presets per form stored in localStorage for recurring data. Sub-issues: #164 (HTML/CSS), #165 (CRUD/storage), #166 (dropdown/integration). Branch: `feature/162-per-schema-presets`
-3. **#163 — Bundle Export/Import** — Package schema + template + sample data as one JSON artifact for LLM workflows. Sub-issues: #167 (export), #168 (import). Branch: `feature/163-bundle-export-import`
-
-**Implementation order:** Paste Data → Presets → Bundle (smallest → largest scope)
 
 ### 2026-03-14 — Info Field Type & Repeater Table Display (#159)
 **Issues:** #159
@@ -274,8 +288,8 @@ Improved separation between end-user and developer experiences across the interf
 
 ---
 
-### 2026-03-14 — UX: Custom Scrollbar Styling (#139)
-**Issues:** #139
+### 2026-03-14 — UX: Custom Scrollbar Styling (#139, #140)
+**Issues:** #139, #140
 
 Added custom scrollbar styles to replace default browser scrollbars across all scrollable areas:
 
@@ -309,6 +323,15 @@ Added 12 new tests to `test_dev_mode.py` covering all changes. Cleaned up unused
 - Docs live in Dev Mode (not setup) because they target form creators, who are the Dev Mode audience
 - "How It Works" card remains on setup since it's useful context for all users
 - Dev Mode now has 4 tabs: Schema Builder, Template Builder, Workspace, Docs
+
+---
+
+### 2026-03-14 — Docs Tab UI Refactor & Devcontainer Overhaul
+
+Two infrastructure improvements:
+
+1. **Docs tab accordion → tabs** — Replaced the accordion-style documentation layout with horizontal sub-tabs for a cleaner navigation experience. Fixed a scrollbar-driven layout shift issue.
+2. **Devcontainer streamlining** — Removed duplicate Chromium installs and unused npm packages. Added `.vscode/tasks.json`, `.vscode/settings.json`, and `.vscode/extensions.json` for consistent editor setup.
 
 ---
 
@@ -804,7 +827,7 @@ All tasks are independent with no ordering constraints.
 - **Touch-friendly** — Added `touch-action: manipulation` to prevent double-tap zoom delay, `padding: 6px 0` for larger hit area.
 - **Keyboard accessible** — Steps have `role="button"`, `tabindex="0"`, and respond to Enter/Space keys.
 
-### 2026-03-10 -- DOCX styling and layout polish
+### 2026-03-10 — DOCX styling and layout polish
 
 - **Title & Heading 1 horizontal rules** — Added bottom borders (`w:pBdr`) to Title and Heading 1 styles using `color_subtitle` for theme-matched lines.
 - **Heading spacing** — 6pt `space_after` on Heading 1, 4pt on Heading 2–6.
@@ -821,7 +844,7 @@ All tasks are independent with no ordering constraints.
 
 ---
 
-### 2026-03-10 -- Load Sample Data button + sampleData schema property (#55, #56, #57)
+### 2026-03-10 — Load Sample Data button + sampleData schema property (#55, #56, #57)
 **Issues:** #55, #56, #57
 
 - **Load Sample Data button** added to the submit area alongside Save Data / Load Data. Clicking it fetches `tests/fixtures/{schemaName}_sample.json` from the connected GitHub repo via `ghFetchRaw()`, then calls `populateForm(data, { skipFileFields: true })`.

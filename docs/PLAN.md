@@ -9,7 +9,50 @@ TODO: Schema context menu improvements — add option to add base scaffold (e.g.
 
 ---
 
+## Active Plans
+
+*(No active plans.)*
+
+---
+
 ## Completed Plans
+
+### Issue #190 — Eliminate ghToolbar ✅
+
+**Branch:** `feature/190-eliminate-ghtoolbar`
+**Issues:** #190
+**PR:** #191
+
+Removed the global `#ghToolbar` bar and merged its branch controls (branch select, create-branch, refresh) into the per-editor source toolbars for both Schema and Template tabs.
+
+### Issues #185, #186–#189 — Forms Tab UX Improvements ✅
+
+**Issues:** #185
+**PRs:** #186, #187, #188, #189
+
+UX improvements: demo→open button swap, disconnect moved to connect dialog, inline "Open Form" button on picker cards, clean Forms tab layout when connected.
+
+### Issues #181, #182, #183 — Button Icon, Source Persistence, Docs Refresh ✅
+
+**PR:** #184
+
+Three bug fixes: missing `icon-link` SVG symbol (#181), GitHub connection persistence to localStorage (#182), docs tab fetching from connected repo (#183).
+
+### Issue #159 — Info Field Type & Repeater Table Display ✅
+
+**Branch:** `feature/159-info-repeater-table`
+**Issues:** #159
+**PR:** #160
+
+Added new `info` field type (read-only display block with info/warning/success styles) and `display: "table"` mode for repeater fields.
+
+### Issue #157 — Git Controls in Editor Tabs ✅
+
+**Branch:** `feature/157-git-controls`
+**Issues:** #157
+**PR:** #158
+
+Restored git operations (branch select, new branch, refresh, disconnect, commit/push) that became unreachable when the workspace view was removed in PR #151.
 
 ### Issue #172 — Unified Autofill Dropdown ✅
 
@@ -20,7 +63,6 @@ Consolidated Profiles, Presets, and data-loading actions into a single `[Autofil
 
 ### Issues #161, #162, #163 — Paste Data, Presets, Bundle Export/Import ✅
 
-**Plan:** `~/.claude/plans/cuddly-churning-tower.md`
 **Implementation order:** Paste Data → Presets → Bundle
 
 | # | Feature | Branch | Sub-issues | Status |

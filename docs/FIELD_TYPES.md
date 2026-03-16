@@ -39,7 +39,7 @@ These apply to any field type unless noted otherwise in the type's section below
 |----------|------|-------------|
 | `required` | boolean | Fails validation if empty. For `address`, checks that `street` is non-empty. |
 | `placeholder` | string | Input placeholder text. Not applicable to `date`, `heading`, `hidden`, `address`, `file`, `signature`, `repeater`. |
-| `hint` | string | Helper text shown below the field label. Applicable to all types. |
+| `hint` | string | Helper text shown below the field label. Applicable to all types except `info` (where it is accepted by the schema but not rendered). |
 | `visible_when` | object | Conditionally show this field. See [Conditional Visibility](#conditional-visibility-visible_when). |
 
 ## Layout Rules
@@ -61,8 +61,6 @@ Standard single-line input. Use for names, titles, short answers.
 ```json
 { "id": "first_name", "label": "First Name", "type": "text", "required": true, "placeholder": "Jane" }
 ```
-
-**Schema properties:** `maxLength` (optional integer, no enforced limit in the browser — schema validation only).
 
 **Template:** `data.get('first_name', '')` → `"Jane"`
 
@@ -366,7 +364,7 @@ if receipt and ',' in receipt:
 
 ## signature
 
-Canvas-based drawing pad for capturing signatures. Supports both mouse and touch input. The canvas is 400x150 pixels internally. Exports as a base64 PNG data URI stored in a hidden input with `id = field.id`. Includes a "Clear" button to reset.
+Canvas-based drawing pad for capturing signatures. Supports both mouse and touch input. The canvas is full-width (CSS `width: 100%`) and 150px tall, with internal pixel dimensions scaled by the device pixel ratio for sharp rendering on high-DPI displays. Exports as a base64 PNG data URI stored in a hidden input with `id = field.id`. Includes a "Clear" button to reset.
 
 ```json
 { "id": "employee_signature", "label": "Employee Signature", "type": "signature", "required": true }
@@ -403,7 +401,7 @@ Dynamic field group — users can add N copies of a set of sub-fields. Each row 
 ```
 
 **Schema properties:**
-- `fields` — required array of sub-field definitions. Permitted sub-field types: `text`, `email`, `tel`, `number`, `currency`, `select`, `time`, `url`, `toggle`. No other types (including `heading`, `hidden`, `address`, `repeater`) are allowed inside a repeater.
+- `fields` — required array of sub-field definitions. Permitted sub-field types: `text`, `email`, `tel`, `number`, `currency`, `select`, `time`, `url`, `toggle`. No other types (including `heading`, `hidden`, `address`, `repeater`) are allowed inside a repeater. **Note:** `toggle` sub-fields within repeaters have a known limitation — data collection reads `.value` instead of `.checked`, so the collected value is always `"on"` rather than `"true"`/`"false"`. Avoid `toggle` in repeaters until this is fixed.
 - `min_rows` — minimum rows; remove button is disabled when at the minimum (defaults to `1`)
 - `max_rows` — maximum rows; add button is disabled when at the maximum (defaults to `10`)
 - `display` — optional display mode: `"cards"` (default) renders each row as a stacked card with numbered header; `"table"` renders rows as a compact HTML table with column headers from sub-field labels. The data format is identical regardless of display mode.
@@ -558,6 +556,7 @@ Any top-level field can include a `visible_when` object to make it appear only w
 - `checkbox` — attaches `change` listeners; `equals` must match the full comma-separated string of checked values
 - `text`, `email`, `tel`, `date`, `time`, `url`, `datetime`, `textarea`, `longtext`, `number`, `currency` — attaches `input` and `change` listeners on the element
 - `toggle` — attaches a `change` listener on the checkbox input
+- `multi_select` — renders a hidden input with `id = field.id` and technically works, but updates the hidden input programmatically without firing DOM events, so visibility changes may not trigger reliably
 
 **Supported target field types** (the field with `visible_when`):
 Works for any type that renders a direct element with `id = field.id`: `text`, `email`, `tel`, `date`, `time`, `url`, `datetime`, `textarea`, `longtext`, `select`, `number`, `currency`, `hidden`, `file`, `signature`, `toggle`.

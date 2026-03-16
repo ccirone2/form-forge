@@ -22,18 +22,17 @@
 | # | Path | Direction | Format |
 |---|------|-----------|--------|
 | 1 | **DOCX export** | Out | `.docx` via Pyodide + python-docx |
-| 2 | **Form data save** | Out | `.json` file download |
-| 3 | **Form data load** | In | `.json` file upload → `populateForm()` |
+| 2 | **Form data save** | Out | `.json` file download (Save Data button in submit area) |
+| 3 | **Form data load** | In | `.json` file upload via Autofill dropdown → "Load from File" → `populateForm()` |
 | 4 | **URL data load** | In | `?data=<url>` → fetch JSON → `populateForm()` |
-| 5 | **Clipboard paste** | In | Paste JSON data modal → `populateForm()` (#161) |
-| 6 | **Profile save** | Internal | localStorage (multi-profile, named via Autofill) |
-| 7 | **Profile apply** | Internal | localStorage → autofill matched fields |
-| 8 | **Preset save** | Internal | localStorage per-schema, named field subsets (#162) |
-| 9 | **Preset apply** | Internal | localStorage → populate selected fields |
-| 10 | **Bundle export** | Out | Copy/download schema + template + sample data as `.formforge.json` (#163) |
-| 11 | **Bundle import** | In | Paste/drop package → load into Schema + Template editors (#163) |
-| 12 | **Autosave** | Internal | localStorage, 2s debounce, per-schema key |
-| 13 | **Autosave restore** | Internal | Prompt on form launch if saved data exists |
+| 5 | **Clipboard paste** | In | Autofill dropdown → "Paste Data" → JSON modal → `populateForm()` (#161) |
+| 6 | **Autofill dropdown** | UI | Unified `[Autofill ▾]` button consolidating profiles, presets, and load actions (#172) |
+| 7 | **Profile save/apply** | Internal | localStorage (multi-profile, named). Save current form or apply saved profile via Autofill dropdown |
+| 8 | **Preset save/apply** | Internal | localStorage per-schema, named field subsets. Save/apply via Autofill dropdown (#162) |
+| 9 | **Bundle export** | Out | Copy/download schema + template + sample data as `.formforge.json` (#163) |
+| 10 | **Bundle import** | In | Paste/drop package → load into Schema + Template editors (#163) |
+| 11 | **Autosave** | Internal | localStorage, 2s debounce, per-schema key |
+| 12 | **Autosave restore** | Internal | Prompt on form launch if saved data exists |
 
 ## Editing Surfaces
 
@@ -53,14 +52,25 @@
 | Picker card | "Edit Schema" | Schema tab |
 | Picker card | "Edit Template" | Template tab |
 | Form view | "Edit Schema" | Schema tab |
+| Form view | Autofill button | Profiles / Presets / Load Sample / Paste Data / Load from File |
 | Schema preview | "Fill Form" | Forms tab with data |
 | Logo click | — | Forms tab |
+
+## Form Behavior
+
+| Feature | Description |
+|---------|-------------|
+| **Wizard mode** | Schemas with `"wizard": true` render as multi-step forms with numbered step indicator, Next/Back navigation, and per-step validation. Submit only available on final step. |
+| **Conditional visibility** | Fields with `visible_when: { field, equals }` are shown/hidden based on another field's value. Hidden fields are skipped by required validation. |
 
 ## LLM-Friendly Patterns
 
 - Copy/paste JSON schemas in/out of editors
 - Copy/paste Python templates in/out
 - JSON form data export/import (round-trip through LLM)
+- Paste JSON data via clipboard modal (Autofill → Paste Data)
+- Bundle export/import for schema + template + data as one artifact
+- Profile/preset reuse for boilerplate data
 - Context menus with field snippets reduce need to remember syntax
 - Auto-generated sample data means less manual setup
 

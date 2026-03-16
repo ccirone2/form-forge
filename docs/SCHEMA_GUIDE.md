@@ -53,7 +53,7 @@ for p in pathlib.Path('schemas').glob('*.json'):
 | `title` | yes | string | Displayed as the form heading. Minimum 1 character. |
 | `description` | no | string | Subheading shown below the title and on the picker card. |
 | `icon` | no | string | Emoji displayed on the picker card. Defaults to 📄 if omitted. |
-| `template` | no | string | Path to the Python template file relative to repo root. Must match `^templates/.+\.py$`. Defaults to `templates/{schema-filename}.py`. |
+| `template` | no | string | Path to the Python template file relative to repo root. Must match `^templates/.+\.py$`. Defaults to `templates/{schema-filename}.py`. **Note:** The Schema tab's live validator treats `template` as required and shows a validation error badge if omitted — always include it in practice. |
 | `wizard` | no | boolean | When `true`, sections render as sequential steps with Next/Back navigation. See [Wizard Mode](#wizard-mode). |
 | `sections` | yes | array | Array of section objects. Minimum 1. |
 | `sampleData` | no | object | Inline sample form data (field ID to string value). Used by the **Load Sample Data** button when no fixture file exists. See [Sample Data](#sample-data). |
@@ -113,7 +113,7 @@ Each field defines a single input in the form. The `id` becomes the key in the `
 | `options` | conditional | array | Array of strings. Required for `select`, `radio`, `checkbox`, and `multi_select`. Forbidden on all other types. |
 | `default_value` | conditional | string | Static value to inject. Required for `hidden`. Forbidden on all other types. |
 | `fields` | conditional | array | Sub-field definitions. Required for `repeater`. Forbidden on all other types. |
-| `maxLength` | no | integer | Maximum character count. Minimum 1. Allowed on `text` and `longtext` only. On `longtext`, displays a live counter (defaults to 5000). On `text`, schema validation only — no counter in the browser. |
+| `maxLength` | no | integer | Maximum character count. Minimum 1. Allowed on `longtext` only. Displays a live counter (defaults to 5000 if omitted). Does not hard-truncate — only colors the counter red when exceeded. |
 | `min` | no | number | Minimum value. Allowed on `number` only. |
 | `max` | no | number | Maximum value. Allowed on `number` only. |
 | `step` | no | number | Step increment. Allowed on `number` only. |
@@ -151,7 +151,7 @@ Examples:
 
 | Type | Renders As | `options` needed? | Special properties |
 |------|-----------|-------------------|--------------------|
-| `text` | Single-line input | no | `maxLength` |
+| `text` | Single-line input | no | — |
 | `email` | Email input with browser validation | no | — |
 | `tel` | Phone number input | no | — |
 | `date` | Native date picker (value: `YYYY-MM-DD`) | no | — |
@@ -277,7 +277,7 @@ Behavior:
 - The field is hidden by default and shown only when the referenced field's current value matches `equals`.
 - Visibility is evaluated on every `change`/`input` event of the source field.
 - Hidden conditional fields are skipped by `required` validation — a hidden field will never block export.
-- `collectFormData()` always collects all fields regardless of visibility. Hidden fields contribute an empty string to the data dict.
+- `collectFormData()` always collects all fields regardless of visibility. Hidden conditional fields contribute their current DOM value — this is an empty string if the field was never shown, but may retain a previously entered value if the user filled the field before hiding it.
 - The source field can appear anywhere in the schema — before or after the conditional field.
 - Multiple fields can each depend on the same source field.
 
@@ -298,6 +298,7 @@ The smallest valid schema:
 ```json
 {
   "title": "Quick Note",
+  "template": "templates/quick-note.py",
   "sections": [
     {
       "title": "Note",
@@ -315,7 +316,7 @@ The **Load Sample Data** button in the form UI lets users fill a form with repre
 
 ### Fixture files (preferred)
 
-Place a JSON file at `tests/fixtures/{schemaName}_sample.json` where `{schemaName}` matches the schema filename without the `.json` extension (e.g., `schemas/onboarding.json` uses `tests/fixtures/onboarding_sample.json`). The file should contain a flat `{fieldId: stringValue}` object with values for all fields. `file` and `signature` fields can use empty strings.
+Place a JSON file at `tests/fixtures/{schemaName}_sample.json` where `{schemaName}` matches the schema filename without the `.json` extension (e.g., `schemas/onboarding.json` uses `tests/fixtures/onboarding_sample.json`). The file should contain a flat `{fieldId: stringValue}` object with values for all fields. `file` and `signature` fields can use empty strings. **Note:** Fixture file lookup only works when the form is loaded from a GitHub-connected repo. Local folder sources skip fixture resolution and fall through directly to inline `sampleData`.
 
 ### Inline `sampleData` (fallback)
 
