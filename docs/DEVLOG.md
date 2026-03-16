@@ -14,6 +14,23 @@
 
 ## Log
 
+### 2026-03-15 — UI/UX Audit (#192)
+
+Conducted a comprehensive UI/UX audit covering accessibility, performance, theming/design tokens, and responsive design. Identified 55 issues (1 critical, 13 high, 20 medium, 21 low).
+
+**Key findings:**
+- **Critical:** `devUpdateLineNumbers` rebuilds entire gutter DOM on every keypress — severe DOM thrashing in code editors
+- **High:** Keyboard-inaccessible `token-toggle` divs, missing focus indicators on nav tabs, icon-only buttons without `aria-label`, 33 transition declarations bypassing design tokens, inconsistent modal overlay colors
+- **Positive:** Excellent ARIA on primary widgets, well-structured token system (85%+ adoption), no layout-triggering animations, smart lazy loading, good mobile touch target expansion
+
+**Created sub-issues by priority:**
+- #193 — P0: Fix critical a11y gaps (keyboard access, focus indicators, ARIA)
+- #194 — P1: Normalize design tokens and fix modal accessibility
+- #195 — P2: Optimize editor performance and improve responsive design
+- #196 — P3: Design system refinements and long-term backlog
+
+---
+
 ### 2026-03-15 — Eliminate ghToolbar (#190)
 
 Removed the global `#ghToolbar` bar and merged its branch controls into the per-editor source toolbars:
