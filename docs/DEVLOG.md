@@ -14,6 +14,26 @@
 
 ## Log
 
+### 2026-03-25 — Coverpage Stencil (#222)
+
+Added `coverpage()` to `templates/stencils.py` — a new public stencil function that renders professional document cover pages:
+
+- **Geometric bar + logo** — full-width shaded table cell (theme accent color, overridable) with company logo centered inside
+- **Title & type** — document title positioned ~2/3 down page, doc type subtitle with horizontal rule
+- **Metadata table** — configurable label/value pairs (date, revision, ID, author, etc.)
+- **Page break** — body content starts on page 2
+
+Also modified `new_doc()` to skip the title heading when `title_text` is empty, enabling clean coverpage workflows.
+
+**New files:**
+- `schemas/coverpage-demo.json` — demo schema with logo, title, type, metadata, and body content fields
+- `templates/coverpage-demo.py` — demo template demonstrating `coverpage()` usage
+
+**Tests:** 8 new tests (7 coverpage + 1 empty-title). All 118 tests pass.
+**Docs:** Updated `TEMPLATE_GUIDE.md` and template help sidebar in `index.html`.
+
+---
+
 ### 2026-03-25 — Editor Context Menu Improvements (#215, #216, #217, #218, #219)
 
 Redesigned Schema and Template editor context menus to be cursor-aware, flat, and editor-clamped.

@@ -13,6 +13,14 @@
 
 ## Completed Plans
 
+### Issue #222 — Coverpage Stencil ✅
+
+**Branch:** `feature/222-coverpage-stencil`
+**Issue:** #222
+**Plan:** `~/.claude/plans/glowing-honking-sloth.md`
+
+Added `coverpage()` stencil function for professional document cover pages: company logo with geometric bar, title/type at ~2/3 page, configurable metadata fields, page break. Includes demo schema+template, 8 tests, and docs updates.
+
 ### Issue #215 — Improve Editor Context Menus ✅
 
 **Branch:** `feature/215-context-menu-improvements`
