@@ -2582,6 +2582,25 @@ def test_preset_setup_called_from_post_launch(index_html: str) -> None:
     assert "setupPresets()" in body
 
 
+def test_signature_getpos_no_dpr_scaling(index_html: str) -> None:
+    """getPos in createSignatureField must not double-scale by DPR (#233)."""
+    body = _extract_func(index_html, "createSignatureField")
+    assert "getPos" in body
+    # getPos must NOT reference scaleX/scaleY (old double-DPR bug)
+    # Extract just the getPos inner function body
+    import re
+
+    m = re.search(r"function getPos\b[^{]*\{([\s\S]*?)\n  \}", body)
+    assert m, "getPos function not found inside createSignatureField"
+    getpos_body = m.group(1)
+    assert "scaleX" not in getpos_body, "getPos should not scale by DPR"
+    assert "scaleY" not in getpos_body, "getPos should not scale by DPR"
+    assert "canvas.width" not in getpos_body, "getPos should use CSS coords, not canvas dims"
+    assert "clientX" in getpos_body
+    assert "clientY" in getpos_body
+    assert "rect.left" in getpos_body
+
+
 def test_preset_hidden_on_reset(index_html: str) -> None:
     """hidePresetDropdown is called from resetForm."""
     body = _extract_func(index_html, "resetForm")

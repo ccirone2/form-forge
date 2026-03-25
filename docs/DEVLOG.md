@@ -14,6 +14,12 @@
 
 ## Log
 
+### 2026-03-25 — Fix Signature Canvas Drawing Offset (#233)
+
+Fixed double-DPR scaling bug in `createSignatureField()` where `getPos()` multiplied coordinates by `canvas.width / rect.width` (= devicePixelRatio), but the canvas context was already scaled by DPR via `ctx.scale(dpr, dpr)`. Strokes appeared offset from the actual touch/cursor position on high-DPI displays (2× offset on retina, 3× on ultra-high-DPI). Removed the redundant scaling so `getPos()` returns raw CSS-pixel coordinates.
+
+---
+
 ### 2026-03-25 — Add Stencil Class to Stencils (#230)
 
 Added `Stencil` fluent builder class to `stencils.py`. Every public stencil function is exposed as a chainable method (returns `self`), with `finalize()` returning DOCX bytes. Supports method chaining, sequential calls, and mixed patterns with conditionals. Instance-scoped `set_theme()` does not modify the module global.
