@@ -2022,6 +2022,80 @@ def test_demo_sets_content_source_type(index_html: str) -> None:
     assert "contentSourceType = 'demo'" in match.group(1)
 
 
+def test_demo_loads_editors(index_html: str) -> None:
+    """launchDemo should pre-load DEMO_SCHEMA and DEMO_TEMPLATE into editor variables."""
+    match = re.search(
+        r"async function launchDemo\(\)([\s\S]*?)^(?:async )?function ",
+        index_html,
+        re.M,
+    )
+    assert match
+    body = match.group(1)
+    assert "DEMO_SCHEMA" in body
+    assert "DEMO_TEMPLATE" in body
+    assert "devSchemaText" in body
+    assert "devTemplateText" in body
+    assert "devSampleDataText" in body
+    assert "devSaveEditorState" in body
+
+
+def test_demo_reset_schema_button_exists(index_html: str) -> None:
+    """Schema toolbar has a demo reset button."""
+    assert 'id="schemaDemoResetBtn"' in index_html
+    assert "devResetDemoSchema()" in index_html
+
+
+def test_demo_reset_template_button_exists(index_html: str) -> None:
+    """Template toolbar has a demo reset button."""
+    assert 'id="templateDemoResetBtn"' in index_html
+    assert "devResetDemoTemplate()" in index_html
+
+
+def test_demo_reset_schema_function(index_html: str) -> None:
+    """devResetDemoSchema restores DEMO_SCHEMA into editor."""
+    body = _extract_func(index_html, "devResetDemoSchema")
+    assert "DEMO_SCHEMA" in body
+    assert "devSchemaText" in body
+    assert "schemaJar" in body
+
+
+def test_demo_reset_template_function(index_html: str) -> None:
+    """devResetDemoTemplate restores DEMO_TEMPLATE into editor."""
+    body = _extract_func(index_html, "devResetDemoTemplate")
+    assert "DEMO_TEMPLATE" in body
+    assert "devTemplateText" in body
+    assert "templateJar" in body
+
+
+def test_demo_reset_buttons_visibility_function(index_html: str) -> None:
+    """devUpdateDemoResetButtons shows buttons only in demo mode with edits."""
+    body = _extract_func(index_html, "devUpdateDemoResetButtons")
+    assert "contentSourceType" in body
+    assert "schemaDemoResetBtn" in body
+    assert "templateDemoResetBtn" in body
+
+
+def test_init_schema_editor_demo_fallback(index_html: str) -> None:
+    """initSchemaEditor falls back to DEMO_SCHEMA when contentSourceType is demo."""
+    body = _extract_func(index_html, "initSchemaEditor")
+    assert "DEMO_SCHEMA" in body
+    assert "contentSourceType" in body
+
+
+def test_init_template_editor_demo_fallback(index_html: str) -> None:
+    """initTemplateEditor falls back to DEMO_TEMPLATE when contentSourceType is demo."""
+    body = _extract_func(index_html, "initTemplateEditor")
+    assert "DEMO_TEMPLATE" in body
+    assert "contentSourceType" in body
+
+
+def test_source_toolbar_shows_demo_label(index_html: str) -> None:
+    """updateSourceToolbar shows demo context label when contentSourceType is demo."""
+    body = _extract_func(index_html, "updateSourceToolbar")
+    assert "demo" in body.lower()
+    assert "isDemo" in body
+
+
 def test_picker_uses_abort_controller(index_html: str) -> None:
     """renderPicker should use AbortController to prevent listener accumulation."""
     match = re.search(

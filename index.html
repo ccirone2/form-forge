@@ -2762,6 +2762,10 @@
           <svg width="12" height="12"><use href="#icon-book"/></svg>
           Reference
         </button>
+        <button type="button" class="btn-secondary btn-sm demo-reset-btn" id="schemaDemoResetBtn" onclick="devResetDemoSchema()" title="Reset to original demo schema" style="display:none">
+          <svg width="12" height="12"><use href="#icon-refresh"/></svg>
+          Reset Demo
+        </button>
       </div>
     </div>
     <div class="dev-source-toolbar" id="schemaSourceToolbar" style="display:none">
@@ -2859,6 +2863,10 @@
         <button type="button" class="btn-primary btn-sm" onclick="devRunPreview()" title="Preview DOCX (Shift+Enter / Ctrl+Enter)">
           <svg width="12" height="12"><use href="#icon-play"/></svg>
           Preview DOCX
+        </button>
+        <button type="button" class="btn-secondary btn-sm demo-reset-btn" id="templateDemoResetBtn" onclick="devResetDemoTemplate()" title="Reset to original demo template" style="display:none">
+          <svg width="12" height="12"><use href="#icon-refresh"/></svg>
+          Reset Demo
         </button>
       </div>
     </div>
@@ -4002,6 +4010,18 @@ async function launchDemo() {
     log('Demo template loaded into Pyodide', 'success');
 
     document.getElementById('exportBtn').disabled = false;
+
+    // Pre-load demo content into editors so Schema/Template tabs show it
+    devSchemaText = JSON.stringify(DEMO_SCHEMA, null, 2);
+    devTemplateText = DEMO_TEMPLATE;
+    devSampleDataText = JSON.stringify(DEMO_SCHEMA.sampleData || {}, null, 2);
+    currentSchemaFile = null;
+    currentTemplateFile = null;
+    if (schemaJar) schemaJar.updateCode(devSchemaText);
+    if (templateJar) templateJar.updateCode(devTemplateText);
+    if (sampleJar) sampleJar.updateCode(devSampleDataText);
+    devSaveEditorState();
+
     showView('form');
     postLaunchHook();
   } catch (err) {
@@ -9959,10 +9979,14 @@ function updateSourceToolbar() {
     const editorContent = fileType === 'schema' ? devSchemaText : devTemplateText;
     const hasEditorContent = editorContent && editorContent.trim();
 
-    // Show toolbar when a source is connected (GitHub or local folder) or a file is loaded
-    if (f || isGh || isLocal) {
+    const isDemo = contentSourceType === 'demo';
+
+    // Show toolbar when a source is connected (GitHub, local folder, or demo)
+    if (f || isGh || isLocal || isDemo) {
       toolbar.style.display = 'flex';
-      document.getElementById(prefix + 'SourceFile').textContent = f ? (f.ghPath || f.name) : (hasEditorContent ? 'new file (unsaved)' : '');
+      document.getElementById(prefix + 'SourceFile').textContent = isDemo
+        ? 'demo · Employee Onboarding'
+        : (f ? (f.ghPath || f.name) : (hasEditorContent ? 'new file (unsaved)' : ''));
       document.getElementById(prefix + 'SourceBranch').textContent = isGh ? `@ ${ghBranch}` : '';
       document.getElementById(prefix + 'BranchSelect').style.display = isGh ? '' : 'none';
       document.getElementById(prefix + 'NewBranchBtn').style.display = isGh ? 'inline-flex' : 'none';
@@ -9976,6 +10000,7 @@ function updateSourceToolbar() {
 
   configureToolbar(schemaToolbar, 'schema', 'schema');
   configureToolbar(tmplToolbar, 'template', 'template');
+  devUpdateDemoResetButtons();
 }
 
 // ============================================================
@@ -10391,7 +10416,9 @@ function initSchemaEditor() {
   if (!el || typeof CodeJar === 'undefined') return;
 
   if (!devSchemaText) {
-    devSchemaText = JSON.stringify(DEV_STARTER_SCHEMA, null, 2);
+    devSchemaText = contentSourceType === 'demo'
+      ? JSON.stringify(DEMO_SCHEMA, null, 2)
+      : JSON.stringify(DEV_STARTER_SCHEMA, null, 2);
   }
   el.textContent = devSchemaText;
 
@@ -10412,6 +10439,7 @@ function initSchemaEditor() {
     clearTimeout(devPreviewDebounce);
     devPreviewDebounce = setTimeout(devUpdateSchemaPreview, 300);
     devSaveEditorState();
+    devUpdateDemoResetButtons();
     if (contentSourceType === 'github' && currentSchemaFile) {
       devGhTrackModification('schema', currentSchemaFile.index);
     }
@@ -10881,6 +10909,44 @@ function devNewSchema() {
   updateSourceToolbar();
   devUpdateSchemaPreview();
   showToast('New schema created');
+}
+
+function devResetDemoSchema() {
+  devSchemaText = JSON.stringify(DEMO_SCHEMA, null, 2);
+  if (schemaJar) schemaJar.updateCode(devSchemaText);
+  devSaveEditorState();
+  devUpdateSchemaPreview();
+  devUpdateDemoResetButtons();
+  showToast('Schema reset to demo original');
+}
+
+function devResetDemoTemplate() {
+  devTemplateText = DEMO_TEMPLATE;
+  if (templateJar) templateJar.updateCode(devTemplateText);
+  devSampleDataText = JSON.stringify(DEMO_SCHEMA.sampleData || {}, null, 2);
+  if (sampleJar) sampleJar.updateCode(devSampleDataText);
+  devSaveEditorState();
+  devUpdateTemplateValidation();
+  devUpdateDemoResetButtons();
+  showToast('Template reset to demo original');
+}
+
+function devUpdateDemoResetButtons() {
+  const schemaBtn = document.getElementById('schemaDemoResetBtn');
+  const templateBtn = document.getElementById('templateDemoResetBtn');
+  if (!schemaBtn || !templateBtn) return;
+
+  if (contentSourceType !== 'demo') {
+    schemaBtn.style.display = 'none';
+    templateBtn.style.display = 'none';
+    return;
+  }
+
+  const origSchema = JSON.stringify(DEMO_SCHEMA, null, 2);
+  schemaBtn.style.display = devSchemaText !== origSchema ? 'inline-flex' : 'none';
+
+  const origTemplate = DEMO_TEMPLATE;
+  templateBtn.style.display = devTemplateText !== origTemplate ? 'inline-flex' : 'none';
 }
 
 function devLoadSchemaFile(event) {
@@ -12135,7 +12201,9 @@ function initTemplateEditor() {
   if (!el || typeof CodeJar === 'undefined') return;
 
   if (!devTemplateText) {
-    devTemplateText = DEV_STARTER_TEMPLATE;
+    devTemplateText = contentSourceType === 'demo'
+      ? DEMO_TEMPLATE
+      : DEV_STARTER_TEMPLATE;
   }
   el.textContent = devTemplateText;
 
@@ -12154,6 +12222,7 @@ function initTemplateEditor() {
     devSaveEditorState();
     clearTimeout(devTemplateValidDebounce);
     devTemplateValidDebounce = setTimeout(devUpdateTemplateValidation, 300);
+    devUpdateDemoResetButtons();
     if (contentSourceType === 'github' && currentTemplateFile) {
       devGhTrackModification('template', currentTemplateFile.index);
     }
