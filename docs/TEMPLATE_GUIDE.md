@@ -173,6 +173,34 @@ stencils.format_time("")                     # → ""
 
 Always pass a string — use `data.get('field_id', '')` to guarantee a string default.
 
+### `stencils.coverpage(doc, title, doc_type="", metadata=None, logo_b64="", logo_width=2.0, bar_color=None)`
+
+Adds a professional cover page to the document. Use with `new_doc("", "")` so the cover page is the first content. A page break is appended automatically.
+
+```python
+doc = stencils.new_doc("", "")
+stencils.coverpage(doc,
+    title="Safety Inspection Report",
+    doc_type="Technical Report",
+    metadata=[
+        ("Date", data.get("doc_date", "")),
+        ("Revision", data.get("revision", "")),
+        ("Document ID", data.get("doc_id", "")),
+        ("Author", data.get("author", "")),
+    ],
+    logo_b64=data.get("company_logo", ""),
+)
+# Body content follows on page 2...
+stencils.table_section(doc, "Findings", [...])
+```
+
+- `title` — large centered title displayed ~2/3 down the page
+- `doc_type` — subtitle-style label below the title (e.g. "Technical Report")
+- `metadata` — list of `(label, value)` tuples rendered as a compact table (date, revision, ID, author, etc.)
+- `logo_b64` — base64 data-URI for a company logo, displayed inside a colored bar at the top of the page
+- `logo_width` — logo width in inches (default 2.0)
+- `bar_color` — hex color for the bar background (defaults to theme `color_accent`)
+
 ### `stencils.finalize(doc)`
 
 Serializes the `Document` to bytes and returns them. Always call this as the last line of `generate_docx`.

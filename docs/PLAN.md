@@ -17,6 +17,14 @@ TODO: Schema context menu improvements — add option to add base scaffold (e.g.
 
 ## Completed Plans
 
+### Issue #222 — Coverpage Stencil ✅
+
+**Branch:** `feature/222-coverpage-stencil`
+**Issue:** #222
+**Plan:** `~/.claude/plans/glowing-honking-sloth.md`
+
+Added `coverpage()` stencil function for professional document cover pages: company logo with geometric bar, title/type at ~2/3 page, configurable metadata fields, page break. Includes demo schema+template, 8 tests, and docs updates.
+
 ### Issue #202 — Commit New Files from Editors to GitHub ✅
 
 **Branch:** `feature/202-commit-new-files`
