@@ -8322,7 +8322,7 @@ Each field defines a single input in the form. The \`id\` becomes the key in the
 | \`required\` | no | boolean | When \`true\`, prevents export until the field is filled. |
 | \`placeholder\` | no | string | Ghost text shown inside empty inputs. |
 | \`hint\` | no | string | Help text displayed below the field in smaller text. |
-| \`options\` | conditional | array | Array of strings. Required for \`select\`, \`radio\`, \`checkbox\`, and \`multi_select\`. Forbidden on all other types. |
+| \`options\` | conditional | array | Array of strings. Minimum 1 item. Required for \`select\`, \`radio\`, \`checkbox\`, and \`multi_select\`. Forbidden on all other types. |
 | \`default_value\` | conditional | string | Static value to inject. Required for \`hidden\`. Forbidden on all other types. |
 | \`fields\` | conditional | array | Sub-field definitions. Required for \`repeater\`. Forbidden on all other types. |
 | \`maxLength\` | no | integer | Maximum character count. Minimum 1. Allowed on \`text\` and \`longtext\`. On \`longtext\`, displays a live counter (defaults to 5000 if omitted) that colors red when exceeded. On \`text\`, accepted by the schema spec but not enforced in the browser (no counter, no truncation). |
@@ -8332,7 +8332,7 @@ Each field defines a single input in the form. The \`id\` becomes the key in the
 | \`currency_symbol\` | no | string | Currency prefix. Allowed on \`currency\` only. Defaults to \`$\`. |
 | \`accept\` | no | string | File type filter (e.g. \`"image/*"\`). Allowed on \`file\` only. |
 | \`max_size_mb\` | no | integer | Maximum file size in MB. Minimum 1. Allowed on \`file\` only. |
-| \`content\` | conditional | string | Display text for \`info\` blocks. Required for \`info\`. Forbidden on all other types. |
+| \`content\` | conditional | string | Display text for \`info\` blocks. Minimum 1 character. Required for \`info\`. Forbidden on all other types. |
 | \`style\` | no | string | Visual variant for \`info\` blocks: \`"info"\`, \`"warning"\`, or \`"success"\`. Defaults to \`"info"\`. Allowed on \`info\` only. |
 | \`min_rows\` | no | integer | Minimum rows shown initially. Minimum 1. Allowed on \`repeater\` only. |
 | \`max_rows\` | no | integer | Maximum rows allowed. Minimum 1. Allowed on \`repeater\` only. |
@@ -8392,7 +8392,7 @@ See \`docs/FIELD_TYPES.md\` for detailed examples, template handling code, and l
 
 ## Options Arrays
 
-For \`select\`, \`radio\`, \`checkbox\`, and \`multi_select\` fields, the \`options\` array defines the available choices:
+For \`select\`, \`radio\`, \`checkbox\`, and \`multi_select\` fields, the \`options\` array defines the available choices. The array must contain at least 1 item (\`minItems: 1\`).
 
 \`\`\`json
 {
@@ -8425,6 +8425,24 @@ The \`repeater\` type requires a nested \`fields\` array. Sub-fields support a r
   ]
 }
 \`\`\`
+
+### Sub-field properties
+
+Sub-fields support the following optional properties in addition to the required \`id\`, \`label\`, and \`type\`:
+
+| Property | Type | Allowed on sub-field types |
+|----------|------|---------------------------|
+| \`required\` | boolean | All types |
+| \`placeholder\` | string | All types |
+| \`hint\` | string | All types |
+| \`options\` | array (min 1 item) | \`select\` only (required for \`select\`; forbidden on all others) |
+| \`maxLength\` | integer (min 1) | \`text\` only |
+| \`min\` | number | \`number\` only |
+| \`max\` | number | \`number\` only |
+| \`step\` | number | \`number\` only |
+| \`currency_symbol\` | string | \`currency\` only |
+
+No other properties are allowed — \`additionalProperties\` is \`false\` on sub-fields.
 
 In the template, the repeater value arrives as a JSON array string. Parse with \`json.loads()\`.
 
@@ -9244,7 +9262,7 @@ These apply to any field type unless noted otherwise in the type's section below
 | Property | Type | Description |
 |----------|------|-------------|
 | \`required\` | boolean | Fails validation if empty. For \`address\`, checks that \`street\` is non-empty. |
-| \`placeholder\` | string | Input placeholder text. Not applicable to \`date\`, \`heading\`, \`hidden\`, \`address\`, \`file\`, \`signature\`, \`repeater\`. |
+| \`placeholder\` | string | Input placeholder text. Not applicable to \`date\`, \`time\`, \`datetime\`, \`heading\`, \`hidden\`, \`address\`, \`file\`, \`signature\`, \`repeater\`. |
 | \`hint\` | string | Helper text shown below the field label. Applicable to all types except \`info\` (where it is accepted by the schema but not rendered). |
 | \`visible_when\` | object | Conditionally show this field. See [Conditional Visibility](#conditional-visibility-visible_when). |
 
@@ -9339,7 +9357,13 @@ Large text area (6 rows) with a live character counter. Use for bios, descriptio
 
 **Schema properties:** \`maxLength\` (optional integer, defaults to \`5000\` in the counter display — does not hard-truncate, only colors the counter red when exceeded).
 
-**Template:** Value may contain \`\\n\` for paragraph breaks.
+**Template:** Value may contain \`\\n\` for paragraph breaks. Use the stencils helper (recommended):
+
+\`\`\`python
+stencils.longtext(doc, "Professional Bio", data.get('bio', ''))
+\`\`\`
+
+Or handle manually:
 
 \`\`\`python
 bio = data.get('bio', '')
@@ -9423,7 +9447,13 @@ One empty row is added automatically when the field renders.
 }
 \`\`\`
 
-**Template:** Value is a newline-separated string. Empty list produces \`""\`.
+**Template:** Value is a newline-separated string. Empty list produces \`""\`. Use the stencils helper (recommended):
+
+\`\`\`python
+stencils.bullet_list(doc, "Key Skills", data.get('skills', ''))
+\`\`\`
+
+Or handle manually:
 
 \`\`\`python
 skills = data.get('skills', '')  # "Python\\nJavaScript\\nRust"
@@ -9522,7 +9552,13 @@ Compound field that renders as a group of 4 sub-inputs: street, city, state, and
 { "id": "mailing_address", "label": "Mailing Address", "type": "address", "hint": "Where should we send it?" }
 \`\`\`
 
-**Template:** Value is a JSON string. Parse it to access sub-fields:
+**Template:** Value is a JSON string. Use the stencils helper (recommended):
+
+\`\`\`python
+stencils.address(doc, "Mailing Address", data.get('mailing_address', '{}'))
+\`\`\`
+
+Or parse manually:
 
 \`\`\`python
 import json
@@ -9559,7 +9595,13 @@ File upload input with image preview. The file is read as a base64 data URI and 
 
 Non-image files are accepted (based on \`accept\`) but won't show a preview. Image files show a preview inline.
 
-**Template:** Value is a base64 data URI string (e.g., \`"data:image/png;base64,iVBOR..."\`) or empty string if no file was uploaded.
+**Template:** Value is a base64 data URI string (e.g., \`"data:image/png;base64,iVBOR..."\`) or empty string if no file was uploaded. Use the stencils helper (recommended):
+
+\`\`\`python
+stencils.image(doc, data.get('receipt_photo', ''), width_inches=3.0)
+\`\`\`
+
+Or handle manually:
 
 \`\`\`python
 import base64, io
@@ -9578,7 +9620,13 @@ Canvas-based drawing pad for capturing signatures. Supports both mouse and touch
 { "id": "employee_signature", "label": "Employee Signature", "type": "signature", "required": true }
 \`\`\`
 
-**Template:** Value is a base64 PNG data URI string or empty string. Embed in DOCX:
+**Template:** Value is a base64 PNG data URI string or empty string. Use the stencils helper (recommended):
+
+\`\`\`python
+stencils.signature(doc, data.get('employee_signature', ''), "Employee Signature")
+\`\`\`
+
+Or handle manually:
 
 \`\`\`python
 import base64, io
@@ -9632,9 +9680,35 @@ Dynamic field group — users can add N copies of a set of sub-fields. Each row 
 
 Use \`"table"\` when sub-fields are short and data-dense (e.g., expense line items, schedules). Use default \`"cards"\` when sub-fields are complex or benefit from more visual separation.
 
+**Sub-field optional properties:**
+
+| Property | Supported sub-field types | Notes |
+|----------|--------------------------|-------|
+| \`placeholder\` | \`text\`, \`email\`, \`tel\`, \`number\`, \`currency\`, \`url\` | Not rendered for \`select\`, \`time\`, \`toggle\`. |
+| \`hint\` | *(all)* | Accepted by the schema spec but **not rendered** in the browser for sub-fields. |
+| \`required\` | *(all)* | Accepted by the schema spec but not enforced in the browser for sub-fields. |
+| \`options\` | \`select\` | Required for \`select\` sub-fields; forbidden on all others. |
+| \`min\`, \`max\`, \`step\` | \`number\` | Forbidden on all other sub-field types. |
+| \`currency_symbol\` | \`currency\` | Defaults to \`"$"\`. Forbidden on all other sub-field types. |
+| \`maxLength\` | \`text\` | Accepted by the schema spec but not enforced in the browser for sub-fields. |
+
 Sub-field IDs within \`fields\` must be unique within the repeater but do not need to be globally unique. They are keyed by sub-field \`id\` in each row's data object.
 
-**Template:** Value is a JSON array string. Parse and iterate:
+**Template:** Value is a JSON array string. Use the stencils helper for table output (recommended):
+
+\`\`\`python
+import json
+items = json.loads(data.get('line_items', '[]'))
+stencils.repeater_table(
+    doc,
+    headers=["Description", "Amount", "Category"],
+    items=items,
+    field_keys=["description", "amount", "category"],
+    currency_keys=["amount"],
+)
+\`\`\`
+
+Or parse and iterate manually:
 
 \`\`\`python
 import json
@@ -9762,14 +9836,13 @@ Any top-level field can include a \`visible_when\` object to make it appear only
 - \`select\` — attaches a \`change\` listener on the \`<select>\` element
 - \`radio\` — attaches \`change\` listeners on all \`<input type="radio">\` elements for that name
 - \`checkbox\` — attaches \`change\` listeners; \`equals\` must match the full comma-separated string of checked values
-- \`text\`, \`email\`, \`tel\`, \`date\`, \`time\`, \`url\`, \`datetime\`, \`textarea\`, \`longtext\`, \`number\`, \`currency\` — attaches \`input\` and \`change\` listeners on the element
-- \`toggle\` — attaches a \`change\` listener on the checkbox input
+- \`text\`, \`email\`, \`tel\`, \`date\`, \`time\`, \`url\`, \`datetime\`, \`textarea\`, \`longtext\`, \`number\`, \`currency\`, \`toggle\` — attaches \`input\` and \`change\` listeners on the element
 - \`multi_select\` — renders a hidden input with \`id = field.id\` and technically works, but updates the hidden input programmatically without firing DOM events, so visibility changes may not trigger reliably
 
 **Supported target field types** (the field with \`visible_when\`):
 Works for any type that renders a direct element with \`id = field.id\`: \`text\`, \`email\`, \`tel\`, \`date\`, \`time\`, \`url\`, \`datetime\`, \`textarea\`, \`longtext\`, \`select\`, \`number\`, \`currency\`, \`hidden\`, \`file\`, \`signature\`, \`toggle\`.
 
-Does **not** reliably work as a target for: \`checkbox\`, \`radio\`, \`list\`, \`address\`, \`repeater\`, \`heading\` — these types do not render a single element with \`id = field.id\`, so the visibility logic cannot find their field group.
+Does **not** reliably work as a target for: \`checkbox\`, \`radio\`, \`list\`, \`address\`, \`repeater\`, \`heading\`, \`info\` — these types do not render a single element with \`id = field.id\`, so the visibility logic cannot find their field group.
 
 **Note:** \`multi_select\` renders a hidden input with \`id = field.id\` and works as a \`visible_when\` target. However, as a \`visible_when\` *source*, \`multi_select\` may not trigger visibility updates reliably because its widget updates the hidden input programmatically without firing DOM events.
 

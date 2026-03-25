@@ -110,7 +110,7 @@ Each field defines a single input in the form. The `id` becomes the key in the `
 | `required` | no | boolean | When `true`, prevents export until the field is filled. |
 | `placeholder` | no | string | Ghost text shown inside empty inputs. |
 | `hint` | no | string | Help text displayed below the field in smaller text. |
-| `options` | conditional | array | Array of strings. Required for `select`, `radio`, `checkbox`, and `multi_select`. Forbidden on all other types. |
+| `options` | conditional | array | Array of strings. Minimum 1 item. Required for `select`, `radio`, `checkbox`, and `multi_select`. Forbidden on all other types. |
 | `default_value` | conditional | string | Static value to inject. Required for `hidden`. Forbidden on all other types. |
 | `fields` | conditional | array | Sub-field definitions. Required for `repeater`. Forbidden on all other types. |
 | `maxLength` | no | integer | Maximum character count. Minimum 1. Allowed on `text` and `longtext`. On `longtext`, displays a live counter (defaults to 5000 if omitted) that colors red when exceeded. On `text`, accepted by the schema spec but not enforced in the browser (no counter, no truncation). |
@@ -120,7 +120,7 @@ Each field defines a single input in the form. The `id` becomes the key in the `
 | `currency_symbol` | no | string | Currency prefix. Allowed on `currency` only. Defaults to `$`. |
 | `accept` | no | string | File type filter (e.g. `"image/*"`). Allowed on `file` only. |
 | `max_size_mb` | no | integer | Maximum file size in MB. Minimum 1. Allowed on `file` only. |
-| `content` | conditional | string | Display text for `info` blocks. Required for `info`. Forbidden on all other types. |
+| `content` | conditional | string | Display text for `info` blocks. Minimum 1 character. Required for `info`. Forbidden on all other types. |
 | `style` | no | string | Visual variant for `info` blocks: `"info"`, `"warning"`, or `"success"`. Defaults to `"info"`. Allowed on `info` only. |
 | `min_rows` | no | integer | Minimum rows shown initially. Minimum 1. Allowed on `repeater` only. |
 | `max_rows` | no | integer | Maximum rows allowed. Minimum 1. Allowed on `repeater` only. |
@@ -180,7 +180,7 @@ See `docs/FIELD_TYPES.md` for detailed examples, template handling code, and lay
 
 ## Options Arrays
 
-For `select`, `radio`, `checkbox`, and `multi_select` fields, the `options` array defines the available choices:
+For `select`, `radio`, `checkbox`, and `multi_select` fields, the `options` array defines the available choices. The array must contain at least 1 item (`minItems: 1`).
 
 ```json
 {
@@ -213,6 +213,24 @@ The `repeater` type requires a nested `fields` array. Sub-fields support a restr
   ]
 }
 ```
+
+### Sub-field properties
+
+Sub-fields support the following optional properties in addition to the required `id`, `label`, and `type`:
+
+| Property | Type | Allowed on sub-field types |
+|----------|------|---------------------------|
+| `required` | boolean | All types |
+| `placeholder` | string | All types |
+| `hint` | string | All types |
+| `options` | array (min 1 item) | `select` only (required for `select`; forbidden on all others) |
+| `maxLength` | integer (min 1) | `text` only |
+| `min` | number | `number` only |
+| `max` | number | `number` only |
+| `step` | number | `number` only |
+| `currency_symbol` | string | `currency` only |
+
+No other properties are allowed — `additionalProperties` is `false` on sub-fields.
 
 In the template, the repeater value arrives as a JSON array string. Parse with `json.loads()`.
 
