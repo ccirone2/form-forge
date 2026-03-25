@@ -1129,12 +1129,40 @@ def test_stamp_doc_property():
     assert hasattr(s.doc, "styles")
 
 
-def test_stamp_theme_is_instance_scoped():
+def test_stamp_set_theme_does_not_mutate_global():
     """Setting theme on Stamp does not change the module-level global."""
     original = stencils._active_theme
     s = stencils.Stamp()
     s.set_theme(stencils.THEME_CLASSIC)
     assert stencils._active_theme is original
+
+
+def test_stamp_instance_theme_used_for_content():
+    """Content methods use the Stamp's instance theme, not the global."""
+    from io import BytesIO
+    from docx import Document
+
+    # CLASSIC footer color = RGBColor(0x6B, 0x6B, 0x6B)
+    # MODERN footer color  = RGBColor(0x4D, 0x6E, 0x78)
+    # The module global is THEME_MODERN; Stamp uses THEME_CLASSIC.
+    s = stencils.Stamp()
+    s.set_theme(stencils.THEME_CLASSIC)
+    s.new_doc("Test")
+    s.footer()
+    result = s.finalize()
+
+    doc = Document(BytesIO(result))
+    # Find the footer paragraph (contains "FormForge")
+    footer_runs = []
+    for p in doc.paragraphs:
+        for run in p.runs:
+            if "FormForge" in run.text:
+                footer_runs.append(run)
+
+    assert len(footer_runs) > 0, "Footer paragraph not found"
+    footer_color = footer_runs[0].font.color.rgb
+    assert footer_color == stencils.THEME_CLASSIC.color_footer
+    assert footer_color != stencils.THEME_MODERN.color_footer
 
 
 def test_stamp_content_round_trip():

@@ -79,12 +79,12 @@ def generate_docx(data: dict[str, str]) -> bytes:
     # textarea — brief description
     description = data.get("event_description", "")
     if description and description.strip():
-        d = doc.doc
-        d.add_heading("Brief Description", level=2)
-        p = d.add_paragraph()
+        raw = doc.doc
+        raw.add_heading("Brief Description", level=2)
+        p = raw.add_paragraph()
         r = p.add_run(description)
         r.font.size = Pt(10)
-        d.add_paragraph("")
+        raw.add_paragraph("")
 
     # longtext — detailed proposal
     proposal = data.get("detailed_proposal", "")
@@ -110,12 +110,12 @@ def generate_docx(data: dict[str, str]) -> bytes:
     # text (conditional — virtual platform)
     virtual_platform = data.get("virtual_platform", "")
     if virtual_platform and virtual_platform.strip():
-        d = doc.doc
-        d.add_heading("Virtual Platform", level=2)
-        p = d.add_paragraph()
+        raw = doc.doc
+        raw.add_heading("Virtual Platform", level=2)
+        p = raw.add_paragraph()
         r = p.add_run(virtual_platform)
         r.font.size = Pt(10)
-        d.add_paragraph("")
+        raw.add_paragraph("")
 
     # multi_select — session topics
     topics = data.get("session_topics", "")
