@@ -19,7 +19,7 @@
 Added `Stamp` fluent builder class to `stencils.py`. Every public stencil function is exposed as a chainable method (returns `self`), with `finalize()` returning DOCX bytes. Supports method chaining, sequential calls, and mixed patterns with conditionals. Instance-scoped `set_theme()` does not modify the module global.
 
 - Updated all 4 templates (`onboarding.py`, `expense-report.py`, `coverpage-demo.py`, `field-type-demo.py`) to use `Stamp` with sequential calls
-- Added 27 new tests covering construction, every method's return value, chaining, sequential, mixed, content round-trip, and theme isolation
+- Added 28 new tests covering construction, every method's return value, chaining, sequential, mixed, content round-trip, and theme isolation
 - Updated `docs/TEMPLATE_GUIDE.md` with Stamp documentation, method table, and usage patterns
 - All existing module-level functions preserved for backward compatibility
 
@@ -36,11 +36,26 @@ Made `title_text` parameter in `stencils.new_doc()` default to `""` so callers t
 
 ---
 
-### 2026-03-25 — Issue Created: SVG Support & Coverpage Layout Constraints (#226)
+### 2026-03-25 — SVG Support & Coverpage Layout Constraints (#226)
+**Issues:** #226
 
-Created issue #226 to address two related problems:
-1. SVG image uploads (common for company logos) silently fail in python-docx — will add client-side SVG→PNG rasterization via canvas in `createFileField()`
-2. Coverpage layout can overflow to a second page with tall logos or many metadata rows — will add `max_logo_height` param, cap bar padding, and make the vertical spacer adaptive
+Implemented SVG image upload support and coverpage layout constraints:
+
+**SVG → PNG rasterization (index.html):**
+- `createFileField()` now detects `image/svg+xml` uploads and rasterizes via canvas to PNG data URI
+- Respects SVG intrinsic aspect ratio (`naturalWidth`/`naturalHeight`), capped at 1200px max dimension
+- Existing raster uploads (PNG, JPEG, WebP) are unaffected
+
+**Coverpage layout constraints (stencils.py):**
+- `coverpage()` gains `max_logo_height` param (default 1.0") — scales logo down proportionally if it exceeds this height
+- Bar cell padding reduced from 0.5" to 0.3" (bar + logo region capped at ~2.5" total)
+- Vertical spacer now adapts based on metadata row count to ensure title + metadata fit on page 1
+
+**`image()` height capping (stencils.py):**
+- `image()` gains optional `max_height` param (inches) for general-purpose height capping
+
+**Tests:** 13 new tests (7 in test_stencils.py, 6 in test_dev_mode.py)
+**Docs:** Updated TEMPLATE_GUIDE.md, FIELD_TYPES.md, synced embedded docs
 
 ---
 
