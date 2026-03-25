@@ -588,9 +588,15 @@ def test_new_doc_empty_title_no_heading():
     """new_doc('', '') should produce a doc with no heading element."""
     doc = stencils.new_doc("", "")
     # Should have no heading paragraphs (level-0 heading is style 'Title')
-    heading_paras = [
-        p for p in doc.paragraphs if p.style.name == "Title" and p.text
-    ]
+    heading_paras = [p for p in doc.paragraphs if p.style.name == "Title" and p.text]
+    assert heading_paras == []
+
+
+def test_new_doc_no_arguments():
+    """new_doc() with no arguments returns a valid doc with no title heading."""
+    doc = stencils.new_doc()
+    assert doc is not None
+    heading_paras = [p for p in doc.paragraphs if p.style.name == "Title" and p.text]
     assert heading_paras == []
 
 
@@ -624,10 +630,7 @@ def test_coverpage_full():
     assert any("Technical Report" in t for t in texts)
     # Metadata in tables
     all_text = " ".join(
-        cell.text
-        for tbl in doc.tables
-        for row in tbl.rows
-        for cell in row.cells
+        cell.text for tbl in doc.tables for row in tbl.rows for cell in row.cells
     )
     assert "Date" in all_text
     assert "2026-03-25" in all_text
@@ -642,7 +645,7 @@ def test_coverpage_no_logo():
     # The bar table (first table) should contain the placeholder
     bar_table = doc.tables[0]
     cell_text = bar_table.rows[0].cells[0].text
-    assert "\u25A0" in cell_text
+    assert "\u25a0" in cell_text
 
 
 def _make_tiny_png_data_uri() -> str:
@@ -676,7 +679,7 @@ def test_coverpage_valid_logo():
     bar_table = doc.tables[0]
     cell_text = bar_table.rows[0].cells[0].text
     # Should NOT contain placeholder squares
-    assert "\u25A0" not in cell_text
+    assert "\u25a0" not in cell_text
 
 
 def test_coverpage_invalid_logo_falls_back():
@@ -686,7 +689,7 @@ def test_coverpage_invalid_logo_falls_back():
         doc, title="Bad Logo", logo_b64="data:image/png;base64,NOT_VALID!!!"
     )
     bar_table = doc.tables[0]
-    assert "\u25A0" in bar_table.rows[0].cells[0].text
+    assert "\u25a0" in bar_table.rows[0].cells[0].text
 
 
 def test_coverpage_metadata_table():

@@ -473,7 +473,7 @@ def _shade_cells(row: object, fill_hex: str) -> None:
 
 
 def new_doc(
-    title_text: str,
+    title_text: str = "",
     subtitle_text: str = "",
     font_name: str | None = None,
     font_size: int | None = None,
@@ -675,7 +675,7 @@ def coverpage(
 
 def _coverpage_logo_placeholder(paragraph: object, theme: DocTheme) -> None:
     """Render a placeholder in the bar cell when no logo is provided."""
-    run = paragraph.add_run("\u25A0  \u25A0  \u25A0")
+    run = paragraph.add_run("\u25a0  \u25a0  \u25a0")
     run.font.size = Pt(24)
     run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
 

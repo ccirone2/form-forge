@@ -14,6 +14,12 @@
 
 ## Log
 
+### 2026-03-25 — Make new_doc() title_text Optional (#227)
+
+Made `title_text` parameter in `stencils.new_doc()` default to `""` so callers that don't need a document heading (e.g., templates using `coverpage()`) can simply call `new_doc()` with no arguments instead of `new_doc("", "")`. Added unit test for zero-argument call. No breaking changes to existing callers.
+
+---
+
 ### 2026-03-25 — Issue Created: SVG Support & Coverpage Layout Constraints (#226)
 
 Created issue #226 to address two related problems:
