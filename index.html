@@ -8650,6 +8650,116 @@ import stencils
 
 This works identically in Pyodide and in standard Python (for local testing).
 
+## The \`Stamp\` Class (Recommended)
+
+\`Stamp\` is a fluent builder that wraps the internal \`Document\` and exposes every stencil function as a chainable method. Instead of passing \`doc\` to each function, you call methods on the \`Stamp\` instance — every method returns \`self\` except \`finalize()\`, which returns the finished DOCX bytes.
+
+Import \`Stamp\` and any constants you need directly:
+
+\`\`\`python
+from stencils import Stamp, THEME_CLASSIC
+\`\`\`
+
+### Sequential calls (recommended for templates with conditionals)
+
+\`\`\`python
+from stencils import Stamp, THEME_CLASSIC
+
+def generate_docx(data):
+    doc = Stamp()
+    doc.set_theme(THEME_CLASSIC)
+    doc.new_doc("Employee Onboarding", f"Prepared for {data.get('name', '')}")
+
+    doc.table_section("Personal Info", [
+        ("Name", data.get("name", "")),
+        ("Email", data.get("email", "")),
+    ])
+
+    notes = data.get("notes", "")
+    if notes and notes.strip():
+        doc.longtext("Notes", notes)
+
+    doc.signatures(["Employee", "Date"])
+    doc.footer()
+    return doc.finalize()
+\`\`\`
+
+### Method chaining
+
+\`\`\`python
+from stencils import Stamp, THEME_CLASSIC
+
+def generate_docx(data):
+    return (Stamp()
+        .set_theme(THEME_CLASSIC)
+        .new_doc("My Document")
+        .table_section("Info", [("Name", data.get("name", ""))])
+        .bullet_list("Skills", data.get("skills", ""))
+        .signatures(["Signer", "Date"])
+        .footer()
+        .finalize())
+\`\`\`
+
+### Mixed (chain setup, sequential for body)
+
+\`\`\`python
+from stencils import Stamp, THEME_CLASSIC
+
+def generate_docx(data):
+    doc = Stamp().set_theme(THEME_CLASSIC).new_doc("Report")
+
+    if data.get("body", "").strip():
+        doc.longtext("Content", data["body"])
+
+    doc.bullet_list("Findings", data.get("findings", ""))
+    return doc.footer().finalize()
+\`\`\`
+
+### Stamp methods
+
+| Method | Returns | Description |
+|---|---|---|
+| \`Stamp()\` | instance | Create a new builder |
+| \`.set_theme(theme)\` | \`self\` | Set theme for this instance (does not change the module global) |
+| \`.new_doc(title, subtitle, ...)\` | \`self\` | Create the internal document (auto-called if omitted) |
+| \`.coverpage(title, ...)\` | \`self\` | Add a cover page |
+| \`.table_section(heading, rows)\` | \`self\` | Add heading + key/value table |
+| \`.longtext(heading, text)\` | \`self\` | Add heading + paragraphs |
+| \`.bullet_list(heading, items_str)\` | \`self\` | Add heading + bullet list |
+| \`.signatures(labels)\` | \`self\` | Add signature grid |
+| \`.footer()\` | \`self\` | Add FormForge footer |
+| \`.address(heading, raw_json)\` | \`self\` | Add formatted address |
+| \`.image(b64_str, ...)\` | \`self\` | Embed image or placeholder |
+| \`.signature(b64_str, label, ...)\` | \`self\` | Add signature image with label |
+| \`.repeater_table(headers, items, field_keys, ...)\` | \`self\` | Render repeater as table |
+| \`.add_heading(text, level)\` | \`self\` | Pass-through to Document |
+| \`.add_paragraph(text)\` | \`self\` | Pass-through to Document |
+| \`.add_page_break()\` | \`self\` | Pass-through to Document |
+| \`.doc\` | \`Document\` | Access the underlying Document for advanced usage |
+| \`.finalize()\` | \`bytes\` | Serialize to DOCX bytes |
+
+### Advanced: accessing the underlying Document
+
+For python-docx operations not covered by Stamp methods, use the \`.doc\` property:
+
+\`\`\`python
+from docx.shared import Pt
+
+doc = Stamp().set_theme(THEME_CLASSIC).new_doc("Report")
+# Direct Document access for custom formatting
+d = doc.doc
+d.add_heading("Custom Section", level=2)
+p = d.add_paragraph()
+r = p.add_run("Custom formatted text")
+r.font.size = Pt(10)
+
+return doc.footer().finalize()
+\`\`\`
+
+## Module-Level Functions (Backward-Compatible)
+
+The original module-level functions still work exactly as before. All existing templates using \`stencils.function(doc, ...)\` will continue to work without changes.
+
 ### \`stencils.new_doc(title_text, subtitle_text="", font_name=None, font_size=None, theme=None)\`
 
 Creates a styled \`Document\` cloned from a pre-built template. The template has all heading styles, page margins, and base font configured from the active (or given) theme. Returns the \`Document\` instance.
@@ -9109,19 +9219,18 @@ for item in skills.split("\\n"):
 ## Minimal Template
 
 \`\`\`python
-import stencils
+from stencils import Stamp, THEME_CLASSIC
 
 def generate_docx(data):
-    doc = stencils.new_doc("My Document", data.get("title", ""))
-
-    stencils.table_section(doc, "Details", [
+    doc = Stamp()
+    doc.set_theme(THEME_CLASSIC)
+    doc.new_doc("My Document", data.get("title", ""))
+    doc.table_section("Details", [
         ("Name", data.get("name", "")),
         ("Date", data.get("date", "")),
     ])
-
-    stencils.bullet_list(doc, "Action Items", data.get("actions", ""))
-
-    return stencils.finalize(doc)
+    doc.bullet_list("Action Items", data.get("actions", ""))
+    return doc.finalize()
 \`\`\`
 
 ## Template Without \`stencils\` (Standalone)

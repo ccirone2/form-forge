@@ -25,7 +25,7 @@ Field type value formats:
 import json
 from docx.shared import Pt
 
-import stencils
+from stencils import Stamp, THEME_MINIMAL, format_time
 
 
 def generate_docx(data: dict[str, str]) -> bytes:
@@ -38,28 +38,27 @@ def generate_docx(data: dict[str, str]) -> bytes:
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
-    stencils.set_theme(stencils.THEME_MINIMAL)
-
     name = data.get("full_name", "")
     email = data.get("email", "")
     event_date = data.get("event_date", "")
     form_ver = data.get("form_version", "")
 
-    doc = stencils.new_doc(
+    doc = Stamp()
+    doc.set_theme(THEME_MINIMAL)
+    doc.new_doc(
         "Event Registration",
         f"{name} — {event_date}",
     )
 
     # ── Step 1: Applicant Info ────────────────────────────
-    stencils.table_section(
-        doc,
+    doc.table_section(
         "Applicant Info",
         [
             ("Full Name", name),
             ("Email", email),
             ("Phone", data.get("phone", "")),
             ("Preferred Date", event_date),
-            ("Preferred Time", stencils.format_time(data.get("event_time", ""))),
+            ("Preferred Time", format_time(data.get("event_time", ""))),
             ("Website", data.get("website", "")),
             ("Form Version", form_ver),
         ],
@@ -69,8 +68,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
     event_type = data.get("event_type", "")
     attendance = data.get("attendance_mode", "")
 
-    stencils.table_section(
-        doc,
+    doc.table_section(
         "Event Details",
         [
             ("Event Type", event_type),
@@ -81,16 +79,17 @@ def generate_docx(data: dict[str, str]) -> bytes:
     # textarea — brief description
     description = data.get("event_description", "")
     if description and description.strip():
-        doc.add_heading("Brief Description", level=2)
-        p = doc.add_paragraph()
+        raw = doc.doc
+        raw.add_heading("Brief Description", level=2)
+        p = raw.add_paragraph()
         r = p.add_run(description)
         r.font.size = Pt(10)
-        doc.add_paragraph("")
+        raw.add_paragraph("")
 
     # longtext — detailed proposal
     proposal = data.get("detailed_proposal", "")
     if proposal and proposal.strip():
-        stencils.longtext(doc, "Detailed Proposal", proposal)
+        doc.longtext("Detailed Proposal", proposal)
 
     # address (conditional — in-person only)
     raw_addr = data.get("venue_address", "{}")
@@ -100,28 +99,29 @@ def generate_docx(data: dict[str, str]) -> bytes:
         addr = {}
 
     if addr.get("street"):
-        stencils.address(doc, "Venue Address", raw_addr)
+        doc.address("Venue Address", raw_addr)
 
     # checkbox (conditional — in-person dietary restrictions)
     dietary = data.get("dietary_restrictions", "")
     if dietary and dietary.strip():
         dietary_nl = "\n".join(d.strip() for d in dietary.split(",") if d.strip())
-        stencils.bullet_list(doc, "Dietary Restrictions", dietary_nl)
+        doc.bullet_list("Dietary Restrictions", dietary_nl)
 
     # text (conditional — virtual platform)
     virtual_platform = data.get("virtual_platform", "")
     if virtual_platform and virtual_platform.strip():
-        doc.add_heading("Virtual Platform", level=2)
-        p = doc.add_paragraph()
+        raw = doc.doc
+        raw.add_heading("Virtual Platform", level=2)
+        p = raw.add_paragraph()
         r = p.add_run(virtual_platform)
         r.font.size = Pt(10)
-        doc.add_paragraph("")
+        raw.add_paragraph("")
 
     # multi_select — session topics
     topics = data.get("session_topics", "")
     if topics and topics.strip():
         topics_nl = "\n".join(t.strip() for t in topics.split(",") if t.strip())
-        stencils.bullet_list(doc, "Session Topics", topics_nl)
+        doc.bullet_list("Session Topics", topics_nl)
 
     # ── Step 3: Budget & Items ────────────────────────────
     budget = data.get("budget_amount", "0")
@@ -132,8 +132,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
 
     attendees = data.get("attendee_count", "")
 
-    stencils.table_section(
-        doc,
+    doc.table_section(
         "Budget & Logistics",
         [
             ("Estimated Budget", budget_fmt),
@@ -149,8 +148,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
     except (json.JSONDecodeError, TypeError):
         items = []
 
-    stencils.repeater_table(
-        doc,
+    doc.repeater_table(
         headers=["Item", "Qty", "Unit Cost", "Category"],
         items=items,
         field_keys=["item_name", "quantity", "unit_cost", "category"],
@@ -160,15 +158,13 @@ def generate_docx(data: dict[str, str]) -> bytes:
     # list — special requests
     special = data.get("special_requests", "")
     if special and special.strip():
-        stencils.bullet_list(doc, "Special Requests", special)
+        doc.bullet_list("Special Requests", special)
 
     # datetime — submission deadline
     deadline = data.get("submission_deadline", "")
     if deadline and deadline.strip():
-        # Format datetime-local value (e.g. "2026-05-01T17:00" → "2026-05-01 at 5:00 PM")
-        deadline_display = stencils.format_time(deadline)
-        stencils.table_section(
-            doc,
+        deadline_display = format_time(deadline)
+        doc.table_section(
             "Deadline",
             [("Proposal Submission Deadline", deadline_display)],
         )
@@ -177,8 +173,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
 
     # file — supporting document
     doc.add_heading("Supporting Document", level=1)
-    stencils.image(
-        doc,
+    doc.image(
         data.get("supporting_doc", ""),
         width_inches=3.0,
         placeholder="No document uploaded.",
@@ -188,22 +183,21 @@ def generate_docx(data: dict[str, str]) -> bytes:
     # textarea — additional notes
     notes = data.get("additional_notes", "")
     if notes and notes.strip():
-        stencils.longtext(doc, "Additional Notes", notes)
+        doc.longtext("Additional Notes", notes)
 
     # toggle — terms agreement
     agree = data.get("agree_terms", "false")
-    stencils.table_section(
-        doc,
+    doc.table_section(
         "Terms",
         [("Agreed to Terms & Conditions", "Yes" if agree == "true" else "No")],
     )
 
     # signature — applicant signature
     doc.add_heading("Applicant Signature", level=1)
-    stencils.signature(doc, data.get("applicant_signature", ""), "Applicant Signature")
+    doc.signature(data.get("applicant_signature", ""), "Applicant Signature")
     doc.add_paragraph("")
 
     # ── Footer ────────────────────────────────────────────
-    stencils.footer(doc)
+    doc.footer()
 
-    return stencils.finalize(doc)
+    return doc.finalize()

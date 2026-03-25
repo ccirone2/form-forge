@@ -14,6 +14,28 @@
 
 ## Log
 
+### 2026-03-25 — Add Stamp Class to Stencils (#230)
+
+Added `Stamp` fluent builder class to `stencils.py`. Every public stencil function is exposed as a chainable method (returns `self`), with `finalize()` returning DOCX bytes. Supports method chaining, sequential calls, and mixed patterns with conditionals. Instance-scoped `set_theme()` does not modify the module global.
+
+- Updated all 4 templates (`onboarding.py`, `expense-report.py`, `coverpage-demo.py`, `field-type-demo.py`) to use `Stamp` with sequential calls
+- Added 28 new tests covering construction, every method's return value, chaining, sequential, mixed, content round-trip, and theme isolation
+- Updated `docs/TEMPLATE_GUIDE.md` with Stamp documentation, method table, and usage patterns
+- All existing module-level functions preserved for backward compatibility
+
+**Decisions:**
+- `Stamp.set_theme()` is instance-scoped to avoid global side effects between templates
+- Content methods auto-create the document if `new_doc()` was not called, for convenience
+- Pass-through methods (`add_heading`, `add_paragraph`, `add_page_break`) and a `.doc` property provided for advanced python-docx usage
+
+---
+
+### 2026-03-25 — Make new_doc() title_text Optional (#227)
+
+Made `title_text` parameter in `stencils.new_doc()` default to `""` so callers that don't need a document heading (e.g., templates using `coverpage()`) can simply call `new_doc()` with no arguments instead of `new_doc("", "")`. Added unit test for zero-argument call. No breaking changes to existing callers.
+
+---
+
 ### 2026-03-25 — SVG Support & Coverpage Layout Constraints (#226)
 **Issues:** #226
 
@@ -34,12 +56,6 @@ Implemented SVG image upload support and coverpage layout constraints:
 
 **Tests:** 13 new tests (7 in test_stencils.py, 6 in test_dev_mode.py)
 **Docs:** Updated TEMPLATE_GUIDE.md, FIELD_TYPES.md, synced embedded docs
-
----
-
-### 2026-03-25 — Make new_doc() title_text Optional (#227)
-
-Made `title_text` parameter in `stencils.new_doc()` default to `""` so callers that don't need a document heading (e.g., templates using `coverpage()`) can simply call `new_doc()` with no arguments instead of `new_doc("", "")`. Added unit test for zero-argument call. No breaking changes to existing callers.
 
 ---
 

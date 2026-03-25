@@ -9,7 +9,7 @@ The `data` dict keys match the field `id` values in
 schemas/coverpage-demo.json.
 """
 
-import stencils
+from stencils import Stamp, THEME_CLASSIC
 
 
 def generate_docx(data: dict[str, str]) -> bytes:
@@ -22,13 +22,12 @@ def generate_docx(data: dict[str, str]) -> bytes:
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
-    stencils.set_theme(stencils.THEME_CLASSIC)
-
-    doc = stencils.new_doc()
+    doc = Stamp()
+    doc.set_theme(THEME_CLASSIC)
+    doc.new_doc()
 
     # ── Cover page ──────────────────────────────────────────────
-    stencils.coverpage(
-        doc,
+    doc.coverpage(
         title=data.get("doc_title", "Untitled Document"),
         doc_type=data.get("doc_type", ""),
         metadata=[
@@ -43,13 +42,13 @@ def generate_docx(data: dict[str, str]) -> bytes:
     # ── Body content (page 2+) ──────────────────────────────────
     heading = data.get("body_heading", "").strip()
     if heading:
-        stencils.longtext(doc, heading, data.get("body_content", ""))
+        doc.longtext(heading, data.get("body_content", ""))
     elif data.get("body_content", "").strip():
-        stencils.longtext(doc, "Content", data.get("body_content", ""))
+        doc.longtext("Content", data.get("body_content", ""))
 
-    stencils.bullet_list(doc, "Key Findings", data.get("key_findings", ""))
+    doc.bullet_list("Key Findings", data.get("key_findings", ""))
 
     # ── Footer ──────────────────────────────────────────────────
-    stencils.footer(doc)
+    doc.footer()
 
-    return stencils.finalize(doc)
+    return doc.finalize()

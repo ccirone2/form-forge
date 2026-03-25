@@ -19,7 +19,7 @@ Field type notes:
 
 import json
 
-import stencils
+from stencils import Stamp, THEME_MODERN
 
 
 def generate_docx(data: dict[str, str]) -> bytes:
@@ -32,14 +32,14 @@ def generate_docx(data: dict[str, str]) -> bytes:
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
-    stencils.set_theme(stencils.THEME_MODERN)
-
     name = data.get("employee_name", "")
     dept = data.get("department", "")
     report_date = data.get("report_date", "")
     form_ver = data.get("form_version", "")
 
-    doc = stencils.new_doc(
+    doc = Stamp()
+    doc.set_theme(THEME_MODERN)
+    doc.new_doc(
         "Expense Report",
         f"{name} — {dept} — {report_date}",
     )
@@ -51,8 +51,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
     except (ValueError, TypeError):
         total_fmt = f"${total}"
 
-    stencils.table_section(
-        doc,
+    doc.table_section(
         "Report Details",
         [
             ("Employee", name),
@@ -72,8 +71,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
     except (json.JSONDecodeError, TypeError):
         items = []
 
-    stencils.repeater_table(
-        doc,
+    doc.repeater_table(
         headers=["Description", "Amount", "Category"],
         items=items,
         field_keys=["description", "amount", "category"],
@@ -81,16 +79,14 @@ def generate_docx(data: dict[str, str]) -> bytes:
     )
 
     # ── Number of Receipts (number field) ───────────────────
-    stencils.table_section(
-        doc,
+    doc.table_section(
         "Receipts",
         [("Number of receipts attached", data.get("item_count", "0"))],
     )
 
     # ── Receipt Photo (file field) ──────────────────────────
     doc.add_heading("Receipt / Invoice", level=1)
-    stencils.image(
-        doc,
+    doc.image(
         data.get("receipt_photo", ""),
         width_inches=3.0,
         placeholder="No receipt uploaded.",
@@ -100,11 +96,10 @@ def generate_docx(data: dict[str, str]) -> bytes:
     # ── Notes ───────────────────────────────────────────────
     notes = data.get("notes", "")
     if notes and notes.strip():
-        stencils.longtext(doc, "Additional Notes", notes)
+        doc.longtext("Additional Notes", notes)
 
     # ── Mailing Address (address field) ─────────────────────
-    stencils.address(
-        doc,
+    doc.address(
         "Reimbursement Mailing Address",
         data.get("mailing_address", "{}"),
     )
@@ -115,10 +110,10 @@ def generate_docx(data: dict[str, str]) -> bytes:
         ("Employee Signature", "employee_signature"),
         ("Manager Signature", "manager_signature"),
     ]:
-        stencils.signature(doc, data.get(field_id, ""), label)
+        doc.signature(data.get(field_id, ""), label)
     doc.add_paragraph("")
 
     # ── Footer ──────────────────────────────────────────────
-    stencils.footer(doc)
+    doc.footer()
 
-    return stencils.finalize(doc)
+    return doc.finalize()
