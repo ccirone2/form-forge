@@ -9,7 +9,7 @@ The `data` dict keys match the field `id` values in
 schemas/coverpage-demo.json.
 """
 
-from stencils import Stamp, THEME_CLASSIC
+from stencils import Stencil, THEME_CLASSIC
 
 
 def generate_docx(data: dict[str, str]) -> bytes:
@@ -22,7 +22,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
-    doc = Stamp()
+    doc = Stencil()
     doc.set_theme(THEME_CLASSIC)
     doc.new_doc()
 

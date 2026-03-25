@@ -4,12 +4,12 @@ FormForge Shared Template Stencils
 Shared helper functions for all FormForge DOCX templates.
 Works in both standard Python (import stencils) and Pyodide (via exec()).
 
-Stamp class (recommended)::
+Stencil class (recommended)::
 
-    from stencils import Stamp, THEME_CLASSIC
+    from stencils import Stencil, THEME_CLASSIC
 
     def generate_docx(data):
-        doc = Stamp()
+        doc = Stencil()
         doc.set_theme(THEME_CLASSIC)
         doc.new_doc("My Form Title", "Subtitle here")
         doc.table_section("Section Name", [("Label", "Value"), ...])
@@ -1117,11 +1117,11 @@ def repeater_table(
 
 
 # ---------------------------------------------------------------------------
-#  Stamp — fluent document builder
+#  Stencil — fluent document builder
 # ---------------------------------------------------------------------------
 
 
-class Stamp:
+class Stencil:
     """Fluent builder for DOCX documents using stencils helpers.
 
     Wraps an internal ``Document`` and exposes every public stencil function
@@ -1130,10 +1130,10 @@ class Stamp:
 
     Usage::
 
-        from stencils import Stamp, THEME_CLASSIC
+        from stencils import Stencil, THEME_CLASSIC
 
         def generate_docx(data):
-            doc = Stamp()
+            doc = Stencil()
             doc.set_theme(THEME_CLASSIC)
             doc.new_doc("My Title")
             doc.table_section("Info", [("Name", data.get("name", ""))])
@@ -1142,7 +1142,7 @@ class Stamp:
 
     Or with method chaining::
 
-        return (Stamp()
+        return (Stencil()
             .set_theme(THEME_CLASSIC)
             .new_doc("My Title")
             .table_section("Info", [("Name", data.get("name", ""))])
@@ -1154,11 +1154,11 @@ class Stamp:
         self._doc: Document | None = None
         self._theme: DocTheme | None = None
 
-    def set_theme(self, theme: DocTheme) -> "Stamp":
+    def set_theme(self, theme: DocTheme) -> "Stencil":
         """Set the theme for this document.
 
         Unlike the module-level ``set_theme()``, this only affects the
-        current ``Stamp`` instance — it does not modify the global theme.
+        current ``Stencil`` instance — it does not modify the global theme.
         """
         missing = [f for f in _THEME_FIELDS if not hasattr(theme, f)]
         if missing:
@@ -1172,7 +1172,7 @@ class Stamp:
         subtitle_text: str = "",
         font_name: str | None = None,
         font_size: int | None = None,
-    ) -> "Stamp":
+    ) -> "Stencil":
         """Create the internal document with optional title and subtitle.
 
         If not called explicitly, the document is created automatically on
@@ -1204,7 +1204,7 @@ class Stamp:
         logo_width: float = 2.0,
         max_logo_height: float = 1.0,
         bar_color: str | None = None,
-    ) -> "Stamp":
+    ) -> "Stencil":
         """Add a professional cover page. See ``coverpage()`` module function."""
         coverpage(
             self._ensure_doc(),
@@ -1219,32 +1219,32 @@ class Stamp:
         )
         return self
 
-    def table_section(self, heading: str, rows: list[tuple[str, str]]) -> "Stamp":
+    def table_section(self, heading: str, rows: list[tuple[str, str]]) -> "Stencil":
         """Add a heading + key/value table. See ``table_section()``."""
         table_section(self._ensure_doc(), heading, rows, theme=self._theme)
         return self
 
-    def longtext(self, heading: str, text: str) -> "Stamp":
+    def longtext(self, heading: str, text: str) -> "Stencil":
         """Add a heading + paragraphs. See ``longtext()``."""
         longtext(self._ensure_doc(), heading, text, theme=self._theme)
         return self
 
-    def bullet_list(self, heading: str, items_str: str) -> "Stamp":
+    def bullet_list(self, heading: str, items_str: str) -> "Stencil":
         """Add a heading + bulleted list. See ``bullet_list()``."""
         bullet_list(self._ensure_doc(), heading, items_str, theme=self._theme)
         return self
 
-    def signatures(self, labels: list[str]) -> "Stamp":
+    def signatures(self, labels: list[str]) -> "Stencil":
         """Add a signature grid. See ``signatures()``."""
         signatures(self._ensure_doc(), labels, theme=self._theme)
         return self
 
-    def footer(self) -> "Stamp":
+    def footer(self) -> "Stencil":
         """Add the standard FormForge footer. See ``footer()``."""
         footer(self._ensure_doc(), theme=self._theme)
         return self
 
-    def address(self, heading: str, raw_json: str) -> "Stamp":
+    def address(self, heading: str, raw_json: str) -> "Stencil":
         """Add a formatted address block. See ``address()``."""
         address(self._ensure_doc(), heading, raw_json, theme=self._theme)
         return self
@@ -1255,7 +1255,7 @@ class Stamp:
         width_inches: float = 3.0,
         max_height: float | None = None,
         placeholder: str = "No image uploaded.",
-    ) -> "Stamp":
+    ) -> "Stencil":
         """Embed a base64 image or placeholder. See ``image()``."""
         image(
             self._ensure_doc(),
@@ -1267,7 +1267,9 @@ class Stamp:
         )
         return self
 
-    def signature(self, b64_str: str, label: str, width_inches: float = 2.5) -> "Stamp":
+    def signature(
+        self, b64_str: str, label: str, width_inches: float = 2.5
+    ) -> "Stencil":
         """Add a signature image with label. See ``signature()``."""
         signature(
             self._ensure_doc(),
@@ -1284,7 +1286,7 @@ class Stamp:
         items: list[dict[str, str]],
         field_keys: list[str],
         currency_keys: list[str] | None = None,
-    ) -> "Stamp":
+    ) -> "Stencil":
         """Render a repeater as a headed table. See ``repeater_table()``."""
         repeater_table(
             self._ensure_doc(),
@@ -1296,17 +1298,17 @@ class Stamp:
         )
         return self
 
-    def add_heading(self, text: str, level: int = 1) -> "Stamp":
+    def add_heading(self, text: str, level: int = 1) -> "Stencil":
         """Add a heading paragraph directly (pass-through to Document)."""
         self._ensure_doc().add_heading(text, level=level)
         return self
 
-    def add_paragraph(self, text: str = "") -> "Stamp":
+    def add_paragraph(self, text: str = "") -> "Stencil":
         """Add a paragraph directly (pass-through to Document)."""
         self._ensure_doc().add_paragraph(text)
         return self
 
-    def add_page_break(self) -> "Stamp":
+    def add_page_break(self) -> "Stencil":
         """Add a page break (pass-through to Document)."""
         self._ensure_doc().add_page_break()
         return self
