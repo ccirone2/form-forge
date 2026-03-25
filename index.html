@@ -1904,6 +1904,7 @@
     padding: 6px 14px 3px; font-family: var(--font-mono);
     font-size: var(--text-2xs); color: var(--text-muted);
     text-transform: uppercase; letter-spacing: 0.05em;
+    user-select: none; cursor: default;
   }
   .ctx-menu-item.has-sub::after {
     content: '▸'; margin-left: auto; padding-left: 12px;
@@ -11008,7 +11009,6 @@ function showContextMenu(x, y, items, boundingEl) {
   });
 
   // Clamping — use bounding element rect if provided, else viewport
-  const rect = menu.getBoundingClientRect();
   let boundsRight, boundsBottom, boundsLeft, boundsTop;
   if (boundingEl) {
     const bRect = boundingEl.getBoundingClientRect();
@@ -11016,6 +11016,7 @@ function showContextMenu(x, y, items, boundingEl) {
     boundsBottom = bRect.bottom;
     boundsLeft = bRect.left;
     boundsTop = bRect.top;
+    // Set maxHeight before measuring so rect reflects constrained height
     menu.style.maxHeight = (bRect.height - 16) + 'px';
   } else {
     boundsRight = window.innerWidth;
@@ -11023,6 +11024,7 @@ function showContextMenu(x, y, items, boundingEl) {
     boundsLeft = 0;
     boundsTop = 0;
   }
+  const rect = menu.getBoundingClientRect();
   if (x + rect.width > boundsRight) x = boundsRight - rect.width - 8;
   if (y + rect.height > boundsBottom) y = boundsBottom - rect.height - 8;
   menu.style.left = Math.max(boundsLeft, x) + 'px';
@@ -11158,7 +11160,7 @@ const FIELD_SNIPPETS = {
   select:   { id: "select_field", label: "Select", type: "select", required: false, options: ["Option A", "Option B", "Option C"] },
   multi_select: { id: "multi_field", label: "Multi Select", type: "multi_select", required: false, options: ["Option A", "Option B", "Option C"] },
   radio:    { id: "radio_field", label: "Radio Choice", type: "radio", required: false, options: ["Option A", "Option B"] },
-  checkbox: { id: "checkbox_field", label: "Agree to terms", type: "checkbox", required: false },
+  checkbox: { id: "checkbox_field", label: "Agree to terms", type: "checkbox", required: false, options: ["Option A", "Option B"] },
   toggle:   { id: "toggle_field", label: "Enable feature", type: "toggle", required: false },
   address:  { id: "address_field", label: "Address", type: "address", required: false },
   repeater: { id: "items", label: "Items", type: "repeater", fields: [{ id: "item_name", label: "Name", type: "text" }, { id: "item_qty", label: "Qty", type: "number" }] },
@@ -11166,7 +11168,7 @@ const FIELD_SNIPPETS = {
   signature:{ id: "signature_field", label: "Signature", type: "signature", required: false },
   list:     { id: "list_field", label: "Items List", type: "list", required: false },
   heading:  { id: "heading_1", label: "Section Heading", type: "heading" },
-  hidden:   { id: "hidden_field", label: "", type: "hidden", default: "value" },
+  hidden:   { id: "hidden_field", label: "hidden_field", type: "hidden", default_value: "value" },
   info:     { id: "info_1", label: "Important Notice", type: "info", content: "This is an informational message.", style: "info" },
   textarea: { id: "notes", label: "Notes", type: "textarea", required: false },
   longtext: { id: "description", label: "Description", type: "longtext", required: false }
@@ -11850,7 +11852,9 @@ function getSchemaEditorContext(text, cursorOffset) {
   }
 
   const current = stack.length > 0 ? stack[stack.length - 1].ctx : 'outside';
-  if (current === 'field') {
+  // Check current context and ancestors — cursor inside a nested property
+  // (visible_when object, options array, etc.) should still resolve to field level
+  if (current === 'field' || stack.some(s => s.ctx === 'field')) {
     const fieldType = _detectFieldType(text, fieldStartPos);
     return { level: 'field', fieldType, sectionIndex: sectionIdx, fieldIndex: fieldIdx };
   }
@@ -11997,9 +12001,11 @@ function devSchemaContextItems(ctx) {
       { label: 'Add Section', action: () => devInsertSection() },
       { label: 'Wrap in Wizard', action: () => devWrapInWizard() },
     ];
-    // Show scaffold option when editor is empty or near-empty
-    const trimmed = devSchemaText.replace(/[\s{}[\]]/g, '');
-    if (!trimmed || trimmed.length < 5) {
+    // Show scaffold option when editor is empty or has no sections
+    let showScaffold = false;
+    try { const p = JSON.parse(devSchemaText); showScaffold = !p.sections || p.sections.length === 0; }
+    catch { showScaffold = !devSchemaText.trim(); }
+    if (showScaffold) {
       items.unshift({ label: 'Base Scaffold', action: () => {
         devSchemaText = JSON.stringify(BASE_SCAFFOLD, null, 2);
         if (schemaJar) schemaJar.updateCode(devSchemaText);
@@ -12050,7 +12056,8 @@ function devSchemaContextItems(ctx) {
   // Field level: property snippets for the detected field type
   if (ctx.level === 'field' && ctx.fieldType) {
     const props = getFieldPropertySnippets(ctx.fieldType);
-    const items = [{ groupLabel: ctx.fieldType + ' properties' }];
+    const typeName = ctx.fieldType.replace(/_/g, ' ');
+    const items = [{ groupLabel: typeName + ' properties' }];
     props.forEach(p => {
       items.push({
         label: p.label,
