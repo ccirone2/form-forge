@@ -10,8 +10,8 @@ description: >
 ## Type Hints
 - All function signatures must have type hints
 - Use `X | None` not `Optional[X]`
-- Use `list[str]` not `List[str]` (Python 3.11+)
-- Import `from __future__ import annotations` in all modules
+- Use `list[str]` not `List[str]` (Python 3.12+)
+- Import `from __future__ import annotations` in library modules (e.g., `stencils.py`); template files and test files omit it
 
 ## Docstrings (Google Style)
 ```python

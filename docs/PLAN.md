@@ -13,6 +13,46 @@
 
 ## Completed Plans
 
+### Issue #233 — Fix Signature Canvas Drawing Offset ✅
+
+**Branch:** `feature/233-signature-offset`
+**Issue:** #233
+**PR:** #234
+
+Fixed double-DPR scaling in `getPos()` within `createSignatureField()` that caused signature strokes to draw offset from the cursor on high-DPI displays.
+
+### Issue #230 — Stencil Fluent Builder Class ✅
+
+**Branch:** `feature/230-stamp-class`
+**Issue:** #230
+**PRs:** #231, #232
+
+Added `Stencil` fluent builder class (originally named `Stamp`, renamed in PR #232) to `stencils.py` for method-chaining document construction. Updated all templates to use the new class. Existing module-level functions retained for backward compatibility.
+
+### Issue #227 — Optional new_doc() Title ✅
+
+**Branch:** `feature/227-optional-new-doc-title`
+**Issue:** #227
+**PR:** #228
+
+Made `title_text` parameter optional in `new_doc()` (default `""`), allowing `new_doc()` to be called with no arguments for coverpage-based templates.
+
+### Issue #226 — SVG Support & Coverpage Layout ✅
+
+**Branch:** `feature/226-svg-support-coverpage-layout`
+**Issue:** #226
+**PR:** #229
+
+Added client-side SVG-to-PNG rasterization in `createFileField()`, `max_logo_height` and `max_height` params to `coverpage()` and `image()`, and adaptive spacer in `coverpage()` to prevent page overflow.
+
+### Issue #223 — Auto-Preview & DOCX Rendering Fidelity ✅
+
+**Branch:** `feature/223-auto-preview-fidelity`
+**Issue:** #223
+**PR:** #224
+
+Auto-runs template preview on first Template tab visit when template and sample data are present. Added mammoth.js style mapping and enhanced preview CSS for improved DOCX rendering fidelity.
+
 ### Issue #222 — Coverpage Stencil ✅
 
 **Branch:** `feature/222-coverpage-stencil`
@@ -27,6 +67,38 @@ Added `coverpage()` stencil function for professional document cover pages: comp
 **Issues:** #215 (parent), #216, #217, #218, #219
 
 Redesigned Schema and Template editor context menus: cursor-aware (root/section/field and top/body contexts), flat (group labels, no submenus), editor-clamped (bounding element positioning), with field property snippets and base scaffold option.
+
+### Issue #214 — Demo Editor Loading ✅
+
+**Branch:** `feature/214-demo-editor-loading`
+**Issue:** #214
+**PR:** #220
+
+Auto-loads `DEMO_SCHEMA` and `DEMO_TEMPLATE` into Schema and Template editors when in demo mode. Added "Reset to Demo" toolbar control for restoring original demo content after edits.
+
+### Issue #212 — Tokenize Sidebar CSS ✅
+
+**Branch:** `feature/212-tokenize-sidebar-css`
+**Issue:** #212
+**PR:** #213
+
+Replaced ~20 hard-coded pixel values in sidebar CSS with new design tokens (`--space-*`, `--sidebar-width`, `--sidebar-collapsed-width`, `--border-width-accent`, `--icon-sm`) in `:root`.
+
+### Issues #208, #209 — Sidebar Navigation & Contextual Help ✅
+
+**Branches:** `feature/208-sidebar-navigation`, `feature/209-sidebar-navigation`
+**Issues:** #208, #209
+**PRs:** #210 (closed, superseded), #211 (merged)
+
+Converted horizontal top navigation to a persistent left sidebar layout with collapse/expand, mobile bottom nav, and localStorage persistence (#208). Added contextual help sidebars to Schema and Template editors with field type reference, stencils API reference, search/filter, and insert-on-click (#209).
+
+### Issue #205 — LLM Context Export ✅
+
+**Branch:** `feature/205-llm-context-export`
+**Issue:** #205
+**PR:** #206
+
+Added per-guide Copy and Download buttons in Docs tab. Added "Copy AI Context" buttons to Schema and Template editor toolbars that assemble LLM-optimized context bundles.
 
 ### Issue #202 — Commit New Files from Editors to GitHub ✅
 

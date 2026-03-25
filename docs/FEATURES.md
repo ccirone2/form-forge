@@ -14,7 +14,7 @@
 | 1 | **GitHub repo** | Connect dialog (GitHub tab) → enter `owner/repo` + optional branch/token → browse schemas → pick form → fill → export DOCX |
 | 2 | **Local folder** | Connect dialog (Local Folder tab) → FSAA folder picker → discover `schemas/*.json` and `templates/*.py` → same flow |
 | 3 | **Individual files** | Connect dialog → Local Folder tab → "Or load individual files" expandable → drop/click `.json` + `.py` (FSAA fallback) |
-| 4 | **Demo mode** | "Try the demo form" button on Forms tab hero → embedded schema + template, zero setup |
+| 4 | **Demo mode** | "Try the demo form" button on Forms tab hero → embedded schema + template, zero setup. Demo content also pre-loads into Schema and Template editors (with "Reset Demo" buttons to restore originals). |
 | 5 | **URL param** (`?data=URL`) | Pre-fill form data from external JSON URL via `populateForm()` |
 
 ## Data Import/Export Paths
@@ -40,10 +40,10 @@
 | # | Surface | What you can do |
 |---|---------|----------------|
 | 1 | **Schema editor** (CodeJar + Prism.js) | Write/edit JSON with syntax highlighting, 300ms debounce live form preview, real-time validation badge, context-aware right-click menu (field type snippets for all 24 types, Add Section, Wrap in Wizard, Base Scaffold) |
-| 2 | **Template editor** (CodeJar + Prism.js) | Write/edit Python with syntax highlighting, run DOCX preview via Pyodide + mammoth.js + DOMPurify, auto-preview on changes, context-aware right-click menu with stencils helper snippets, validation badge |
+| 2 | **Template editor** (CodeJar + Prism.js) | Write/edit Python with syntax highlighting, run DOCX preview via Pyodide + mammoth.js + DOMPurify, auto-preview on changes and on tab switch (skips re-run if content unchanged), MAMMOTH_STYLE_MAP for improved preview fidelity (Title, Subtitle, Heading 1-3, List Bullet mapped to CSS), context-aware right-click menu with stencils helper snippets, validation badge |
 | 3 | **Schema preview** | Visual live form preview, drag-drop reorder fields and sections, insert fields via right-click context menu, add sections via `+` buttons between sections, "Fill Form" button to test in Forms tab |
 | 4 | **Sample data editor** (CodeJar) | Collapsible panel in Template tab, edit test data JSON, auto-generate from schema via "Auto-fill" button (`devAutoFillSampleData()`) |
-| 5 | **GitHub commit/push** | Save edits back to repo, create new branches, switch branches. Commit & Push buttons in Schema and Template editor toolbars (visible when connected to GitHub). |
+| 5 | **GitHub commit/push** | Save edits back to repo, create new branches, switch branches. Commit & Push buttons in Schema and Template editor toolbars (visible when connected to GitHub). Supports committing new files (not just editing existing ones) — auto-prompts for filename, creates via GitHub API. |
 | 6 | **Local folder save** | Write edits to filesystem via FSAA with 5s file polling for external changes (`devWorkspacePoller`) |
 | 7 | **Help sidebar** | Contextual reference panels for Schema and Template editors, searchable/filterable, toggled via toolbar button or Ctrl+Shift+H |
 
@@ -58,7 +58,7 @@
 | **Form view** | Full form with nav bar (Back, source info, autosave indicator, Edit Schema, Autofill), form sections, submit area (Export DOCX, Save Data, Reset), activity log panel |
 | **Schema tab** | Split pane: left = JSON editor with toolbar, right = live form preview. Help sidebar available. |
 | **Template tab** | Split pane: left = Python editor with toolbar + collapsible sample data panel, right = DOCX preview (mammoth.js rendered). Help sidebar available. |
-| **Docs tab** | Embedded documentation with sub-tabs: Schema Guide, Template Guide, Field Types, Examples. Each has Copy and Download .md buttons. Content is built-in (independent of connected source). |
+| **Docs tab** | Embedded documentation with sub-tabs: Schema Guide, Template Guide, Field Types, Examples. Each has Copy and Download .md buttons. Content is embedded as JS template-literal constants (synced from `docs/*.md` via `scripts/sync-embedded-docs.py`), always available regardless of connected source — no fetch-or-fallback. |
 
 ## Cross-Feature Navigation (Bidirectional Flow)
 
@@ -84,6 +84,7 @@
 | **Form validation** | Per-section validation with inline error messages. Required fields, type-specific validation (email, address, checkbox, radio). |
 | **Reset form** | Reset button clears all form fields. |
 | **Dirty guard** | Warns before leaving form view if data exists (Escape key or browser unload). |
+| **SVG rasterization** | SVG uploads in `file` fields are automatically rasterized to PNG via canvas before storing the data URI. Respects intrinsic aspect ratio, capped at 1200px max dimension. Ensures compatibility with `python-docx` (which does not support SVG). Existing raster formats (PNG, JPEG, WebP) unaffected. |
 
 ## Keyboard Shortcuts
 
@@ -124,6 +125,44 @@ All loaded at runtime from jsDelivr (no build step):
 | python-docx | (via micropip) | DOCX document creation in Pyodide |
 
 Prism CSS is preloaded. All JS libraries are lazy-loaded on first Schema/Template tab click (via `loadDevDeps()`), except Pyodide which loads on first form launch or export.
+
+## Stencils API (`templates/stencils.py`)
+
+Shared helper module for all DOCX templates. Loaded into Pyodide's virtual filesystem once per session.
+
+### Stencil Class (Fluent Builder)
+
+`Stencil` wraps an internal `Document` and exposes every public stencil function as a chainable method (returns `self`), with `finalize()` returning DOCX bytes. Instance-scoped `set_theme()` does not modify the module global. Auto-creates the document on first content call if `new_doc()` was not called explicitly.
+
+```python
+from stencils import Stencil, THEME_CLASSIC
+doc = Stencil().set_theme(THEME_CLASSIC).new_doc("Title").table_section("Info", rows).footer().finalize()
+```
+
+### Module-Level Functions (Backward-Compatible)
+
+All Stencil methods are also available as standalone functions that take `doc` as the first argument (`set_theme()`, `new_doc()`, `coverpage()`, `table_section()`, `longtext()`, `bullet_list()`, `signatures()`, `footer()`, `address()`, `image()`, `signature()`, `repeater_table()`, `format_time()`, `finalize()`).
+
+### Key Stencil Capabilities
+
+| Function | Description |
+|----------|-------------|
+| `new_doc()` | Create styled Document with optional title/subtitle. `title_text` defaults to `""` (no heading rendered), enabling coverpage-only workflows. |
+| `coverpage()` | Professional cover page: geometric bar with logo (or placeholder), centered title, doc type subtitle with rule, metadata table, auto page break. Adaptive vertical spacer ensures content fits page 1. `max_logo_height` caps logo proportionally. `bar_color` overrides theme accent. |
+| `table_section()` | Heading + borderless two-column key/value table. |
+| `longtext()` | Heading + multi-paragraph text block. |
+| `bullet_list()` | Heading + bulleted list from newline-separated string. |
+| `signatures()` | Signature grid with label/line pairs in two-column layout. |
+| `footer()` | Standard FormForge auto-generated disclaimer paragraph. |
+| `address()` | Formatted address block from JSON string. |
+| `image()` | Base64 image embed with optional `max_height` (inches) for proportional scaling. |
+| `signature()` | Canvas signature image with label, or underline placeholder if empty. |
+| `repeater_table()` | Repeater data as headed table with optional currency formatting. |
+| `format_time()` | Convert 24h time or ISO datetime to 12h AM/PM format. |
+
+### Theme System
+
+Three built-in themes (`THEME_CLASSIC`, `THEME_MINIMAL`, `THEME_MODERN`; default is `THEME_MODERN`) with `DocTheme` dataclass covering colors (5), fonts (3), type sizes (11), and page margins (4). Custom themes supported via `DocTheme()` constructor.
 
 ---
 
