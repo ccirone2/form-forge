@@ -163,6 +163,10 @@ All design values are centralized as CSS custom properties. When adding or modif
 | **Radii** | `--radius-xs` (4), `--radius-sm` (6), `--radius-md` (8), `--radius` / `--radius-lg` (10), `--radius-pill` (20) | `--radius-md` (8px) is the default for inputs and buttons. `--radius` (10px) for cards/sections. |
 | **Shadows** | `--shadow-sm`, `--shadow-md`, `--shadow-lg`, `--shadow-xl` | Used sparingly — only on hover-lifts, dropdowns, toasts, and overlays. |
 | **Transitions** | `--transition-fast` (0.15s), `--transition-base` (0.2s), `--transition-slow` (0.3s) | Default to `--transition-base`. Use `--transition-fast` for micro-interactions. |
+| **Spacing** | `--space-2xs` (2), `--space-xs` (4), `--space-sm` (6), `--space-md` (8), `--space-lg` (10), `--space-xl` (12) | Use for padding, gap, and margin in sidebar and other components. |
+| **Sidebar** | `--sidebar-width` (200), `--sidebar-collapsed-width` (52) | Expanded and icon-only widths for the left navigation sidebar. |
+| **Border widths** | `--border-width-accent` (2) | Active-indicator border thickness (sidebar left-border, mobile bottom-border). |
+| **Icon sizes** | `--icon-sm` (16) | Small icon dimensions (e.g., mobile nav SVGs). |
 
 ### Reusable Patterns
 - **`.mono-label`** — Utility class for the mono-label pattern (12px JetBrains Mono, muted). Apply via class or replicate the three properties.
