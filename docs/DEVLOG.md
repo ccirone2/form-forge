@@ -14,6 +14,19 @@
 
 ## Log
 
+### 2026-03-25 — Tokenize Sidebar CSS (#212)
+
+Replaced ~20 hard-coded pixel values in the sidebar CSS with CSS custom properties. Added new `:root` token categories:
+
+- **Spacing scale:** `--space-2xs` (2px) through `--space-xl` (12px) — used for padding, gap, and margin
+- **Sidebar:** `--sidebar-width` (200px), `--sidebar-collapsed-width` (52px)
+- **Border widths:** `--border-width-accent` (2px) — active-indicator thickness
+- **Icon sizes:** `--icon-sm` (16px) — mobile nav SVGs
+
+All sidebar styles (section 31 + section 38 responsive) now reference tokens. Updated design tokens table in `CLAUDE.md`.
+
+---
+
 ### 2026-03-25 — Contextual Help Sidebars (#209)
 
 Added toggleable right-hand reference sidebars to both Schema and Template editors, surfacing documentation inline without leaving the workspace.
