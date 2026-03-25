@@ -173,12 +173,12 @@ def test_css_section_34_template_builder(index_html: str) -> None:
     assert "34. TEMPLATE BUILDER" in index_html
 
 
-def test_css_section_36_reduced_motion(index_html: str) -> None:
-    assert "36b. REDUCED MOTION" in index_html
+def test_css_section_37_reduced_motion(index_html: str) -> None:
+    assert "37. REDUCED MOTION" in index_html
 
 
-def test_css_section_37_mobile_gate(index_html: str) -> None:
-    assert "37. DEV MODE MOBILE GATE" in index_html
+def test_css_section_38_mobile_gate(index_html: str) -> None:
+    assert "38. DEV MODE MOBILE GATE" in index_html
 
 
 def test_mobile_gate_hides_dev_nav(index_html: str) -> None:

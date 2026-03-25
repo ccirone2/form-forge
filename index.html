@@ -2053,7 +2053,7 @@
     border-color: var(--accent);
   }
 
-  /* ===== 36. HELP SIDEBAR ===== */
+  /* ===== 36. HELP SIDEBAR (contextual reference panels) ===== */
   .dev-workspace {
     display: flex; flex: 1; min-height: 0; gap: 0;
     position: relative;
@@ -2189,7 +2189,7 @@
     color: var(--text-muted); opacity: 0.5;
   }
 
-  /* ===== 36b. REDUCED MOTION ===== */
+  /* ===== 37. REDUCED MOTION ===== */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -2198,7 +2198,7 @@
     }
   }
 
-  /* ===== 37. DEV MODE MOBILE GATE ===== */
+  /* ===== 38. DEV MODE MOBILE GATE ===== */
   @media (max-width: 768px) {
     .dev-nav-tab[data-tab="dev-schema"],
     .dev-nav-tab[data-tab="dev-template"] { display: none; }
@@ -2214,7 +2214,7 @@
     }
   }
 
-  /* ===== 38. REDUCE GPU COST ON TOUCH DEVICES ===== */
+  /* ===== 39. REDUCE GPU COST ON TOUCH DEVICES ===== */
   @media (pointer: coarse) {
     .loading-overlay,
     .gh-connect-modal,
@@ -11157,7 +11157,7 @@ function buildTemplateHelpHTML() {
   let methodItems = TEMPLATE_HELP_DATA.methods.map(m =>
     `<div class="help-item" tabindex="0" data-search="${m.name} ${m.desc} ${m.sig}" onclick="insertMethodFromSidebar('${m.name}')" onkeydown="if(event.key==='Enter'){insertMethodFromSidebar('${m.name}')}">
       <span class="help-item-name">${m.name}</span>
-      <span class="help-item-sig">${escapeHTML(m.sig)}</span>
+      <span class="help-item-sig">${escapeHtml(m.sig)}</span>
       <span class="help-item-desc">${m.desc}</span>
     </div>`
   ).join('');
@@ -11223,16 +11223,15 @@ function updateTemplateDataShape() {
 
   body.innerHTML = fields.map(f => {
     const accessor = getFieldAccessor(f);
-    return `<div class="help-item" tabindex="0" data-search="${f.id} ${f.type} ${f.label}" onclick="insertTemplateSnippet(${escapeHTML(JSON.stringify(accessor))})" onkeydown="if(event.key==='Enter'){insertTemplateSnippet(${escapeHTML(JSON.stringify(accessor))})}">
-      <span class="help-item-name">${f.id}</span>
-      <span class="help-item-desc">${f.label} (${f.type})</span>
-      <span class="help-item-sig">${escapeHTML(accessor)}</span>
+    const safeId = escapeHtml(f.id);
+    const safeType = escapeHtml(f.type);
+    const safeLabel = escapeHtml(f.label || '');
+    return `<div class="help-item" tabindex="0" data-search="${safeId} ${safeType} ${safeLabel}" onclick="insertTemplateSnippet(${escapeHtml(JSON.stringify(accessor))})" onkeydown="if(event.key==='Enter'){insertTemplateSnippet(${escapeHtml(JSON.stringify(accessor))})}">
+      <span class="help-item-name">${safeId}</span>
+      <span class="help-item-desc">${safeLabel} (${safeType})</span>
+      <span class="help-item-sig">${escapeHtml(accessor)}</span>
     </div>`;
   }).join('');
-}
-
-function escapeHTML(str) {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 // ---- Sidebar toggle & persistence ----
@@ -11245,10 +11244,10 @@ function initHelpSidebars() {
 
   // Restore saved state
   if (localStorage.getItem('formforge-help-sidebar-schema') === 'open') {
-    openHelpSidebar('schema', true);
+    openHelpSidebar('schema');
   }
   if (localStorage.getItem('formforge-help-sidebar-template') === 'open') {
-    openHelpSidebar('template', true);
+    openHelpSidebar('template');
   }
 
   // Restore expanded accordions
@@ -11280,7 +11279,7 @@ function toggleHelpSidebar(type) {
   }
 }
 
-function openHelpSidebar(type, silent) {
+function openHelpSidebar(type) {
   const sidebar = document.getElementById(type + 'HelpSidebar');
   const btn = document.getElementById(type + 'HelpToggleBtn');
   if (!sidebar) return;
@@ -11323,10 +11322,21 @@ function saveAccordionState(changedAcc) {
 
 // ---- Filter / Search ----
 
+let _helpFilterPreSearchState = {};
+
 function filterHelpSidebar(type, query) {
   const content = document.getElementById(type + 'HelpContent');
   if (!content) return;
   const q = query.toLowerCase().trim();
+
+  // Save pre-search accordion state when starting a search
+  if (q && !_helpFilterPreSearchState[type]) {
+    _helpFilterPreSearchState[type] = [];
+    content.querySelectorAll('.help-accordion.open').forEach(acc => {
+      const id = acc.getAttribute('data-accordion');
+      if (id) _helpFilterPreSearchState[type].push(id);
+    });
+  }
 
   content.querySelectorAll('.help-accordion').forEach(acc => {
     let anyVisible = false;
@@ -11344,6 +11354,19 @@ function filterHelpSidebar(type, query) {
       if (btn) btn.setAttribute('aria-expanded', 'true');
     }
   });
+
+  // Restore pre-search accordion state when clearing the search
+  if (!q && _helpFilterPreSearchState[type]) {
+    const saved = _helpFilterPreSearchState[type];
+    content.querySelectorAll('.help-accordion').forEach(acc => {
+      const id = acc.getAttribute('data-accordion');
+      const shouldBeOpen = saved.includes(id);
+      acc.classList.toggle('open', shouldBeOpen);
+      const btn = acc.querySelector('.help-accordion-header');
+      if (btn) btn.setAttribute('aria-expanded', String(shouldBeOpen));
+    });
+    delete _helpFilterPreSearchState[type];
+  }
 
   // Show "no results" message
   const existing = content.querySelector('.help-no-results-global');
@@ -11419,7 +11442,7 @@ function highlightFieldAtCursor() {
       if (ch === '}') depth--;
     }
     // If depth went negative, we've left that field block
-    if (depth < -1) return;
+    if (depth < 0) return;
 
     // Highlight matching item
     const item = sidebar.querySelector(`.help-item[data-field-type="${fieldType}"]`);
