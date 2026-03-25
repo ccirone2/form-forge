@@ -5403,7 +5403,7 @@ function createFileField(field, group) {
           const canvas = document.createElement('canvas');
           canvas.width = w; canvas.height = h;
           const ctx = canvas.getContext('2d');
-          if (!ctx) { showToast('Canvas not available', 'error'); fileInput.value = ''; return; }
+          if (!ctx) { showToast('Canvas not available', 'error'); fileInput.value = ''; hiddenInput.value = ''; return; }
           ctx.drawImage(img, 0, 0, w, h);
           const dataUrl = canvas.toDataURL('image/png');
           hiddenInput.value = dataUrl;

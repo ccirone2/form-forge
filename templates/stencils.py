@@ -617,7 +617,7 @@ def coverpage(
             run = cell_p.add_run()
             picture = run.add_picture(io.BytesIO(img_bytes), width=Inches(logo_width))
             # Scale down proportionally if logo exceeds max height
-            if max_logo_height and picture.height > Inches(max_logo_height):
+            if max_logo_height > 0 and picture.height > Inches(max_logo_height):
                 ratio = Inches(max_logo_height) / picture.height
                 picture.height = Inches(max_logo_height)
                 picture.width = int(picture.width * ratio)
@@ -933,7 +933,7 @@ def image(
             img_data = b64_str.split(",")[1]
             img_bytes = base64.b64decode(img_data)
             picture = doc.add_picture(io.BytesIO(img_bytes), width=Inches(width_inches))
-            if max_height is not None and picture.height > Inches(max_height):
+            if max_height is not None and max_height > 0 and picture.height > Inches(max_height):
                 ratio = Inches(max_height) / picture.height
                 picture.height = Inches(max_height)
                 picture.width = int(picture.width * ratio)
