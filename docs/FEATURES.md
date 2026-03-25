@@ -153,7 +153,7 @@ All Stencil methods are also available as standalone functions that take `doc` a
 | `longtext()` | Heading + multi-paragraph text block. |
 | `bullet_list()` | Heading + bulleted list from newline-separated string. |
 | `signatures()` | Signature grid with label/line pairs in two-column layout. |
-| `footer()` | Standard FormForge footer with timestamp. |
+| `footer()` | Standard FormForge auto-generated disclaimer paragraph. |
 | `address()` | Formatted address block from JSON string. |
 | `image()` | Base64 image embed with optional `max_height` (inches) for proportional scaling. |
 | `signature()` | Canvas signature image with label, or underline placeholder if empty. |
