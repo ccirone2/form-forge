@@ -14,6 +14,22 @@
 
 ## Log
 
+### 2026-03-25 — Auto-Preview and DOCX Rendering Fidelity (#223)
+
+Template preview now auto-runs when switching to the Template tab if a valid template and sample data are present (e.g., after launching demo or loading from a connected source). Preview skips re-running if content hasn't changed.
+
+Improved preview fidelity via mammoth.js style mapping:
+- `MAMMOTH_STYLE_MAP` maps Title, Subtitle, Heading 1-3, List Bullet to CSS classes
+- Preview CSS approximates THEME_MODERN colors (#1B5E6E title, #3A7A8C subtitle/borders)
+- Title gets centered text with bottom border (26pt), Heading 1 gets section-style border (16pt)
+- Tables render borderless by default (matching `table_section()` key/value style)
+- Bold first column scoped to 2-column key/value tables only (repeater tables unaffected)
+- Mammoth conversion warnings displayed in an amber box below the preview
+- Preview hash tracking (`_devPreviewHash`) prevents redundant re-renders
+- In-flight guard (`_devPreviewRunning`) prevents concurrent preview runs
+
+---
+
 ### 2026-03-25 — Coverpage Stencil (#222)
 
 Added `coverpage()` to `templates/stencils.py` — a new public stencil function that renders professional document cover pages:
