@@ -15,7 +15,7 @@ Field type notes:
   - list → newline-separated str (e.g. "Python\\nJavaScript\\nRust")
 """
 
-import stencils
+from stencils import Stamp, THEME_CLASSIC
 
 
 def generate_docx(data: dict[str, str]) -> bytes:
@@ -28,20 +28,19 @@ def generate_docx(data: dict[str, str]) -> bytes:
     Returns:
         bytes: The generated .docx file as raw bytes.
     """
-    stencils.set_theme(stencils.THEME_CLASSIC)
-
     first = data.get("first_name", "")
     last = data.get("last_name", "")
     start = data.get("start_date", "TBD")
 
-    doc = stencils.new_doc(
+    doc = Stamp()
+    doc.set_theme(THEME_CLASSIC)
+    doc.new_doc(
         "Employee Onboarding Document",
         f"Prepared for {first} {last} — Start Date: {start}",
     )
 
     # ── Section: Personal Information ──────────────────────────
-    stencils.table_section(
-        doc,
+    doc.table_section(
         "Personal Information",
         [
             ("First Name", data.get("first_name", "")),
@@ -54,8 +53,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
     )
 
     # ── Section: Role & Department ─────────────────────────────
-    stencils.table_section(
-        doc,
+    doc.table_section(
         "Role & Department",
         [
             ("Department", data.get("department", "")),
@@ -69,8 +67,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
     equipment = data.get("equipment_needs", "")
     software = data.get("software_access", "")
 
-    stencils.table_section(
-        doc,
+    doc.table_section(
         "Equipment & Access",
         [
             ("Laptop", data.get("laptop_preference", "")),
@@ -81,17 +78,13 @@ def generate_docx(data: dict[str, str]) -> bytes:
 
     # ── Section: Skills & Experience ───────────────────────────
     doc.add_heading("Skills & Experience", level=1)
-
-    stencils.longtext(doc, "Professional Bio", data.get("bio", ""))
-    stencils.bullet_list(doc, "Key Skills", data.get("skills", ""))
-    stencils.bullet_list(
-        doc, "Certifications & Licenses", data.get("certifications", "")
-    )
-    stencils.longtext(doc, "Notable Prior Projects", data.get("prior_projects", ""))
+    doc.longtext("Professional Bio", data.get("bio", ""))
+    doc.bullet_list("Key Skills", data.get("skills", ""))
+    doc.bullet_list("Certifications & Licenses", data.get("certifications", ""))
+    doc.longtext("Notable Prior Projects", data.get("prior_projects", ""))
 
     # ── Section: Additional Information ────────────────────────
-    stencils.table_section(
-        doc,
+    doc.table_section(
         "Additional Information",
         [
             ("Emergency Contact", data.get("emergency_contact", "")),
@@ -101,11 +94,10 @@ def generate_docx(data: dict[str, str]) -> bytes:
         ],
     )
 
-    stencils.bullet_list(doc, "First 90 Days Goals", data.get("onboarding_goals", ""))
+    doc.bullet_list("First 90 Days Goals", data.get("onboarding_goals", ""))
 
     # ── Signatures ─────────────────────────────────────────────
-    stencils.signatures(
-        doc,
+    doc.signatures(
         [
             "Employee Signature",
             "Date",
@@ -115,6 +107,6 @@ def generate_docx(data: dict[str, str]) -> bytes:
     )
 
     # ── Footer ─────────────────────────────────────────────────
-    stencils.footer(doc)
+    doc.footer()
 
-    return stencils.finalize(doc)
+    return doc.finalize()

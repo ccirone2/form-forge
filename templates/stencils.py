@@ -4,7 +4,23 @@ FormForge Shared Template Stencils
 Shared helper functions for all FormForge DOCX templates.
 Works in both standard Python (import stencils) and Pyodide (via exec()).
 
-Usage in templates:
+Stamp class (recommended)::
+
+    from stencils import Stamp, THEME_CLASSIC
+
+    def generate_docx(data):
+        doc = Stamp()
+        doc.set_theme(THEME_CLASSIC)
+        doc.new_doc("My Form Title", "Subtitle here")
+        doc.table_section("Section Name", [("Label", "Value"), ...])
+        doc.longtext("Notes", some_text)
+        doc.bullet_list("Skills", newline_separated_str)
+        doc.signatures(["Signer 1", "Signer 2"])
+        doc.footer()
+        return doc.finalize()
+
+Module-level functions (backward-compatible)::
+
     import stencils
     doc = stencils.new_doc("My Form Title", "Subtitle here")
     stencils.table_section(doc, "Section Name", [("Label", "Value"), ...])
@@ -1058,6 +1074,202 @@ def repeater_table(
         r.font.color.rgb = t.color_muted
 
     doc.add_paragraph("")
+
+
+# ---------------------------------------------------------------------------
+#  Stamp — fluent document builder
+# ---------------------------------------------------------------------------
+
+
+class Stamp:
+    """Fluent builder for DOCX documents using stencils helpers.
+
+    Wraps an internal ``Document`` and exposes every public stencil function
+    as a chainable method (returns ``self``), except ``finalize()`` which
+    returns the finished DOCX bytes.
+
+    Usage::
+
+        from stencils import Stamp, THEME_CLASSIC
+
+        def generate_docx(data):
+            doc = Stamp()
+            doc.set_theme(THEME_CLASSIC)
+            doc.new_doc("My Title")
+            doc.table_section("Info", [("Name", data.get("name", ""))])
+            doc.footer()
+            return doc.finalize()
+
+    Or with method chaining::
+
+        return (Stamp()
+            .set_theme(THEME_CLASSIC)
+            .new_doc("My Title")
+            .table_section("Info", [("Name", data.get("name", ""))])
+            .footer()
+            .finalize())
+    """
+
+    def __init__(self) -> None:
+        self._doc: Document | None = None
+        self._theme: DocTheme | None = None
+
+    def set_theme(self, theme: DocTheme) -> "Stamp":
+        """Set the theme for this document.
+
+        Unlike the module-level ``set_theme()``, this only affects the
+        current ``Stamp`` instance — it does not modify the global theme.
+        """
+        missing = [f for f in _THEME_FIELDS if not hasattr(theme, f)]
+        if missing:
+            raise ValueError(f"Theme missing required fields: {', '.join(missing)}")
+        self._theme = theme
+        return self
+
+    def new_doc(
+        self,
+        title_text: str = "",
+        subtitle_text: str = "",
+        font_name: str | None = None,
+        font_size: int | None = None,
+    ) -> "Stamp":
+        """Create the internal document with optional title and subtitle.
+
+        Must be called before any content methods. The document is cloned
+        from a pre-built template configured from the instance theme (set
+        via ``set_theme()``) or the module-level active theme.
+        """
+        self._doc = new_doc(
+            title_text,
+            subtitle_text,
+            font_name=font_name,
+            font_size=font_size,
+            theme=self._theme,
+        )
+        return self
+
+    def _ensure_doc(self) -> Document:
+        """Lazily create the document if ``new_doc()`` was not called."""
+        if self._doc is None:
+            self._doc = new_doc(theme=self._theme)
+        return self._doc
+
+    def coverpage(
+        self,
+        title: str,
+        doc_type: str = "",
+        metadata: list[tuple[str, str]] | None = None,
+        logo_b64: str = "",
+        logo_width: float = 2.0,
+        max_logo_height: float = 1.0,
+        bar_color: str | None = None,
+    ) -> "Stamp":
+        """Add a professional cover page. See ``coverpage()`` module function."""
+        coverpage(
+            self._ensure_doc(),
+            title,
+            doc_type=doc_type,
+            metadata=metadata,
+            logo_b64=logo_b64,
+            logo_width=logo_width,
+            max_logo_height=max_logo_height,
+            bar_color=bar_color,
+            theme=self._theme,
+        )
+        return self
+
+    def table_section(self, heading: str, rows: list[tuple[str, str]]) -> "Stamp":
+        """Add a heading + key/value table. See ``table_section()``."""
+        table_section(self._ensure_doc(), heading, rows)
+        return self
+
+    def longtext(self, heading: str, text: str) -> "Stamp":
+        """Add a heading + paragraphs. See ``longtext()``."""
+        longtext(self._ensure_doc(), heading, text)
+        return self
+
+    def bullet_list(self, heading: str, items_str: str) -> "Stamp":
+        """Add a heading + bulleted list. See ``bullet_list()``."""
+        bullet_list(self._ensure_doc(), heading, items_str)
+        return self
+
+    def signatures(self, labels: list[str]) -> "Stamp":
+        """Add a signature grid. See ``signatures()``."""
+        signatures(self._ensure_doc(), labels)
+        return self
+
+    def footer(self) -> "Stamp":
+        """Add the standard FormForge footer. See ``footer()``."""
+        footer(self._ensure_doc())
+        return self
+
+    def address(self, heading: str, raw_json: str) -> "Stamp":
+        """Add a formatted address block. See ``address()``."""
+        address(self._ensure_doc(), heading, raw_json)
+        return self
+
+    def image(
+        self,
+        b64_str: str,
+        width_inches: float = 3.0,
+        max_height: float | None = None,
+        placeholder: str = "No image uploaded.",
+    ) -> "Stamp":
+        """Embed a base64 image or placeholder. See ``image()``."""
+        image(
+            self._ensure_doc(),
+            b64_str,
+            width_inches=width_inches,
+            max_height=max_height,
+            placeholder=placeholder,
+        )
+        return self
+
+    def signature(self, b64_str: str, label: str, width_inches: float = 2.5) -> "Stamp":
+        """Add a signature image with label. See ``signature()``."""
+        signature(self._ensure_doc(), b64_str, label, width_inches=width_inches)
+        return self
+
+    def repeater_table(
+        self,
+        headers: list[str],
+        items: list[dict[str, str]],
+        field_keys: list[str],
+        currency_keys: list[str] | None = None,
+    ) -> "Stamp":
+        """Render a repeater as a headed table. See ``repeater_table()``."""
+        repeater_table(
+            self._ensure_doc(),
+            headers,
+            items,
+            field_keys,
+            currency_keys=currency_keys,
+        )
+        return self
+
+    def add_heading(self, text: str, level: int = 1) -> "Stamp":
+        """Add a heading paragraph directly (pass-through to Document)."""
+        self._ensure_doc().add_heading(text, level=level)
+        return self
+
+    def add_paragraph(self, text: str = "") -> "Stamp":
+        """Add a paragraph directly (pass-through to Document)."""
+        self._ensure_doc().add_paragraph(text)
+        return self
+
+    def add_page_break(self) -> "Stamp":
+        """Add a page break (pass-through to Document)."""
+        self._ensure_doc().add_page_break()
+        return self
+
+    @property
+    def doc(self) -> Document:
+        """Access the underlying Document for advanced usage."""
+        return self._ensure_doc()
+
+    def finalize(self) -> bytes:
+        """Serialize the document to DOCX bytes."""
+        return finalize(self._ensure_doc())
 
 
 def format_time(value: str) -> str:

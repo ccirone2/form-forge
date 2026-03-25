@@ -596,9 +596,7 @@ def test_new_doc_no_arguments():
     """new_doc() with no arguments returns a valid doc with no title heading."""
     doc = stencils.new_doc()
     assert doc is not None
-    heading_paras = [
-        p for p in doc.paragraphs if p.style.name == "Title" and p.text
-    ]
+    heading_paras = [p for p in doc.paragraphs if p.style.name == "Title" and p.text]
     assert heading_paras == []
 
 
@@ -909,3 +907,259 @@ def test_image_without_max_height_unchanged():
     stencils.image(doc, small_png, width_inches=3.0)
     shapes = doc.inline_shapes
     assert len(shapes) >= 1
+
+
+# ---------------------------------------------------------------------------
+#  Stamp class
+# ---------------------------------------------------------------------------
+
+
+def test_stamp_importable():
+    """Stamp and theme constants are importable via from-import."""
+    from stencils import Stamp, THEME_CLASSIC, THEME_MINIMAL, THEME_MODERN, DocTheme
+
+    assert Stamp is not None
+    assert THEME_CLASSIC is not None
+    assert THEME_MINIMAL is not None
+    assert THEME_MODERN is not None
+    assert DocTheme is not None
+
+
+def test_stamp_construction():
+    """Stamp() creates an instance with no document yet."""
+    s = stencils.Stamp()
+    assert s._doc is None
+    assert s._theme is None
+
+
+def test_stamp_set_theme_returns_self():
+    s = stencils.Stamp()
+    result = s.set_theme(stencils.THEME_CLASSIC)
+    assert result is s
+    assert s._theme is stencils.THEME_CLASSIC
+
+
+def test_stamp_set_theme_invalid():
+    """set_theme with an incomplete theme should raise ValueError."""
+
+    class BadTheme:
+        pass
+
+    s = stencils.Stamp()
+    with pytest.raises(ValueError, match="missing required fields"):
+        s.set_theme(BadTheme())
+
+
+def test_stamp_new_doc_returns_self():
+    s = stencils.Stamp()
+    result = s.new_doc("Test Title")
+    assert result is s
+    assert s._doc is not None
+
+
+def test_stamp_new_doc_creates_titled_doc():
+    s = stencils.Stamp()
+    s.set_theme(stencils.THEME_CLASSIC)
+    s.new_doc("My Title", "My Subtitle")
+    texts = [p.text for p in s.doc.paragraphs]
+    assert any("My Title" in t for t in texts)
+    assert any("My Subtitle" in t for t in texts)
+
+
+def test_stamp_lazy_doc_creation():
+    """Content methods should auto-create the doc if new_doc() was not called."""
+    s = stencils.Stamp()
+    s.set_theme(stencils.THEME_CLASSIC)
+    s.table_section("Info", [("Key", "Value")])
+    assert s._doc is not None
+
+
+def test_stamp_table_section_returns_self():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.table_section("Section", [("A", "B")])
+    assert result is s
+
+
+def test_stamp_longtext_returns_self():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.longtext("Heading", "Some text")
+    assert result is s
+
+
+def test_stamp_bullet_list_returns_self():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.bullet_list("Items", "a\nb\nc")
+    assert result is s
+
+
+def test_stamp_signatures_returns_self():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.signatures(["Signer 1", "Date"])
+    assert result is s
+
+
+def test_stamp_footer_returns_self():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.footer()
+    assert result is s
+
+
+def test_stamp_address_returns_self():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.address("Addr", '{"street":"123 Main"}')
+    assert result is s
+
+
+def test_stamp_image_returns_self():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.image("")
+    assert result is s
+
+
+def test_stamp_signature_returns_self():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.signature("", "Label")
+    assert result is s
+
+
+def test_stamp_repeater_table_returns_self():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.repeater_table(headers=["Col"], items=[], field_keys=["col"])
+    assert result is s
+
+
+def test_stamp_coverpage_returns_self():
+    s = stencils.Stamp()
+    s.new_doc()
+    result = s.coverpage("Title")
+    assert result is s
+
+
+def test_stamp_add_heading_returns_self():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.add_heading("H1", level=1)
+    assert result is s
+
+
+def test_stamp_add_paragraph_returns_self():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.add_paragraph("text")
+    assert result is s
+
+
+def test_stamp_add_page_break_returns_self():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.add_page_break()
+    assert result is s
+
+
+def test_stamp_finalize_returns_bytes():
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    result = s.finalize()
+    assert isinstance(result, bytes)
+    assert len(result) > 0
+    assert result[:2] == b"PK"
+
+
+def test_stamp_method_chaining():
+    """Full method-chaining workflow produces valid DOCX bytes."""
+    result = (
+        stencils.Stamp()
+        .set_theme(stencils.THEME_CLASSIC)
+        .new_doc("Chained Doc")
+        .table_section("Info", [("Name", "Test")])
+        .longtext("Notes", "Some notes here")
+        .bullet_list("Skills", "Python\nRust")
+        .signatures(["Signer", "Date"])
+        .footer()
+        .finalize()
+    )
+    assert isinstance(result, bytes)
+    assert result[:2] == b"PK"
+
+
+def test_stamp_sequential_calls():
+    """Sequential (non-chained) workflow produces valid DOCX bytes."""
+    s = stencils.Stamp()
+    s.set_theme(stencils.THEME_MODERN)
+    s.new_doc("Sequential Doc")
+    s.table_section("Details", [("Key", "Value")])
+    s.footer()
+    result = s.finalize()
+    assert isinstance(result, bytes)
+    assert result[:2] == b"PK"
+
+
+def test_stamp_mixed_chain_and_sequential():
+    """Mixed chaining + sequential with conditionals."""
+    s = stencils.Stamp().set_theme(stencils.THEME_CLASSIC).new_doc("Mixed Doc")
+
+    # Conditional content
+    include_notes = True
+    if include_notes:
+        s.longtext("Notes", "Important notes")
+
+    s.footer()
+    result = s.finalize()
+    assert isinstance(result, bytes)
+    assert result[:2] == b"PK"
+
+
+def test_stamp_doc_property():
+    """The doc property provides access to the underlying Document."""
+    s = stencils.Stamp()
+    s.new_doc("Test")
+    # python-docx Document is a function; check the returned object has
+    # the expected document attributes instead.
+    assert hasattr(s.doc, "paragraphs")
+    assert hasattr(s.doc, "add_paragraph")
+    assert hasattr(s.doc, "styles")
+
+
+def test_stamp_theme_is_instance_scoped():
+    """Setting theme on Stamp does not change the module-level global."""
+    original = stencils._active_theme
+    s = stencils.Stamp()
+    s.set_theme(stencils.THEME_CLASSIC)
+    assert stencils._active_theme is original
+
+
+def test_stamp_content_round_trip():
+    """Content added via Stamp methods is present in the output DOCX."""
+    from io import BytesIO
+    from docx import Document
+
+    result = (
+        stencils.Stamp()
+        .set_theme(stencils.THEME_CLASSIC)
+        .new_doc("Round Trip")
+        .table_section("People", [("Name", "Alice"), ("Role", "Dev")])
+        .bullet_list("Skills", "Python\nGo")
+        .footer()
+        .finalize()
+    )
+    doc = Document(BytesIO(result))
+    all_text = "\n".join(p.text for p in doc.paragraphs)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                all_text += "\n" + cell.text
+
+    assert "Round Trip" in all_text
+    assert "People" in all_text
+    assert "Alice" in all_text
+    assert "Python" in all_text
+    assert "FormForge" in all_text  # footer text
