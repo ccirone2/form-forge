@@ -833,11 +833,10 @@ def test_mammoth_style_map_defined(index_html: str) -> None:
     assert "docx-h1" in index_html
 
 
-def test_devrunpreview_preserves_inline_styles(index_html: str) -> None:
-    """DOMPurify is called with ADD_ATTR: ['style'] to preserve inline styles."""
+def test_devrunpreview_has_inflight_guard(index_html: str) -> None:
+    """devRunPreview guards against concurrent runs with _devPreviewRunning."""
     body = _extract_func(index_html, "devRunPreview")
-    assert "ADD_ATTR" in body
-    assert "'style'" in body
+    assert "_devPreviewRunning" in body
 
 
 def test_devrunpreview_shows_mammoth_warnings(index_html: str) -> None:
@@ -866,6 +865,12 @@ def test_auto_preview_skips_empty_data(index_html: str) -> None:
     """devAutoPreview skips preview when sample data is empty."""
     body = _extract_func(index_html, "devAutoPreview")
     assert "'{}'" in body
+
+
+def test_auto_preview_skips_missing_generate_docx(index_html: str) -> None:
+    """devAutoPreview does nothing when generate_docx is absent from template."""
+    body = _extract_func(index_html, "devAutoPreview")
+    assert "includes('generate_docx')" in body
 
 
 def test_show_tab_calls_auto_preview(index_html: str) -> None:

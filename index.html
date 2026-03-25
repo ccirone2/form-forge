@@ -1943,9 +1943,10 @@
     font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11pt;
     line-height: 1.5;
   }
-  /* Title style — centered, colored, with bottom border */
+  /* Title style — centered, colored, with bottom border.
+     Approximates THEME_MODERN — templates using THEME_CLASSIC or THEME_MINIMAL will differ */
   .dev-docx-preview .docx-title {
-    font-size: 22pt; font-weight: 400; text-align: center;
+    font-size: 26pt; font-weight: 400; text-align: center;
     color: #1B5E6E; margin: 0 0 4px;
     padding-bottom: 8px; border-bottom: 1px solid #3A7A8C;
   }
@@ -1954,27 +1955,25 @@
     font-size: 12pt; text-align: center;
     color: #3A7A8C; margin: 0 0 12px;
   }
-  /* Heading 1 — section heading with bottom border */
+  /* Heading 1 — section heading with bottom border (THEME_MODERN color_title) */
   .dev-docx-preview .docx-h1 {
-    font-size: 14pt; font-weight: 600;
+    font-size: 16pt; font-weight: 600;
     color: #1B5E6E; margin: 18px 0 6px;
     padding-bottom: 4px; border-bottom: 1px solid #3A7A8C;
   }
-  /* Heading 2 — subsection heading */
+  /* Heading 2 — subsection heading (THEME_MODERN color_subtitle) */
   .dev-docx-preview .docx-h2 {
     font-size: 13pt; font-weight: 600;
     color: #3A7A8C; margin: 14px 0 4px;
   }
-  /* Heading 3 */
+  /* Heading 3 (THEME_MODERN color_title) */
   .dev-docx-preview .docx-h3 { font-size: 12pt; font-weight: 600; color: #1B5E6E; margin: 10px 0 4px; }
   /* Tables — borderless key/value style by default */
   .dev-docx-preview table { border-collapse: collapse; width: 100%; margin: 4px 0; }
   .dev-docx-preview td, .dev-docx-preview th { padding: 3px 8px; border: none; vertical-align: top; font-size: 10pt; }
-  /* Tables with borders (repeater tables — mammoth preserves border attrs) */
-  .dev-docx-preview table[border] td,
-  .dev-docx-preview table[border] th { border: 1px solid #ccc; }
-  /* Bold first column in key/value tables */
-  .dev-docx-preview td:first-child { font-weight: 600; padding-left: 18px; }
+  /* Bold first column only in 2-column tables (key/value from table_section);
+     repeater tables have 3+ columns so this won't match them */
+  .dev-docx-preview td:first-child:nth-last-child(2) { font-weight: 600; padding-left: 18px; }
   /* Bullet lists */
   .dev-docx-preview .docx-bullet { font-size: 10pt; margin: 2px 0; }
   .dev-docx-preview ul { padding-left: 24px; margin: 4px 0; }
@@ -12401,6 +12400,7 @@ function devAutoFillSampleData() {
 
 let devTemplateValidDebounce = null;
 let _devPreviewHash = ''; // tracks template+data fingerprint to avoid redundant previews
+let _devPreviewRunning = false; // guards against concurrent preview runs
 
 // Mammoth style map — maps DOCX paragraph/run styles to CSS classes
 const MAMMOTH_STYLE_MAP = [
@@ -12445,6 +12445,9 @@ function devUpdateTemplateValidation() {
 }
 
 async function devRunPreview() {
+  if (_devPreviewRunning) return;
+  _devPreviewRunning = true;
+
   const badge = document.getElementById('templateStatusBadge');
   const badgeText = document.getElementById('templateStatusText');
   const container = document.getElementById('docxPreviewContainer');
@@ -12499,10 +12502,8 @@ bytes(_result) if isinstance(_result, (bytes, bytearray)) else _result
       }, { styleMap: MAMMOTH_STYLE_MAP });
       if (emptyEl) emptyEl.style.display = 'none';
 
-      // Sanitize mammoth output via DOMPurify, preserving inline styles
-      let html = DOMPurify.sanitize(mammothResult.value, {
-        ADD_ATTR: ['style'],
-      });
+      // Sanitize mammoth output via DOMPurify
+      let html = DOMPurify.sanitize(mammothResult.value);
 
       // Append mammoth conversion warnings if any
       const warnings = (mammothResult.messages || []).filter(m => m.type === 'warning');
@@ -12530,6 +12531,8 @@ bytes(_result) if isinstance(_result, (bytes, bytearray)) else _result
     errDiv.textContent = e.message || String(e);
     container.innerHTML = '';
     container.appendChild(errDiv);
+  } finally {
+    _devPreviewRunning = false;
   }
 }
 
