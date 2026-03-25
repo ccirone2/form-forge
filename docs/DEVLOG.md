@@ -14,6 +14,36 @@
 
 ## Log
 
+### 2026-03-25 — Contextual Help Sidebars (#209)
+
+Added toggleable right-hand reference sidebars to both Schema and Template editors, surfacing documentation inline without leaving the workspace.
+
+**Schema Editor Sidebar:**
+- Field type quick reference — all 24 field types organized by category (Input, Choice, Complex, Layout) with required/optional properties shown as badges
+- Schema structure reference — top-level keys, section keys, and common field properties
+- Click-to-insert — clicking a field type inserts its snippet into the schema (reuses existing `devInsertSnippet` system)
+- Cursor-aware highlighting — when cursor is inside a field block, the matching field type is auto-highlighted in the sidebar
+
+**Template Editor Sidebar:**
+- Stencils method reference — all 13 public functions with full signatures, descriptions, and click-to-insert snippets
+- Theme reference — built-in themes (MODERN, CLASSIC, MINIMAL) and DocTheme constructor properties
+- Data type format reference — how each field type's data appears in the `data` dict
+- Dynamic schema fields — when a schema is loaded, shows all field IDs with their types and accessor snippets
+
+**Shared UX:**
+- Collapsible accordion sections with smooth transitions, defaulting to collapsed
+- Search/filter input at top of sidebar that auto-expands matching accordions
+- Keyboard shortcut: `Ctrl+Shift+H` toggles the sidebar for the active editor tab
+- Toggle button in each editor toolbar with `aria-expanded` state
+- LocalStorage persistence for sidebar open/closed state and expanded accordion sections
+- Responsive: full-width overlay on viewports ≤ 768px
+- `.dev-workspace` flex wrapper keeps sidebar alongside the existing split pane without disrupting resizer
+
+**Decisions:**
+- Used `Ctrl+Shift+H` instead of `Ctrl+/` to avoid conflict with comment toggle in Python editor
+- Sidebar width fixed at 320px with `overflow: hidden` animation for clean slide-in
+- Content derived entirely from embedded JS data structures (no fetch calls)
+
 ### 2026-03-16 — LLM Context Export (#205)
 
 Implemented LLM context export to help users leverage AI assistants when building schemas and templates.
