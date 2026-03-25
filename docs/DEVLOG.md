@@ -14,6 +14,74 @@
 
 ## Log
 
+### 2026-03-25 — Contextual Help Sidebars (#209)
+
+Added toggleable right-hand reference sidebars to both Schema and Template editors, surfacing documentation inline without leaving the workspace.
+
+**Schema Editor Sidebar:**
+- Field type quick reference — all 24 field types organized by category (Input, Choice, Complex, Layout) with required/optional properties shown as badges
+- Schema structure reference — top-level keys, section keys, and common field properties
+- Click-to-insert — clicking a field type inserts its snippet into the schema (reuses existing `devInsertSnippet` system)
+- Cursor-aware highlighting — when cursor is inside a field block, the matching field type is auto-highlighted in the sidebar
+
+**Template Editor Sidebar:**
+- Stencils method reference — all 13 public functions with full signatures, descriptions, and click-to-insert snippets
+- Theme reference — built-in themes (MODERN, CLASSIC, MINIMAL) and DocTheme constructor properties
+- Data type format reference — how each field type's data appears in the `data` dict
+- Dynamic schema fields — when a schema is loaded, shows all field IDs with their types and accessor snippets
+
+**Shared UX:**
+- Collapsible accordion sections with smooth transitions, defaulting to collapsed
+- Search/filter input at top of sidebar that auto-expands matching accordions
+- Keyboard shortcut: `Ctrl+Shift+H` toggles the sidebar for the active editor tab
+- Toggle button in each editor toolbar with `aria-expanded` state
+- LocalStorage persistence for sidebar open/closed state and expanded accordion sections
+- Responsive: full-width overlay on viewports ≤ 768px
+- `.dev-workspace` flex wrapper keeps sidebar alongside the existing split pane without disrupting resizer
+
+**Decisions:**
+- Used `Ctrl+Shift+H` instead of `Ctrl+/` to avoid conflict with comment toggle in Python editor
+- Sidebar width fixed at 320px with `overflow: hidden` animation for clean slide-in
+- Content derived entirely from embedded JS data structures (no fetch calls)
+
+---
+
+### 2026-03-25 — Sidebar Navigation (#208)
+
+Replaced the horizontal top navigation bar with a persistent left sidebar layout.
+
+**Layout restructure:**
+- New `.app-shell` flex container wraps `.app-sidebar` + `.app-main` horizontally
+- Header remains at the top spanning full width; sidebar sits below it
+- All four tabs (Forms, Schema, Template, Docs) render vertically in the sidebar
+- Active tab highlighted with `border-left: 2px solid var(--accent)` + `background: var(--accent-subtle)`
+
+**Collapsible sidebar:**
+- `toggleSidebar()` toggles `.collapsed` class (200px expanded → 52px icon-only)
+- Collapse state persisted via `localStorage('formforge-sidebar-collapsed')`
+- Chevron icon rotates 180 degrees when collapsed
+- Labels and status text hidden in collapsed mode via `.nav-label` / `.status-text` spans
+
+**Status badge relocation:**
+- Connection status badge moved from header into sidebar footer
+- New `syncSidebarStatus()` syncs sidebar badge whenever header badge changes
+- Header badge hidden on desktop (CSS `display: none`), shown on mobile via media query
+
+**Responsive behavior:**
+- `>1024px`: Full expanded sidebar with labels and collapse toggle
+- `768–1024px`: Auto-collapsed to icon-only, collapse toggle hidden
+- `<768px`: Sidebar hidden entirely; mobile bottom nav bar with all 4 tabs (icon + label)
+- All 4 tabs accessible on mobile (previously Schema/Template were hidden at 768px)
+
+**Tests updated:**
+- `test_dev_nav_has_four_tabs`: expects 8 tab instances (4 sidebar + 4 mobile bottom nav)
+- `test_css_section_31/37`: updated section names to "SIDEBAR NAVIGATION" / "SIDEBAR RESPONSIVE"
+- `test_mobile_gate_hides_sidebar`: verifies `.app-sidebar { display: none }` at 768px
+- `test_mobile_bottom_nav_exists`: verifies mobile bottom nav HTML presence
+- New `test_sidebar_structure` and `test_sidebar_collapse_persists` tests added
+
+---
+
 ### 2026-03-16 — LLM Context Export (#205)
 
 Implemented LLM context export to help users leverage AI assistants when building schemas and templates.

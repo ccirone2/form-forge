@@ -41,13 +41,13 @@
    * 28. Drop Zones
    * 29. Docs Section
    * 30. Responsive / Media Queries
-   * 31. Dev Mode Core
+   * 31. Sidebar Navigation
    * 32. Dev Split Pane & Editor
    * 33. Context Menu
    * 34. Template Builder
    * 35. (removed)
    * 36. Reduced Motion
-   * 37. Dev Mode Mobile Gate
+   * 38. Sidebar Responsive
    */
 
   /* ===== 1. VARIABLES & RESETS ===== */
@@ -221,22 +221,28 @@
   .h1-home-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-xs); }
   .header-right { display: flex; align-items: center; gap: 12px; position: relative; }
   .status-badge {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 6px 14px; border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: 500;
-    font-family: var(--font-mono);
-    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
-    transition: all var(--transition-slow) ease;
+    display: none; /* moved to sidebar; kept as hidden fallback for mobile */
   }
-  .status-badge.ready { border-color: var(--success); color: var(--success); }
-  .status-badge.loading { border-color: var(--warning); color: var(--warning); }
-  .status-badge.error { border-color: var(--error); color: var(--error); }
   .status-dot { width: 7px; height: 7px; border-radius: var(--radius-circle); background: currentColor; }
-  .status-badge.loading .status-dot { animation: pulse 1.2s ease-in-out infinite; }
+  .sidebar-status-badge.loading .status-dot { animation: pulse 1.2s ease-in-out infinite; }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-  .status-badge { cursor: pointer; }
-  .status-badge:hover { border-color: var(--text-muted); }
-  .status-badge.ready:hover { border-color: var(--success); }
   .status-chevron { font-size: var(--text-2xs); margin-left: 2px; opacity: 0.6; }
+  /* Show header status badge on mobile where sidebar is hidden */
+  @media (max-width: 768px) {
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border-radius: var(--radius-pill); font-size: var(--text-sm); font-weight: 500;
+      font-family: var(--font-mono);
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
+      transition: all var(--transition-slow) ease; cursor: pointer;
+    }
+    .status-badge:hover { border-color: var(--text-muted); }
+    .status-badge.ready { border-color: var(--success); color: var(--success); }
+    .status-badge.ready:hover { border-color: var(--success); }
+    .status-badge.loading { border-color: var(--warning); color: var(--warning); }
+    .status-badge.error { border-color: var(--error); color: var(--error); }
+    .status-badge.loading .status-dot { animation: pulse 1.2s ease-in-out infinite; }
+  }
 
   /* ===== 3b. CONNECT DIALOG ===== */
   .connect-dialog-overlay {
@@ -317,13 +323,18 @@
     height: 100vh; overflow: hidden;
     display: flex; flex-direction: column;
   }
-  body > .app-header,
-  body > .dev-nav { flex-shrink: 0; }
+  body > .app-header { flex-shrink: 0; }
+  .app-shell {
+    display: flex; flex: 1; min-height: 0;
+  }
   .view { display: none; }
   .view.active { display: block; flex: 1; overflow-y: auto; }
   .view.active[role="tabpanel"] {
     display: flex; flex-direction: column; flex: 1;
     width: 100%; min-height: 0; overflow: hidden;
+  }
+  .app-main {
+    flex: 1; min-width: 0; display: flex; flex-direction: column;
   }
   #view-dev-docs.view.active { overflow-y: auto; }
   #view-dev-docs .main-container { width: min(820px, 100% - 48px); }
@@ -1550,28 +1561,72 @@
   .docs-rendered-md blockquote { border-left: 3px solid var(--accent); padding-left: 14px; margin: 8px 0; color: var(--text-muted); font-style: italic; }
   .docs-rendered-md-link { color: var(--accent-hover); }
 
-  /* ===== 31. DEV MODE CORE ===== */
-  .dev-nav {
-    display: flex; align-items: center; justify-content: center; gap: 2px;
-    padding: 4px 24px; background: var(--bg);
-    border-bottom: 1px solid var(--border);
+  /* ===== 31. SIDEBAR NAVIGATION ===== */
+  .app-sidebar {
+    width: 200px; flex-shrink: 0;
+    display: flex; flex-direction: column;
+    background: var(--bg); border-right: 1px solid var(--border);
+    transition: width var(--transition-base);
+    overflow: hidden;
+  }
+  .app-sidebar.collapsed { width: 52px; }
+  .app-sidebar-nav {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 12px 8px; flex: 1;
   }
   .dev-nav-tab {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 8px 14px; border-radius: var(--radius-md) var(--radius-md) 0 0;
-    background: transparent; border: 1px solid transparent;
-    border-bottom: none;
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--radius-md);
+    background: transparent; border: none;
+    border-left: 2px solid transparent;
     color: var(--text-muted); font-family: var(--font-sans);
     font-size: var(--text-sm); cursor: pointer;
     transition: all var(--transition-base);
-    position: relative; bottom: -1px;
+    white-space: nowrap; overflow: hidden;
+    width: 100%; text-align: left;
   }
   .dev-nav-tab:hover { color: var(--text); background: var(--surface-2); }
-  .dev-nav-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .dev-nav-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-md); }
   .dev-nav-tab.active {
-    color: var(--text); background: var(--surface);
-    border-color: var(--border);
+    color: var(--text); background: var(--accent-subtle);
+    border-left-color: var(--accent);
   }
+  .dev-nav-tab svg { flex-shrink: 0; }
+  .dev-nav-tab .nav-label { overflow: hidden; text-overflow: ellipsis; }
+  .app-sidebar.collapsed .nav-label { display: none; }
+  .app-sidebar-footer {
+    padding: 8px; border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .sidebar-toggle {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; padding: 6px; background: transparent; border: none;
+    color: var(--text-muted); cursor: pointer; border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+  }
+  .sidebar-toggle:hover { color: var(--text); background: var(--surface-2); }
+  .sidebar-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sidebar-toggle svg { transition: transform var(--transition-base); }
+  .app-sidebar.collapsed .sidebar-toggle svg { transform: rotate(180deg); }
+  .sidebar-status-badge {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; border-radius: var(--radius-pill); font-size: var(--text-xs); font-weight: 500;
+    font-family: var(--font-mono);
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted);
+    transition: all var(--transition-slow) ease;
+    cursor: pointer; white-space: nowrap; overflow: hidden;
+    width: 100%;
+  }
+  .sidebar-status-badge:hover { border-color: var(--text-muted); }
+  .sidebar-status-badge.ready { border-color: var(--success); color: var(--success); }
+  .sidebar-status-badge.ready:hover { border-color: var(--success); }
+  .sidebar-status-badge.loading { border-color: var(--warning); color: var(--warning); }
+  .sidebar-status-badge.error { border-color: var(--error); color: var(--error); }
+  .sidebar-status-badge .status-dot { flex-shrink: 0; }
+  .sidebar-status-badge .status-text { overflow: hidden; text-overflow: ellipsis; }
+  .app-sidebar.collapsed .sidebar-status-badge .status-text { display: none; }
+  .app-sidebar.collapsed .sidebar-status-badge .status-chevron { display: none; }
+  .app-sidebar.collapsed .sidebar-status-badge { justify-content: center; padding: 6px; }
 
   .dev-container {
     width: 100%; max-width: 1600px; margin: 0 auto;
@@ -2053,7 +2108,143 @@
     border-color: var(--accent);
   }
 
-  /* ===== 36. REDUCED MOTION ===== */
+  /* ===== 36. HELP SIDEBAR (contextual reference panels) ===== */
+  .dev-workspace {
+    display: flex; flex: 1; min-height: 0; gap: 0;
+    position: relative;
+  }
+  .dev-workspace .dev-split { flex: 1; min-width: 0; }
+
+  .help-sidebar {
+    width: 0; overflow: hidden; flex-shrink: 0;
+    background: var(--surface-2); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    transition: width var(--transition-slow);
+  }
+  .help-sidebar.open { width: 320px; }
+  .help-sidebar-inner {
+    width: 320px; min-width: 320px;
+    display: flex; flex-direction: column;
+    height: 100%;
+  }
+  .help-sidebar-header {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+    flex-shrink: 0;
+  }
+  .help-sidebar-title-row {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .help-sidebar-title {
+    font-family: var(--font-mono); font-size: var(--text-xs);
+    color: var(--text-muted); letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .help-sidebar-close {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); padding: 2px 6px;
+    border-radius: var(--radius-xs); font-size: 16px; line-height: 1;
+    transition: color var(--transition-fast);
+  }
+  .help-sidebar-close:hover { color: var(--text); }
+  .help-sidebar-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .help-sidebar-search {
+    width: 100%; padding: 6px 10px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text); font-family: var(--font-sans);
+    font-size: var(--text-sm);
+  }
+  .help-sidebar-search:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+  .help-sidebar-search::placeholder { color: var(--text-muted); opacity: 0.6; }
+
+  .help-sidebar-content {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+  }
+
+  .help-accordion { border-bottom: 1px solid var(--border); }
+  .help-accordion-header {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; padding: 10px 12px;
+    background: none; border: none; cursor: pointer;
+    color: var(--text); font-family: var(--font-mono);
+    font-size: var(--text-xs); letter-spacing: 0.04em;
+    text-align: left;
+    transition: background var(--transition-fast);
+  }
+  .help-accordion-header:hover { background: var(--surface); }
+  .help-accordion-header:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .help-accordion-arrow {
+    font-size: 10px; color: var(--text-muted);
+    transition: transform var(--transition-base);
+    flex-shrink: 0;
+  }
+  .help-accordion.open .help-accordion-arrow { transform: rotate(90deg); }
+  .help-accordion-body {
+    max-height: 0; overflow: hidden;
+    transition: max-height var(--transition-slow);
+  }
+  .help-accordion.open .help-accordion-body { max-height: 3000px; }
+  .help-accordion-count {
+    font-family: var(--font-mono); font-size: var(--text-2xs);
+    color: var(--text-muted); opacity: 0.6; margin-left: auto;
+  }
+
+  .help-item {
+    display: flex; flex-direction: column; gap: 2px;
+    padding: 6px 12px 6px 24px;
+    cursor: pointer; border-left: 2px solid transparent;
+    transition: all var(--transition-fast);
+  }
+  .help-item:hover {
+    background: var(--surface); border-left-color: var(--accent);
+  }
+  .help-item:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: -2px;
+  }
+  .help-item.active {
+    background: var(--accent-subtle); border-left-color: var(--accent);
+  }
+  .help-item-name {
+    font-family: var(--font-mono); font-size: var(--text-sm);
+    color: var(--accent-hover);
+  }
+  .help-item-desc {
+    font-family: var(--font-sans); font-size: var(--text-2xs);
+    color: var(--text-muted); line-height: 1.4;
+  }
+  .help-item-sig {
+    font-family: var(--font-mono); font-size: var(--text-2xs);
+    color: var(--text-muted); line-height: 1.3;
+    white-space: pre-wrap; word-break: break-all;
+  }
+  .help-item-props {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px;
+  }
+  .help-item-prop {
+    font-family: var(--font-mono); font-size: var(--text-2xs);
+    color: var(--text-muted); background: var(--bg);
+    padding: 1px 5px; border-radius: var(--radius-xs);
+    border: 1px solid var(--border);
+  }
+  .help-item-prop.required {
+    color: var(--accent); border-color: var(--accent-border);
+  }
+  .help-no-results {
+    padding: 20px 12px; text-align: center;
+    font-family: var(--font-sans); font-size: var(--text-sm);
+    color: var(--text-muted);
+  }
+  .help-sidebar-shortcut {
+    font-family: var(--font-mono); font-size: var(--text-2xs);
+    color: var(--text-muted); opacity: 0.5;
+  }
+
+  /* ===== 37. REDUCED MOTION ===== */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -2062,15 +2253,50 @@
     }
   }
 
-  /* ===== 37. DEV MODE MOBILE GATE ===== */
+  /* ===== 38. SIDEBAR RESPONSIVE ===== */
+  .mobile-bottom-nav { display: none; }
+  @media (max-width: 1024px) {
+    .app-sidebar { width: 52px; }
+    .app-sidebar .nav-label { display: none; }
+    .app-sidebar .sidebar-status-badge .status-text { display: none; }
+    .app-sidebar .sidebar-status-badge .status-chevron { display: none; }
+    .app-sidebar .sidebar-status-badge { justify-content: center; padding: 6px; }
+    .sidebar-toggle { display: none; }
+  }
   @media (max-width: 768px) {
-    .dev-nav-tab[data-tab="dev-schema"],
-    .dev-nav-tab[data-tab="dev-template"] { display: none; }
+    .app-shell { flex-direction: column; }
+    .app-sidebar { display: none; }
+    .mobile-bottom-nav {
+      display: flex; align-items: center; justify-content: center; gap: 2px;
+      padding: 6px 8px; background: var(--bg);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0; order: 99;
+    }
+    .mobile-bottom-nav .dev-nav-tab {
+      flex: 1; flex-direction: column; gap: 2px;
+      padding: 6px 4px; border-left: none;
+      border-bottom: 2px solid transparent;
+      text-align: center; justify-content: center;
+      font-size: var(--text-2xs);
+    }
+    .mobile-bottom-nav .dev-nav-tab.active {
+      border-bottom-color: var(--accent); border-left-color: transparent;
+      background: var(--accent-subtle);
+    }
+    .mobile-bottom-nav .dev-nav-tab svg { width: 16px; height: 16px; }
     .dev-split { flex-direction: column; }
     .dev-pane-resizer { display: none; }
+    .help-sidebar.open {
+      position: absolute; right: 0; top: 0; bottom: 0;
+      z-index: 50; width: 100%;
+      border-left: none;
+    }
+    .help-sidebar.open .help-sidebar-inner {
+      width: 100%; min-width: 100%;
+    }
   }
 
-  /* ===== 38. REDUCE GPU COST ON TOUCH DEVICES ===== */
+  /* ===== 39. REDUCE GPU COST ON TOUCH DEVICES ===== */
   @media (pointer: coarse) {
     .loading-overlay,
     .gh-connect-modal,
@@ -2206,6 +2432,10 @@
   <!-- Link: used for Connect a Source -->
   <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
     <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+  </symbol>
+  <!-- Chevron left: used for sidebar collapse toggle -->
+  <symbol id="icon-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M15 18l-6-6 6-6"/>
   </symbol>
 </svg>
 
@@ -2348,28 +2578,46 @@
   </div>
 </div>
 
-<!-- Primary Navigation -->
-<nav class="dev-nav" id="mainNav" role="tablist" aria-label="Main navigation">
-  <button type="button" class="dev-nav-tab active" id="tab-forms" data-tab="forms" role="tab" aria-selected="true" aria-controls="view-setup" onclick="showTab('forms')">
-    <svg width="14" height="14" aria-hidden="true"><use href="#icon-file-text"/></svg>
-    Forms
-  </button>
-  <button type="button" class="dev-nav-tab" id="tab-dev-schema" data-tab="dev-schema" role="tab" aria-selected="false" aria-controls="view-dev-schema" onclick="showTab('dev-schema')">
-    <svg width="14" height="14" aria-hidden="true"><use href="#icon-file-upload"/></svg>
-    Schema
-  </button>
-  <button type="button" class="dev-nav-tab" id="tab-dev-template" data-tab="dev-template" role="tab" aria-selected="false" aria-controls="view-dev-template" onclick="showTab('dev-template')">
-    <svg width="14" height="14" aria-hidden="true"><use href="#icon-code"/></svg>
-    Template
-  </button>
-  <button type="button" class="dev-nav-tab" id="tab-dev-docs" data-tab="dev-docs" role="tab" aria-selected="false" aria-controls="view-dev-docs" onclick="showTab('dev-docs')">
-    <svg width="14" height="14" aria-hidden="true"><use href="#icon-book"/></svg>
-    Docs
-  </button>
-</nav>
+<!-- App Shell: sidebar + main content -->
+<div class="app-shell">
+
+<!-- Sidebar Navigation -->
+<aside class="app-sidebar" id="appSidebar">
+  <nav class="app-sidebar-nav" id="mainNav" role="tablist" aria-label="Main navigation">
+    <button type="button" class="dev-nav-tab active" id="tab-forms" data-tab="forms" role="tab" aria-selected="true" aria-controls="view-setup" onclick="showTab('forms')">
+      <svg width="16" height="16" aria-hidden="true"><use href="#icon-file-text"/></svg>
+      <span class="nav-label">Forms</span>
+    </button>
+    <button type="button" class="dev-nav-tab" id="tab-dev-schema" data-tab="dev-schema" role="tab" aria-selected="false" aria-controls="view-dev-schema" onclick="showTab('dev-schema')">
+      <svg width="16" height="16" aria-hidden="true"><use href="#icon-file-upload"/></svg>
+      <span class="nav-label">Schema</span>
+    </button>
+    <button type="button" class="dev-nav-tab" id="tab-dev-template" data-tab="dev-template" role="tab" aria-selected="false" aria-controls="view-dev-template" onclick="showTab('dev-template')">
+      <svg width="16" height="16" aria-hidden="true"><use href="#icon-code"/></svg>
+      <span class="nav-label">Template</span>
+    </button>
+    <button type="button" class="dev-nav-tab" id="tab-dev-docs" data-tab="dev-docs" role="tab" aria-selected="false" aria-controls="view-dev-docs" onclick="showTab('dev-docs')">
+      <svg width="16" height="16" aria-hidden="true"><use href="#icon-book"/></svg>
+      <span class="nav-label">Docs</span>
+    </button>
+  </nav>
+  <div class="app-sidebar-footer">
+    <button type="button" class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" aria-label="Collapse sidebar" title="Collapse sidebar">
+      <svg width="16" height="16" aria-hidden="true"><use href="#icon-chevron-left"/></svg>
+    </button>
+    <button type="button" class="sidebar-status-badge" id="sidebarStatusBadge" onclick="showConnectDialog()" title="Connection settings" aria-label="Connection settings">
+      <div class="status-dot" aria-hidden="true"></div>
+      <span class="status-text" id="sidebarStatusText">not connected</span>
+      <span class="status-chevron" aria-hidden="true">&#9662;</span>
+    </button>
+  </div>
+</aside>
+
+<!-- Main Content Area -->
+<div class="app-main">
 
 <!-- ==================== SETUP VIEW ==================== -->
-<main class="view active" id="view-setup" role="tabpanel" aria-labelledby="tab-forms">
+<main class="view active" id="view-setup" role="tabpanel" aria-labelledby="tab-forms mob-tab-forms" tabindex="-1">
   <div class="main-container">
     <div class="setup-hero">
       <h2>Forms that build documents</h2>
@@ -2462,7 +2710,7 @@
 </main>
 
 <!-- ==================== DEV: SCHEMA BUILDER VIEW ==================== -->
-<main class="view" id="view-dev-schema" role="tabpanel" aria-labelledby="tab-dev-schema">
+<main class="view" id="view-dev-schema" role="tabpanel" aria-labelledby="tab-dev-schema mob-tab-dev-schema">
   <div class="dev-container">
     <div class="dev-toolbar">
       <div class="dev-toolbar-left">
@@ -2492,6 +2740,10 @@
           <svg width="12" height="12"><use href="#icon-sparkle"/></svg>
           Copy AI Context
         </button>
+        <button type="button" class="btn-secondary btn-sm" id="schemaHelpToggleBtn" onclick="toggleHelpSidebar('schema')" title="Toggle reference sidebar (Ctrl+Shift+H)" aria-expanded="false" aria-controls="schemaHelpSidebar">
+          <svg width="12" height="12"><use href="#icon-book"/></svg>
+          Reference
+        </button>
       </div>
     </div>
     <div class="dev-source-toolbar" id="schemaSourceToolbar" style="display:none">
@@ -2509,28 +2761,43 @@
         <svg width="12" height="12"><use href="#icon-git-commit"/></svg> Commit
       </button>
     </div>
-    <div class="dev-split" id="schemaSplit">
-      <div class="dev-pane dev-pane-editor" id="schemaEditorPane">
-        <div class="dev-editor-wrap">
-          <div class="dev-line-numbers" id="schemaLineNumbers"></div>
-          <div class="dev-editor" id="schemaEditor" aria-label="Schema JSON editor"></div>
+    <div class="dev-workspace">
+      <div class="dev-split" id="schemaSplit">
+        <div class="dev-pane dev-pane-editor" id="schemaEditorPane">
+          <div class="dev-editor-wrap">
+            <div class="dev-line-numbers" id="schemaLineNumbers"></div>
+            <div class="dev-editor" id="schemaEditor" aria-label="Schema JSON editor"></div>
+          </div>
+          <div class="dev-errors hidden" id="schemaErrors"></div>
         </div>
-        <div class="dev-errors hidden" id="schemaErrors"></div>
+        <div class="dev-pane-resizer" id="schemaResizer" role="separator" aria-orientation="vertical" aria-label="Resize editor and preview panes" tabindex="0" aria-valuenow="50"></div>
+        <div class="dev-pane dev-pane-preview" id="schemaPreviewPane">
+          <div class="dev-preview-header">
+            <span class="mono-label">LIVE PREVIEW</span>
+            <span class="mono-label" id="schemaCoverageBadge" style="color:var(--accent);"></span>
+            <button type="button" class="btn-card-edit" onclick="fillFormFromEditor()" title="Fill this form in the Forms tab" style="margin-left:auto">
+              <svg width="12" height="12"><use href="#icon-arrow-right"/></svg> Fill Form
+            </button>
+          </div>
+          <div class="dev-preview-form" id="schemaPreviewForm"></div>
+          <div class="dev-preview-empty" id="schemaPreviewEmpty">
+            <svg width="28" height="28" style="color:var(--text-muted);opacity:0.3"><use href="#icon-file"/></svg>
+            <p>Live form preview</p>
+            <p class="empty-hint">Edit the JSON or right-click to insert fields</p>
+          </div>
+        </div>
       </div>
-      <div class="dev-pane-resizer" id="schemaResizer" role="separator" aria-orientation="vertical" aria-label="Resize editor and preview panes" tabindex="0" aria-valuenow="50"></div>
-      <div class="dev-pane dev-pane-preview" id="schemaPreviewPane">
-        <div class="dev-preview-header">
-          <span class="mono-label">LIVE PREVIEW</span>
-          <span class="mono-label" id="schemaCoverageBadge" style="color:var(--accent);"></span>
-          <button type="button" class="btn-card-edit" onclick="fillFormFromEditor()" title="Fill this form in the Forms tab" style="margin-left:auto">
-            <svg width="12" height="12"><use href="#icon-arrow-right"/></svg> Fill Form
-          </button>
-        </div>
-        <div class="dev-preview-form" id="schemaPreviewForm"></div>
-        <div class="dev-preview-empty" id="schemaPreviewEmpty">
-          <svg width="28" height="28" style="color:var(--text-muted);opacity:0.3"><use href="#icon-file"/></svg>
-          <p>Live form preview</p>
-          <p class="empty-hint">Edit the JSON or right-click to insert fields</p>
+      <div class="help-sidebar" id="schemaHelpSidebar" role="complementary" aria-label="Schema reference sidebar">
+        <div class="help-sidebar-inner">
+          <div class="help-sidebar-header">
+            <div class="help-sidebar-title-row">
+              <span class="help-sidebar-title">Reference</span>
+              <span class="help-sidebar-shortcut">Ctrl+Shift+H</span>
+              <button type="button" class="help-sidebar-close" onclick="toggleHelpSidebar('schema')" title="Close sidebar" aria-label="Close reference sidebar">&times;</button>
+            </div>
+            <input type="search" class="help-sidebar-search" id="schemaHelpSearch" placeholder="Filter field types, properties..." oninput="filterHelpSidebar('schema', this.value)" aria-label="Filter reference items">
+          </div>
+          <div class="help-sidebar-content" id="schemaHelpContent"></div>
         </div>
       </div>
     </div>
@@ -2538,7 +2805,7 @@
 </main>
 
 <!-- ==================== DEV: TEMPLATE BUILDER VIEW ==================== -->
-<main class="view" id="view-dev-template" role="tabpanel" aria-labelledby="tab-dev-template">
+<main class="view" id="view-dev-template" role="tabpanel" aria-labelledby="tab-dev-template mob-tab-dev-template">
   <div class="dev-container">
     <div class="dev-toolbar">
       <div class="dev-toolbar-left">
@@ -2567,6 +2834,10 @@
           <svg width="12" height="12"><use href="#icon-sparkle"/></svg>
           Copy AI Context
         </button>
+        <button type="button" class="btn-secondary btn-sm" id="templateHelpToggleBtn" onclick="toggleHelpSidebar('template')" title="Toggle reference sidebar (Ctrl+Shift+H)" aria-expanded="false" aria-controls="templateHelpSidebar">
+          <svg width="12" height="12"><use href="#icon-book"/></svg>
+          Reference
+        </button>
         <button type="button" class="btn-primary btn-sm" onclick="devRunPreview()" title="Preview DOCX (Shift+Enter / Ctrl+Enter)">
           <svg width="12" height="12"><use href="#icon-play"/></svg>
           Preview DOCX
@@ -2588,38 +2859,53 @@
         <svg width="12" height="12"><use href="#icon-git-commit"/></svg> Commit
       </button>
     </div>
-    <div class="dev-split" id="templateSplit">
-      <div class="dev-pane dev-pane-editor" id="templateEditorPane">
-        <div class="dev-editor-wrap">
-          <div class="dev-line-numbers" id="templateLineNumbers"></div>
-          <div class="dev-editor" id="templateEditor" aria-label="Python template editor"></div>
+    <div class="dev-workspace">
+      <div class="dev-split" id="templateSplit">
+        <div class="dev-pane dev-pane-editor" id="templateEditorPane">
+          <div class="dev-editor-wrap">
+            <div class="dev-line-numbers" id="templateLineNumbers"></div>
+            <div class="dev-editor" id="templateEditor" aria-label="Python template editor"></div>
+          </div>
+          <div class="dev-sample-data" id="sampleDataPanel">
+            <button type="button" class="dev-sample-toggle" onclick="devToggleSampleData()" aria-expanded="false" aria-controls="sampleDataBody">
+              <span class="dev-sample-arrow" id="sampleDataArrow">&#9654;</span>
+              <span class="mono-label">SAMPLE DATA (JSON)</span>
+            </button>
+            <button type="button" class="btn-secondary btn-sm" onclick="devAutoFillSampleData()" title="Generate from schema" style="position:absolute;right:8px;top:4px;font-size:var(--text-2xs);padding:2px 8px;">Auto-fill</button>
+            <div class="dev-sample-body collapsed" id="sampleDataBody">
+              <div class="dev-editor-wrap dev-editor-wrap-sm">
+                <div class="dev-line-numbers" id="sampleLineNumbers"></div>
+                <div class="dev-editor dev-editor-sm" id="sampleDataEditor" aria-label="Sample data JSON editor"></div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="dev-sample-data" id="sampleDataPanel">
-          <button type="button" class="dev-sample-toggle" onclick="devToggleSampleData()" aria-expanded="false" aria-controls="sampleDataBody">
-            <span class="dev-sample-arrow" id="sampleDataArrow">&#9654;</span>
-            <span class="mono-label">SAMPLE DATA (JSON)</span>
-          </button>
-          <button type="button" class="btn-secondary btn-sm" onclick="devAutoFillSampleData()" title="Generate from schema" style="position:absolute;right:8px;top:4px;font-size:var(--text-2xs);padding:2px 8px;">Auto-fill</button>
-          <div class="dev-sample-body collapsed" id="sampleDataBody">
-            <div class="dev-editor-wrap dev-editor-wrap-sm">
-              <div class="dev-line-numbers" id="sampleLineNumbers"></div>
-              <div class="dev-editor dev-editor-sm" id="sampleDataEditor" aria-label="Sample data JSON editor"></div>
+        <div class="dev-pane-resizer" id="templateResizer" role="separator" aria-orientation="vertical" aria-label="Resize editor and preview panes" tabindex="0" aria-valuenow="50"></div>
+        <div class="dev-pane dev-pane-preview" id="templatePreviewPane">
+          <div class="dev-preview-header">
+            <span class="mono-label">DOCX PREVIEW</span>
+            <span class="dev-preview-warn">approximate rendering</span>
+          </div>
+          <div class="dev-docx-preview" id="docxPreviewContainer">
+            <div class="dev-preview-empty" id="templatePreviewEmpty">
+              <svg width="28" height="28" style="color:var(--text-muted);opacity:0.3"><use href="#icon-export"/></svg>
+              <p>Document preview</p>
+              <p class="empty-hint">Run your template to see the DOCX output here</p>
             </div>
           </div>
         </div>
       </div>
-      <div class="dev-pane-resizer" id="templateResizer" role="separator" aria-orientation="vertical" aria-label="Resize editor and preview panes" tabindex="0" aria-valuenow="50"></div>
-      <div class="dev-pane dev-pane-preview" id="templatePreviewPane">
-        <div class="dev-preview-header">
-          <span class="mono-label">DOCX PREVIEW</span>
-          <span class="dev-preview-warn">approximate rendering</span>
-        </div>
-        <div class="dev-docx-preview" id="docxPreviewContainer">
-          <div class="dev-preview-empty" id="templatePreviewEmpty">
-            <svg width="28" height="28" style="color:var(--text-muted);opacity:0.3"><use href="#icon-export"/></svg>
-            <p>Document preview</p>
-            <p class="empty-hint">Run your template to see the DOCX output here</p>
+      <div class="help-sidebar" id="templateHelpSidebar" role="complementary" aria-label="Template reference sidebar">
+        <div class="help-sidebar-inner">
+          <div class="help-sidebar-header">
+            <div class="help-sidebar-title-row">
+              <span class="help-sidebar-title">Reference</span>
+              <span class="help-sidebar-shortcut">Ctrl+Shift+H</span>
+              <button type="button" class="help-sidebar-close" onclick="toggleHelpSidebar('template')" title="Close sidebar" aria-label="Close reference sidebar">&times;</button>
+            </div>
+            <input type="search" class="help-sidebar-search" id="templateHelpSearch" placeholder="Filter methods, themes..." oninput="filterHelpSidebar('template', this.value)" aria-label="Filter reference items">
           </div>
+          <div class="help-sidebar-content" id="templateHelpContent"></div>
         </div>
       </div>
     </div>
@@ -2646,7 +2932,7 @@
 </div>
 
 <!-- ==================== DEV: DOCS VIEW ==================== -->
-<main class="view" id="view-dev-docs" role="tabpanel" aria-labelledby="tab-dev-docs">
+<main class="view" id="view-dev-docs" role="tabpanel" aria-labelledby="tab-dev-docs mob-tab-dev-docs">
   <div class="main-container">
     <div class="docs-section" id="docsSection">
 
@@ -2707,6 +2993,30 @@
     </div>
   </div>
 </main>
+
+</div><!-- /.app-main -->
+
+<!-- Mobile Bottom Navigation (visible only at <=768px) -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav" role="tablist" aria-label="Navigation">
+  <button type="button" class="dev-nav-tab active" id="mob-tab-forms" data-tab="forms" role="tab" aria-selected="true" aria-controls="view-setup" onclick="showTab('forms')">
+    <svg width="16" height="16" aria-hidden="true"><use href="#icon-file-text"/></svg>
+    <span class="nav-label">Forms</span>
+  </button>
+  <button type="button" class="dev-nav-tab" id="mob-tab-dev-schema" data-tab="dev-schema" role="tab" aria-selected="false" aria-controls="view-dev-schema" onclick="showTab('dev-schema')">
+    <svg width="16" height="16" aria-hidden="true"><use href="#icon-file-upload"/></svg>
+    <span class="nav-label">Schema</span>
+  </button>
+  <button type="button" class="dev-nav-tab" id="mob-tab-dev-template" data-tab="dev-template" role="tab" aria-selected="false" aria-controls="view-dev-template" onclick="showTab('dev-template')">
+    <svg width="16" height="16" aria-hidden="true"><use href="#icon-code"/></svg>
+    <span class="nav-label">Template</span>
+  </button>
+  <button type="button" class="dev-nav-tab" id="mob-tab-dev-docs" data-tab="dev-docs" role="tab" aria-selected="false" aria-controls="view-dev-docs" onclick="showTab('dev-docs')">
+    <svg width="16" height="16" aria-hidden="true"><use href="#icon-book"/></svg>
+    <span class="nav-label">Docs</span>
+  </button>
+</nav>
+
+</div><!-- /.app-shell -->
 
 <!-- GitHub Connect Repo Modal -->
 <div class="gh-connect-modal" id="ghConnectModal" role="dialog" aria-labelledby="ghConnectTitle" aria-modal="true">
@@ -3804,6 +4114,7 @@ async function connectRepo() {
     const badge = document.getElementById('statusBadge');
     badge.className = 'status-badge ready';
     document.getElementById('statusText').textContent = `${ghOwner}/${ghRepo}`;
+    syncSidebarStatus('ready', `${ghOwner}/${ghRepo}`);
 
     contentSourceType = 'github';
 
@@ -9416,6 +9727,32 @@ function loadScript(src) {
   });
 }
 
+// ============================================================
+//  SIDEBAR
+// ============================================================
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('appSidebar');
+  if (!sidebar) return;
+  const collapsed = sidebar.classList.toggle('collapsed');
+  if (collapsed) localStorage.setItem('formforge-sidebar-collapsed', '1');
+  else localStorage.removeItem('formforge-sidebar-collapsed');
+  const btn = document.getElementById('sidebarToggle');
+  if (btn) {
+    btn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    btn.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+  }
+}
+
+function syncSidebarStatus(className, text) {
+  const badge = document.getElementById('sidebarStatusBadge');
+  const textEl = document.getElementById('sidebarStatusText');
+  if (badge) {
+    badge.className = 'sidebar-status-badge' + (className ? ' ' + className : '');
+  }
+  if (textEl && text != null) textEl.textContent = text;
+}
+
 const VALID_TABS = new Set(['forms', 'dev-schema', 'dev-template', 'dev-docs']);
 
 async function showTab(tabName) {
@@ -9436,11 +9773,10 @@ async function showTab(tabName) {
     t.classList.remove('active');
     t.setAttribute('aria-selected', 'false');
   });
-  const tab = document.querySelector(`.dev-nav-tab[data-tab="${tabName}"]`);
-  if (tab) {
-    tab.classList.add('active');
-    tab.setAttribute('aria-selected', 'true');
-  }
+  document.querySelectorAll(`.dev-nav-tab[data-tab="${tabName}"]`).forEach(t => {
+    t.classList.add('active');
+    t.setAttribute('aria-selected', 'true');
+  });
   localStorage.setItem('formforge-active-tab', tabName);
 
   // Map tab to view
@@ -10076,6 +10412,8 @@ function initSchemaEditor() {
   devUpdateLineNumbers(el, gutterEl);
   devUpdateSchemaPreview();
   initDevResizer('schemaResizer', 'schemaEditorPane', 'schemaPreviewPane', 'schema');
+  initHelpSidebars();
+  setupCursorHighlighting();
 }
 
 function devValidateSchema(schema) {
@@ -10143,6 +10481,7 @@ function devUpdateSchemaValidation() {
     errPanel.classList.remove('hidden');
     devSchemaValid = false;
     devParsedSchema = null;
+    updateTemplateDataShape();
     return;
   }
 
@@ -10152,6 +10491,7 @@ function devUpdateSchemaValidation() {
   errPanel.classList.add('hidden');
   devSchemaValid = true;
   devParsedSchema = schema;
+  updateTemplateDataShape();
 }
 
 function devUpdateSchemaPreview() {
@@ -10796,6 +11136,497 @@ const FIELD_SNIPPETS = {
 };
 
 const SECTION_SNIPPET = { title: "New Section", fields: [{ id: "new_field", label: "New Field", type: "text", required: false }] };
+
+// ============================================================
+//  HELP SIDEBAR
+// ============================================================
+
+const SCHEMA_HELP_DATA = {
+  structure: {
+    title: 'Schema Structure',
+    items: [
+      { name: 'title', desc: 'Form title (string, required)', type: 'top' },
+      { name: 'description', desc: 'Form description (string, required)', type: 'top' },
+      { name: 'icon', desc: 'Emoji icon for the form card (string, required)', type: 'top' },
+      { name: 'template', desc: 'Path to Python template, e.g. "templates/my_form.py" (string, required)', type: 'top' },
+      { name: 'sections', desc: 'Array of form sections, each with title and fields (required)', type: 'top' },
+      { name: 'sampleData', desc: 'Object mapping field IDs to sample values (optional)', type: 'top' },
+      { name: 'wizard', desc: 'Enable multi-step wizard mode (boolean, optional)', type: 'top' },
+      { name: 'section.title', desc: 'Section heading text (string, required)', type: 'section' },
+      { name: 'section.fields', desc: 'Array of field objects (required)', type: 'section' },
+      { name: 'section.step', desc: 'Wizard step number, integer >= 1 (optional, wizard mode only)', type: 'section' },
+    ]
+  },
+  fieldTypes: [
+    {
+      category: 'Input Fields',
+      types: [
+        { name: 'text', desc: 'Single-line text input', props: ['placeholder', 'maxLength'], requiredProps: [] },
+        { name: 'email', desc: 'Email with browser validation', props: ['placeholder'], requiredProps: [] },
+        { name: 'tel', desc: 'Phone number input', props: ['placeholder'], requiredProps: [] },
+        { name: 'number', desc: 'Numeric input', props: ['placeholder', 'min', 'max', 'step'], requiredProps: [] },
+        { name: 'currency', desc: 'Number with currency prefix', props: ['placeholder', 'currency_symbol'], requiredProps: [] },
+        { name: 'url', desc: 'URL with browser validation', props: ['placeholder'], requiredProps: [] },
+        { name: 'date', desc: 'Date picker (YYYY-MM-DD)', props: [], requiredProps: [] },
+        { name: 'time', desc: 'Time picker (HH:MM)', props: [], requiredProps: [] },
+        { name: 'datetime', desc: 'Date and time picker', props: [], requiredProps: [] },
+        { name: 'textarea', desc: 'Multi-line text (3 rows)', props: ['placeholder'], requiredProps: [] },
+        { name: 'longtext', desc: 'Large textarea with character counter (6 rows)', props: ['placeholder', 'maxLength'], requiredProps: [] },
+      ]
+    },
+    {
+      category: 'Choice Fields',
+      types: [
+        { name: 'select', desc: 'Dropdown select', props: ['placeholder'], requiredProps: ['options'] },
+        { name: 'multi_select', desc: 'Searchable multi-select with tags', props: [], requiredProps: ['options'] },
+        { name: 'radio', desc: 'Radio button group', props: [], requiredProps: ['options'] },
+        { name: 'checkbox', desc: 'Checkbox group', props: [], requiredProps: ['options'] },
+        { name: 'toggle', desc: 'Boolean yes/no switch', props: [], requiredProps: [] },
+      ]
+    },
+    {
+      category: 'Complex Fields',
+      types: [
+        { name: 'address', desc: 'Compound field (street/city/state/zip)', props: [], requiredProps: [] },
+        { name: 'repeater', desc: 'Dynamic rows of sub-fields', props: ['display', 'min_rows', 'max_rows'], requiredProps: ['fields'] },
+        { name: 'file', desc: 'File upload with preview', props: ['accept', 'max_size_mb'], requiredProps: [] },
+        { name: 'signature', desc: 'Canvas drawing pad (base64 PNG)', props: [], requiredProps: [] },
+        { name: 'list', desc: 'Dynamic add/remove rows with bulk paste', props: [], requiredProps: [] },
+      ]
+    },
+    {
+      category: 'Layout',
+      types: [
+        { name: 'heading', desc: 'Section divider (no data collected)', props: [], requiredProps: [] },
+        { name: 'hidden', desc: 'Not rendered; passes static value', props: [], requiredProps: ['default_value'] },
+        { name: 'info', desc: 'Read-only info/warning/success block', props: ['style'], requiredProps: ['content'] },
+      ]
+    }
+  ],
+  commonProps: {
+    title: 'Common Field Properties',
+    items: [
+      { name: 'id', desc: 'Unique field ID (lowercase, underscores), required', required: true },
+      { name: 'label', desc: 'Display label (string), required', required: true },
+      { name: 'type', desc: 'Field type (see categories above), required', required: true },
+      { name: 'required', desc: 'Whether the field must be filled (boolean)', required: false },
+      { name: 'placeholder', desc: 'Placeholder text (not all types)', required: false },
+      { name: 'hint', desc: 'Help text shown below the field', required: false },
+      { name: 'visible_when', desc: '{ "field": "source_id", "equals": "value" } — conditional visibility', required: false },
+    ]
+  }
+};
+
+const TEMPLATE_HELP_DATA = {
+  methods: [
+    { name: 'new_doc', sig: 'stencils.new_doc(title_text, subtitle_text="", font_name=None, font_size=None, theme=None)', desc: 'Create a new Document with themed title/subtitle.', snippet: 'doc = stencils.new_doc(data.get("title", "Document"))\n' },
+    { name: 'table_section', sig: 'stencils.table_section(doc, heading, rows)', desc: 'Bordered key/value table. rows = [(label, value), ...]', snippet: '    stencils.table_section(doc, "Section Title", [\n        ("Label", data.get("field_id", "")),\n    ])\n' },
+    { name: 'longtext', sig: 'stencils.longtext(doc, heading, text)', desc: 'Multi-paragraph text block (respects \\n).', snippet: '    stencils.longtext(doc, "Section Title", data.get("field_id", ""))\n' },
+    { name: 'bullet_list', sig: 'stencils.bullet_list(doc, heading, items_str)', desc: 'Bulleted list from newline-separated string.', snippet: '    stencils.bullet_list(doc, "List Title", items)\n' },
+    { name: 'address', sig: 'stencils.address(doc, heading, raw_json)', desc: 'Formatted address from JSON string.', snippet: '    stencils.address(doc, "Address", data.get("address_field", "{}"))\n' },
+    { name: 'image', sig: 'stencils.image(doc, b64_str, width_inches=3.0, placeholder="No image uploaded.")', desc: 'Embed base64 image in the document.', snippet: '    stencils.image(doc, data.get("file_field", ""))\n' },
+    { name: 'signature', sig: 'stencils.signature(doc, b64_str, label, width_inches=2.5)', desc: 'Signature image with label below.', snippet: '    stencils.signature(doc, data.get("signature_field", ""), "Signature")\n' },
+    { name: 'repeater_table', sig: 'stencils.repeater_table(doc, headers, items, field_keys, currency_keys=None)', desc: 'Table from repeater JSON array.', snippet: '    stencils.repeater_table(doc, ["Col A", "Col B"], json.loads(data.get("items", "[]")), ["col_a", "col_b"])\n' },
+    { name: 'format_time', sig: 'stencils.format_time(value)', desc: '"14:30" -> "2:30 PM". Handles datetime-local too.', snippet: '    stencils.format_time(data.get("time_field", ""))\n' },
+    { name: 'signatures', sig: 'stencils.signatures(doc, labels)', desc: 'Signature block with underlines. labels = [("Name", "Title"), ...]', snippet: '    stencils.signatures(doc, [("Name", "Title")])\n' },
+    { name: 'footer', sig: 'stencils.footer(doc)', desc: 'Standard "auto-generated by FormForge" footer.', snippet: '    stencils.footer(doc)\n' },
+    { name: 'finalize', sig: 'stencils.finalize(doc)', desc: 'Serialize Document to bytes. Always return this.', snippet: '    return stencils.finalize(doc)\n' },
+    { name: 'set_theme', sig: 'stencils.set_theme(theme)', desc: 'Set active theme before new_doc(). Built-in: THEME_MODERN (default), THEME_CLASSIC, THEME_MINIMAL.', snippet: 'stencils.set_theme(stencils.THEME_CLASSIC)\n' },
+  ],
+  themes: [
+    { name: 'THEME_MODERN', desc: 'Default theme. Blue/teal palette, modern feel.' },
+    { name: 'THEME_CLASSIC', desc: 'Traditional navy/gray palette.' },
+    { name: 'THEME_MINIMAL', desc: 'Minimal black/white palette.' },
+    { name: 'DocTheme(...)', desc: 'Custom theme with: color_title, color_subtitle, color_muted, color_footer, color_accent, font_body, font_heading, font_caption, size_body (11), size_title (26), size_heading1-6, size_subtitle (12), size_table (10), size_caption (9), size_footer (8), margin_top/bottom/left/right.' },
+  ],
+  dataFormats: [
+    { name: 'text/email/tel/url/select/radio/textarea', desc: 'Plain string' },
+    { name: 'number/currency', desc: 'String — use float() to convert' },
+    { name: 'date', desc: '"YYYY-MM-DD"' },
+    { name: 'time', desc: '"HH:MM" — use stencils.format_time()' },
+    { name: 'datetime', desc: '"YYYY-MM-DDTHH:MM"' },
+    { name: 'toggle', desc: '"true" or "false"' },
+    { name: 'checkbox/multi_select', desc: 'Comma-separated string' },
+    { name: 'list', desc: 'Newline-separated string' },
+    { name: 'address', desc: 'JSON string: {"street":"...","city":"...","state":"...","zip":"..."}' },
+    { name: 'repeater', desc: 'JSON array string: [{"sub_id":"val",...},...]' },
+    { name: 'file/signature', desc: 'Base64 data URI string' },
+  ]
+};
+
+// ---- Sidebar rendering ----
+
+function buildAccordionHTML(id, title, bodyHTML, count) {
+  const countSpan = count != null ? `<span class="help-accordion-count">${count}</span>` : '';
+  return `<div class="help-accordion" data-accordion="${id}">
+    <button type="button" class="help-accordion-header" aria-expanded="false" onclick="toggleHelpAccordion(this)">
+      <span class="help-accordion-arrow">&#9654;</span>
+      <span>${title}</span>${countSpan}
+    </button>
+    <div class="help-accordion-body" role="region">${bodyHTML}</div>
+  </div>`;
+}
+
+function buildSchemaHelpHTML() {
+  let html = '';
+
+  // Schema structure
+  let structItems = SCHEMA_HELP_DATA.structure.items.map(it =>
+    `<div class="help-item" tabindex="0" data-search="${it.name} ${it.desc}">
+      <span class="help-item-name">${it.name}</span>
+      <span class="help-item-desc">${it.desc}</span>
+    </div>`
+  ).join('');
+  html += buildAccordionHTML('schema-structure', 'Schema Structure', structItems, SCHEMA_HELP_DATA.structure.items.length);
+
+  // Field type categories
+  SCHEMA_HELP_DATA.fieldTypes.forEach(cat => {
+    let catItems = cat.types.map(ft => {
+      const allProps = [...ft.requiredProps.map(p => `<span class="help-item-prop required">${p}*</span>`), ...ft.props.map(p => `<span class="help-item-prop">${p}</span>`)];
+      return `<div class="help-item" tabindex="0" data-search="${ft.name} ${ft.desc} ${ft.props.join(' ')} ${ft.requiredProps.join(' ')}" data-field-type="${ft.name}" onclick="insertFieldFromSidebar('${ft.name}')" onkeydown="if(event.key==='Enter'){insertFieldFromSidebar('${ft.name}')}">
+        <span class="help-item-name">${ft.name}</span>
+        <span class="help-item-desc">${ft.desc}</span>
+        ${allProps.length ? '<div class="help-item-props">' + allProps.join('') + '</div>' : ''}
+      </div>`;
+    }).join('');
+    html += buildAccordionHTML('schema-' + cat.category.toLowerCase().replace(/\s/g, '-'), cat.category, catItems, cat.types.length);
+  });
+
+  // Common properties
+  let commonItems = SCHEMA_HELP_DATA.commonProps.items.map(it =>
+    `<div class="help-item" tabindex="0" data-search="${it.name} ${it.desc}">
+      <span class="help-item-name">${it.name}${it.required ? ' *' : ''}</span>
+      <span class="help-item-desc">${it.desc}</span>
+    </div>`
+  ).join('');
+  html += buildAccordionHTML('schema-common', 'Common Field Properties', commonItems, SCHEMA_HELP_DATA.commonProps.items.length);
+
+  return html;
+}
+
+function buildTemplateHelpHTML() {
+  let html = '';
+
+  // Stencils methods
+  let methodItems = TEMPLATE_HELP_DATA.methods.map(m =>
+    `<div class="help-item" tabindex="0" data-search="${m.name} ${m.desc} ${m.sig}" onclick="insertMethodFromSidebar('${m.name}')" onkeydown="if(event.key==='Enter'){insertMethodFromSidebar('${m.name}')}">
+      <span class="help-item-name">${m.name}</span>
+      <span class="help-item-sig">${escapeHtml(m.sig)}</span>
+      <span class="help-item-desc">${m.desc}</span>
+    </div>`
+  ).join('');
+  html += buildAccordionHTML('template-methods', 'Stencils Methods', methodItems, TEMPLATE_HELP_DATA.methods.length);
+
+  // Themes
+  let themeItems = TEMPLATE_HELP_DATA.themes.map(t =>
+    `<div class="help-item" tabindex="0" data-search="${t.name} ${t.desc}">
+      <span class="help-item-name">${t.name}</span>
+      <span class="help-item-desc">${t.desc}</span>
+    </div>`
+  ).join('');
+  html += buildAccordionHTML('template-themes', 'Built-in Themes', themeItems, TEMPLATE_HELP_DATA.themes.length);
+
+  // Data formats
+  let formatItems = TEMPLATE_HELP_DATA.dataFormats.map(d =>
+    `<div class="help-item" tabindex="0" data-search="${d.name} ${d.desc}">
+      <span class="help-item-name">${d.name}</span>
+      <span class="help-item-desc">${d.desc}</span>
+    </div>`
+  ).join('');
+  html += buildAccordionHTML('template-formats', 'Data Type Formats', formatItems, TEMPLATE_HELP_DATA.dataFormats.length);
+
+  // Data shape (dynamic from schema)
+  html += '<div class="help-accordion" data-accordion="template-data-shape" id="templateDataShapeAccordion">';
+  html += `<button type="button" class="help-accordion-header" aria-expanded="false" onclick="toggleHelpAccordion(this)">
+    <span class="help-accordion-arrow">&#9654;</span>
+    <span>Schema Fields</span>
+    <span class="help-accordion-count" id="templateDataShapeCount">0</span>
+  </button>`;
+  html += '<div class="help-accordion-body" role="region" id="templateDataShapeBody"><div class="help-no-results">Load a schema to see available fields</div></div>';
+  html += '</div>';
+
+  return html;
+}
+
+function updateTemplateDataShape() {
+  const body = document.getElementById('templateDataShapeBody');
+  const count = document.getElementById('templateDataShapeCount');
+  if (!body) return;
+
+  if (!devParsedSchema || !devParsedSchema.sections) {
+    body.innerHTML = '<div class="help-no-results">Load a schema to see available fields</div>';
+    if (count) count.textContent = '0';
+    return;
+  }
+
+  let fields = [];
+  devParsedSchema.sections.forEach(sec => {
+    (sec.fields || []).forEach(f => {
+      if (f.type !== 'heading' && f.type !== 'info') {
+        fields.push(f);
+      }
+    });
+  });
+
+  if (count) count.textContent = String(fields.length);
+
+  if (fields.length === 0) {
+    body.innerHTML = '<div class="help-no-results">No data fields in schema</div>';
+    return;
+  }
+
+  body.innerHTML = fields.map(f => {
+    const accessor = getFieldAccessor(f);
+    const safeId = escapeHtml(f.id);
+    const safeType = escapeHtml(f.type);
+    const safeLabel = escapeHtml(f.label || '');
+    return `<div class="help-item" tabindex="0" data-search="${safeId} ${safeType} ${safeLabel}" onclick="insertTemplateSnippet(${escapeHtml(JSON.stringify(accessor))})" onkeydown="if(event.key==='Enter'){insertTemplateSnippet(${escapeHtml(JSON.stringify(accessor))})}">
+      <span class="help-item-name">${safeId}</span>
+      <span class="help-item-desc">${safeLabel} (${safeType})</span>
+      <span class="help-item-sig">${escapeHtml(accessor)}</span>
+    </div>`;
+  }).join('');
+}
+
+// ---- Sidebar toggle & persistence ----
+
+function initHelpSidebars() {
+  const schemaEl = document.getElementById('schemaHelpContent');
+  const templateEl = document.getElementById('templateHelpContent');
+  if (schemaEl) schemaEl.innerHTML = buildSchemaHelpHTML();
+  if (templateEl) templateEl.innerHTML = buildTemplateHelpHTML();
+
+  // Restore saved state
+  if (localStorage.getItem('formforge-help-sidebar-schema') === 'open') {
+    openHelpSidebar('schema');
+  }
+  if (localStorage.getItem('formforge-help-sidebar-template') === 'open') {
+    openHelpSidebar('template');
+  }
+
+  // Restore expanded accordions
+  ['schema', 'template'].forEach(type => {
+    const saved = localStorage.getItem(`formforge-help-accordion-${type}`);
+    if (saved) {
+      try {
+        const ids = JSON.parse(saved);
+        ids.forEach(id => {
+          const el = document.querySelector(`#${type}HelpSidebar .help-accordion[data-accordion="${id}"]`);
+          if (el) {
+            el.classList.add('open');
+            const btn = el.querySelector('.help-accordion-header');
+            if (btn) btn.setAttribute('aria-expanded', 'true');
+          }
+        });
+      } catch (e) { /* ignore */ }
+    }
+  });
+}
+
+function toggleHelpSidebar(type) {
+  const sidebar = document.getElementById(type + 'HelpSidebar');
+  if (!sidebar) return;
+  if (sidebar.classList.contains('open')) {
+    closeHelpSidebar(type);
+  } else {
+    openHelpSidebar(type);
+  }
+}
+
+function openHelpSidebar(type) {
+  const sidebar = document.getElementById(type + 'HelpSidebar');
+  const btn = document.getElementById(type + 'HelpToggleBtn');
+  if (!sidebar) return;
+  sidebar.classList.add('open');
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+  localStorage.setItem(`formforge-help-sidebar-${type}`, 'open');
+  if (type === 'template') updateTemplateDataShape();
+}
+
+function closeHelpSidebar(type) {
+  const sidebar = document.getElementById(type + 'HelpSidebar');
+  const btn = document.getElementById(type + 'HelpToggleBtn');
+  if (!sidebar) return;
+  sidebar.classList.remove('open');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+  localStorage.setItem(`formforge-help-sidebar-${type}`, 'closed');
+}
+
+// ---- Accordion ----
+
+function toggleHelpAccordion(headerEl) {
+  const acc = headerEl.closest('.help-accordion');
+  if (!acc) return;
+  const isOpen = acc.classList.toggle('open');
+  headerEl.setAttribute('aria-expanded', String(isOpen));
+  saveAccordionState(acc);
+}
+
+function saveAccordionState(changedAcc) {
+  const sidebar = changedAcc.closest('.help-sidebar');
+  if (!sidebar) return;
+  const type = sidebar.id.replace('HelpSidebar', '');
+  const openIds = [];
+  sidebar.querySelectorAll('.help-accordion.open').forEach(a => {
+    const id = a.getAttribute('data-accordion');
+    if (id) openIds.push(id);
+  });
+  localStorage.setItem(`formforge-help-accordion-${type}`, JSON.stringify(openIds));
+}
+
+// ---- Filter / Search ----
+
+let _helpFilterPreSearchState = {};
+
+function filterHelpSidebar(type, query) {
+  const content = document.getElementById(type + 'HelpContent');
+  if (!content) return;
+  const q = query.toLowerCase().trim();
+
+  // Save pre-search accordion state when starting a search
+  if (q && !_helpFilterPreSearchState[type]) {
+    _helpFilterPreSearchState[type] = [];
+    content.querySelectorAll('.help-accordion.open').forEach(acc => {
+      const id = acc.getAttribute('data-accordion');
+      if (id) _helpFilterPreSearchState[type].push(id);
+    });
+  }
+
+  content.querySelectorAll('.help-accordion').forEach(acc => {
+    let anyVisible = false;
+    acc.querySelectorAll('.help-item').forEach(item => {
+      const searchText = (item.getAttribute('data-search') || '').toLowerCase();
+      const match = !q || searchText.includes(q);
+      item.style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
+    });
+    acc.style.display = anyVisible ? '' : 'none';
+    // Auto-expand matching accordions when searching
+    if (q && anyVisible && !acc.classList.contains('open')) {
+      acc.classList.add('open');
+      const btn = acc.querySelector('.help-accordion-header');
+      if (btn) btn.setAttribute('aria-expanded', 'true');
+    }
+  });
+
+  // Restore pre-search accordion state when clearing the search
+  if (!q && _helpFilterPreSearchState[type]) {
+    const saved = _helpFilterPreSearchState[type];
+    content.querySelectorAll('.help-accordion').forEach(acc => {
+      const id = acc.getAttribute('data-accordion');
+      const shouldBeOpen = saved.includes(id);
+      acc.classList.toggle('open', shouldBeOpen);
+      const btn = acc.querySelector('.help-accordion-header');
+      if (btn) btn.setAttribute('aria-expanded', String(shouldBeOpen));
+    });
+    delete _helpFilterPreSearchState[type];
+  }
+
+  // Show "no results" message
+  const existing = content.querySelector('.help-no-results-global');
+  if (existing) existing.remove();
+  if (q) {
+    const anyAccVisible = content.querySelector('.help-accordion:not([style*="display: none"])');
+    if (!anyAccVisible) {
+      const msg = document.createElement('div');
+      msg.className = 'help-no-results help-no-results-global';
+      msg.textContent = 'No matches for "' + query + '"';
+      content.appendChild(msg);
+    }
+  }
+}
+
+// ---- Insert from sidebar ----
+
+function insertFieldFromSidebar(fieldType) {
+  const snippet = FIELD_SNIPPETS[fieldType];
+  if (snippet) devInsertSnippet('schema', snippet);
+}
+
+function insertMethodFromSidebar(methodName) {
+  const method = TEMPLATE_HELP_DATA.methods.find(m => m.name === methodName);
+  if (method) devInsertSnippet('template', method.snippet);
+}
+
+function insertTemplateSnippet(text) {
+  devInsertSnippet('template', text);
+}
+
+// ---- Cursor-aware highlighting ----
+
+let _cursorHighlightTimer = null;
+
+function setupCursorHighlighting() {
+  const el = document.getElementById('schemaEditor');
+  if (!el) return;
+  const handler = () => {
+    clearTimeout(_cursorHighlightTimer);
+    _cursorHighlightTimer = setTimeout(() => highlightFieldAtCursor(), 200);
+  };
+  el.addEventListener('click', handler);
+  el.addEventListener('keyup', handler);
+}
+
+function highlightFieldAtCursor() {
+  const sidebar = document.getElementById('schemaHelpSidebar');
+  if (!sidebar || !sidebar.classList.contains('open')) return;
+
+  // Clear previous highlights
+  sidebar.querySelectorAll('.help-item.active').forEach(el => el.classList.remove('active'));
+
+  const editorEl = document.getElementById('schemaEditor');
+  if (!editorEl) return;
+  try {
+    const offset = devGetCursorOffset(editorEl);
+    const text = devSchemaText;
+    // Find the nearest "type": "xxx" before the cursor
+    const before = text.substring(0, offset);
+    const typeMatches = [...before.matchAll(/"type"\s*:\s*"([a-z_]+)"/g)];
+    if (typeMatches.length === 0) return;
+    const lastMatch = typeMatches[typeMatches.length - 1];
+    const fieldType = lastMatch[1];
+
+    // Check we're actually inside a field block (between { and })
+    const matchEnd = lastMatch.index + lastMatch[0].length;
+    const afterMatch = text.substring(matchEnd, offset);
+    // If we've crossed a } then { boundary after the type match, we're in a different block
+    let depth = 0;
+    for (const ch of afterMatch) {
+      if (ch === '{') depth++;
+      if (ch === '}') depth--;
+    }
+    // If depth went negative, we've left that field block
+    if (depth < 0) return;
+
+    // Highlight matching item
+    const item = sidebar.querySelector(`.help-item[data-field-type="${fieldType}"]`);
+    if (item) {
+      item.classList.add('active');
+      // Ensure containing accordion is open
+      const acc = item.closest('.help-accordion');
+      if (acc && !acc.classList.contains('open')) {
+        acc.classList.add('open');
+        const btn = acc.querySelector('.help-accordion-header');
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+      }
+    }
+  } catch (e) { /* ignore cursor errors */ }
+}
+
+// ---- Keyboard shortcut ----
+
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'H' || e.key === 'h')) {
+    const activeTab = localStorage.getItem('formforge-active-tab');
+    if (activeTab === 'dev-schema') {
+      e.preventDefault();
+      toggleHelpSidebar('schema');
+    } else if (activeTab === 'dev-template') {
+      e.preventDefault();
+      toggleHelpSidebar('template');
+    }
+  }
+});
 
 // ============================================================
 //  AI CONTEXT: SCHEMA
@@ -11779,6 +12610,7 @@ function finalizeLocalConnection(handle) {
   contentSourceType = 'local';
   document.getElementById('statusBadge').className = 'status-badge ready';
   document.getElementById('statusText').textContent = `local: ${handle.name}`;
+  syncSidebarStatus('ready', `local: ${handle.name}`);
   renderPicker();
   if (repoSchemas.length === 0) {
     showToast('No schemas found — use "Create a Form" to get started', 'info');
@@ -11854,6 +12686,7 @@ async function restoreLocalFolder(folderName) {
       grid.appendChild(card);
       document.getElementById('statusBadge').className = 'status-badge';
       document.getElementById('statusText').textContent = `local: ${displayName} (reconnect needed)`;
+      syncSidebarStatus('', `local: ${displayName} (reconnect needed)`);
     }
   } catch (e) {
     log('Could not restore local folder: ' + e.message, 'error');
@@ -12737,6 +13570,7 @@ function disconnectSource() {
   // Reset status badge and picker
   document.getElementById('statusBadge').className = 'status-badge';
   document.getElementById('statusText').textContent = 'not connected';
+  syncSidebarStatus('', 'not connected');
   document.getElementById('pickerSection').style.display = 'none';
   document.getElementById('setupEmptyState').style.display = '';
 
@@ -12784,8 +13618,9 @@ function hideConnectDialog() {
 
 function connectDialogKeyHandler(e) {
   if (e.key === 'Escape') { hideConnectDialog(); e.stopPropagation(); return; }
-  // Arrow key navigation between connect dialog tabs
-  if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && document.activeElement?.getAttribute('role') === 'tab') {
+  // Arrow key navigation between connect dialog tabs (scoped to dialog)
+  if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && document.activeElement?.getAttribute('role') === 'tab'
+      && document.querySelector('.connect-dialog')?.contains(document.activeElement)) {
     e.preventDefault();
     const tabs = [document.getElementById('connectTabBtnGithub'), document.getElementById('connectTabBtnLocal')];
     const idx = tabs.indexOf(document.activeElement);
@@ -12973,6 +13808,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Preload Pyodide in the background so the first export is faster
   preloadPyodide();
+
+  // Restore sidebar collapsed state
+  if (localStorage.getItem('formforge-sidebar-collapsed') === '1') {
+    const sidebar = document.getElementById('appSidebar');
+    if (sidebar) {
+      sidebar.classList.add('collapsed');
+      const btn = document.getElementById('sidebarToggle');
+      if (btn) { btn.setAttribute('aria-label', 'Expand sidebar'); btn.setAttribute('title', 'Expand sidebar'); }
+    }
+  }
+
+  // Arrow-key navigation for main nav tablists (ARIA APG tablist pattern)
+  const NAV_TAB_ORDER = ['forms', 'dev-schema', 'dev-template', 'dev-docs'];
+  function handleNavTabKeydown(e) {
+    const btn = e.target.closest('.dev-nav-tab');
+    if (!btn || !btn.dataset.tab) return;
+    // Sidebar: vertical — ArrowUp/ArrowDown; Mobile: horizontal — ArrowLeft/ArrowRight
+    const isVertical = !!btn.closest('.app-sidebar-nav');
+    const prev = isVertical ? 'ArrowUp' : 'ArrowLeft';
+    const next = isVertical ? 'ArrowDown' : 'ArrowRight';
+    if (e.key !== prev && e.key !== next) return;
+    e.preventDefault();
+    const idx = NAV_TAB_ORDER.indexOf(btn.dataset.tab);
+    if (idx < 0) return;
+    const nextIdx = e.key === next ? (idx + 1) % NAV_TAB_ORDER.length : (idx - 1 + NAV_TAB_ORDER.length) % NAV_TAB_ORDER.length;
+    const container = btn.closest('[role="tablist"]');
+    const nextBtn = container?.querySelector(`.dev-nav-tab[data-tab="${NAV_TAB_ORDER[nextIdx]}"]`);
+    if (nextBtn) { nextBtn.focus(); nextBtn.click(); }
+  }
+  document.getElementById('mainNav')?.addEventListener('keydown', handleNavTabKeydown);
+  document.getElementById('mobileBottomNav')?.addEventListener('keydown', handleNavTabKeydown);
 
   // Restore last active tab
   const lastTab = localStorage.getItem('formforge-active-tab');
