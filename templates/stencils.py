@@ -535,6 +535,7 @@ def coverpage(
     logo_b64: str = "",
     logo_width: float = 2.0,
     bar_color: str | None = None,
+    theme: DocTheme | None = None,
 ) -> None:
     """
     Add a professional cover page with logo bar, title, type, and metadata.
@@ -550,15 +551,30 @@ def coverpage(
                   Report").  Omit or pass ``""`` to skip.
         metadata: Optional list of (label, value) tuples rendered as a compact
                   table beneath the title (e.g. date, revision, author).
-        logo_b64: Base64 data-URI string for a company logo, or ``""`` for a
-                  placeholder.
+        logo_b64: Base64 data-URI string (e.g. ``"data:image/png;base64,..."``
+                  ) for a company logo, or ``""`` for a placeholder.  Raw base64
+                  without the ``data:`` prefix is treated as absent.
         logo_width: Logo image width in inches (default 2.0).
         bar_color: Hex color string for the geometric bar background
-                   (e.g. ``"1A1A3E"``).  Defaults to the active theme's
+                   (e.g. ``"1A1A3E"``).  A leading ``#`` is stripped
+                   automatically.  Defaults to the active theme's
                    ``color_accent``.
+        theme: Optional DocTheme for this cover page.  If None, uses the
+               current active theme.
+
+    Raises:
+        ValueError: If ``bar_color`` is not a valid 6-digit hex string.
     """
-    t = _active_theme
-    fill = bar_color if bar_color else str(t.color_accent)
+    t = theme if theme is not None else _active_theme
+
+    if bar_color:
+        fill = bar_color.lstrip("#").upper()
+        if len(fill) != 6 or not all(c in "0123456789ABCDEF" for c in fill):
+            raise ValueError(
+                f"bar_color must be a 6-digit hex string, got: {bar_color!r}"
+            )
+    else:
+        fill = str(t.color_accent)
 
     # ── Geometric bar with logo ──────────────────────────────────────
     bar_table = doc.add_table(rows=1, cols=1)
@@ -649,6 +665,7 @@ def coverpage(
             vp = row.cells[1].paragraphs[0]
             display = str(value) if value else "\u2014"
             vr = vp.add_run(display)
+            vr.font.name = t.font_body
             vr.font.size = Pt(t.size_table)
             _set_cell_left_margin(row.cells[1], 0.15)
 
@@ -656,7 +673,7 @@ def coverpage(
     doc.add_page_break()
 
 
-def _coverpage_logo_placeholder(paragraph, theme: DocTheme) -> None:
+def _coverpage_logo_placeholder(paragraph: object, theme: DocTheme) -> None:
     """Render a placeholder in the bar cell when no logo is provided."""
     run = paragraph.add_run("\u25A0  \u25A0  \u25A0")
     run.font.size = Pt(24)

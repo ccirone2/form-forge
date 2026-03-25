@@ -173,7 +173,7 @@ stencils.format_time("")                     # → ""
 
 Always pass a string — use `data.get('field_id', '')` to guarantee a string default.
 
-### `stencils.coverpage(doc, title, doc_type="", metadata=None, logo_b64="", logo_width=2.0, bar_color=None)`
+### `stencils.coverpage(doc, title, doc_type="", metadata=None, logo_b64="", logo_width=2.0, bar_color=None, theme=None)`
 
 Adds a professional cover page to the document. Use with `new_doc("", "")` so the cover page is the first content. A page break is appended automatically.
 
@@ -197,9 +197,10 @@ stencils.table_section(doc, "Findings", [...])
 - `title` — large centered title displayed ~2/3 down the page
 - `doc_type` — subtitle-style label below the title (e.g. "Technical Report")
 - `metadata` — list of `(label, value)` tuples rendered as a compact table (date, revision, ID, author, etc.)
-- `logo_b64` — base64 data-URI for a company logo, displayed inside a colored bar at the top of the page
+- `logo_b64` — base64 data-URI for a company logo, displayed inside a colored bar at the top of the page. Raw base64 without the `data:` prefix is treated as absent
 - `logo_width` — logo width in inches (default 2.0)
-- `bar_color` — hex color for the bar background (defaults to theme `color_accent`)
+- `bar_color` — hex color for the bar background (defaults to theme `color_accent`). A leading `#` is stripped automatically
+- `theme` — optional `DocTheme` override for this cover page (defaults to active theme)
 
 ### `stencils.finalize(doc)`
 

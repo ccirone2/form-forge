@@ -86,6 +86,22 @@ def test_field_type_demo_with_empty_data():
     assert result[:2] == b"PK"
 
 
+def test_coverpage_demo_generates_valid_docx():
+    data = json.loads((FIXTURES / "coverpage-demo_sample.json").read_text())
+    mod = load_template("coverpage-demo")
+    result = mod.generate_docx(data)
+    assert isinstance(result, bytes)
+    assert len(result) > 1000
+    assert result[:2] == b"PK"
+
+
+def test_coverpage_demo_with_empty_data():
+    mod = load_template("coverpage-demo")
+    result = mod.generate_docx({})
+    assert isinstance(result, bytes)
+    assert result[:2] == b"PK"
+
+
 # ---------------------------------------------------------------------------
 #  Round-trip content assertions
 # ---------------------------------------------------------------------------
@@ -122,6 +138,19 @@ def test_field_type_demo_content_round_trip():
     assert "Conference" in text
     assert "In-person" in text
     assert "100 Convention Center Dr" in text
+
+
+def test_coverpage_demo_content_round_trip():
+    data = json.loads((FIXTURES / "coverpage-demo_sample.json").read_text())
+    mod = load_template("coverpage-demo")
+    result = mod.generate_docx(data)
+    text = _full_text(result)
+    assert "Quarterly Safety Inspection Report" in text
+    assert "Technical Report" in text
+    assert "Jane Doe" in text
+    assert "RPT-2026-042" in text
+    assert "Executive Summary" in text
+    assert "Fire suppression" in text
 
 
 # ---------------------------------------------------------------------------

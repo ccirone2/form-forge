@@ -605,9 +605,9 @@ def test_coverpage_basic():
     stencils.coverpage(doc, title="My Report")
     texts = [p.text for p in doc.paragraphs]
     assert any("My Report" in t for t in texts)
-    # Should have a page break (rendered as a run with break element)
+    # Should have a page break
     xml = doc.element.body.xml
-    assert "w:br" in xml
+    assert 'w:type="page"' in xml
 
 
 def test_coverpage_full():
@@ -645,6 +645,50 @@ def test_coverpage_no_logo():
     assert "\u25A0" in cell_text
 
 
+def _make_tiny_png_data_uri() -> str:
+    """Create a minimal 1x1 white PNG as a data URI for testing."""
+    import base64 as b64mod
+
+    # Minimal valid PNG: 1x1 white pixel
+    # (header + IHDR + IDAT + IEND)
+    import struct
+    import zlib
+
+    def _chunk(chunk_type, data):
+        c = chunk_type + data
+        crc = struct.pack(">I", zlib.crc32(c) & 0xFFFFFFFF)
+        return struct.pack(">I", len(data)) + c + crc
+
+    sig = b"\x89PNG\r\n\x1a\n"
+    ihdr = _chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
+    raw = zlib.compress(b"\x00\xff\xff\xff")
+    idat = _chunk(b"IDAT", raw)
+    iend = _chunk(b"IEND", b"")
+    png_bytes = sig + ihdr + idat + iend
+    encoded = b64mod.b64encode(png_bytes).decode()
+    return f"data:image/png;base64,{encoded}"
+
+
+def test_coverpage_valid_logo():
+    """coverpage with valid logo should embed image, not placeholder."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(doc, title="Logo Test", logo_b64=_make_tiny_png_data_uri())
+    bar_table = doc.tables[0]
+    cell_text = bar_table.rows[0].cells[0].text
+    # Should NOT contain placeholder squares
+    assert "\u25A0" not in cell_text
+
+
+def test_coverpage_invalid_logo_falls_back():
+    """coverpage with invalid base64 logo should fall back to placeholder."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(
+        doc, title="Bad Logo", logo_b64="data:image/png;base64,NOT_VALID!!!"
+    )
+    bar_table = doc.tables[0]
+    assert "\u25A0" in bar_table.rows[0].cells[0].text
+
+
 def test_coverpage_metadata_table():
     """Metadata renders as label/value pairs in a table."""
     doc = stencils.new_doc("", "")
@@ -675,6 +719,23 @@ def test_coverpage_custom_bar_color():
     shd = cell._tc.tcPr.find(qn("w:shd"))
     assert shd is not None
     assert shd.get(qn("w:fill")) == "FF0000"
+
+
+def test_coverpage_bar_color_strips_hash():
+    """bar_color with leading # should be accepted after stripping."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(doc, title="Hash Test", bar_color="#1A1A3E")
+    bar_table = doc.tables[0]
+    cell = bar_table.rows[0].cells[0]
+    shd = cell._tc.tcPr.find(qn("w:shd"))
+    assert shd.get(qn("w:fill")) == "1A1A3E"
+
+
+def test_coverpage_bar_color_invalid_raises():
+    """bar_color with non-hex value should raise ValueError."""
+    doc = stencils.new_doc("", "")
+    with pytest.raises(ValueError, match="6-digit hex"):
+        stencils.coverpage(doc, title="Bad Color", bar_color="red")
 
 
 def test_coverpage_empty_metadata():
