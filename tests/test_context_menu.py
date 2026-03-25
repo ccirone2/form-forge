@@ -319,15 +319,14 @@ class TestSchemaSnippetInsertion:
         )
         page.wait_for_timeout(100)
         open_schema_context_menu(page)
-        select_item = page.locator(
-            "#ctxMenu > .ctx-menu-item", has_text="Select"
-        ).first
+        select_item = page.locator("#ctxMenu > .ctx-menu-item", has_text="Select").first
         select_item.click()
         text = get_editor_text(page, "schemaEditor")
         assert "select_field" in text
 
     def test_unique_id_on_duplicate(self, page):
         """Inserting the same field type twice gives unique IDs."""
+
         # Helper to position cursor and insert Text field
         def insert_text_field():
             page.evaluate(
@@ -363,9 +362,7 @@ class TestSchemaSnippetInsertion:
         )
         page.wait_for_timeout(100)
         open_schema_context_menu(page)
-        page.locator(
-            "#ctxMenu > .ctx-menu-item", has_text="Add Section"
-        ).click()
+        page.locator("#ctxMenu > .ctx-menu-item", has_text="Add Section").click()
         text = get_editor_text(page, "schemaEditor")
         assert "Section" in text
 

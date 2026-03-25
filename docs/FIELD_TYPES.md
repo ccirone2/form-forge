@@ -354,6 +354,8 @@ formatted = f"{street}\n{city}, {state} {zip_code}"
 
 File upload input with image preview. The file is read as a base64 data URI and stored in a hidden input with `id = field.id`.
 
+**SVG support:** SVG uploads (`image/svg+xml`) are automatically rasterized to PNG via canvas before storing the data URI. This ensures compatibility with `python-docx`, which does not support SVG. The conversion respects the SVG's intrinsic aspect ratio and caps dimensions at 1200px max. Existing raster formats (PNG, JPEG, WebP) are unaffected.
+
 ```json
 {
   "id": "receipt_photo",

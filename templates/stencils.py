@@ -534,6 +534,7 @@ def coverpage(
     metadata: list[tuple[str, str]] | None = None,
     logo_b64: str = "",
     logo_width: float = 2.0,
+    max_logo_height: float = 1.0,
     bar_color: str | None = None,
     theme: DocTheme | None = None,
 ) -> None:
@@ -543,6 +544,10 @@ def coverpage(
     Call on a document created with ``new_doc()`` so the cover page is the
     first content.  A page break is appended automatically so body content
     starts on page 2.
+
+    The layout adapts to content: the geometric bar is capped at ~2.5" total
+    height, and the vertical spacer adjusts so that title + metadata always
+    fit on page 1 (up to ~8 metadata rows on US Letter).
 
     Args:
         doc: The Document instance (from ``new_doc``).
@@ -555,6 +560,9 @@ def coverpage(
                   ) for a company logo, or ``""`` for a placeholder.  Raw base64
                   without the ``data:`` prefix is treated as absent.
         logo_width: Logo image width in inches (default 2.0).
+        max_logo_height: Maximum logo height in inches (default 1.0).  If the
+                         image exceeds this height at the given width, it is
+                         scaled down proportionally.
         bar_color: Hex color string for the geometric bar background
                    (e.g. ``"1A1A3E"``).  A leading ``#`` is stripped
                    automatically.  Defaults to the active theme's
@@ -581,8 +589,8 @@ def coverpage(
     bar_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     _set_table_borders(bar_table, val="none", sz=0, color="auto")
 
-    # Generous vertical padding to give the bar visual weight
-    _set_cell_margins(bar_table, top=0.5, bottom=0.5)
+    # Bounded vertical padding (bar + logo region capped at ~2.5" total)
+    _set_cell_margins(bar_table, top=0.3, bottom=0.3)
 
     # Full-width: set preferred width to 100%
     tblPr = bar_table._tbl.tblPr
@@ -607,15 +615,37 @@ def coverpage(
             img_data = logo_b64.split(",")[1]
             img_bytes = base64.b64decode(img_data)
             run = cell_p.add_run()
-            run.add_picture(io.BytesIO(img_bytes), width=Inches(logo_width))
+            picture = run.add_picture(io.BytesIO(img_bytes), width=Inches(logo_width))
+            # Scale down proportionally if logo exceeds max height
+            if max_logo_height > 0 and picture.height > Inches(max_logo_height):
+                ratio = Inches(max_logo_height) / picture.height
+                picture.height = Inches(max_logo_height)
+                picture.width = int(picture.width * ratio)
         except (ValueError, binascii.Error, OSError, UnrecognizedImageError):
             _coverpage_logo_placeholder(cell_p, t)
     else:
         _coverpage_logo_placeholder(cell_p, t)
 
-    # ── Vertical spacer (push title to ~2/3 down page) ───────────────
+    # ── Adaptive vertical spacer (push title toward ~2/3 of page) ────
+    # Estimate content heights to ensure everything fits on page 1.
+    # Derive usable height from the document's actual margins.
+    _section = doc.sections[0]
+    _usable_in = (
+        _section.page_height - _section.top_margin - _section.bottom_margin
+    ) / 914400  # EMU → inches
+    _bar_in = 0.6 + max_logo_height  # 2 × 0.3" padding + logo cap
+    _below_in = 0.5  # title block
+    if doc_type:
+        _below_in += 0.35
+    _meta_count = len(metadata) if metadata else 0
+    if _meta_count > 0:
+        _below_in += 0.15 + _meta_count * 0.22
+    _below_in += 0.2  # page-break buffer
+    _available_in = _usable_in - _bar_in - _below_in
+    _target_in = min(_available_in, _usable_in * 2 / 3 - _bar_in)
+    _spacer_pt = max(_target_in * 72, 36)  # at least 0.5"
     spacer = doc.add_paragraph()
-    spacer.paragraph_format.space_before = Pt(220)
+    spacer.paragraph_format.space_before = Pt(_spacer_pt)
 
     # ── Document title ───────────────────────────────────────────────
     title_p = doc.add_paragraph()
@@ -887,6 +917,7 @@ def image(
     doc: Document,
     b64_str: str,
     width_inches: float = 3.0,
+    max_height: float | None = None,
     placeholder: str = "No image uploaded.",
 ) -> None:
     """
@@ -896,13 +927,24 @@ def image(
         doc: The Document instance.
         b64_str: Base64 data URI string (e.g. "data:image/png;base64,...") or "".
         width_inches: Image width in inches (default: 3.0).
+        max_height: Optional maximum height in inches.  If the image exceeds
+                    this height at the given width, it is scaled down
+                    proportionally.
         placeholder: Text to show when no image is available.
     """
     if b64_str and "," in b64_str:
         try:
             img_data = b64_str.split(",")[1]
             img_bytes = base64.b64decode(img_data)
-            doc.add_picture(io.BytesIO(img_bytes), width=Inches(width_inches))
+            picture = doc.add_picture(io.BytesIO(img_bytes), width=Inches(width_inches))
+            if (
+                max_height is not None
+                and max_height > 0
+                and picture.height > Inches(max_height)
+            ):
+                ratio = Inches(max_height) / picture.height
+                picture.height = Inches(max_height)
+                picture.width = int(picture.width * ratio)
             return
         except (ValueError, binascii.Error, OSError, UnrecognizedImageError):
             pass
