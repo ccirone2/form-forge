@@ -774,13 +774,13 @@ def test_dompurify_cdn_loaded(index_html: str) -> None:
 
 
 def test_docx_preview_white_background_css(index_html: str) -> None:
-    """DOCX preview container has white background and Calibri font."""
+    """DOCX preview container has white background and Segoe UI font."""
     assert "dev-docx-preview" in index_html
     # Find the CSS rule containing the background (not the scrollbar override)
     matches = re.findall(r"\.dev-docx-preview\s*\{([^}]+)\}", index_html)
     css = " ".join(matches)
     assert "#ffffff" in css
-    assert "Calibri" in css
+    assert "Segoe UI" in css
 
 
 def test_devrunpreview_error_uses_textcontent(index_html: str) -> None:
@@ -814,6 +814,80 @@ def test_devrunpreview_shows_stencils_badge(index_html: str) -> None:
     """devRunPreview updates status badge to 'loading stencils...' during load."""
     body = _extract_func(index_html, "devRunPreview")
     assert "loading stencils" in body
+
+
+def test_devrunpreview_uses_style_map(index_html: str) -> None:
+    """devRunPreview passes MAMMOTH_STYLE_MAP to mammoth.convertToHtml."""
+    body = _extract_func(index_html, "devRunPreview")
+    assert "MAMMOTH_STYLE_MAP" in body
+    assert "styleMap" in body
+
+
+def test_mammoth_style_map_defined(index_html: str) -> None:
+    """MAMMOTH_STYLE_MAP maps DOCX paragraph styles to CSS classes."""
+    assert "const MAMMOTH_STYLE_MAP" in index_html
+    assert "style-name='Title'" in index_html
+    assert "style-name='Subtitle'" in index_html
+    assert "style-name='Heading 1'" in index_html
+    assert "docx-title" in index_html
+    assert "docx-h1" in index_html
+
+
+def test_devrunpreview_preserves_inline_styles(index_html: str) -> None:
+    """DOMPurify is called with ADD_ATTR: ['style'] to preserve inline styles."""
+    body = _extract_func(index_html, "devRunPreview")
+    assert "ADD_ATTR" in body
+    assert "'style'" in body
+
+
+def test_devrunpreview_shows_mammoth_warnings(index_html: str) -> None:
+    """devRunPreview renders mammoth conversion warnings in the preview."""
+    body = _extract_func(index_html, "devRunPreview")
+    assert "messages" in body
+    assert "warning" in body
+    assert "docx-preview-warnings" in body
+
+
+def test_devrunpreview_updates_preview_hash(index_html: str) -> None:
+    """devRunPreview updates _devPreviewHash on success."""
+    body = _extract_func(index_html, "devRunPreview")
+    assert "_devPreviewHash" in body
+
+
+def test_auto_preview_function_exists(index_html: str) -> None:
+    """devAutoPreview runs preview when template and sample data are ready."""
+    body = _extract_func(index_html, "devAutoPreview")
+    assert "generate_docx" in body
+    assert "_devPreviewHash" in body
+    assert "devRunPreview" in body
+
+
+def test_auto_preview_skips_empty_data(index_html: str) -> None:
+    """devAutoPreview skips preview when sample data is empty."""
+    body = _extract_func(index_html, "devAutoPreview")
+    assert "'{}'" in body
+
+
+def test_show_tab_calls_auto_preview(index_html: str) -> None:
+    """showView triggers devAutoPreview when switching to template tab."""
+    body = _extract_func(index_html, "showView")
+    assert "devAutoPreview" in body
+
+
+def test_docx_preview_title_css(index_html: str) -> None:
+    """CSS for .docx-title matches THEME_MODERN title color."""
+    assert ".docx-title" in index_html
+    assert "#1B5E6E" in index_html
+
+
+def test_docx_preview_h1_css(index_html: str) -> None:
+    """CSS for .docx-h1 matches THEME_MODERN heading 1 style."""
+    assert ".docx-h1" in index_html
+
+
+def test_docx_preview_warnings_css(index_html: str) -> None:
+    """CSS for conversion warnings container exists."""
+    assert ".docx-preview-warnings" in index_html
 
 
 def test_loadbasemodule_has_silent_param(index_html: str) -> None:

@@ -1938,16 +1938,61 @@
   .dev-sample-body.collapsed { display: none; }
 
   .dev-docx-preview {
-    flex: 1; overflow-y: auto; padding: 24px;
-    background: #ffffff; color: #000000;
-    font-family: Calibri, 'Segoe UI', sans-serif; font-size: 11pt;
+    flex: 1; overflow-y: auto; padding: 32px 40px;
+    background: #ffffff; color: #1a1a1a;
+    font-family: 'Segoe UI', Calibri, sans-serif; font-size: 11pt;
     line-height: 1.5;
   }
-  .dev-docx-preview table { border-collapse: collapse; width: 100%; margin: 8px 0; }
-  .dev-docx-preview td, .dev-docx-preview th { border: 1px solid #ccc; padding: 4px 8px; }
+  /* Title style — centered, colored, with bottom border */
+  .dev-docx-preview .docx-title {
+    font-size: 22pt; font-weight: 400; text-align: center;
+    color: #1B5E6E; margin: 0 0 4px;
+    padding-bottom: 8px; border-bottom: 1px solid #3A7A8C;
+  }
+  /* Subtitle style — centered, muted */
+  .dev-docx-preview .docx-subtitle {
+    font-size: 12pt; text-align: center;
+    color: #3A7A8C; margin: 0 0 12px;
+  }
+  /* Heading 1 — section heading with bottom border */
+  .dev-docx-preview .docx-h1 {
+    font-size: 14pt; font-weight: 600;
+    color: #1B5E6E; margin: 18px 0 6px;
+    padding-bottom: 4px; border-bottom: 1px solid #3A7A8C;
+  }
+  /* Heading 2 — subsection heading */
+  .dev-docx-preview .docx-h2 {
+    font-size: 13pt; font-weight: 600;
+    color: #3A7A8C; margin: 14px 0 4px;
+  }
+  /* Heading 3 */
+  .dev-docx-preview .docx-h3 { font-size: 12pt; font-weight: 600; color: #1B5E6E; margin: 10px 0 4px; }
+  /* Tables — borderless key/value style by default */
+  .dev-docx-preview table { border-collapse: collapse; width: 100%; margin: 4px 0; }
+  .dev-docx-preview td, .dev-docx-preview th { padding: 3px 8px; border: none; vertical-align: top; font-size: 10pt; }
+  /* Tables with borders (repeater tables — mammoth preserves border attrs) */
+  .dev-docx-preview table[border] td,
+  .dev-docx-preview table[border] th { border: 1px solid #ccc; }
+  /* Bold first column in key/value tables */
+  .dev-docx-preview td:first-child { font-weight: 600; padding-left: 18px; }
+  /* Bullet lists */
+  .dev-docx-preview .docx-bullet { font-size: 10pt; margin: 2px 0; }
+  .dev-docx-preview ul { padding-left: 24px; margin: 4px 0; }
+  .dev-docx-preview li { margin: 2px 0; font-size: 10pt; }
+  /* Generic heading fallbacks */
   .dev-docx-preview h1 { font-size: 18pt; margin: 12px 0 6px; }
   .dev-docx-preview h2 { font-size: 14pt; margin: 10px 0 4px; }
-  .dev-docx-preview p { margin: 4px 0; }
+  .dev-docx-preview h3 { font-size: 13pt; margin: 8px 0 4px; }
+  .dev-docx-preview p { margin: 3px 0; }
+  /* Empty paragraph spacers */
+  .dev-docx-preview p:empty { margin: 6px 0; }
+  /* Conversion warnings */
+  .docx-preview-warnings {
+    margin-top: 16px; padding: 8px 12px;
+    background: #fff8e1; border: 1px solid #ffe082; border-radius: 4px;
+    font-size: 9pt; color: #6d4c00;
+  }
+  .docx-preview-warnings p { margin: 2px 0; }
 
   /* Connect Repo modal */
   .gh-connect-modal {
@@ -3488,6 +3533,8 @@ function showView(name) {
       const el = document.getElementById('templateEditor');
       if (el) devHighlightWithFolding(el, Prism.languages.python, 'python', 'templateLineNumbers');
     }
+    // Auto-preview if template + sample data are ready
+    devAutoPreview();
   }
 }
 
@@ -12353,6 +12400,17 @@ function devAutoFillSampleData() {
 }
 
 let devTemplateValidDebounce = null;
+let _devPreviewHash = ''; // tracks template+data fingerprint to avoid redundant previews
+
+// Mammoth style map — maps DOCX paragraph/run styles to CSS classes
+const MAMMOTH_STYLE_MAP = [
+  "p[style-name='Title'] => h1.docx-title:fresh",
+  "p[style-name='Subtitle'] => p.docx-subtitle:fresh",
+  "p[style-name='Heading 1'] => h2.docx-h1:fresh",
+  "p[style-name='Heading 2'] => h3.docx-h2:fresh",
+  "p[style-name='Heading 3'] => h4.docx-h3:fresh",
+  "p[style-name='List Bullet'] => li.docx-bullet:fresh",
+];
 
 function devUpdateTemplateValidation() {
   const badge = document.getElementById('templateStatusBadge');
@@ -12431,15 +12489,32 @@ bytes(_result) if isinstance(_result, (bytes, bytearray)) else _result
       const docxBytes = result.toJs ? result.toJs() : result;
       const arrayBuf = (docxBytes instanceof Uint8Array) ? docxBytes.buffer : new Uint8Array(docxBytes).buffer;
 
-      // Convert to HTML via mammoth
+      // Convert to HTML via mammoth with style mapping
       badgeText.textContent = 'rendering preview...';
       if (typeof mammoth === 'undefined') {
         throw new Error('mammoth.js not loaded yet — please try again');
       }
-      const mammothResult = await mammoth.convertToHtml({ arrayBuffer: arrayBuf });
+      const mammothResult = await mammoth.convertToHtml({
+        arrayBuffer: arrayBuf
+      }, { styleMap: MAMMOTH_STYLE_MAP });
       if (emptyEl) emptyEl.style.display = 'none';
-      // Sanitize mammoth output via DOMPurify
-      container.innerHTML = DOMPurify.sanitize(mammothResult.value);
+
+      // Sanitize mammoth output via DOMPurify, preserving inline styles
+      let html = DOMPurify.sanitize(mammothResult.value, {
+        ADD_ATTR: ['style'],
+      });
+
+      // Append mammoth conversion warnings if any
+      const warnings = (mammothResult.messages || []).filter(m => m.type === 'warning');
+      if (warnings.length > 0) {
+        html += '<div class="docx-preview-warnings">'
+          + warnings.map(w => '<p>' + DOMPurify.sanitize(w.message) + '</p>').join('')
+          + '</div>';
+      }
+      container.innerHTML = html;
+
+      // Update preview hash so auto-preview can skip unchanged content
+      _devPreviewHash = devTemplateText + '\0' + devSampleDataText;
 
       badge.className = 'dev-validation-badge valid';
       badgeText.textContent = 'success';
@@ -12456,6 +12531,17 @@ bytes(_result) if isinstance(_result, (bytes, bytearray)) else _result
     container.innerHTML = '';
     container.appendChild(errDiv);
   }
+}
+
+function devAutoPreview() {
+  // Auto-run preview if template has generate_docx and sample data is valid JSON
+  if (!devTemplateText || !devTemplateText.includes('generate_docx')) return;
+  if (!devSampleDataText || devSampleDataText.trim() === '{}') return;
+  try { JSON.parse(devSampleDataText); } catch { return; }
+  // Skip if content hasn't changed since last preview
+  const hash = devTemplateText + '\0' + devSampleDataText;
+  if (hash === _devPreviewHash) return;
+  devRunPreview();
 }
 
 function devNewTemplate() {
