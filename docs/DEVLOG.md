@@ -14,6 +14,33 @@
 
 ## Log
 
+### 2026-03-25 — Editor Context Menu Improvements (#215, #216, #217, #218, #219)
+
+Redesigned Schema and Template editor context menus to be cursor-aware, flat, and editor-clamped.
+
+**#216 — Clamp to editor pane bounds:**
+- `showContextMenu()` accepts optional `boundingEl` for pane-clamped positioning
+- Added `overflow-y: auto` and dynamic `max-height` for scrollable menus
+
+**#217 — Schema editor cursor-aware flat menu:**
+- `getSchemaEditorContext()` detects root/section/field level via JSON bracket tracking
+- Root: Add Section, Wrap in Wizard; Section: 24 field types with group labels; Field: type-specific property snippets
+- New `getFieldPropertySnippets()` and `devInsertProperty()` for field-level editing
+
+**#218 — Template editor cursor-aware flat menu:**
+- `getTemplateEditorContext()` detects top-level vs function body via `def` line scanning
+- Top: imports, scaffold, themes; Body: stencil helpers, schema field accessors
+- `TEMPLATE_SNIPPETS` entries now tagged with `category: 'top'|'body'`
+
+**#219 — Base scaffold:** `BASE_SCAFFOLD` constant shown at root level when editor is empty
+
+**Decisions:**
+- Preview pane context menu unchanged (keeps submenus for field insertion)
+- Schema cursor detection uses string-stripped bracket/key state machine
+- Template cursor detection uses backward scan for `def` lines with indentation check
+
+---
+
 ### 2026-03-25 — Load Demo Content into Editors (#214)
 
 When users click "Try Demo" and then switch to Schema or Template tabs, the editors now show the actual demo schema and template (previously showed blank starters). Key changes:
