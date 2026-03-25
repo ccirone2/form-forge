@@ -2295,9 +2295,6 @@
       width: 100%; min-width: 100%;
     }
   }
-  @media (min-width: 769px) {
-    .mobile-bottom-nav { display: none; }
-  }
 
   /* ===== 39. REDUCE GPU COST ON TOUCH DEVICES ===== */
   @media (pointer: coarse) {
@@ -2585,7 +2582,7 @@
 <div class="app-shell">
 
 <!-- Sidebar Navigation -->
-<aside class="app-sidebar" id="appSidebar" role="navigation" aria-label="Main navigation">
+<aside class="app-sidebar" id="appSidebar">
   <nav class="app-sidebar-nav" id="mainNav" role="tablist" aria-label="Main navigation">
     <button type="button" class="dev-nav-tab active" id="tab-forms" data-tab="forms" role="tab" aria-selected="true" aria-controls="view-setup" onclick="showTab('forms')">
       <svg width="16" height="16" aria-hidden="true"><use href="#icon-file-text"/></svg>
@@ -3000,7 +2997,7 @@
 </div><!-- /.app-main -->
 
 <!-- Mobile Bottom Navigation (visible only at <=768px) -->
-<nav class="mobile-bottom-nav" id="mobileBottomNav" role="tablist" aria-label="Main navigation">
+<nav class="mobile-bottom-nav" id="mobileBottomNav" role="tablist" aria-label="Navigation">
   <button type="button" class="dev-nav-tab active" data-tab="forms" role="tab" aria-selected="true" aria-controls="view-setup" onclick="showTab('forms')">
     <svg width="16" height="16" aria-hidden="true"><use href="#icon-file-text"/></svg>
     <span class="nav-label">Forms</span>
@@ -9736,8 +9733,10 @@ function loadScript(src) {
 
 function toggleSidebar() {
   const sidebar = document.getElementById('appSidebar');
+  if (!sidebar) return;
   const collapsed = sidebar.classList.toggle('collapsed');
-  localStorage.setItem('formforge-sidebar-collapsed', collapsed ? '1' : '');
+  if (collapsed) localStorage.setItem('formforge-sidebar-collapsed', '1');
+  else localStorage.removeItem('formforge-sidebar-collapsed');
   const btn = document.getElementById('sidebarToggle');
   if (btn) {
     btn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
@@ -9774,11 +9773,10 @@ async function showTab(tabName) {
     t.classList.remove('active');
     t.setAttribute('aria-selected', 'false');
   });
-  const tab = document.querySelector(`.dev-nav-tab[data-tab="${tabName}"]`);
-  if (tab) {
-    tab.classList.add('active');
-    tab.setAttribute('aria-selected', 'true');
-  }
+  document.querySelectorAll(`.dev-nav-tab[data-tab="${tabName}"]`).forEach(t => {
+    t.classList.add('active');
+    t.setAttribute('aria-selected', 'true');
+  });
   localStorage.setItem('formforge-active-tab', tabName);
 
   // Map tab to view
