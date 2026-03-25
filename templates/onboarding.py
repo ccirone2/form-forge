@@ -15,7 +15,7 @@ Field type notes:
   - list → newline-separated str (e.g. "Python\\nJavaScript\\nRust")
 """
 
-from stencils import Stamp, THEME_CLASSIC
+from stencils import Stencil, THEME_CLASSIC
 
 
 def generate_docx(data: dict[str, str]) -> bytes:
@@ -32,7 +32,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
     last = data.get("last_name", "")
     start = data.get("start_date", "TBD")
 
-    doc = Stamp()
+    doc = Stencil()
     doc.set_theme(THEME_CLASSIC)
     doc.new_doc(
         "Employee Onboarding Document",

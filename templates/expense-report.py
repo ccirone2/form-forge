@@ -19,7 +19,7 @@ Field type notes:
 
 import json
 
-from stencils import Stamp, THEME_MODERN
+from stencils import Stencil, THEME_MODERN
 
 
 def generate_docx(data: dict[str, str]) -> bytes:
@@ -37,7 +37,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
     report_date = data.get("report_date", "")
     form_ver = data.get("form_version", "")
 
-    doc = Stamp()
+    doc = Stencil()
     doc.set_theme(THEME_MODERN)
     doc.new_doc(
         "Expense Report",

@@ -25,7 +25,7 @@ Field type value formats:
 import json
 from docx.shared import Pt
 
-from stencils import Stamp, THEME_MINIMAL, format_time
+from stencils import Stencil, THEME_MINIMAL, format_time
 
 
 def generate_docx(data: dict[str, str]) -> bytes:
@@ -43,7 +43,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
     event_date = data.get("event_date", "")
     form_ver = data.get("form_version", "")
 
-    doc = Stamp()
+    doc = Stencil()
     doc.set_theme(THEME_MINIMAL)
     doc.new_doc(
         "Event Registration",

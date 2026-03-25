@@ -910,55 +910,55 @@ def test_image_without_max_height_unchanged():
 
 
 # ---------------------------------------------------------------------------
-#  Stamp class
+#  Stencil class
 # ---------------------------------------------------------------------------
 
 
-def test_stamp_importable():
-    """Stamp and theme constants are importable via from-import."""
-    from stencils import Stamp, THEME_CLASSIC, THEME_MINIMAL, THEME_MODERN, DocTheme
+def test_stencil_importable():
+    """Stencil and theme constants are importable via from-import."""
+    from stencils import Stencil, THEME_CLASSIC, THEME_MINIMAL, THEME_MODERN, DocTheme
 
-    assert Stamp is not None
+    assert Stencil is not None
     assert THEME_CLASSIC is not None
     assert THEME_MINIMAL is not None
     assert THEME_MODERN is not None
     assert DocTheme is not None
 
 
-def test_stamp_construction():
-    """Stamp() creates an instance with no document yet."""
-    s = stencils.Stamp()
+def test_stencil_construction():
+    """Stencil() creates an instance with no document yet."""
+    s = stencils.Stencil()
     assert s._doc is None
     assert s._theme is None
 
 
-def test_stamp_set_theme_returns_self():
-    s = stencils.Stamp()
+def test_stencil_set_theme_returns_self():
+    s = stencils.Stencil()
     result = s.set_theme(stencils.THEME_CLASSIC)
     assert result is s
     assert s._theme is stencils.THEME_CLASSIC
 
 
-def test_stamp_set_theme_invalid():
+def test_stencil_set_theme_invalid():
     """set_theme with an incomplete theme should raise ValueError."""
 
     class BadTheme:
         pass
 
-    s = stencils.Stamp()
+    s = stencils.Stencil()
     with pytest.raises(ValueError, match="missing required fields"):
         s.set_theme(BadTheme())
 
 
-def test_stamp_new_doc_returns_self():
-    s = stencils.Stamp()
+def test_stencil_new_doc_returns_self():
+    s = stencils.Stencil()
     result = s.new_doc("Test Title")
     assert result is s
     assert s._doc is not None
 
 
-def test_stamp_new_doc_creates_titled_doc():
-    s = stencils.Stamp()
+def test_stencil_new_doc_creates_titled_doc():
+    s = stencils.Stencil()
     s.set_theme(stencils.THEME_CLASSIC)
     s.new_doc("My Title", "My Subtitle")
     texts = [p.text for p in s.doc.paragraphs]
@@ -966,107 +966,107 @@ def test_stamp_new_doc_creates_titled_doc():
     assert any("My Subtitle" in t for t in texts)
 
 
-def test_stamp_lazy_doc_creation():
+def test_stencil_lazy_doc_creation():
     """Content methods should auto-create the doc if new_doc() was not called."""
-    s = stencils.Stamp()
+    s = stencils.Stencil()
     s.set_theme(stencils.THEME_CLASSIC)
     s.table_section("Info", [("Key", "Value")])
     assert s._doc is not None
 
 
-def test_stamp_table_section_returns_self():
-    s = stencils.Stamp()
+def test_stencil_table_section_returns_self():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.table_section("Section", [("A", "B")])
     assert result is s
 
 
-def test_stamp_longtext_returns_self():
-    s = stencils.Stamp()
+def test_stencil_longtext_returns_self():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.longtext("Heading", "Some text")
     assert result is s
 
 
-def test_stamp_bullet_list_returns_self():
-    s = stencils.Stamp()
+def test_stencil_bullet_list_returns_self():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.bullet_list("Items", "a\nb\nc")
     assert result is s
 
 
-def test_stamp_signatures_returns_self():
-    s = stencils.Stamp()
+def test_stencil_signatures_returns_self():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.signatures(["Signer 1", "Date"])
     assert result is s
 
 
-def test_stamp_footer_returns_self():
-    s = stencils.Stamp()
+def test_stencil_footer_returns_self():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.footer()
     assert result is s
 
 
-def test_stamp_address_returns_self():
-    s = stencils.Stamp()
+def test_stencil_address_returns_self():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.address("Addr", '{"street":"123 Main"}')
     assert result is s
 
 
-def test_stamp_image_returns_self():
-    s = stencils.Stamp()
+def test_stencil_image_returns_self():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.image("")
     assert result is s
 
 
-def test_stamp_signature_returns_self():
-    s = stencils.Stamp()
+def test_stencil_signature_returns_self():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.signature("", "Label")
     assert result is s
 
 
-def test_stamp_repeater_table_returns_self():
-    s = stencils.Stamp()
+def test_stencil_repeater_table_returns_self():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.repeater_table(headers=["Col"], items=[], field_keys=["col"])
     assert result is s
 
 
-def test_stamp_coverpage_returns_self():
-    s = stencils.Stamp()
+def test_stencil_coverpage_returns_self():
+    s = stencils.Stencil()
     s.new_doc()
     result = s.coverpage("Title")
     assert result is s
 
 
-def test_stamp_add_heading_returns_self():
-    s = stencils.Stamp()
+def test_stencil_add_heading_returns_self():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.add_heading("H1", level=1)
     assert result is s
 
 
-def test_stamp_add_paragraph_returns_self():
-    s = stencils.Stamp()
+def test_stencil_add_paragraph_returns_self():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.add_paragraph("text")
     assert result is s
 
 
-def test_stamp_add_page_break_returns_self():
-    s = stencils.Stamp()
+def test_stencil_add_page_break_returns_self():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.add_page_break()
     assert result is s
 
 
-def test_stamp_finalize_returns_bytes():
-    s = stencils.Stamp()
+def test_stencil_finalize_returns_bytes():
+    s = stencils.Stencil()
     s.new_doc("Test")
     result = s.finalize()
     assert isinstance(result, bytes)
@@ -1074,10 +1074,10 @@ def test_stamp_finalize_returns_bytes():
     assert result[:2] == b"PK"
 
 
-def test_stamp_method_chaining():
+def test_stencil_method_chaining():
     """Full method-chaining workflow produces valid DOCX bytes."""
     result = (
-        stencils.Stamp()
+        stencils.Stencil()
         .set_theme(stencils.THEME_CLASSIC)
         .new_doc("Chained Doc")
         .table_section("Info", [("Name", "Test")])
@@ -1091,9 +1091,9 @@ def test_stamp_method_chaining():
     assert result[:2] == b"PK"
 
 
-def test_stamp_sequential_calls():
+def test_stencil_sequential_calls():
     """Sequential (non-chained) workflow produces valid DOCX bytes."""
-    s = stencils.Stamp()
+    s = stencils.Stencil()
     s.set_theme(stencils.THEME_MODERN)
     s.new_doc("Sequential Doc")
     s.table_section("Details", [("Key", "Value")])
@@ -1103,9 +1103,9 @@ def test_stamp_sequential_calls():
     assert result[:2] == b"PK"
 
 
-def test_stamp_mixed_chain_and_sequential():
+def test_stencil_mixed_chain_and_sequential():
     """Mixed chaining + sequential with conditionals."""
-    s = stencils.Stamp().set_theme(stencils.THEME_CLASSIC).new_doc("Mixed Doc")
+    s = stencils.Stencil().set_theme(stencils.THEME_CLASSIC).new_doc("Mixed Doc")
 
     # Conditional content
     include_notes = True
@@ -1118,9 +1118,9 @@ def test_stamp_mixed_chain_and_sequential():
     assert result[:2] == b"PK"
 
 
-def test_stamp_doc_property():
+def test_stencil_doc_property():
     """The doc property provides access to the underlying Document."""
-    s = stencils.Stamp()
+    s = stencils.Stencil()
     s.new_doc("Test")
     # python-docx Document is a function; check the returned object has
     # the expected document attributes instead.
@@ -1129,23 +1129,23 @@ def test_stamp_doc_property():
     assert hasattr(s.doc, "styles")
 
 
-def test_stamp_set_theme_does_not_mutate_global():
-    """Setting theme on Stamp does not change the module-level global."""
+def test_stencil_set_theme_does_not_mutate_global():
+    """Setting theme on Stencil does not change the module-level global."""
     original = stencils._active_theme
-    s = stencils.Stamp()
+    s = stencils.Stencil()
     s.set_theme(stencils.THEME_CLASSIC)
     assert stencils._active_theme is original
 
 
-def test_stamp_instance_theme_used_for_content():
-    """Content methods use the Stamp's instance theme, not the global."""
+def test_stencil_instance_theme_used_for_content():
+    """Content methods use the Stencil's instance theme, not the global."""
     from io import BytesIO
     from docx import Document
 
     # CLASSIC footer color = RGBColor(0x6B, 0x6B, 0x6B)
     # MODERN footer color  = RGBColor(0x4D, 0x6E, 0x78)
-    # The module global is THEME_MODERN; Stamp uses THEME_CLASSIC.
-    s = stencils.Stamp()
+    # The module global is THEME_MODERN; Stencil uses THEME_CLASSIC.
+    s = stencils.Stencil()
     s.set_theme(stencils.THEME_CLASSIC)
     s.new_doc("Test")
     s.footer()
@@ -1165,13 +1165,13 @@ def test_stamp_instance_theme_used_for_content():
     assert footer_color != stencils.THEME_MODERN.color_footer
 
 
-def test_stamp_content_round_trip():
-    """Content added via Stamp methods is present in the output DOCX."""
+def test_stencil_content_round_trip():
+    """Content added via Stencil methods is present in the output DOCX."""
     from io import BytesIO
     from docx import Document
 
     result = (
-        stencils.Stamp()
+        stencils.Stencil()
         .set_theme(stencils.THEME_CLASSIC)
         .new_doc("Round Trip")
         .table_section("People", [("Name", "Alice"), ("Role", "Dev")])

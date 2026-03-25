@@ -8650,23 +8650,23 @@ import stencils
 
 This works identically in Pyodide and in standard Python (for local testing).
 
-## The \`Stamp\` Class (Recommended)
+## The \`Stencil\` Class (Recommended)
 
-\`Stamp\` is a fluent builder that wraps the internal \`Document\` and exposes every stencil function as a chainable method. Instead of passing \`doc\` to each function, you call methods on the \`Stamp\` instance — every method returns \`self\` except \`finalize()\`, which returns the finished DOCX bytes.
+\`Stencil\` is a fluent builder that wraps the internal \`Document\` and exposes every stencil function as a chainable method. Instead of passing \`doc\` to each function, you call methods on the \`Stencil\` instance — every method returns \`self\` except \`finalize()\`, which returns the finished DOCX bytes.
 
-Import \`Stamp\` and any constants you need directly:
+Import \`Stencil\` and any constants you need directly:
 
 \`\`\`python
-from stencils import Stamp, THEME_CLASSIC
+from stencils import Stencil, THEME_CLASSIC
 \`\`\`
 
 ### Sequential calls (recommended for templates with conditionals)
 
 \`\`\`python
-from stencils import Stamp, THEME_CLASSIC
+from stencils import Stencil, THEME_CLASSIC
 
 def generate_docx(data):
-    doc = Stamp()
+    doc = Stencil()
     doc.set_theme(THEME_CLASSIC)
     doc.new_doc("Employee Onboarding", f"Prepared for {data.get('name', '')}")
 
@@ -8687,10 +8687,10 @@ def generate_docx(data):
 ### Method chaining
 
 \`\`\`python
-from stencils import Stamp, THEME_CLASSIC
+from stencils import Stencil, THEME_CLASSIC
 
 def generate_docx(data):
-    return (Stamp()
+    return (Stencil()
         .set_theme(THEME_CLASSIC)
         .new_doc("My Document")
         .table_section("Info", [("Name", data.get("name", ""))])
@@ -8703,10 +8703,10 @@ def generate_docx(data):
 ### Mixed (chain setup, sequential for body)
 
 \`\`\`python
-from stencils import Stamp, THEME_CLASSIC
+from stencils import Stencil, THEME_CLASSIC
 
 def generate_docx(data):
-    doc = Stamp().set_theme(THEME_CLASSIC).new_doc("Report")
+    doc = Stencil().set_theme(THEME_CLASSIC).new_doc("Report")
 
     if data.get("body", "").strip():
         doc.longtext("Content", data["body"])
@@ -8715,11 +8715,11 @@ def generate_docx(data):
     return doc.footer().finalize()
 \`\`\`
 
-### Stamp methods
+### Stencil methods
 
 | Method | Returns | Description |
 |---|---|---|
-| \`Stamp()\` | instance | Create a new builder |
+| \`Stencil()\` | instance | Create a new builder |
 | \`.set_theme(theme)\` | \`self\` | Set theme for this instance (does not change the module global) |
 | \`.new_doc(title, subtitle, ...)\` | \`self\` | Create the internal document (auto-called if omitted) |
 | \`.coverpage(title, ...)\` | \`self\` | Add a cover page |
@@ -8740,12 +8740,12 @@ def generate_docx(data):
 
 ### Advanced: accessing the underlying Document
 
-For python-docx operations not covered by Stamp methods, use the \`.doc\` property:
+For python-docx operations not covered by Stencil methods, use the \`.doc\` property:
 
 \`\`\`python
 from docx.shared import Pt
 
-doc = Stamp().set_theme(THEME_CLASSIC).new_doc("Report")
+doc = Stencil().set_theme(THEME_CLASSIC).new_doc("Report")
 # Direct Document access for custom formatting
 d = doc.doc
 d.add_heading("Custom Section", level=2)
@@ -9219,10 +9219,10 @@ for item in skills.split("\\n"):
 ## Minimal Template
 
 \`\`\`python
-from stencils import Stamp, THEME_CLASSIC
+from stencils import Stencil, THEME_CLASSIC
 
 def generate_docx(data):
-    doc = Stamp()
+    doc = Stencil()
     doc.set_theme(THEME_CLASSIC)
     doc.new_doc("My Document", data.get("title", ""))
     doc.table_section("Details", [
