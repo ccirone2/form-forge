@@ -70,7 +70,24 @@ def test_dev_nav_exists(index_html: str) -> None:
 
 
 def test_dev_nav_has_four_tabs(index_html: str) -> None:
-    assert index_html.count('class="dev-nav-tab') == 4
+    # Sidebar has 4 tabs + mobile bottom nav has 4 tabs = 8 total
+    assert index_html.count('class="dev-nav-tab') == 8
+
+
+def test_sidebar_structure(index_html: str) -> None:
+    """Sidebar has expected structure: aside, nav, footer, toggle, status badge."""
+    assert 'id="appSidebar"' in index_html
+    assert 'class="app-sidebar"' in index_html
+    assert 'class="app-sidebar-nav"' in index_html
+    assert 'class="app-sidebar-footer"' in index_html
+    assert 'id="sidebarToggle"' in index_html
+    assert 'id="sidebarStatusBadge"' in index_html
+
+
+def test_sidebar_collapse_persists(index_html: str) -> None:
+    """toggleSidebar saves collapsed state to localStorage."""
+    assert "formforge-sidebar-collapsed" in index_html
+    assert "function toggleSidebar" in index_html
 
 
 def test_view_dev_schema_exists(index_html: str) -> None:
@@ -157,8 +174,8 @@ def test_no_default_repo_value(index_html: str) -> None:
 # --- CSS Sections ---
 
 
-def test_css_section_31_dev_mode_core(index_html: str) -> None:
-    assert "31. DEV MODE CORE" in index_html
+def test_css_section_31_sidebar_navigation(index_html: str) -> None:
+    assert "31. SIDEBAR NAVIGATION" in index_html
 
 
 def test_css_section_32_split_pane(index_html: str) -> None:
@@ -177,16 +194,14 @@ def test_css_section_36_reduced_motion(index_html: str) -> None:
     assert "36. REDUCED MOTION" in index_html
 
 
-def test_css_section_37_mobile_gate(index_html: str) -> None:
-    assert "37. DEV MODE MOBILE GATE" in index_html
+def test_css_section_37_sidebar_responsive(index_html: str) -> None:
+    assert "37. SIDEBAR RESPONSIVE" in index_html
 
 
-def test_mobile_gate_hides_dev_nav(index_html: str) -> None:
-    """Editor tabs (Schema/Template) must be hidden on narrow viewports."""
-    pattern = r'@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.dev-nav-tab\[data-tab="dev-schema"\]'
-    assert re.search(pattern, index_html), (
-        "Schema/Template tabs must be hidden at <=768px"
-    )
+def test_mobile_gate_hides_sidebar(index_html: str) -> None:
+    """Sidebar must be hidden on narrow viewports, replaced by mobile bottom nav."""
+    pattern = r"@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.app-sidebar\s*\{[\s\S]*?display:\s*none"
+    assert re.search(pattern, index_html), "Sidebar must be hidden at <=768px"
 
 
 # --- JavaScript Functions ---
@@ -893,13 +908,10 @@ def test_workspace_poll_auto_reloads_editor(index_html: str) -> None:
 # ============================================================
 
 
-def test_mobile_gate_hides_dev_nav_display_none(index_html: str) -> None:
-    """Schema/Template tabs are hidden at max-width 768px via CSS."""
-    # Individual editor tabs are hidden rather than the entire nav bar
-    pattern = r'@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.dev-nav-tab\[data-tab="dev-schema"\][\s\S]*?display:\s*none'
-    assert re.search(pattern, index_html), (
-        "Schema/Template tabs must be hidden at <=768px"
-    )
+def test_mobile_bottom_nav_exists(index_html: str) -> None:
+    """Mobile bottom nav provides all 4 tabs on narrow viewports."""
+    assert 'class="mobile-bottom-nav"' in index_html
+    assert 'id="mobileBottomNav"' in index_html
 
 
 # ============================================================
