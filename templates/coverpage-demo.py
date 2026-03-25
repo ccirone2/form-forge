@@ -24,8 +24,7 @@ def generate_docx(data: dict[str, str]) -> bytes:
     """
     stencils.set_theme(stencils.THEME_CLASSIC)
 
-    # Empty title — the cover page replaces the default heading
-    doc = stencils.new_doc("", "")
+    doc = stencils.new_doc()
 
     # ── Cover page ──────────────────────────────────────────────
     stencils.coverpage(
