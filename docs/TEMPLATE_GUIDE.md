@@ -176,10 +176,10 @@ Always pass a string — use `data.get('field_id', '')` to guarantee a string de
 
 ### `stencils.coverpage(doc, title, doc_type="", metadata=None, logo_b64="", logo_width=2.0, max_logo_height=1.0, bar_color=None, theme=None)`
 
-Adds a professional cover page to the document. Use with `new_doc("", "")` so the cover page is the first content. A page break is appended automatically. The layout adapts to content: the bar region is capped at ~2.5" total height and the vertical spacer adjusts so title + metadata always fit on page 1 (up to ~8 metadata rows on US Letter).
+Adds a professional cover page to the document. Use with `new_doc()` so the cover page is the first content. A page break is appended automatically. The layout adapts to content: the bar region is capped at ~2.5" total height and the vertical spacer adjusts so title + metadata always fit on page 1 (up to ~8 metadata rows on US Letter).
 
 ```python
-doc = stencils.new_doc("", "")
+doc = stencils.new_doc()
 stencils.coverpage(doc,
     title="Safety Inspection Report",
     doc_type="Technical Report",

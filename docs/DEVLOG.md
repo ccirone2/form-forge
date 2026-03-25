@@ -37,6 +37,12 @@ Implemented SVG image upload support and coverpage layout constraints:
 
 ---
 
+### 2026-03-25 — Make new_doc() title_text Optional (#227)
+
+Made `title_text` parameter in `stencils.new_doc()` default to `""` so callers that don't need a document heading (e.g., templates using `coverpage()`) can simply call `new_doc()` with no arguments instead of `new_doc("", "")`. Added unit test for zero-argument call. No breaking changes to existing callers.
+
+---
+
 ### 2026-03-25 — Auto-Preview and DOCX Rendering Fidelity (#223)
 
 Template preview now auto-runs when switching to the Template tab if a valid template and sample data are present (e.g., after launching demo or loading from a connected source). Preview skips re-running if content hasn't changed.

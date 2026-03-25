@@ -592,6 +592,16 @@ def test_new_doc_empty_title_no_heading():
     assert heading_paras == []
 
 
+def test_new_doc_no_arguments():
+    """new_doc() with no arguments returns a valid doc with no title heading."""
+    doc = stencils.new_doc()
+    assert doc is not None
+    heading_paras = [
+        p for p in doc.paragraphs if p.style.name == "Title" and p.text
+    ]
+    assert heading_paras == []
+
+
 # ---------------------------------------------------------------------------
 #  coverpage
 # ---------------------------------------------------------------------------

@@ -473,7 +473,7 @@ def _shade_cells(row: object, fill_hex: str) -> None:
 
 
 def new_doc(
-    title_text: str,
+    title_text: str = "",
     subtitle_text: str = "",
     font_name: str | None = None,
     font_size: int | None = None,
@@ -487,7 +487,7 @@ def new_doc(
     theme.
 
     Args:
-        title_text: Main heading text.
+        title_text: Main heading text. Defaults to ``""`` (no heading rendered).
         subtitle_text: Optional subtitle displayed below the title.
         font_name: Override the base body font (default: theme's font_body).
         font_size: Override the base font size in points (default: theme's
@@ -541,8 +541,8 @@ def coverpage(
     """
     Add a professional cover page with logo bar, title, type, and metadata.
 
-    Call on a document created with ``new_doc("", "")`` so the cover page is
-    the first content.  A page break is appended automatically so body content
+    Call on a document created with ``new_doc()`` so the cover page is the
+    first content.  A page break is appended automatically so body content
     starts on page 2.
 
     The layout adapts to content: the geometric bar is capped at ~2.5" total
