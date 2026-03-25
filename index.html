@@ -2617,7 +2617,7 @@
 <div class="app-main">
 
 <!-- ==================== SETUP VIEW ==================== -->
-<main class="view active" id="view-setup" role="tabpanel" aria-labelledby="tab-forms">
+<main class="view active" id="view-setup" role="tabpanel" aria-labelledby="tab-forms mob-tab-forms" tabindex="-1">
   <div class="main-container">
     <div class="setup-hero">
       <h2>Forms that build documents</h2>
@@ -2710,7 +2710,7 @@
 </main>
 
 <!-- ==================== DEV: SCHEMA BUILDER VIEW ==================== -->
-<main class="view" id="view-dev-schema" role="tabpanel" aria-labelledby="tab-dev-schema">
+<main class="view" id="view-dev-schema" role="tabpanel" aria-labelledby="tab-dev-schema mob-tab-dev-schema">
   <div class="dev-container">
     <div class="dev-toolbar">
       <div class="dev-toolbar-left">
@@ -2805,7 +2805,7 @@
 </main>
 
 <!-- ==================== DEV: TEMPLATE BUILDER VIEW ==================== -->
-<main class="view" id="view-dev-template" role="tabpanel" aria-labelledby="tab-dev-template">
+<main class="view" id="view-dev-template" role="tabpanel" aria-labelledby="tab-dev-template mob-tab-dev-template">
   <div class="dev-container">
     <div class="dev-toolbar">
       <div class="dev-toolbar-left">
@@ -2932,7 +2932,7 @@
 </div>
 
 <!-- ==================== DEV: DOCS VIEW ==================== -->
-<main class="view" id="view-dev-docs" role="tabpanel" aria-labelledby="tab-dev-docs">
+<main class="view" id="view-dev-docs" role="tabpanel" aria-labelledby="tab-dev-docs mob-tab-dev-docs">
   <div class="main-container">
     <div class="docs-section" id="docsSection">
 
@@ -2998,19 +2998,19 @@
 
 <!-- Mobile Bottom Navigation (visible only at <=768px) -->
 <nav class="mobile-bottom-nav" id="mobileBottomNav" role="tablist" aria-label="Navigation">
-  <button type="button" class="dev-nav-tab active" data-tab="forms" role="tab" aria-selected="true" aria-controls="view-setup" onclick="showTab('forms')">
+  <button type="button" class="dev-nav-tab active" id="mob-tab-forms" data-tab="forms" role="tab" aria-selected="true" aria-controls="view-setup" onclick="showTab('forms')">
     <svg width="16" height="16" aria-hidden="true"><use href="#icon-file-text"/></svg>
     <span class="nav-label">Forms</span>
   </button>
-  <button type="button" class="dev-nav-tab" data-tab="dev-schema" role="tab" aria-selected="false" aria-controls="view-dev-schema" onclick="showTab('dev-schema')">
+  <button type="button" class="dev-nav-tab" id="mob-tab-dev-schema" data-tab="dev-schema" role="tab" aria-selected="false" aria-controls="view-dev-schema" onclick="showTab('dev-schema')">
     <svg width="16" height="16" aria-hidden="true"><use href="#icon-file-upload"/></svg>
     <span class="nav-label">Schema</span>
   </button>
-  <button type="button" class="dev-nav-tab" data-tab="dev-template" role="tab" aria-selected="false" aria-controls="view-dev-template" onclick="showTab('dev-template')">
+  <button type="button" class="dev-nav-tab" id="mob-tab-dev-template" data-tab="dev-template" role="tab" aria-selected="false" aria-controls="view-dev-template" onclick="showTab('dev-template')">
     <svg width="16" height="16" aria-hidden="true"><use href="#icon-code"/></svg>
     <span class="nav-label">Template</span>
   </button>
-  <button type="button" class="dev-nav-tab" data-tab="dev-docs" role="tab" aria-selected="false" aria-controls="view-dev-docs" onclick="showTab('dev-docs')">
+  <button type="button" class="dev-nav-tab" id="mob-tab-dev-docs" data-tab="dev-docs" role="tab" aria-selected="false" aria-controls="view-dev-docs" onclick="showTab('dev-docs')">
     <svg width="16" height="16" aria-hidden="true"><use href="#icon-book"/></svg>
     <span class="nav-label">Docs</span>
   </button>
@@ -13618,8 +13618,9 @@ function hideConnectDialog() {
 
 function connectDialogKeyHandler(e) {
   if (e.key === 'Escape') { hideConnectDialog(); e.stopPropagation(); return; }
-  // Arrow key navigation between connect dialog tabs
-  if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && document.activeElement?.getAttribute('role') === 'tab') {
+  // Arrow key navigation between connect dialog tabs (scoped to dialog)
+  if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && document.activeElement?.getAttribute('role') === 'tab'
+      && document.querySelector('.connect-dialog')?.contains(document.activeElement)) {
     e.preventDefault();
     const tabs = [document.getElementById('connectTabBtnGithub'), document.getElementById('connectTabBtnLocal')];
     const idx = tabs.indexOf(document.activeElement);
@@ -13817,6 +13818,27 @@ document.addEventListener('DOMContentLoaded', () => {
       if (btn) { btn.setAttribute('aria-label', 'Expand sidebar'); btn.setAttribute('title', 'Expand sidebar'); }
     }
   }
+
+  // Arrow-key navigation for main nav tablists (ARIA APG tablist pattern)
+  const NAV_TAB_ORDER = ['forms', 'dev-schema', 'dev-template', 'dev-docs'];
+  function handleNavTabKeydown(e) {
+    const btn = e.target.closest('.dev-nav-tab');
+    if (!btn || !btn.dataset.tab) return;
+    // Sidebar: vertical — ArrowUp/ArrowDown; Mobile: horizontal — ArrowLeft/ArrowRight
+    const isVertical = !!btn.closest('.app-sidebar-nav');
+    const prev = isVertical ? 'ArrowUp' : 'ArrowLeft';
+    const next = isVertical ? 'ArrowDown' : 'ArrowRight';
+    if (e.key !== prev && e.key !== next) return;
+    e.preventDefault();
+    const idx = NAV_TAB_ORDER.indexOf(btn.dataset.tab);
+    if (idx < 0) return;
+    const nextIdx = e.key === next ? (idx + 1) % NAV_TAB_ORDER.length : (idx - 1 + NAV_TAB_ORDER.length) % NAV_TAB_ORDER.length;
+    const container = btn.closest('[role="tablist"]');
+    const nextBtn = container?.querySelector(`.dev-nav-tab[data-tab="${NAV_TAB_ORDER[nextIdx]}"]`);
+    if (nextBtn) { nextBtn.focus(); nextBtn.click(); }
+  }
+  document.getElementById('mainNav')?.addEventListener('keydown', handleNavTabKeydown);
+  document.getElementById('mobileBottomNav')?.addEventListener('keydown', handleNavTabKeydown);
 
   // Restore last active tab
   const lastTab = localStorage.getItem('formforge-active-tab');
