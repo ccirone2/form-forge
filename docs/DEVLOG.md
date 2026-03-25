@@ -41,6 +41,19 @@ Redesigned Schema and Template editor context menus to be cursor-aware, flat, an
 
 ---
 
+### 2026-03-25 — Load Demo Content into Editors (#214)
+
+When users click "Try Demo" and then switch to Schema or Template tabs, the editors now show the actual demo schema and template (previously showed blank starters). Key changes:
+
+- `launchDemo()` pre-loads `DEMO_SCHEMA`, `DEMO_TEMPLATE`, and sample data into editor variables
+- `initSchemaEditor()` / `initTemplateEditor()` fall back to demo content when `contentSourceType === 'demo'`
+- Source toolbar shows "demo · Employee Onboarding" label in demo mode
+- "Reset Demo" buttons appear in each editor toolbar when content has been modified, restoring originals
+- Reset buttons auto-hide when not in demo mode or when content matches original
+- Added 10 tests covering editor loading, reset functions, button visibility, and toolbar demo label
+
+---
+
 ### 2026-03-25 — Tokenize Sidebar CSS (#212)
 
 Replaced ~20 hard-coded pixel values in the sidebar CSS with CSS custom properties. Added new `:root` token categories:

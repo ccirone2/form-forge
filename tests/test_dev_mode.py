@@ -2119,6 +2119,80 @@ def test_demo_sets_content_source_type(index_html: str) -> None:
     assert "contentSourceType = 'demo'" in match.group(1)
 
 
+def test_demo_loads_editors(index_html: str) -> None:
+    """launchDemo should pre-load DEMO_SCHEMA and DEMO_TEMPLATE into editor variables."""
+    match = re.search(
+        r"async function launchDemo\(\)([\s\S]*?)^(?:async )?function ",
+        index_html,
+        re.M,
+    )
+    assert match
+    body = match.group(1)
+    assert "DEMO_SCHEMA" in body
+    assert "DEMO_TEMPLATE" in body
+    assert "devSchemaText" in body
+    assert "devTemplateText" in body
+    assert "devSampleDataText" in body
+    assert "devSaveEditorState" in body
+
+
+def test_demo_reset_schema_button_exists(index_html: str) -> None:
+    """Schema toolbar has a demo reset button."""
+    assert 'id="schemaDemoResetBtn"' in index_html
+    assert "devResetDemoSchema()" in index_html
+
+
+def test_demo_reset_template_button_exists(index_html: str) -> None:
+    """Template toolbar has a demo reset button."""
+    assert 'id="templateDemoResetBtn"' in index_html
+    assert "devResetDemoTemplate()" in index_html
+
+
+def test_demo_reset_schema_function(index_html: str) -> None:
+    """devResetDemoSchema restores DEMO_SCHEMA into editor."""
+    body = _extract_func(index_html, "devResetDemoSchema")
+    assert "DEMO_SCHEMA" in body
+    assert "devSchemaText" in body
+    assert "schemaJar" in body
+
+
+def test_demo_reset_template_function(index_html: str) -> None:
+    """devResetDemoTemplate restores DEMO_TEMPLATE into editor."""
+    body = _extract_func(index_html, "devResetDemoTemplate")
+    assert "DEMO_TEMPLATE" in body
+    assert "devTemplateText" in body
+    assert "templateJar" in body
+
+
+def test_demo_reset_buttons_visibility_function(index_html: str) -> None:
+    """devUpdateDemoResetButtons shows buttons only in demo mode with edits."""
+    body = _extract_func(index_html, "devUpdateDemoResetButtons")
+    assert "contentSourceType" in body
+    assert "schemaDemoResetBtn" in body
+    assert "templateDemoResetBtn" in body
+
+
+def test_init_schema_editor_demo_fallback(index_html: str) -> None:
+    """initSchemaEditor falls back to DEMO_SCHEMA when contentSourceType is demo."""
+    body = _extract_func(index_html, "initSchemaEditor")
+    assert "DEMO_SCHEMA" in body
+    assert "contentSourceType" in body
+
+
+def test_init_template_editor_demo_fallback(index_html: str) -> None:
+    """initTemplateEditor falls back to DEMO_TEMPLATE when contentSourceType is demo."""
+    body = _extract_func(index_html, "initTemplateEditor")
+    assert "DEMO_TEMPLATE" in body
+    assert "contentSourceType" in body
+
+
+def test_source_toolbar_shows_demo_label(index_html: str) -> None:
+    """updateSourceToolbar shows demo context label when contentSourceType is demo."""
+    body = _extract_func(index_html, "updateSourceToolbar")
+    assert "demo" in body.lower()
+    assert "isDemo" in body
+
+
 def test_picker_uses_abort_controller(index_html: str) -> None:
     """renderPicker should use AbortController to prevent listener accumulation."""
     match = re.search(
@@ -2734,6 +2808,29 @@ def test_demo_button_restored_on_disconnect(index_html: str) -> None:
     assert "demoBtnAction" in body
 
 
+def test_disconnect_clears_demo_editor_state(index_html: str) -> None:
+    """disconnectSource clears editor content when leaving demo mode."""
+    body = _extract_func(index_html, "disconnectSource")
+    assert "wasType === 'demo'" in body
+    assert "devSchemaText" in body
+    assert "devTemplateText" in body
+    assert "devSampleDataText" in body
+    assert "formforge-dev-schema" in body
+
+
+def test_demo_schema_json_constant_exists(index_html: str) -> None:
+    """DEMO_SCHEMA_JSON is pre-computed to avoid repeated serialization."""
+    assert (
+        "const DEMO_SCHEMA_JSON = JSON.stringify(DEMO_SCHEMA, null, 2);" in index_html
+    )
+
+
+def test_source_toolbar_demo_label_uses_title(index_html: str) -> None:
+    """Demo source label uses DEMO_SCHEMA.title instead of a hardcoded string."""
+    body = _extract_func(index_html, "updateSourceToolbar")
+    assert "DEMO_SCHEMA.title" in body
+
+
 def test_empty_state_hidden_when_connected(index_html: str) -> None:
     """renderPicker hides the empty state card."""
     body = _extract_func(index_html, "renderPicker")
@@ -2847,6 +2944,8 @@ def test_build_schema_ai_context_function(index_html: str) -> None:
     assert "devSchemaText" in body
     assert "contentSourceType" in body
     assert "workspaceFiles" in body
+    # WIP section excludes demo content
+    assert "DEMO_SCHEMA_JSON" in body
 
 
 def test_build_template_ai_context_function(index_html: str) -> None:
@@ -2860,6 +2959,8 @@ def test_build_template_ai_context_function(index_html: str) -> None:
     assert "devParsedSchema" in body
     assert "devSampleDataText" in body
     assert "contentSourceType" in body
+    # WIP section excludes demo content
+    assert "DEMO_TEMPLATE.trim()" in body
 
 
 def test_copy_schema_ai_context_function(index_html: str) -> None:

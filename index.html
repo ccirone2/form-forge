@@ -2764,6 +2764,10 @@
           <svg width="12" height="12"><use href="#icon-book"/></svg>
           Reference
         </button>
+        <button type="button" class="btn-secondary btn-sm demo-reset-btn" id="schemaDemoResetBtn" onclick="devResetDemoSchema()" title="Reset to original demo schema" style="display:none">
+          <svg width="12" height="12"><use href="#icon-refresh"/></svg>
+          Reset Demo
+        </button>
       </div>
     </div>
     <div class="dev-source-toolbar" id="schemaSourceToolbar" style="display:none">
@@ -2861,6 +2865,10 @@
         <button type="button" class="btn-primary btn-sm" onclick="devRunPreview()" title="Preview DOCX (Shift+Enter / Ctrl+Enter)">
           <svg width="12" height="12"><use href="#icon-play"/></svg>
           Preview DOCX
+        </button>
+        <button type="button" class="btn-secondary btn-sm demo-reset-btn" id="templateDemoResetBtn" onclick="devResetDemoTemplate()" title="Reset to original demo template" style="display:none">
+          <svg width="12" height="12"><use href="#icon-refresh"/></svg>
+          Reset Demo
         </button>
       </div>
     </div>
@@ -3607,7 +3615,7 @@ function getDocRawContent(panelId) {
     exampleSchema: () => {
       if (typeof DEMO_SCHEMA === 'undefined' || typeof DEMO_TEMPLATE === 'undefined') return '';
       const parts = [];
-      parts.push('# Example Schema\n\n```json\n' + JSON.stringify(DEMO_SCHEMA, null, 2) + '\n```');
+      parts.push('# Example Schema\n\n```json\n' + DEMO_SCHEMA_JSON + '\n```');
       parts.push('\n\n# Example Template\n\n```python\n' + DEMO_TEMPLATE.trim() + '\n```');
       return parts.join('');
     }
@@ -3810,7 +3818,7 @@ function friendlyError(err) {
 }
 
 function buildFallbackExamples() {
-  const schema = JSON.stringify(DEMO_SCHEMA, null, 2);
+  const schema = DEMO_SCHEMA_JSON;
   return `<p>These are the embedded demo files. Save them as <code>.json</code> and <code>.py</code> to use as starting points.</p>
     <h4>onboarding.json</h4>
     <pre class="docs-code">${escapeHtml(schema)}</pre>
@@ -4004,6 +4012,18 @@ async function launchDemo() {
     log('Demo template loaded into Pyodide', 'success');
 
     document.getElementById('exportBtn').disabled = false;
+
+    // Pre-load demo content into editors so Schema/Template tabs show it
+    devSchemaText = DEMO_SCHEMA_JSON;
+    devTemplateText = DEMO_TEMPLATE;
+    devSampleDataText = JSON.stringify(DEMO_SCHEMA.sampleData || {}, null, 2);
+    currentSchemaFile = null;
+    currentTemplateFile = null;
+    if (schemaJar) schemaJar.updateCode(devSchemaText);
+    if (templateJar) templateJar.updateCode(devTemplateText);
+    if (sampleJar) sampleJar.updateCode(devSampleDataText);
+    devSaveEditorState();
+
     showView('form');
     postLaunchHook();
   } catch (err) {
@@ -8081,6 +8101,8 @@ const DEMO_SCHEMA = {
   ]
 };
 
+const DEMO_SCHEMA_JSON = JSON.stringify(DEMO_SCHEMA, null, 2);
+
 const DEMO_TEMPLATE = `
 import stencils
 
@@ -9961,10 +9983,14 @@ function updateSourceToolbar() {
     const editorContent = fileType === 'schema' ? devSchemaText : devTemplateText;
     const hasEditorContent = editorContent && editorContent.trim();
 
-    // Show toolbar when a source is connected (GitHub or local folder) or a file is loaded
-    if (f || isGh || isLocal) {
+    const isDemo = contentSourceType === 'demo';
+
+    // Show toolbar when a source is connected (GitHub, local folder, or demo)
+    if (f || isGh || isLocal || isDemo) {
       toolbar.style.display = 'flex';
-      document.getElementById(prefix + 'SourceFile').textContent = f ? (f.ghPath || f.name) : (hasEditorContent ? 'new file (unsaved)' : '');
+      document.getElementById(prefix + 'SourceFile').textContent = isDemo
+        ? `demo \u00b7 ${DEMO_SCHEMA.title}`
+        : (f ? (f.ghPath || f.name) : (hasEditorContent ? 'new file (unsaved)' : ''));
       document.getElementById(prefix + 'SourceBranch').textContent = isGh ? `@ ${ghBranch}` : '';
       document.getElementById(prefix + 'BranchSelect').style.display = isGh ? '' : 'none';
       document.getElementById(prefix + 'NewBranchBtn').style.display = isGh ? 'inline-flex' : 'none';
@@ -9978,6 +10004,7 @@ function updateSourceToolbar() {
 
   configureToolbar(schemaToolbar, 'schema', 'schema');
   configureToolbar(tmplToolbar, 'template', 'template');
+  devUpdateDemoResetButtons();
 }
 
 // ============================================================
@@ -10393,7 +10420,9 @@ function initSchemaEditor() {
   if (!el || typeof CodeJar === 'undefined') return;
 
   if (!devSchemaText) {
-    devSchemaText = JSON.stringify(DEV_STARTER_SCHEMA, null, 2);
+    devSchemaText = contentSourceType === 'demo'
+      ? DEMO_SCHEMA_JSON
+      : JSON.stringify(DEV_STARTER_SCHEMA, null, 2);
   }
   el.textContent = devSchemaText;
 
@@ -10414,6 +10443,7 @@ function initSchemaEditor() {
     clearTimeout(devPreviewDebounce);
     devPreviewDebounce = setTimeout(devUpdateSchemaPreview, 300);
     devSaveEditorState();
+    devUpdateDemoResetButtons();
     if (contentSourceType === 'github' && currentSchemaFile) {
       devGhTrackModification('schema', currentSchemaFile.index);
     }
@@ -10886,6 +10916,39 @@ function devNewSchema() {
   updateSourceToolbar();
   devUpdateSchemaPreview();
   showToast('New schema created');
+}
+
+function devResetDemoSchema() {
+  devSchemaText = DEMO_SCHEMA_JSON;
+  // updateCode triggers onUpdate which handles save/preview/reset-buttons,
+  // but explicit calls are needed as fallback when jar isn't initialized
+  if (schemaJar) { schemaJar.updateCode(devSchemaText); }
+  else { devSaveEditorState(); devUpdateSchemaPreview(); devUpdateDemoResetButtons(); }
+  showToast('Schema reset to demo original');
+}
+
+function devResetDemoTemplate() {
+  devTemplateText = DEMO_TEMPLATE;
+  devSampleDataText = JSON.stringify(DEMO_SCHEMA.sampleData || {}, null, 2);
+  if (templateJar) { templateJar.updateCode(devTemplateText); }
+  else { devSaveEditorState(); devUpdateTemplateValidation(); devUpdateDemoResetButtons(); }
+  if (sampleJar) sampleJar.updateCode(devSampleDataText);
+  showToast('Template reset to demo original');
+}
+
+function devUpdateDemoResetButtons() {
+  const schemaBtn = document.getElementById('schemaDemoResetBtn');
+  const templateBtn = document.getElementById('templateDemoResetBtn');
+  if (!schemaBtn || !templateBtn) return;
+
+  if (contentSourceType !== 'demo') {
+    schemaBtn.style.display = 'none';
+    templateBtn.style.display = 'none';
+    return;
+  }
+
+  schemaBtn.style.display = devSchemaText !== DEMO_SCHEMA_JSON ? 'inline-flex' : 'none';
+  templateBtn.style.display = devTemplateText !== DEMO_TEMPLATE ? 'inline-flex' : 'none';
 }
 
 function devLoadSchemaFile(event) {
@@ -11744,12 +11807,14 @@ function buildSchemaAIContext() {
   lines.push('## Complete Example Schema');
   lines.push('');
   lines.push('```json');
-  lines.push(JSON.stringify(DEMO_SCHEMA, null, 2));
+  lines.push(DEMO_SCHEMA_JSON);
   lines.push('```');
   lines.push('');
 
-  // Current WIP
-  if (devSchemaText && devSchemaText.trim() && devSchemaText.trim() !== JSON.stringify(DEV_STARTER_SCHEMA, null, 2)) {
+  // Current WIP (exclude starter and demo content)
+  if (devSchemaText && devSchemaText.trim()
+      && devSchemaText.trim() !== JSON.stringify(DEV_STARTER_SCHEMA, null, 2)
+      && devSchemaText.trim() !== DEMO_SCHEMA_JSON) {
     lines.push('## Current Work in Progress');
     lines.push('');
     lines.push('The user is currently editing this schema:');
@@ -12367,8 +12432,10 @@ function buildTemplateAIContext() {
     lines.push('');
   }
 
-  // Current WIP
-  if (devTemplateText && devTemplateText.trim() && devTemplateText.trim() !== DEV_STARTER_TEMPLATE.trim()) {
+  // Current WIP (exclude starter and demo content)
+  if (devTemplateText && devTemplateText.trim()
+      && devTemplateText.trim() !== DEV_STARTER_TEMPLATE.trim()
+      && devTemplateText.trim() !== DEMO_TEMPLATE.trim()) {
     lines.push('## Current Work in Progress');
     lines.push('');
     lines.push('The user is currently editing this template:');
@@ -12415,7 +12482,9 @@ function initTemplateEditor() {
   if (!el || typeof CodeJar === 'undefined') return;
 
   if (!devTemplateText) {
-    devTemplateText = DEV_STARTER_TEMPLATE;
+    devTemplateText = contentSourceType === 'demo'
+      ? DEMO_TEMPLATE
+      : DEV_STARTER_TEMPLATE;
   }
   el.textContent = devTemplateText;
 
@@ -12434,6 +12503,7 @@ function initTemplateEditor() {
     devSaveEditorState();
     clearTimeout(devTemplateValidDebounce);
     devTemplateValidDebounce = setTimeout(devUpdateTemplateValidation, 300);
+    devUpdateDemoResetButtons();
     if (contentSourceType === 'github' && currentTemplateFile) {
       devGhTrackModification('template', currentTemplateFile.index);
     }
@@ -13862,6 +13932,19 @@ function disconnectSource() {
   workspaceHandle = null;
   if (devWorkspacePoller) { clearInterval(devWorkspacePoller); devWorkspacePoller = null; }
   baseModuleLoaded = false;
+
+  // Clear demo editor content so it doesn't persist into the next session
+  if (wasType === 'demo') {
+    devSchemaText = '';
+    devTemplateText = '';
+    devSampleDataText = '{}';
+    if (schemaJar) schemaJar.updateCode('');
+    if (templateJar) templateJar.updateCode('');
+    if (sampleJar) sampleJar.updateCode('{}');
+    localStorage.removeItem('formforge-dev-schema');
+    localStorage.removeItem('formforge-dev-template');
+    localStorage.removeItem('formforge-dev-sampledata');
+  }
 
   // Clear stored connection info
   localStorage.removeItem('formforge-dev-github-repo');
