@@ -8597,7 +8597,7 @@ The function receives a flat dictionary where keys are field \`id\` values from 
 
 ## The \`stencils\` Module
 
-FormForge provides a shared helper module at \`templates/stencils.py\`. It is loaded into Pyodide's virtual filesystem once per session (before any template runs) via \`loadBaseModule()\` in \`index.html\`. FormForge loads \`stencils.py\` from the connected repo's \`templates/stencils.py\` first, falling back to the canonical FormForge copy. If your repo ships a customized \`stencils.py\`, place it at \`templates/stencils.py\` and it will take precedence. All templates should import it:
+FormForge provides a shared helper module at \`templates/stencils.py\`. It is loaded into Pyodide's virtual filesystem once per session (before any template runs) via \`loadBaseModule()\` in \`index.html\`. When connected to a GitHub repo, FormForge loads \`stencils.py\` from the repo's \`templates/stencils.py\` first, falling back to the canonical FormForge copy. If your GitHub repo ships a customized \`stencils.py\`, place it at \`templates/stencils.py\` and it will take precedence. When using a local folder or the demo, FormForge always loads the canonical copy from the FormForge repository. All templates should import it:
 
 \`\`\`python
 import stencils
@@ -8632,7 +8632,7 @@ stencils.table_section(doc, "Personal Information", [
 \`\`\`
 
 - \`rows\` is a list of \`(label, value)\` tuples.
-- Empty/falsy values display as \`—\` (em dash).
+- Empty string and \`None\` values display as \`—\` (em dash). Other falsy values like \`0\` are shown as-is via \`str()\`.
 - Borderless table, centered. Labels use the heading font (semibold).
 - Both columns use the theme's \`size_table\` (default 10pt).
 
