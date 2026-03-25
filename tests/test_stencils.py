@@ -588,9 +588,7 @@ def test_new_doc_empty_title_no_heading():
     """new_doc('', '') should produce a doc with no heading element."""
     doc = stencils.new_doc("", "")
     # Should have no heading paragraphs (level-0 heading is style 'Title')
-    heading_paras = [
-        p for p in doc.paragraphs if p.style.name == "Title" and p.text
-    ]
+    heading_paras = [p for p in doc.paragraphs if p.style.name == "Title" and p.text]
     assert heading_paras == []
 
 
@@ -624,10 +622,7 @@ def test_coverpage_full():
     assert any("Technical Report" in t for t in texts)
     # Metadata in tables
     all_text = " ".join(
-        cell.text
-        for tbl in doc.tables
-        for row in tbl.rows
-        for cell in row.cells
+        cell.text for tbl in doc.tables for row in tbl.rows for cell in row.cells
     )
     assert "Date" in all_text
     assert "2026-03-25" in all_text
@@ -642,7 +637,7 @@ def test_coverpage_no_logo():
     # The bar table (first table) should contain the placeholder
     bar_table = doc.tables[0]
     cell_text = bar_table.rows[0].cells[0].text
-    assert "\u25A0" in cell_text
+    assert "\u25a0" in cell_text
 
 
 def _make_tiny_png_data_uri() -> str:
@@ -676,7 +671,7 @@ def test_coverpage_valid_logo():
     bar_table = doc.tables[0]
     cell_text = bar_table.rows[0].cells[0].text
     # Should NOT contain placeholder squares
-    assert "\u25A0" not in cell_text
+    assert "\u25a0" not in cell_text
 
 
 def test_coverpage_invalid_logo_falls_back():
@@ -686,7 +681,7 @@ def test_coverpage_invalid_logo_falls_back():
         doc, title="Bad Logo", logo_b64="data:image/png;base64,NOT_VALID!!!"
     )
     bar_table = doc.tables[0]
-    assert "\u25A0" in bar_table.rows[0].cells[0].text
+    assert "\u25a0" in bar_table.rows[0].cells[0].text
 
 
 def test_coverpage_metadata_table():
@@ -757,3 +752,153 @@ def test_coverpage_page_break():
     # The last paragraph before any body content should contain a page break
     body_xml = doc.element.body.xml
     assert 'w:type="page"' in body_xml
+
+
+def _make_png_data_uri(width: int = 1, height: int = 1) -> str:
+    """Create a minimal PNG of the given pixel dimensions as a data URI."""
+    import base64 as b64mod
+    import struct
+    import zlib
+
+    def _chunk(chunk_type, data):
+        c = chunk_type + data
+        crc = struct.pack(">I", zlib.crc32(c) & 0xFFFFFFFF)
+        return struct.pack(">I", len(data)) + c + crc
+
+    sig = b"\x89PNG\r\n\x1a\n"
+    ihdr = _chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+    # Each row: filter byte (0) + 3 bytes per pixel (RGB white)
+    row = b"\x00" + b"\xff\xff\xff" * width
+    raw = zlib.compress(row * height)
+    idat = _chunk(b"IDAT", raw)
+    iend = _chunk(b"IEND", b"")
+    png_bytes = sig + ihdr + idat + iend
+    encoded = b64mod.b64encode(png_bytes).decode()
+    return f"data:image/png;base64,{encoded}"
+
+
+# ── coverpage: max_logo_height ──────────────────────────────────────
+
+
+def test_coverpage_max_logo_height_scales_down():
+    """A tall logo should be scaled down to max_logo_height."""
+    # Create a tall image (100x400 pixels → 4:1 aspect ratio)
+    tall_png = _make_png_data_uri(100, 400)
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(
+        doc,
+        title="Height Cap",
+        logo_b64=tall_png,
+        logo_width=2.0,
+        max_logo_height=1.0,
+    )
+    # Logo was embedded (not placeholder)
+    bar_table = doc.tables[0]
+    assert "\u25a0" not in bar_table.rows[0].cells[0].text
+    # The inline shape in the cell should respect max_logo_height
+    cell = bar_table.rows[0].cells[0]
+    run = cell.paragraphs[0].runs[0]
+    inline_shapes = run._r.findall(
+        ".//{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}inline"
+    )
+    assert len(inline_shapes) == 1
+    extent = inline_shapes[0].find(
+        "{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}extent"
+    )
+    if extent is None:
+        extent = inline_shapes[0].find(
+            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}extent"
+        )
+    # Extent cy is in EMU (914400 per inch). 1.0" = 914400 EMU
+    cy = int(extent.get("cy"))
+    assert cy <= 914400 + 1000  # allow tiny rounding tolerance
+
+
+def test_coverpage_max_logo_height_no_upscale():
+    """A small logo should not be enlarged to max_logo_height."""
+    small_png = _make_tiny_png_data_uri()  # 1x1 pixel
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(
+        doc,
+        title="No Upscale",
+        logo_b64=small_png,
+        logo_width=2.0,
+        max_logo_height=5.0,
+    )
+    bar_table = doc.tables[0]
+    assert "\u25a0" not in bar_table.rows[0].cells[0].text
+
+
+def test_coverpage_adaptive_spacer_with_metadata():
+    """Spacer should shrink when enough metadata rows consume vertical space."""
+    doc_few = stencils.new_doc("", "")
+    stencils.coverpage(doc_few, title="Few", metadata=[("A", "1")])
+
+    doc_many = stencils.new_doc("", "")
+    stencils.coverpage(
+        doc_many,
+        title="Many",
+        metadata=[(f"K{i}", f"V{i}") for i in range(14)],
+    )
+
+    # Find the spacer paragraph (first paragraph after the bar table)
+    # It's the paragraph with a non-zero space_before
+    def _get_spacer_pt(doc):
+        for p in doc.paragraphs:
+            if p.paragraph_format.space_before and p.text == "":
+                return p.paragraph_format.space_before
+        return None
+
+    few_spacer = _get_spacer_pt(doc_few)
+    many_spacer = _get_spacer_pt(doc_many)
+    assert few_spacer is not None and many_spacer is not None
+    # More metadata rows should produce a smaller spacer
+    assert many_spacer < few_spacer
+
+
+def test_coverpage_bar_padding_bounded():
+    """Bar cell margins should be 0.3" (bounded), not the old 0.5"."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(doc, title="Padding Test")
+    bar_table = doc.tables[0]
+    tblPr = bar_table._tbl.tblPr
+    cell_mar = tblPr.find(qn("w:tblCellMar"))
+    assert cell_mar is not None
+    top_el = cell_mar.find(qn("w:top"))
+    # 0.3" in twips = 432
+    assert int(top_el.get(qn("w:w"))) == 432
+
+
+# ── image: max_height ───────────────────────────────────────────────
+
+
+def test_image_max_height_scales_down():
+    """image() with max_height should scale down a tall image."""
+    tall_png = _make_png_data_uri(100, 400)
+    doc = stencils.new_doc("Test")
+    stencils.image(doc, tall_png, width_inches=3.0, max_height=1.0)
+    # Should have an inline shape, not placeholder text
+    shapes = doc.inline_shapes
+    assert len(shapes) >= 1
+    # Height should be capped at ~1.0" (914400 EMU)
+    assert shapes[0].height <= 914400 + 1000
+
+
+def test_image_max_height_no_cap_when_small():
+    """image() with max_height should not affect images already under the cap."""
+    small_png = _make_tiny_png_data_uri()  # 1x1 pixel
+    doc = stencils.new_doc("Test")
+    stencils.image(doc, small_png, width_inches=3.0, max_height=5.0)
+    shapes = doc.inline_shapes
+    assert len(shapes) >= 1
+    # Height should be well under 5" (4572000 EMU)
+    assert shapes[0].height < 4572000
+
+
+def test_image_without_max_height_unchanged():
+    """image() without max_height should behave as before."""
+    small_png = _make_tiny_png_data_uri()
+    doc = stencils.new_doc("Test")
+    stencils.image(doc, small_png, width_inches=3.0)
+    shapes = doc.inline_shapes
+    assert len(shapes) >= 1

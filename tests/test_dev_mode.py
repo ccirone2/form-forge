@@ -3255,3 +3255,57 @@ class TestHelpSidebarJS:
             assert f"name: '{method}'" in body, (
                 f"Method '{method}' missing from TEMPLATE_HELP_DATA"
             )
+
+
+# ── SVG → PNG rasterization ─────────────────────────────────────────
+
+
+class TestSvgRasterization:
+    """Verify SVG file input triggers rasterisation path in createFileField."""
+
+    def test_svg_detected_as_separate_branch(self, index_html: str) -> None:
+        """SVG files should hit a dedicated conversion branch, not the raster or fallback path."""
+        assert "const isSvg = file.type === 'image/svg+xml'" in index_html
+
+    def test_svg_branch_converts_to_png(self, index_html: str) -> None:
+        """SVG branch should output image/png via canvas.toDataURL."""
+        # Find the SVG branch code block
+        svg_idx = index_html.index("if (isSvg)")
+        # The next else-if starts the raster branch
+        raster_idx = index_html.index("} else if (isRasterImage)", svg_idx)
+        svg_block = index_html[svg_idx:raster_idx]
+        assert "canvas.toDataURL('image/png')" in svg_block
+
+    def test_svg_respects_max_dim(self, index_html: str) -> None:
+        """SVG rasterization should cap dimensions at MAX_DIM (1200)."""
+        svg_idx = index_html.index("if (isSvg)")
+        raster_idx = index_html.index("} else if (isRasterImage)", svg_idx)
+        svg_block = index_html[svg_idx:raster_idx]
+        assert "MAX_DIM" in svg_block
+        assert "1200" in svg_block
+
+    def test_svg_uses_natural_dimensions(self, index_html: str) -> None:
+        """SVG branch should read naturalWidth/naturalHeight from the Image element."""
+        svg_idx = index_html.index("if (isSvg)")
+        raster_idx = index_html.index("} else if (isRasterImage)", svg_idx)
+        svg_block = index_html[svg_idx:raster_idx]
+        assert "naturalWidth" in svg_block
+        assert "naturalHeight" in svg_block
+
+    def test_svg_excluded_from_raster_path(self, index_html: str) -> None:
+        """SVG should not match the isRasterImage condition."""
+        assert "!isSvg" in index_html or (
+            "const isRasterImage" in index_html
+            and "image/svg+xml"
+            not in index_html.split("const isRasterImage")[1]
+            .split(";")[0]
+            .replace("isSvg", "")
+        )
+
+    def test_raster_images_unaffected(self, index_html: str) -> None:
+        """The existing raster image path should still handle PNG/JPEG/WebP."""
+        raster_idx = index_html.index("} else if (isRasterImage)")
+        else_idx = index_html.index("} else {", raster_idx + 1)
+        raster_block = index_html[raster_idx:else_idx]
+        assert "URL.createObjectURL(file)" in raster_block
+        assert "canvas.toDataURL(outType" in raster_block

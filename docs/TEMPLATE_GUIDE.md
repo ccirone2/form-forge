@@ -120,13 +120,14 @@ Adds a level-2 heading followed by a formatted mailing address block. Parses a J
 stencils.address(doc, "Mailing Address", data.get("mailing_address", "{}"))
 ```
 
-### `stencils.image(doc, b64_str, width_inches=3.0, placeholder="No image uploaded.")`
+### `stencils.image(doc, b64_str, width_inches=3.0, max_height=None, placeholder="No image uploaded.")`
 
-Embeds a base64 data-URI image in the document, or renders a muted italic placeholder if the string is empty or invalid.
+Embeds a base64 data-URI image in the document, or renders a muted italic placeholder if the string is empty or invalid. The optional `max_height` parameter (inches) caps the image height — if the image exceeds this at the given width, it is scaled down proportionally.
 
 ```python
 stencils.image(doc, data.get("receipt_photo", ""))
 stencils.image(doc, data.get("logo", ""), width_inches=2.0, placeholder="No logo provided.")
+stencils.image(doc, data.get("floor_plan", ""), width_inches=5.0, max_height=3.0)
 ```
 
 ### `stencils.signature(doc, b64_str, label, width_inches=2.5)`
@@ -173,9 +174,9 @@ stencils.format_time("")                     # → ""
 
 Always pass a string — use `data.get('field_id', '')` to guarantee a string default.
 
-### `stencils.coverpage(doc, title, doc_type="", metadata=None, logo_b64="", logo_width=2.0, bar_color=None, theme=None)`
+### `stencils.coverpage(doc, title, doc_type="", metadata=None, logo_b64="", logo_width=2.0, max_logo_height=1.0, bar_color=None, theme=None)`
 
-Adds a professional cover page to the document. Use with `new_doc("", "")` so the cover page is the first content. A page break is appended automatically.
+Adds a professional cover page to the document. Use with `new_doc("", "")` so the cover page is the first content. A page break is appended automatically. The layout adapts to content: the bar region is capped at ~2.5" total height and the vertical spacer adjusts so title + metadata always fit on page 1 (up to ~8 metadata rows on US Letter).
 
 ```python
 doc = stencils.new_doc("", "")
@@ -189,6 +190,7 @@ stencils.coverpage(doc,
         ("Author", data.get("author", "")),
     ],
     logo_b64=data.get("company_logo", ""),
+    max_logo_height=1.5,  # allow taller logos
 )
 # Body content follows on page 2...
 stencils.table_section(doc, "Findings", [...])
@@ -197,8 +199,9 @@ stencils.table_section(doc, "Findings", [...])
 - `title` — large centered title displayed ~2/3 down the page
 - `doc_type` — subtitle-style label below the title (e.g. "Technical Report")
 - `metadata` — list of `(label, value)` tuples rendered as a compact table (date, revision, ID, author, etc.)
-- `logo_b64` — base64 data-URI for a company logo, displayed inside a colored bar at the top of the page. Raw base64 without the `data:` prefix is treated as absent
+- `logo_b64` — base64 data-URI for a company logo, displayed inside a colored bar at the top of the page. Raw base64 without the `data:` prefix is treated as absent. SVG uploads are auto-converted to PNG by the browser before reaching the template
 - `logo_width` — logo width in inches (default 2.0)
+- `max_logo_height` — maximum logo height in inches (default 1.0). If the image exceeds this height at the given width, it is scaled down proportionally
 - `bar_color` — hex color for the bar background (defaults to theme `color_accent`). A leading `#` is stripped automatically
 - `theme` — optional `DocTheme` override for this cover page (defaults to active theme)
 
