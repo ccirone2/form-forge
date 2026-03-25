@@ -174,7 +174,7 @@ def test_css_section_34_template_builder(index_html: str) -> None:
 
 
 def test_css_section_36_reduced_motion(index_html: str) -> None:
-    assert "36. REDUCED MOTION" in index_html
+    assert "36b. REDUCED MOTION" in index_html
 
 
 def test_css_section_37_mobile_gate(index_html: str) -> None:
@@ -2764,3 +2764,204 @@ def test_copy_template_ai_context_function(index_html: str) -> None:
     body = _extract_func(index_html, "copyTemplateAIContext")
     assert "buildTemplateAIContext" in body
     assert "navigator.clipboard.writeText" in body
+
+
+# --- Help Sidebar ---
+
+
+class TestHelpSidebarHTML:
+    """Sidebar HTML structure and toggle buttons exist."""
+
+    def test_schema_sidebar_exists(self, index_html: str) -> None:
+        assert 'id="schemaHelpSidebar"' in index_html
+
+    def test_template_sidebar_exists(self, index_html: str) -> None:
+        assert 'id="templateHelpSidebar"' in index_html
+
+    def test_schema_sidebar_role(self, index_html: str) -> None:
+        assert (
+            'role="complementary" aria-label="Schema reference sidebar"' in index_html
+        )
+
+    def test_template_sidebar_role(self, index_html: str) -> None:
+        assert (
+            'role="complementary" aria-label="Template reference sidebar"' in index_html
+        )
+
+    def test_schema_toggle_button(self, index_html: str) -> None:
+        assert 'id="schemaHelpToggleBtn"' in index_html
+        assert "toggleHelpSidebar('schema')" in index_html
+
+    def test_template_toggle_button(self, index_html: str) -> None:
+        assert 'id="templateHelpToggleBtn"' in index_html
+        assert "toggleHelpSidebar('template')" in index_html
+
+    def test_schema_search_input(self, index_html: str) -> None:
+        assert 'id="schemaHelpSearch"' in index_html
+        assert "filterHelpSidebar('schema'" in index_html
+
+    def test_template_search_input(self, index_html: str) -> None:
+        assert 'id="templateHelpSearch"' in index_html
+        assert "filterHelpSidebar('template'" in index_html
+
+    def test_sidebar_inner_wrapper(self, index_html: str) -> None:
+        assert 'class="help-sidebar-inner"' in index_html
+
+    def test_sidebar_content_containers(self, index_html: str) -> None:
+        assert 'id="schemaHelpContent"' in index_html
+        assert 'id="templateHelpContent"' in index_html
+
+    def test_dev_workspace_wraps_split(self, index_html: str) -> None:
+        """dev-split is wrapped in dev-workspace for sidebar layout."""
+        assert 'class="dev-workspace"' in index_html
+
+    def test_keyboard_shortcut_hint(self, index_html: str) -> None:
+        assert "Ctrl+Shift+H" in index_html
+
+
+class TestHelpSidebarCSS:
+    """Sidebar CSS classes are defined."""
+
+    @pytest.mark.parametrize(
+        "cls",
+        [
+            ".help-sidebar",
+            ".help-sidebar.open",
+            ".help-sidebar-inner",
+            ".help-sidebar-header",
+            ".help-sidebar-search",
+            ".help-sidebar-content",
+            ".help-accordion",
+            ".help-accordion-header",
+            ".help-accordion-body",
+            ".help-accordion.open",
+            ".help-item",
+            ".help-item-name",
+            ".help-item-desc",
+            ".help-item-props",
+            ".help-item-prop",
+            ".help-no-results",
+            ".dev-workspace",
+        ],
+    )
+    def test_css_class_defined(self, index_html: str, cls: str) -> None:
+        escaped = cls.replace(".", r"\.").replace(" ", r"\s+")
+        pattern = re.compile(escaped + r"\s*[{,\s]")
+        assert pattern.search(index_html), f"CSS selector {cls} not found"
+
+
+class TestHelpSidebarJS:
+    """Core sidebar JavaScript functions exist."""
+
+    def test_toggle_function(self, index_html: str) -> None:
+        assert "function toggleHelpSidebar(" in index_html
+
+    def test_open_function(self, index_html: str) -> None:
+        assert "function openHelpSidebar(" in index_html
+
+    def test_close_function(self, index_html: str) -> None:
+        assert "function closeHelpSidebar(" in index_html
+
+    def test_init_function(self, index_html: str) -> None:
+        assert "function initHelpSidebars(" in index_html
+
+    def test_filter_function(self, index_html: str) -> None:
+        assert "function filterHelpSidebar(" in index_html
+
+    def test_accordion_toggle_function(self, index_html: str) -> None:
+        assert "function toggleHelpAccordion(" in index_html
+
+    def test_build_schema_help(self, index_html: str) -> None:
+        assert "function buildSchemaHelpHTML(" in index_html
+
+    def test_build_template_help(self, index_html: str) -> None:
+        assert "function buildTemplateHelpHTML(" in index_html
+
+    def test_insert_field_from_sidebar(self, index_html: str) -> None:
+        assert "function insertFieldFromSidebar(" in index_html
+
+    def test_insert_method_from_sidebar(self, index_html: str) -> None:
+        assert "function insertMethodFromSidebar(" in index_html
+
+    def test_cursor_highlighting(self, index_html: str) -> None:
+        assert "function highlightFieldAtCursor(" in index_html
+        assert "function setupCursorHighlighting(" in index_html
+
+    def test_keyboard_shortcut_handler(self, index_html: str) -> None:
+        """Ctrl+Shift+H keyboard shortcut is registered."""
+        assert "e.shiftKey" in index_html
+        assert "toggleHelpSidebar" in index_html
+
+    def test_localstorage_persistence(self, index_html: str) -> None:
+        """Sidebar state is persisted via localStorage."""
+        assert "formforge-help-sidebar-schema" in index_html
+        assert "formforge-help-sidebar-template" in index_html
+        assert "formforge-help-accordion-" in index_html
+
+    def test_update_template_data_shape(self, index_html: str) -> None:
+        assert "function updateTemplateDataShape(" in index_html
+
+    def test_schema_help_data_has_all_field_types(self, index_html: str) -> None:
+        """SCHEMA_HELP_DATA covers all 24 field types."""
+        body = index_html[
+            index_html.index("SCHEMA_HELP_DATA") : index_html.index(
+                "TEMPLATE_HELP_DATA"
+            )
+        ]
+        expected = [
+            "text",
+            "email",
+            "tel",
+            "number",
+            "currency",
+            "url",
+            "date",
+            "time",
+            "datetime",
+            "textarea",
+            "longtext",
+            "select",
+            "multi_select",
+            "radio",
+            "checkbox",
+            "toggle",
+            "address",
+            "repeater",
+            "file",
+            "signature",
+            "list",
+            "heading",
+            "hidden",
+            "info",
+        ]
+        for ft in expected:
+            assert f"name: '{ft}'" in body, (
+                f"Field type '{ft}' missing from SCHEMA_HELP_DATA"
+            )
+
+    def test_template_help_data_has_all_methods(self, index_html: str) -> None:
+        """TEMPLATE_HELP_DATA covers all stencils public methods."""
+        body = index_html[
+            index_html.index("TEMPLATE_HELP_DATA") : index_html.index(
+                "function buildAccordionHTML"
+            )
+        ]
+        expected = [
+            "new_doc",
+            "table_section",
+            "longtext",
+            "bullet_list",
+            "address",
+            "image",
+            "signature",
+            "repeater_table",
+            "format_time",
+            "signatures",
+            "footer",
+            "finalize",
+            "set_theme",
+        ]
+        for method in expected:
+            assert f"name: '{method}'" in body, (
+                f"Method '{method}' missing from TEMPLATE_HELP_DATA"
+            )
