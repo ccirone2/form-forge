@@ -2711,6 +2711,29 @@ def test_demo_button_restored_on_disconnect(index_html: str) -> None:
     assert "demoBtnAction" in body
 
 
+def test_disconnect_clears_demo_editor_state(index_html: str) -> None:
+    """disconnectSource clears editor content when leaving demo mode."""
+    body = _extract_func(index_html, "disconnectSource")
+    assert "wasType === 'demo'" in body
+    assert "devSchemaText" in body
+    assert "devTemplateText" in body
+    assert "devSampleDataText" in body
+    assert "formforge-dev-schema" in body
+
+
+def test_demo_schema_json_constant_exists(index_html: str) -> None:
+    """DEMO_SCHEMA_JSON is pre-computed to avoid repeated serialization."""
+    assert (
+        "const DEMO_SCHEMA_JSON = JSON.stringify(DEMO_SCHEMA, null, 2);" in index_html
+    )
+
+
+def test_source_toolbar_demo_label_uses_title(index_html: str) -> None:
+    """Demo source label uses DEMO_SCHEMA.title instead of a hardcoded string."""
+    body = _extract_func(index_html, "updateSourceToolbar")
+    assert "DEMO_SCHEMA.title" in body
+
+
 def test_empty_state_hidden_when_connected(index_html: str) -> None:
     """renderPicker hides the empty state card."""
     body = _extract_func(index_html, "renderPicker")
@@ -2824,6 +2847,8 @@ def test_build_schema_ai_context_function(index_html: str) -> None:
     assert "devSchemaText" in body
     assert "contentSourceType" in body
     assert "workspaceFiles" in body
+    # WIP section excludes demo content
+    assert "DEMO_SCHEMA_JSON" in body
 
 
 def test_build_template_ai_context_function(index_html: str) -> None:
@@ -2837,6 +2862,8 @@ def test_build_template_ai_context_function(index_html: str) -> None:
     assert "devParsedSchema" in body
     assert "devSampleDataText" in body
     assert "contentSourceType" in body
+    # WIP section excludes demo content
+    assert "DEMO_TEMPLATE.trim()" in body
 
 
 def test_copy_schema_ai_context_function(index_html: str) -> None:
