@@ -572,8 +572,8 @@ def test_context_menu_prevents_default(index_html: str) -> None:
     assert "contextmenu" in body
 
 
-def test_context_menu_four_submenus(index_html: str) -> None:
-    """devSchemaContextItems returns 4 grouped submenus."""
+def test_context_menu_four_group_labels(index_html: str) -> None:
+    """devSchemaContextItems returns 4 group labels for section-level context."""
     body = _extract_func(index_html, "devSchemaContextItems")
     assert "'Input Fields'" in body
     assert "'Choice Fields'" in body
@@ -694,11 +694,108 @@ def test_context_menu_closes_on_escape(index_html: str) -> None:
 
 
 def test_context_menu_viewport_clamped(index_html: str) -> None:
-    """showContextMenu clamps position to viewport edges."""
+    """showContextMenu clamps position to bounds (bounding element or viewport)."""
     body = _extract_func(index_html, "showContextMenu")
+    # Viewport fallback when no bounding element
     assert "window.innerWidth" in body
     assert "window.innerHeight" in body
-    assert "Math.max(0" in body
+    # Bounding element clamping
+    assert "boundingEl" in body
+    assert "getBoundingClientRect" in body
+    assert "boundsRight" in body
+    assert "boundsBottom" in body
+    assert "Math.max(boundsLeft" in body
+    assert "Math.max(boundsTop" in body
+
+
+def test_schema_context_menu_cursor_aware(index_html: str) -> None:
+    """Schema editor contextmenu listener calls getSchemaEditorContext."""
+    body = _extract_func(index_html, "initSchemaEditor")
+    assert "getSchemaEditorContext" in body
+    assert "schemaEditorPane" in body
+
+
+def test_get_schema_editor_context_exists(index_html: str) -> None:
+    """getSchemaEditorContext function is defined."""
+    body = _extract_func(index_html, "getSchemaEditorContext")
+    assert "'root'" in body
+    assert "'section'" in body
+    assert "'field'" in body
+
+
+def test_schema_context_root_level_items(index_html: str) -> None:
+    """Root-level context shows Add Section and Wrap in Wizard."""
+    body = _extract_func(index_html, "devSchemaContextItems")
+    assert "'Add Section'" in body
+    assert "'Wrap in Wizard'" in body
+
+
+def test_schema_context_field_level_properties(index_html: str) -> None:
+    """Field-level context calls getFieldPropertySnippets."""
+    body = _extract_func(index_html, "devSchemaContextItems")
+    assert "getFieldPropertySnippets" in body
+
+
+def test_get_field_property_snippets_exists(index_html: str) -> None:
+    """getFieldPropertySnippets returns type-specific property items."""
+    body = _extract_func(index_html, "getFieldPropertySnippets")
+    assert "'required'" in body
+    assert "'placeholder'" in body
+    assert "'options'" in body
+    assert "'visible_when'" in body
+
+
+def test_dev_insert_property_exists(index_html: str) -> None:
+    """devInsertProperty function adds properties to field objects."""
+    body = _extract_func(index_html, "devInsertProperty")
+    assert "already exists" in body
+    assert "schemaJar" in body
+
+
+def test_base_scaffold_defined(index_html: str) -> None:
+    """BASE_SCAFFOLD constant is defined with required schema structure."""
+    assert "const BASE_SCAFFOLD" in index_html
+    assert '"New Form"' in index_html or "'New Form'" in index_html
+
+
+def test_schema_context_root_scaffold_option(index_html: str) -> None:
+    """Root-level context includes Base Scaffold when editor is empty."""
+    body = _extract_func(index_html, "devSchemaContextItems")
+    assert "'Base Scaffold'" in body
+    assert "BASE_SCAFFOLD" in body
+
+
+def test_template_context_cursor_aware(index_html: str) -> None:
+    """Template editor contextmenu listener calls getTemplateEditorContext."""
+    body = _extract_func(index_html, "initTemplateEditor")
+    assert "getTemplateEditorContext" in body
+    assert "templateEditorPane" in body
+
+
+def test_get_template_editor_context_exists(index_html: str) -> None:
+    """getTemplateEditorContext function detects top vs body level."""
+    body = _extract_func(index_html, "getTemplateEditorContext")
+    assert "'top'" in body
+    assert "'body'" in body
+
+
+def test_template_snippets_have_categories(index_html: str) -> None:
+    """TEMPLATE_SNIPPETS entries have category field (top or body)."""
+    assert "category: 'top'" in index_html
+    assert "category: 'body'" in index_html
+
+
+def test_template_context_top_level_items(index_html: str) -> None:
+    """Top-level template context shows only top-category snippets."""
+    body = _extract_func(index_html, "devTemplateContextItems")
+    assert "category === 'top'" in body or "s.category === 'top'" in body
+
+
+def test_template_context_body_level_items(index_html: str) -> None:
+    """Body-level template context shows helpers and schema fields."""
+    body = _extract_func(index_html, "devTemplateContextItems")
+    assert "'Helpers'" in body
+    assert "'Schema Fields'" in body
 
 
 def test_insert_snippet_invalid_json_toast(index_html: str) -> None:

@@ -5,10 +5,6 @@
 
 ---
 
-TODO: Schema context menu improvements — add option to add base scaffold (e.g. editor is blank)
-
----
-
 ## Active Plans
 
 *(No active plans.)*
@@ -24,6 +20,13 @@ TODO: Schema context menu improvements — add option to add base scaffold (e.g.
 **Plan:** `~/.claude/plans/glowing-honking-sloth.md`
 
 Added `coverpage()` stencil function for professional document cover pages: company logo with geometric bar, title/type at ~2/3 page, configurable metadata fields, page break. Includes demo schema+template, 8 tests, and docs updates.
+
+### Issue #215 — Improve Editor Context Menus ✅
+
+**Branch:** `feature/215-context-menu-improvements`
+**Issues:** #215 (parent), #216, #217, #218, #219
+
+Redesigned Schema and Template editor context menus: cursor-aware (root/section/field and top/body contexts), flat (group labels, no submenus), editor-clamped (bounding element positioning), with field property snippets and base scaffold option.
 
 ### Issue #202 — Commit New Files from Editors to GitHub ✅
 
