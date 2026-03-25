@@ -95,20 +95,71 @@ def page(browser_instance, server):
 # ---------------------------------------------------------------------------
 
 
+def _dispatch_contextmenu(page, editor_id):
+    """Dispatch a contextmenu event on the editor without moving the cursor.
+
+    Playwright's ``click(button="right")`` repositions the text caret to the
+    click coordinates, overriding any cursor position set by
+    ``devSetCursorOffset``.  Dispatching the event via JS preserves the
+    caret so that ``devGetCursorOffset`` returns the intended position.
+    """
+    page.evaluate(
+        f"""(() => {{
+            const el = document.getElementById('{editor_id}');
+            const rect = el.getBoundingClientRect();
+            el.dispatchEvent(new MouseEvent('contextmenu', {{
+                bubbles: true, cancelable: true,
+                clientX: rect.left + 10, clientY: rect.top + 10
+            }}));
+        }})()"""
+    )
+
+
 def open_schema_context_menu(page):
     """Right-click inside the schema editor and wait for the context menu."""
-    editor = page.locator("#schemaEditor")
-    editor.click(button="right")
+    _dispatch_contextmenu(page, "schemaEditor")
     page.wait_for_selector('#ctxMenu[style*="display: block"]', timeout=3000)
     return page.locator("#ctxMenu")
 
 
-def open_template_context_menu(page):
-    """Switch to template tab, right-click in template editor, wait for menu."""
+def open_template_context_menu(page, level="body"):
+    """Switch to template tab, position cursor, and open context menu.
+
+    Args:
+        level: ``'body'`` (default) places cursor inside the function body so
+               the menu shows stencil helpers.  ``'top'`` places cursor at the
+               very start for top-level items.
+    """
     page.click("#tab-dev-template")
     page.wait_for_selector("#templateEditor[contenteditable]", timeout=15000)
-    editor = page.locator("#templateEditor")
-    editor.click(button="right")
+    # Position cursor so context detection gives the expected level
+    if level == "body":
+        page.evaluate(
+            """(() => {
+                const el = document.getElementById('templateEditor');
+                el.focus();
+                const text = devTemplateText || '';
+                const defIdx = text.indexOf('def ');
+                if (defIdx >= 0) {
+                    const nl = text.indexOf('\\n', defIdx);
+                    if (nl >= 0) {
+                        devSetCursorOffset(el, nl + 5);
+                        return;
+                    }
+                }
+                devSetCursorOffset(el, Math.min(50, text.length));
+            })()"""
+        )
+    else:
+        page.evaluate(
+            """(() => {
+                const el = document.getElementById('templateEditor');
+                el.focus();
+                devSetCursorOffset(el, 0);
+            })()"""
+        )
+    page.wait_for_timeout(100)
+    _dispatch_contextmenu(page, "templateEditor")
     page.wait_for_selector('#ctxMenu[style*="display: block"]', timeout=3000)
     return page.locator("#ctxMenu")
 
