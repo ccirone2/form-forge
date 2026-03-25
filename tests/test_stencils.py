@@ -805,10 +805,7 @@ def test_coverpage_max_logo_height_scales_down():
     extent = inline_shapes[0].find(
         "{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}extent"
     )
-    if extent is None:
-        extent = inline_shapes[0].find(
-            "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}extent"
-        )
+    assert extent is not None, "extent element not found in inline shape"
     # Extent cy is in EMU (914400 per inch). 1.0" = 914400 EMU
     cy = int(extent.get("cy"))
     assert cy <= 914400 + 1000  # allow tiny rounding tolerance

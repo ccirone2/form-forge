@@ -3294,12 +3294,9 @@ class TestSvgRasterization:
 
     def test_svg_excluded_from_raster_path(self, index_html: str) -> None:
         """SVG should not match the isRasterImage condition."""
-        assert "!isSvg" in index_html or (
-            "const isRasterImage" in index_html
-            and "image/svg+xml"
-            not in index_html.split("const isRasterImage")[1]
-            .split(";")[0]
-            .replace("isSvg", "")
+        assert (
+            "const isRasterImage = file.type.startsWith('image/') && !isSvg"
+            in index_html
         )
 
     def test_raster_images_unaffected(self, index_html: str) -> None:

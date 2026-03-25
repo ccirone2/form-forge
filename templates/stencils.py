@@ -628,7 +628,11 @@ def coverpage(
 
     # ── Adaptive vertical spacer (push title toward ~2/3 of page) ────
     # Estimate content heights to ensure everything fits on page 1.
-    # US Letter: ~9.5" usable (11" - 1" top - 0.5" bottom margin).
+    # Derive usable height from the document's actual margins.
+    _section = doc.sections[0]
+    _usable_in = (
+        _section.page_height - _section.top_margin - _section.bottom_margin
+    ) / 914400  # EMU → inches
     _bar_in = 0.6 + max_logo_height  # 2 × 0.3" padding + logo cap
     _below_in = 0.5  # title block
     if doc_type:
@@ -637,8 +641,8 @@ def coverpage(
     if _meta_count > 0:
         _below_in += 0.15 + _meta_count * 0.22
     _below_in += 0.2  # page-break buffer
-    _available_in = 9.5 - _bar_in - _below_in
-    _target_in = min(_available_in, 6.3 - _bar_in)  # cap at ~2/3 mark
+    _available_in = _usable_in - _bar_in - _below_in
+    _target_in = min(_available_in, _usable_in * 2 / 3 - _bar_in)
     _spacer_pt = max(_target_in * 72, 36)  # at least 0.5"
     spacer = doc.add_paragraph()
     spacer.paragraph_format.space_before = Pt(_spacer_pt)
@@ -933,7 +937,11 @@ def image(
             img_data = b64_str.split(",")[1]
             img_bytes = base64.b64decode(img_data)
             picture = doc.add_picture(io.BytesIO(img_bytes), width=Inches(width_inches))
-            if max_height is not None and max_height > 0 and picture.height > Inches(max_height):
+            if (
+                max_height is not None
+                and max_height > 0
+                and picture.height > Inches(max_height)
+            ):
                 ratio = Inches(max_height) / picture.height
                 picture.height = Inches(max_height)
                 picture.width = int(picture.width * ratio)
