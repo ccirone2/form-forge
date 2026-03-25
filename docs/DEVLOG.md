@@ -14,6 +14,14 @@
 
 ## Log
 
+### 2026-03-25 — Issue Created: SVG Support & Coverpage Layout Constraints (#226)
+
+Created issue #226 to address two related problems:
+1. SVG image uploads (common for company logos) silently fail in python-docx — will add client-side SVG→PNG rasterization via canvas in `createFileField()`
+2. Coverpage layout can overflow to a second page with tall logos or many metadata rows — will add `max_logo_height` param, cap bar padding, and make the vertical spacer adaptive
+
+---
+
 ### 2026-03-25 — Auto-Preview and DOCX Rendering Fidelity (#223)
 
 Template preview now auto-runs when switching to the Template tab if a valid template and sample data are present (e.g., after launching demo or loading from a connected source). Preview skips re-running if content hasn't changed.
