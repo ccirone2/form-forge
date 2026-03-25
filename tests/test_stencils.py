@@ -577,3 +577,183 @@ def test_signature_invalid_b64():
     texts = [p.text for p in doc.paragraphs]
     assert any("Signer" in t for t in texts)
     assert any("_" * 40 in t for t in texts)
+
+
+# ---------------------------------------------------------------------------
+#  new_doc — empty title
+# ---------------------------------------------------------------------------
+
+
+def test_new_doc_empty_title_no_heading():
+    """new_doc('', '') should produce a doc with no heading element."""
+    doc = stencils.new_doc("", "")
+    # Should have no heading paragraphs (level-0 heading is style 'Title')
+    heading_paras = [
+        p for p in doc.paragraphs if p.style.name == "Title" and p.text
+    ]
+    assert heading_paras == []
+
+
+# ---------------------------------------------------------------------------
+#  coverpage
+# ---------------------------------------------------------------------------
+
+
+def test_coverpage_basic():
+    """coverpage with title only should render title and page break."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(doc, title="My Report")
+    texts = [p.text for p in doc.paragraphs]
+    assert any("My Report" in t for t in texts)
+    # Should have a page break
+    xml = doc.element.body.xml
+    assert 'w:type="page"' in xml
+
+
+def test_coverpage_full():
+    """coverpage with all parameters should include title, type, and metadata."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(
+        doc,
+        title="Full Report",
+        doc_type="Technical Report",
+        metadata=[("Date", "2026-03-25"), ("Author", "Jane Doe")],
+    )
+    texts = [p.text for p in doc.paragraphs]
+    assert any("Full Report" in t for t in texts)
+    assert any("Technical Report" in t for t in texts)
+    # Metadata in tables
+    all_text = " ".join(
+        cell.text
+        for tbl in doc.tables
+        for row in tbl.rows
+        for cell in row.cells
+    )
+    assert "Date" in all_text
+    assert "2026-03-25" in all_text
+    assert "Author" in all_text
+    assert "Jane Doe" in all_text
+
+
+def test_coverpage_no_logo():
+    """coverpage without logo should render placeholder squares."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(doc, title="No Logo Test")
+    # The bar table (first table) should contain the placeholder
+    bar_table = doc.tables[0]
+    cell_text = bar_table.rows[0].cells[0].text
+    assert "\u25A0" in cell_text
+
+
+def _make_tiny_png_data_uri() -> str:
+    """Create a minimal 1x1 white PNG as a data URI for testing."""
+    import base64 as b64mod
+
+    # Minimal valid PNG: 1x1 white pixel
+    # (header + IHDR + IDAT + IEND)
+    import struct
+    import zlib
+
+    def _chunk(chunk_type, data):
+        c = chunk_type + data
+        crc = struct.pack(">I", zlib.crc32(c) & 0xFFFFFFFF)
+        return struct.pack(">I", len(data)) + c + crc
+
+    sig = b"\x89PNG\r\n\x1a\n"
+    ihdr = _chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0))
+    raw = zlib.compress(b"\x00\xff\xff\xff")
+    idat = _chunk(b"IDAT", raw)
+    iend = _chunk(b"IEND", b"")
+    png_bytes = sig + ihdr + idat + iend
+    encoded = b64mod.b64encode(png_bytes).decode()
+    return f"data:image/png;base64,{encoded}"
+
+
+def test_coverpage_valid_logo():
+    """coverpage with valid logo should embed image, not placeholder."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(doc, title="Logo Test", logo_b64=_make_tiny_png_data_uri())
+    bar_table = doc.tables[0]
+    cell_text = bar_table.rows[0].cells[0].text
+    # Should NOT contain placeholder squares
+    assert "\u25A0" not in cell_text
+
+
+def test_coverpage_invalid_logo_falls_back():
+    """coverpage with invalid base64 logo should fall back to placeholder."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(
+        doc, title="Bad Logo", logo_b64="data:image/png;base64,NOT_VALID!!!"
+    )
+    bar_table = doc.tables[0]
+    assert "\u25A0" in bar_table.rows[0].cells[0].text
+
+
+def test_coverpage_metadata_table():
+    """Metadata renders as label/value pairs in a table."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(
+        doc,
+        title="Meta Test",
+        metadata=[
+            ("Revision", "Rev B"),
+            ("ID", "RPT-001"),
+        ],
+    )
+    # Find the metadata table (second table after bar table)
+    assert len(doc.tables) >= 2
+    meta_table = doc.tables[1]
+    assert len(meta_table.rows) == 2
+    assert meta_table.rows[0].cells[0].text == "Revision"
+    assert meta_table.rows[0].cells[1].text == "Rev B"
+    assert meta_table.rows[1].cells[0].text == "ID"
+    assert meta_table.rows[1].cells[1].text == "RPT-001"
+
+
+def test_coverpage_custom_bar_color():
+    """bar_color parameter should override theme accent in the bar cell."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(doc, title="Color Test", bar_color="FF0000")
+    bar_table = doc.tables[0]
+    cell = bar_table.rows[0].cells[0]
+    shd = cell._tc.tcPr.find(qn("w:shd"))
+    assert shd is not None
+    assert shd.get(qn("w:fill")) == "FF0000"
+
+
+def test_coverpage_bar_color_strips_hash():
+    """bar_color with leading # should be accepted after stripping."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(doc, title="Hash Test", bar_color="#1A1A3E")
+    bar_table = doc.tables[0]
+    cell = bar_table.rows[0].cells[0]
+    shd = cell._tc.tcPr.find(qn("w:shd"))
+    assert shd.get(qn("w:fill")) == "1A1A3E"
+
+
+def test_coverpage_bar_color_invalid_raises():
+    """bar_color with non-hex value should raise ValueError."""
+    doc = stencils.new_doc("", "")
+    with pytest.raises(ValueError, match="6-digit hex"):
+        stencils.coverpage(doc, title="Bad Color", bar_color="red")
+
+
+def test_coverpage_empty_metadata():
+    """coverpage with None/empty metadata should not add a metadata table."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(doc, title="No Meta", metadata=None)
+    # Only the bar table should exist (no metadata table)
+    assert len(doc.tables) == 1
+
+    doc2 = stencils.new_doc("", "")
+    stencils.coverpage(doc2, title="No Meta", metadata=[])
+    assert len(doc2.tables) == 1
+
+
+def test_coverpage_page_break():
+    """coverpage should end with a page break so body starts on page 2."""
+    doc = stencils.new_doc("", "")
+    stencils.coverpage(doc, title="Break Test")
+    # The last paragraph before any body content should contain a page break
+    body_xml = doc.element.body.xml
+    assert 'w:type="page"' in body_xml

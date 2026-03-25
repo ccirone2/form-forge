@@ -1,0 +1,11 @@
+{
+  "doc_title": "Quarterly Safety Inspection Report",
+  "doc_type": "Technical Report",
+  "doc_date": "2026-03-25",
+  "revision": "Rev B",
+  "doc_id": "RPT-2026-042",
+  "author": "Jane Doe",
+  "body_heading": "Executive Summary",
+  "body_content": "This report summarizes the findings from the Q1 2026 safety inspection conducted across all facilities.\n\nAll critical systems were evaluated against current compliance standards. Three areas of concern were identified and remediation plans have been established.",
+  "key_findings": "Fire suppression systems passed inspection\nEmergency lighting requires replacement in Building C\nEvacuation routes properly marked and clear"
+}

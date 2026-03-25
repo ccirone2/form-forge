@@ -2,10 +2,11 @@
 
 Uses Playwright to exercise runtime behavior:
 - Right-click in schema/template editors opens context menus
-- Menu structure (submenus, items, separators)
+- Cursor-aware menu structure (flat items with group labels, no submenus)
 - Snippet insertion into editors
 - Menu close behavior (click-outside, Escape)
 - Error handling (invalid JSON toast)
+- Bounding element clamping (menu stays within editor pane)
 
 Requires: pip install playwright && python -m playwright install chromium
 """
@@ -147,37 +148,76 @@ class TestSchemaContextMenuAppears:
 
 
 class TestSchemaMenuStructure:
-    """Menu has 4 grouped submenus plus action items."""
+    """Menu shows cursor-aware flat items with group labels (no submenus).
 
-    def test_has_four_submenus(self, page):
+    The default starter schema has sections with fields, so right-clicking
+    in the editor lands inside a section/field context. The menu should show
+    flat field type items with category group labels.
+    """
+
+    def test_no_submenus(self, page):
+        """Editor context menus are flat — no submenu items."""
         open_schema_context_menu(page)
         submenus = page.locator("#ctxMenu > .ctx-menu-item.has-sub")
-        assert submenus.count() == 4
+        assert submenus.count() == 0
 
-    def test_submenu_labels(self, page):
+    def test_has_group_labels(self, page):
+        """Section-level context shows group labels for field categories."""
+        # Place cursor inside a section (click on "Section 1" text area)
+        page.evaluate(
+            """(() => {
+                const text = devSchemaText;
+                const sectionPos = text.indexOf('"fields"');
+                if (sectionPos > 0) {
+                    const el = document.getElementById('schemaEditor');
+                    el.focus();
+                    devSetCursorOffset(el, sectionPos + 10);
+                }
+            })()"""
+        )
+        page.wait_for_timeout(100)
         open_schema_context_menu(page)
-        subs = page.locator("#ctxMenu > .ctx-menu-item.has-sub")
-        labels = [subs.nth(i).text_content().strip() for i in range(4)]
-        assert "Input Fields" in labels[0]
-        assert "Choice Fields" in labels[1]
-        assert "Complex Fields" in labels[2]
-        assert "Layout" in labels[3]
+        labels = page.locator("#ctxMenu > .ctx-menu-group-label")
+        texts = [labels.nth(i).text_content().strip() for i in range(labels.count())]
+        assert "Input Fields" in texts
+        assert "Choice Fields" in texts
 
-    def test_has_separator(self, page):
+    def test_field_type_items_visible(self, page):
+        """Section-level context shows flat field type items."""
+        page.evaluate(
+            """(() => {
+                const text = devSchemaText;
+                const pos = text.indexOf('"fields"');
+                if (pos > 0) {
+                    const el = document.getElementById('schemaEditor');
+                    el.focus();
+                    devSetCursorOffset(el, pos + 10);
+                }
+            })()"""
+        )
+        page.wait_for_timeout(100)
         open_schema_context_menu(page)
-        separators = page.locator("#ctxMenu > .ctx-menu-separator")
-        assert separators.count() >= 1
+        items = page.locator("#ctxMenu > .ctx-menu-item")
+        texts = [items.nth(i).text_content().strip() for i in range(items.count())]
+        assert "Text" in texts
+        assert "Select" in texts
+        assert "Address" in texts
 
-    def test_add_section_item(self, page):
+    def test_root_level_shows_structural_items(self, page):
+        """When cursor is at root level, shows Add Section and Wrap in Wizard."""
+        # Place cursor at the very start (root level)
+        page.evaluate(
+            """(() => {
+                const el = document.getElementById('schemaEditor');
+                el.focus();
+                devSetCursorOffset(el, 1);
+            })()"""
+        )
+        page.wait_for_timeout(100)
         open_schema_context_menu(page)
-        items = page.locator("#ctxMenu > .ctx-menu-item:not(.has-sub)")
+        items = page.locator("#ctxMenu > .ctx-menu-item")
         texts = [items.nth(i).text_content().strip() for i in range(items.count())]
         assert "Add Section" in texts
-
-    def test_wrap_in_wizard_item(self, page):
-        open_schema_context_menu(page)
-        items = page.locator("#ctxMenu > .ctx-menu-item:not(.has-sub)")
-        texts = [items.nth(i).text_content().strip() for i in range(items.count())]
         assert "Wrap in Wizard" in texts
 
 
@@ -185,16 +225,25 @@ class TestSchemaSnippetInsertion:
     """Clicking a field type inserts a snippet into the schema JSON."""
 
     def test_insert_text_field(self, page):
+        """Insert a Text field from the section-level context menu."""
         text_before = get_editor_text(page, "schemaEditor")
+        # Position cursor inside the fields array of section
+        page.evaluate(
+            """(() => {
+                const text = devSchemaText;
+                const pos = text.indexOf('"fields"');
+                if (pos > 0) {
+                    const el = document.getElementById('schemaEditor');
+                    el.focus();
+                    devSetCursorOffset(el, pos + 10);
+                }
+            })()"""
+        )
+        page.wait_for_timeout(100)
         open_schema_context_menu(page)
 
-        # Hover the "Input Fields" submenu to reveal children
-        sub = page.locator("#ctxMenu > .ctx-menu-item.has-sub").first
-        sub.hover()
-        page.wait_for_timeout(200)
-
-        # Click "Text" item
-        text_item = sub.locator(".ctx-menu-sub .ctx-menu-item", has_text="Text").first
+        # Click "Text" item directly (no submenu hover needed)
+        text_item = page.locator("#ctxMenu > .ctx-menu-item", has_text="Text").first
         text_item.click()
 
         # Menu should close
@@ -206,61 +255,131 @@ class TestSchemaSnippetInsertion:
         assert len(text_after) > len(text_before)
 
     def test_insert_select_field(self, page):
-        open_schema_context_menu(page)
-        sub = page.locator(
-            "#ctxMenu > .ctx-menu-item.has-sub", has_text="Choice Fields"
+        page.evaluate(
+            """(() => {
+                const text = devSchemaText;
+                const pos = text.indexOf('"fields"');
+                if (pos > 0) {
+                    const el = document.getElementById('schemaEditor');
+                    el.focus();
+                    devSetCursorOffset(el, pos + 10);
+                }
+            })()"""
         )
-        sub.hover()
-        page.wait_for_timeout(200)
-
-        select_item = sub.locator(
-            ".ctx-menu-sub .ctx-menu-item", has_text="Select"
+        page.wait_for_timeout(100)
+        open_schema_context_menu(page)
+        select_item = page.locator(
+            "#ctxMenu > .ctx-menu-item", has_text="Select"
         ).first
         select_item.click()
-
         text = get_editor_text(page, "schemaEditor")
         assert "select_field" in text
 
     def test_unique_id_on_duplicate(self, page):
         """Inserting the same field type twice gives unique IDs."""
-        # Insert text field first time
-        open_schema_context_menu(page)
-        sub = page.locator("#ctxMenu > .ctx-menu-item.has-sub").first
-        sub.hover()
-        page.wait_for_timeout(200)
-        sub.locator(".ctx-menu-sub .ctx-menu-item", has_text="Text").first.click()
-        page.wait_for_timeout(100)
+        # Helper to position cursor and insert Text field
+        def insert_text_field():
+            page.evaluate(
+                """(() => {
+                    const text = devSchemaText;
+                    const pos = text.indexOf('"fields"');
+                    if (pos > 0) {
+                        const el = document.getElementById('schemaEditor');
+                        el.focus();
+                        devSetCursorOffset(el, pos + 10);
+                    }
+                })()"""
+            )
+            page.wait_for_timeout(100)
+            open_schema_context_menu(page)
+            page.locator("#ctxMenu > .ctx-menu-item", has_text="Text").first.click()
+            page.wait_for_timeout(100)
 
-        # Insert text field second time
-        open_schema_context_menu(page)
-        sub = page.locator("#ctxMenu > .ctx-menu-item.has-sub").first
-        sub.hover()
-        page.wait_for_timeout(200)
-        sub.locator(".ctx-menu-sub .ctx-menu-item", has_text="Text").first.click()
-
+        insert_text_field()
+        insert_text_field()
         text = get_editor_text(page, "schemaEditor")
-        # Should have both text_field and text_field_2 (or similar suffix)
         assert "text_field" in text
         assert "text_field_2" in text or "text_field_3" in text
 
     def test_add_section(self, page):
+        # Place cursor at root level
+        page.evaluate(
+            """(() => {
+                const el = document.getElementById('schemaEditor');
+                el.focus();
+                devSetCursorOffset(el, 1);
+            })()"""
+        )
+        page.wait_for_timeout(100)
         open_schema_context_menu(page)
         page.locator(
-            "#ctxMenu > .ctx-menu-item:not(.has-sub)", has_text="Add Section"
+            "#ctxMenu > .ctx-menu-item", has_text="Add Section"
         ).click()
-
         text = get_editor_text(page, "schemaEditor")
         assert "Section" in text
 
     def test_wrap_in_wizard(self, page):
+        page.evaluate(
+            """(() => {
+                const el = document.getElementById('schemaEditor');
+                el.focus();
+                devSetCursorOffset(el, 1);
+            })()"""
+        )
+        page.wait_for_timeout(100)
         open_schema_context_menu(page)
         page.locator(
-            "#ctxMenu > .ctx-menu-item:not(.has-sub)",
+            "#ctxMenu > .ctx-menu-item",
             has_text="Wrap in Wizard",
         ).click()
-
         text = get_editor_text(page, "schemaEditor")
         assert '"wizard"' in text or "wizard" in text
+
+
+class TestSchemaFieldPropertyInsertion:
+    """Field-level context shows property snippets for the detected type."""
+
+    def test_field_level_shows_properties(self, page):
+        """When cursor is inside a field object, shows property snippets."""
+        # Position cursor inside the field_1 object (after "type": "text")
+        page.evaluate(
+            """(() => {
+                const text = devSchemaText;
+                const pos = text.indexOf('"type": "text"');
+                if (pos > 0) {
+                    const el = document.getElementById('schemaEditor');
+                    el.focus();
+                    devSetCursorOffset(el, pos + 5);
+                }
+            })()"""
+        )
+        page.wait_for_timeout(100)
+        open_schema_context_menu(page)
+        items = page.locator("#ctxMenu > .ctx-menu-item")
+        texts = [items.nth(i).text_content().strip() for i in range(items.count())]
+        # Text field should show common properties
+        assert "placeholder" in texts
+        assert "visible_when" in texts
+
+    def test_insert_property(self, page):
+        """Clicking a property snippet adds it to the field."""
+        page.evaluate(
+            """(() => {
+                const text = devSchemaText;
+                const pos = text.indexOf('"type": "text"');
+                if (pos > 0) {
+                    const el = document.getElementById('schemaEditor');
+                    el.focus();
+                    devSetCursorOffset(el, pos + 5);
+                }
+            })()"""
+        )
+        page.wait_for_timeout(100)
+        open_schema_context_menu(page)
+        page.locator("#ctxMenu > .ctx-menu-item", has_text="placeholder").click()
+        page.wait_for_timeout(300)
+        text = get_editor_text(page, "schemaEditor")
+        assert "placeholder" in text
 
 
 class TestSchemaInvalidJson:
@@ -283,10 +402,10 @@ class TestSchemaInvalidJson:
 
         # Open menu and try to insert a field
         open_schema_context_menu(page)
-        sub = page.locator("#ctxMenu > .ctx-menu-item.has-sub").first
-        sub.hover()
-        page.wait_for_timeout(200)
-        sub.locator(".ctx-menu-sub .ctx-menu-item").first.click()
+        # With invalid JSON, context detection falls back to root level
+        items = page.locator("#ctxMenu > .ctx-menu-item")
+        if items.count() > 0:
+            items.first.click()
 
         # Wait for toast to appear
         toast = page.locator(".toast", has_text="fix JSON errors")
@@ -321,11 +440,20 @@ class TestSchemaLivePreview:
     """Live preview updates after snippet insertion."""
 
     def test_preview_updates_after_insert(self, page):
+        page.evaluate(
+            """(() => {
+                const text = devSchemaText;
+                const pos = text.indexOf('"fields"');
+                if (pos > 0) {
+                    const el = document.getElementById('schemaEditor');
+                    el.focus();
+                    devSetCursorOffset(el, pos + 10);
+                }
+            })()"""
+        )
+        page.wait_for_timeout(100)
         open_schema_context_menu(page)
-        sub = page.locator("#ctxMenu > .ctx-menu-item.has-sub").first
-        sub.hover()
-        page.wait_for_timeout(200)
-        sub.locator(".ctx-menu-sub .ctx-menu-item", has_text="Text").first.click()
+        page.locator("#ctxMenu > .ctx-menu-item", has_text="Text").first.click()
 
         # Wait for preview debounce (300ms)
         page.wait_for_timeout(500)
@@ -335,15 +463,101 @@ class TestSchemaLivePreview:
         assert badge.is_visible()
 
     def test_validation_badge_valid_after_insert(self, page):
+        page.evaluate(
+            """(() => {
+                const text = devSchemaText;
+                const pos = text.indexOf('"fields"');
+                if (pos > 0) {
+                    const el = document.getElementById('schemaEditor');
+                    el.focus();
+                    devSetCursorOffset(el, pos + 10);
+                }
+            })()"""
+        )
+        page.wait_for_timeout(100)
         open_schema_context_menu(page)
-        sub = page.locator("#ctxMenu > .ctx-menu-item.has-sub").first
-        sub.hover()
-        page.wait_for_timeout(200)
-        sub.locator(".ctx-menu-sub .ctx-menu-item", has_text="Email").first.click()
+        page.locator("#ctxMenu > .ctx-menu-item", has_text="Email").first.click()
 
         page.wait_for_timeout(500)
         badge_text = page.locator("#schemaValidText").text_content()
         assert badge_text == "valid"
+
+
+class TestSchemaMenuClamping:
+    """Context menu stays within editor pane bounds."""
+
+    def test_menu_within_editor_pane(self, page):
+        """Menu position does not exceed the editor pane right/bottom edges."""
+        open_schema_context_menu(page)
+        result = page.evaluate(
+            """(() => {
+                const menu = document.getElementById('ctxMenu');
+                const pane = document.getElementById('schemaEditorPane');
+                const menuRect = menu.getBoundingClientRect();
+                const paneRect = pane.getBoundingClientRect();
+                return {
+                    menuRight: menuRect.right,
+                    menuBottom: menuRect.bottom,
+                    paneRight: paneRect.right,
+                    paneBottom: paneRect.bottom,
+                };
+            })()"""
+        )
+        # Menu should not exceed pane bounds (with small tolerance for rounding)
+        assert result["menuRight"] <= result["paneRight"] + 2
+        assert result["menuBottom"] <= result["paneBottom"] + 2
+
+
+class TestBaseScaffold:
+    """Base scaffold option appears when editor is empty."""
+
+    def test_scaffold_shown_when_empty(self, page):
+        """Clearing the editor and right-clicking shows Base Scaffold."""
+        page.evaluate(
+            """(() => {
+                devSchemaText = '';
+                if (window.schemaJar) schemaJar.updateCode('');
+            })()"""
+        )
+        page.wait_for_timeout(200)
+        # Position cursor at start
+        page.evaluate(
+            """(() => {
+                const el = document.getElementById('schemaEditor');
+                el.focus();
+                devSetCursorOffset(el, 0);
+            })()"""
+        )
+        page.wait_for_timeout(100)
+        open_schema_context_menu(page)
+        items = page.locator("#ctxMenu > .ctx-menu-item")
+        texts = [items.nth(i).text_content().strip() for i in range(items.count())]
+        assert "Base Scaffold" in texts
+
+    def test_scaffold_inserts_valid_schema(self, page):
+        """Clicking Base Scaffold inserts a complete valid schema."""
+        page.evaluate(
+            """(() => {
+                devSchemaText = '';
+                if (window.schemaJar) schemaJar.updateCode('');
+            })()"""
+        )
+        page.wait_for_timeout(200)
+        page.evaluate(
+            """(() => {
+                const el = document.getElementById('schemaEditor');
+                el.focus();
+                devSetCursorOffset(el, 0);
+            })()"""
+        )
+        page.wait_for_timeout(100)
+        open_schema_context_menu(page)
+        page.locator("#ctxMenu > .ctx-menu-item", has_text="Base Scaffold").click()
+        page.wait_for_timeout(500)
+        text = get_editor_text(page, "schemaEditor")
+        assert "New Form" in text
+        assert "sections" in text
+        assert "fields" in text
 
 
 # ===========================================================================
@@ -360,7 +574,13 @@ class TestTemplateContextMenuAppears:
 
 
 class TestTemplateMenuStructure:
-    """Template menu has stencils helper snippet items."""
+    """Template menu has cursor-aware items — no submenus."""
+
+    def test_no_submenus(self, page):
+        """Template context menu has no submenu items."""
+        open_template_context_menu(page)
+        submenus = page.locator("#ctxMenu > .ctx-menu-item.has-sub")
+        assert submenus.count() == 0
 
     def test_has_snippet_items(self, page):
         open_template_context_menu(page)
@@ -420,3 +640,27 @@ class TestTemplateMenuCloses:
         page.wait_for_timeout(200)
 
         assert not ctx_menu_visible(page)
+
+
+class TestTemplateMenuClamping:
+    """Template context menu stays within editor pane bounds."""
+
+    def test_menu_within_editor_pane(self, page):
+        """Menu position does not exceed the template editor pane bounds."""
+        open_template_context_menu(page)
+        result = page.evaluate(
+            """(() => {
+                const menu = document.getElementById('ctxMenu');
+                const pane = document.getElementById('templateEditorPane');
+                const menuRect = menu.getBoundingClientRect();
+                const paneRect = pane.getBoundingClientRect();
+                return {
+                    menuRight: menuRect.right,
+                    menuBottom: menuRect.bottom,
+                    paneRight: paneRect.right,
+                    paneBottom: paneRect.bottom,
+                };
+            })()"""
+        )
+        assert result["menuRight"] <= result["paneRight"] + 2
+        assert result["menuBottom"] <= result["paneBottom"] + 2

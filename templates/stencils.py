@@ -508,8 +508,9 @@ def new_doc(
         if font_size is not None:
             style.font.size = Pt(font_size)
 
-    doc.add_heading(title_text, level=0)
-    doc.add_paragraph("")
+    if title_text:
+        doc.add_heading(title_text, level=0)
+        doc.add_paragraph("")
 
     if subtitle_text:
         try:
@@ -524,6 +525,159 @@ def new_doc(
         doc.add_paragraph("")
 
     return doc
+
+
+def coverpage(
+    doc: Document,
+    title: str,
+    doc_type: str = "",
+    metadata: list[tuple[str, str]] | None = None,
+    logo_b64: str = "",
+    logo_width: float = 2.0,
+    bar_color: str | None = None,
+    theme: DocTheme | None = None,
+) -> None:
+    """
+    Add a professional cover page with logo bar, title, type, and metadata.
+
+    Call on a document created with ``new_doc("", "")`` so the cover page is
+    the first content.  A page break is appended automatically so body content
+    starts on page 2.
+
+    Args:
+        doc: The Document instance (from ``new_doc``).
+        title: Document title displayed large and centered.
+        doc_type: Document type label shown below the title (e.g. "Technical
+                  Report").  Omit or pass ``""`` to skip.
+        metadata: Optional list of (label, value) tuples rendered as a compact
+                  table beneath the title (e.g. date, revision, author).
+        logo_b64: Base64 data-URI string (e.g. ``"data:image/png;base64,..."``
+                  ) for a company logo, or ``""`` for a placeholder.  Raw base64
+                  without the ``data:`` prefix is treated as absent.
+        logo_width: Logo image width in inches (default 2.0).
+        bar_color: Hex color string for the geometric bar background
+                   (e.g. ``"1A1A3E"``).  A leading ``#`` is stripped
+                   automatically.  Defaults to the active theme's
+                   ``color_accent``.
+        theme: Optional DocTheme for this cover page.  If None, uses the
+               current active theme.
+
+    Raises:
+        ValueError: If ``bar_color`` is not a valid 6-digit hex string.
+    """
+    t = theme if theme is not None else _active_theme
+
+    if bar_color:
+        fill = bar_color.lstrip("#").upper()
+        if len(fill) != 6 or not all(c in "0123456789ABCDEF" for c in fill):
+            raise ValueError(
+                f"bar_color must be a 6-digit hex string, got: {bar_color!r}"
+            )
+    else:
+        fill = str(t.color_accent)
+
+    # ── Geometric bar with logo ──────────────────────────────────────
+    bar_table = doc.add_table(rows=1, cols=1)
+    bar_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    _set_table_borders(bar_table, val="none", sz=0, color="auto")
+
+    # Generous vertical padding to give the bar visual weight
+    _set_cell_margins(bar_table, top=0.5, bottom=0.5)
+
+    # Full-width: set preferred width to 100%
+    tblPr = bar_table._tbl.tblPr
+    if tblPr is None:
+        tblPr = bar_table._tbl._add_tblPr()
+    existing_w = tblPr.find(qn("w:tblW"))
+    if existing_w is not None:
+        tblPr.remove(existing_w)
+    tblPr.append(parse_xml(f'<w:tblW {nsdecls("w")} w:w="5000" w:type="pct"/>'))
+
+    # Shade the bar cell
+    cell = bar_table.rows[0].cells[0]
+    _shade_cells(bar_table.rows[0], fill)
+
+    # Center content in the cell
+    cell_p = cell.paragraphs[0]
+    cell_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    # Embed logo or placeholder
+    if logo_b64 and "," in logo_b64:
+        try:
+            img_data = logo_b64.split(",")[1]
+            img_bytes = base64.b64decode(img_data)
+            run = cell_p.add_run()
+            run.add_picture(io.BytesIO(img_bytes), width=Inches(logo_width))
+        except (ValueError, binascii.Error, OSError, UnrecognizedImageError):
+            _coverpage_logo_placeholder(cell_p, t)
+    else:
+        _coverpage_logo_placeholder(cell_p, t)
+
+    # ── Vertical spacer (push title to ~2/3 down page) ───────────────
+    spacer = doc.add_paragraph()
+    spacer.paragraph_format.space_before = Pt(220)
+
+    # ── Document title ───────────────────────────────────────────────
+    title_p = doc.add_paragraph()
+    title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title_run = title_p.add_run(title)
+    title_run.font.name = t.font_heading
+    title_run.font.size = Pt(t.size_title)
+    title_run.font.color.rgb = t.color_title
+
+    # ── Document type ────────────────────────────────────────────────
+    if doc_type:
+        type_p = doc.add_paragraph()
+        type_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        type_run = type_p.add_run(doc_type)
+        type_run.font.name = t.font_caption
+        type_run.font.size = Pt(t.size_subtitle)
+        type_run.font.color.rgb = t.color_subtitle
+
+        # Thin horizontal rule below the doc type
+        pPr = type_p._p.get_or_add_pPr()
+        pPr.append(
+            parse_xml(
+                f"<w:pBdr {nsdecls('w')}>"
+                f'<w:bottom w:val="single" w:sz="4" w:space="4"'
+                f' w:color="{t.color_subtitle}"/>'
+                f"</w:pBdr>"
+            )
+        )
+
+    # ── Metadata table ───────────────────────────────────────────────
+    if metadata:
+        doc.add_paragraph("")
+        meta_table = doc.add_table(rows=0, cols=2)
+        meta_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+        _set_table_borders(meta_table, val="none", sz=0, color="auto")
+        _set_cell_margins(meta_table, top=0.02, bottom=0.02)
+
+        for label, value in metadata:
+            row = meta_table.add_row()
+            lp = row.cells[0].paragraphs[0]
+            lp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            lr = lp.add_run(label)
+            lr.font.name = t.font_heading
+            lr.font.size = Pt(t.size_table)
+            lr.font.color.rgb = t.color_subtitle
+
+            vp = row.cells[1].paragraphs[0]
+            display = str(value) if value else "\u2014"
+            vr = vp.add_run(display)
+            vr.font.name = t.font_body
+            vr.font.size = Pt(t.size_table)
+            _set_cell_left_margin(row.cells[1], 0.15)
+
+    # ── Page break ───────────────────────────────────────────────────
+    doc.add_page_break()
+
+
+def _coverpage_logo_placeholder(paragraph: object, theme: DocTheme) -> None:
+    """Render a placeholder in the bar cell when no logo is provided."""
+    run = paragraph.add_run("\u25A0  \u25A0  \u25A0")
+    run.font.size = Pt(24)
+    run.font.color.rgb = RGBColor(0xFF, 0xFF, 0xFF)
 
 
 def table_section(doc: Document, heading: str, rows: list[tuple[str, str]]) -> None:

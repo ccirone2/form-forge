@@ -1,0 +1,108 @@
+{
+  "title": "Cover Page Demo",
+  "description": "Demonstrates the coverpage stencil with a professional title page, metadata fields, and body content.",
+  "icon": "📄",
+  "template": "templates/coverpage-demo.py",
+  "sections": [
+    {
+      "title": "Cover Page",
+      "fields": [
+        {
+          "id": "cover_info",
+          "label": "Cover Page Settings",
+          "type": "info",
+          "content": "These fields populate the document cover page. The company logo appears inside a colored bar at the top, with the title and metadata below.",
+          "style": "info"
+        },
+        {
+          "id": "company_logo",
+          "label": "Company Logo",
+          "type": "file",
+          "hint": "Upload a logo image (PNG or JPG). Displayed inside the cover page bar.",
+          "accept": "image/*"
+        },
+        {
+          "id": "doc_title",
+          "label": "Document Title",
+          "type": "text",
+          "required": true,
+          "placeholder": "Safety Inspection Report"
+        },
+        {
+          "id": "doc_type",
+          "label": "Document Type",
+          "type": "select",
+          "required": true,
+          "options": [
+            "Technical Report",
+            "Policy Document",
+            "Procedure Manual",
+            "Audit Report",
+            "Project Plan",
+            "Proposal",
+            "Other"
+          ]
+        },
+        {
+          "id": "doc_date",
+          "label": "Document Date",
+          "type": "date",
+          "required": true
+        },
+        {
+          "id": "revision",
+          "label": "Revision",
+          "type": "text",
+          "placeholder": "Rev A"
+        },
+        {
+          "id": "doc_id",
+          "label": "Document ID",
+          "type": "text",
+          "placeholder": "RPT-2026-001"
+        },
+        {
+          "id": "author",
+          "label": "Author",
+          "type": "text",
+          "required": true,
+          "placeholder": "Jane Doe"
+        }
+      ]
+    },
+    {
+      "title": "Document Content",
+      "fields": [
+        {
+          "id": "body_heading",
+          "label": "Section Heading",
+          "type": "text",
+          "placeholder": "Executive Summary"
+        },
+        {
+          "id": "body_content",
+          "label": "Content",
+          "type": "longtext",
+          "placeholder": "Enter the main document content here..."
+        },
+        {
+          "id": "key_findings",
+          "label": "Key Findings",
+          "type": "list",
+          "hint": "One finding per line."
+        }
+      ]
+    }
+  ],
+  "sampleData": {
+    "doc_title": "Quarterly Safety Inspection Report",
+    "doc_type": "Technical Report",
+    "doc_date": "2026-03-25",
+    "revision": "Rev B",
+    "doc_id": "RPT-2026-042",
+    "author": "Jane Doe",
+    "body_heading": "Executive Summary",
+    "body_content": "This report summarizes the findings from the Q1 2026 safety inspection conducted across all facilities.\n\nAll critical systems were evaluated against current compliance standards. Three areas of concern were identified and remediation plans have been established.",
+    "key_findings": "Fire suppression systems passed inspection\nEmergency lighting requires replacement in Building C\nEvacuation routes properly marked and clear"
+  }
+}
