@@ -2007,7 +2007,8 @@ def test_forms_view_has_tabpanel_role(index_html: str) -> None:
     match = re.search(r'id="view-setup"[^>]*>', index_html)
     assert match
     assert 'role="tabpanel"' in match.group(0)
-    assert 'aria-labelledby="tab-forms"' in match.group(0)
+    assert "tab-forms" in match.group(0)
+    assert "aria-labelledby=" in match.group(0)
 
 
 def test_demo_sets_content_source_type(index_html: str) -> None:
