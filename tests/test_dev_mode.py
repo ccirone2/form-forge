@@ -1091,6 +1091,43 @@ def test_mobile_bottom_nav_exists(index_html: str) -> None:
 
 
 # ============================================================
+#  ISSUE #236 — Mobile responsiveness fixes
+# ============================================================
+
+
+def test_body_uses_dvh_fallback(index_html: str) -> None:
+    """Body height uses 100dvh with 100vh fallback (#236 P0-3)."""
+    assert "100dvh" in index_html
+
+
+def test_ios_input_zoom_prevention(index_html: str) -> None:
+    """Mobile inputs use 16px font to prevent iOS auto-zoom (#236 P0-1)."""
+    # The 600px media query should force 16px on form inputs
+    assert "font-size: 16px !important" in index_html
+
+
+def test_mobile_nav_min_height(index_html: str) -> None:
+    """Mobile bottom nav tabs have 44px minimum touch target (#236 P0-2)."""
+    assert "min-height: 44px" in index_html
+
+
+def test_overflow_wrap_on_body(index_html: str) -> None:
+    """Body has overflow-wrap: break-word for long text (#236 P1-1)."""
+    assert "overflow-wrap: break-word" in index_html
+
+
+def test_ctx_menu_sub_flip(index_html: str) -> None:
+    """Context menu submenus can flip left to stay on-screen (#236 P1-4)."""
+    assert "flip-left" in index_html
+
+
+def test_toast_word_break(index_html: str) -> None:
+    """Toast messages wrap long content (#236 P3-1)."""
+    # Find word-break in toast-related CSS
+    assert "word-break: break-word" in index_html
+
+
+# ============================================================
 #  ISSUE #122 — Regression: user mode unchanged
 # ============================================================
 
