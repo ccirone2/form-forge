@@ -14,6 +14,35 @@
 
 ## Log
 
+### 2026-03-26 — Fix Mobile Responsiveness Issues (#236)
+
+Implemented 15 of 17 findings from the responsiveness audit (P3-4 modal bottom-sheets and P3-5 fluid type tokens deferred).
+
+**P0 — Critical (3/3):**
+- Force `font-size: 16px` on inputs/textareas/selects at 600px breakpoint to prevent iOS Safari auto-zoom
+- Add `min-height: 44px` to mobile bottom nav tabs
+- Add `100dvh` fallback after `100vh` on body for mobile Safari address bar
+
+**P1 — High (5/5):**
+- Add `overflow-wrap: break-word` to body for global text wrapping
+- Add `::after` 44px touch expansion for 5 close/dismiss buttons (toast, dialog, sidebar, multi-select tag, disconnect)
+- Scale `.form-title` to 22px at 600px breakpoint
+- Add `.flip-left` CSS class + JS viewport-edge detection for context menu submenus
+- Force visibility of preset buttons, drag handles, and add-section dividers on mobile/tablet
+
+**P2 — Moderate (4/4):**
+- Reduce DOCX preview padding to `20px 16px` at 768px
+- Shrink help sidebar to 260px at 1024px breakpoint
+- Give editor pane `flex: 2` and preview `flex: 1` when stacked on mobile
+- Keep wizard circles at 32px minimum + add `::after` touch expansion
+
+**P3 — Polish (3/5, 2 deferred):**
+- Add `word-break: break-word` to `.toast-msg`
+- Add `flex-wrap: wrap` to `.progress-steps`
+- Set `.console-panel` opacity to 0.85 on `pointer: coarse` devices
+
+---
+
 ### 2026-03-25 — Fix Signature Canvas Drawing Offset (#233)
 
 Fixed double-DPR scaling bug in `createSignatureField()` where `getPos()` multiplied coordinates by `canvas.width / rect.width` (= devicePixelRatio), but the canvas context was already scaled by DPR via `ctx.scale(dpr, dpr)`. Strokes appeared offset from the actual touch/cursor position on high-DPI displays (2× offset on retina, 3× on ultra-high-DPI). Removed the redundant scaling so `getPos()` returns raw CSS-pixel coordinates.
