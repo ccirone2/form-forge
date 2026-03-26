@@ -1370,7 +1370,7 @@
   }
 
   @media (max-width: 400px) {
-    .wizard-step-circle { width: 32px; height: 32px; font-size: var(--text-xs); }
+    .wizard-step-circle { width: 24px; height: 24px; font-size: var(--text-xs); }
     .wizard-step-connector { width: 16px; margin: 0 2px; }
   }
 
@@ -2375,8 +2375,8 @@
     }
     .mobile-bottom-nav .dev-nav-tab svg { width: var(--icon-sm); height: var(--icon-sm); }
     .dev-split { flex-direction: column; }
-    .dev-split > .dev-pane:first-child { flex: 2; }
-    .dev-split > .dev-pane:last-child { flex: 1; min-height: 200px; }
+    .dev-split > .dev-pane:first-child { flex: 2; min-height: 200px; }
+    .dev-split > .dev-pane:last-child { flex: 1; min-height: 150px; }
     .dev-pane-resizer { display: none; }
     .dev-docx-preview { padding: 20px 16px; }
     .help-sidebar.open {
@@ -11366,12 +11366,14 @@ function showContextMenu(x, y, items, boundingEl) {
         sub.appendChild(childEl);
       });
       parent.addEventListener('mouseenter', () => {
+        sub.style.display = 'block';
         const subRect = sub.getBoundingClientRect();
         if (subRect.right > window.innerWidth) {
           sub.classList.add('flip-left');
         } else {
           sub.classList.remove('flip-left');
         }
+        sub.style.display = '';
       });
       parent.appendChild(sub);
       menu.appendChild(parent);
